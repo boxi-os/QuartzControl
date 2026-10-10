@@ -21,6 +21,14 @@ export const LAYOUT_BOX_READ_AGAINST = '0.4.1'
 export const NULL_SAFE_SINCE = '0.4.1'
 export const DEFAULT_SNIPPET_DIR = 'quartz/static/snippets'
 export const DEFAULT_SNIPPET_FILE = 'snippet.html'
+/**
+ * The `{{…}}` tokens layout-box replaces in a box's text and title, read from its placeholders.ts
+ * (`resolvePlaceholder`, 0.4.1): the seven named ones, and `frontmatter.<key>` for any key of the
+ * page's frontmatter. A token it does not know stays as it is written. `npm run check:plugin-copies`
+ * holds the list against the plugin's own switch.
+ */
+export const LAYOUT_BOX_PLACEHOLDERS = ['title', 'slug', 'root', 'siteTitle', 'baseUrl', 'locale', 'lang'] as const
+export const LAYOUT_BOX_FRONTMATTER_PLACEHOLDER = 'frontmatter.'
 /** Where "Bild einfügen…" copies a picture to (snippetService.IMAGES_DIR). */
 export const IMAGES_DIR = 'quartz/static/images'
 

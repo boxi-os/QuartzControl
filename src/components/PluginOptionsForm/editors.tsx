@@ -5,7 +5,7 @@ import type { OptionEnumValue, OptionField, OptionNode } from '@shared/ipc-contr
 import { evaluateCondition, nodeAccepts, setAtPath } from '@shared/pluginOptionSchema'
 import { Button, DIVIDED_ROWS, FoldBox, IconButton, Select, TextInput, Toggle } from '../ui'
 import { enumLabel, fieldMatch, fieldText, inlineValue, isEmptyObject, isPlainObject, type FormLanguage } from './text'
-import { ImageButton, SnippetFileField, siblingValue } from './snippets'
+import { ImageButton, PlaceholderList, SnippetFileField, siblingValue } from './snippets'
 
 export interface FormContext {
   lang: FormLanguage
@@ -300,6 +300,11 @@ function FieldRow({
       </div>
       <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5 [&>*]:min-w-0">{editor}</div>
       {text.description && <p className="text-micro text-text-muted">{text.description}</p>}
+      {/* layout-box's switch: which tokens it replaces, not only that it does. Not in a language
+          entry, which takes the list from above. */}
+      {field.key === 'placeholders' && field.node.kind === 'boolean' && !inherited && inherit.fields.some((f) => f.key === 'html') && (
+        <PlaceholderList off={(isSet ? value : field.hasDefault ? field.default : true) === false} />
+      )}
     </div>
   )
 }
@@ -464,6 +469,8 @@ function StringEditor({
   // load. Read by its key, because that is the option layout-box names in its schema; a plugin
   // without it never turns the hint on.
   const placeholdersOff = inherit ? siblingValue('placeholders', inherit.values, inherit.fields) === false : false
+  // The list of placeholders stands where the option exists - layout-box's, by the same key.
+  const hasPlaceholders = inherit ? inherit.fields.some((f) => f.key === 'placeholders') : false
   if (widget?.kind === 'snippetFile' && ctx.projectPath && inherit) {
     // The folder is a sibling option (`x-quartz-dir-option`); in a byLang entry, the one above.
     const dir = widget.dirOption ? siblingValue(widget.dirOption, inherit.values, inherit.fields) : undefined
@@ -520,6 +527,7 @@ function StringEditor({
               onInsert={insertImage}
             />
           )}
+          {hasPlaceholders && <PlaceholderList onInsert={insertImage} off={placeholdersOff} />}
         </span>
       ) : (
         <TextInput key={current} id={id} type="text" defaultValue={current} placeholder={placeholder} onBlur={(e) => commit(e.target.value)} className={INPUT_WIDTH} />

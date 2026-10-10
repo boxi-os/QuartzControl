@@ -404,6 +404,22 @@ function tally(label, cases, diffs) {
       fs.rmSync(root, { recursive: true, force: true })
     }
     tally('Inhalt (boxContentKind, snippetRefs)', cases, diffs)
+
+    // Die Platzhalter, die die App unter „Verfügbare Platzhalter“ anbietet, gegen placeholders.ts:
+    // Jeder der Liste muss ersetzt werden, und jeder `case` der Funktion muss in der Liste stehen.
+    const source = fs.readFileSync(path.join(dir, 'src/placeholders.ts'), 'utf-8')
+    const { applyPlaceholders } = await load(path.join(dir, 'src/placeholders.ts'), 'plugin-placeholders')
+    const ctx = { fileData: { slug: 'a/b', frontmatter: { title: 'T', lang: 'de-DE', author: 'A' } }, cfg: { pageTitle: 'S', baseUrl: 'example.com', locale: 'en-US' } }
+    const offered = [...copy.LAYOUT_BOX_PLACEHOLDERS, `${copy.LAYOUT_BOX_FRONTMATTER_PLACEHOLDER}author`]
+    const placeholderDiffs = []
+    for (const name of offered) {
+      if (applyPlaceholders(`{{${name}}}`, ctx) === `{{${name}}}`) placeholderDiffs.push(`{{${name}}}: die App bietet ihn an, das Plugin ersetzt ihn nicht`)
+    }
+    for (const [, name] of source.matchAll(/case "([\w.-]+)":/g)) {
+      if (!copy.LAYOUT_BOX_PLACEHOLDERS.includes(name)) placeholderDiffs.push(`{{${name}}}: das Plugin kennt ihn, die App bietet ihn nicht an`)
+    }
+    if (!source.includes(`"${copy.LAYOUT_BOX_FRONTMATTER_PLACEHOLDER}"`)) placeholderDiffs.push(`${copy.LAYOUT_BOX_FRONTMATTER_PLACEHOLDER}: das Plugin nennt dieses Präfix nicht mehr`)
+    tally('Platzhalter (LAYOUT_BOX_PLACEHOLDERS)', offered.length, placeholderDiffs)
   }
 }
 

@@ -1294,6 +1294,21 @@ export default {
     noMatch: 'No option matches the search.'
   },
   snippets: {
+    placeholders: {
+      summary: 'Available placeholders ({{count}})',
+      intro: 'Replaced when the site is built, in the text and the title of the box. A placeholder it does not know stays as written.',
+      introInsert: 'Replaced when the site is built, in the text and the title of the box. A click puts it in at the cursor.',
+      off: 'Switched off: the placeholders stay as they are written. Switch “placeholders” on.',
+      insertNamed: 'Insert {{token}}',
+      title: 'Title of the page, from its frontmatter',
+      slug: 'Path of the page, such as “folder/note”',
+      root: 'Relative path to the home page, for links and images: {{example}}',
+      siteTitle: 'Title of the site (pageTitle)',
+      baseUrl: 'Address of the site (baseUrl)',
+      locale: 'Language of the page, such as “en-US” — from its frontmatter, else the site’s',
+      lang: 'Just the language code, such as “en”',
+      frontmatter: 'Any entry of the page’s frontmatter — the entry’s name in place of “author”'
+    },
     imageFilter: 'Images',
     snippetFilter: 'Snippets',
     insertImage: 'Insert image…',

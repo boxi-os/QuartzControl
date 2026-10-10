@@ -4,7 +4,7 @@ import CodeMirror, { Transaction } from '@uiw/react-codemirror'
 import { html } from '@codemirror/lang-html'
 import { markdown } from '@codemirror/lang-markdown'
 import { EditorView } from '@codemirror/view'
-import { FilePlus2, FileUp, ImagePlus, Pencil } from 'lucide-react'
+import { Braces, FilePlus2, FileUp, ImagePlus, Pencil } from 'lucide-react'
 import type { OptionField, SnippetDirInfo } from '@shared/ipc-contract'
 import { Button, Select, TextInput } from '../ui'
 import { askDialog, confirmDialog } from '../../utils/confirm'
@@ -12,6 +12,7 @@ import { formatIpcError } from '../ErrorSurface'
 import { useStickyState } from '../../state/uiState'
 import { inlineValue } from './text'
 import { inlineSvg } from '../../utils/inlineSvg'
+import { LAYOUT_BOX_FRONTMATTER_PLACEHOLDER, LAYOUT_BOX_PLACEHOLDERS } from '../../routes/Plugins/layoutBoxes'
 
 // The editors behind `x-quartz-widget: snippetFile` and the image button of `html`/`markdown`
 // (shared/pluginOptionSchema.ts). Picked by the schema's widget, not by the plugin's name: any
@@ -141,6 +142,54 @@ export function ImageButton({
       {note && <span className="text-micro text-amber-700 dark:text-amber-300">{note}</span>}
       {error && <span className="text-micro text-red-600 dark:text-red-400">{error}</span>}
     </span>
+  )
+}
+
+/**
+ * The placeholders a layout box can use, folded under a summary (Wunsch des Nutzers, 2026-10-10:
+ * the option `placeholders` said that it replaces `{{placeholder}}` tokens, not which). Beside a
+ * text editor each token is a button that puts it in at the cursor; under the option itself the
+ * list only reads. `off`: the plugin's `placeholders` is false, and the tokens would stay as text.
+ */
+export function PlaceholderList({ onInsert, off }: { onInsert?: (text: string) => void; off: boolean }): JSX.Element {
+  const { t } = useTranslation()
+  const frontmatterExample = `{{${LAYOUT_BOX_FRONTMATTER_PLACEHOLDER}author}}`
+  const rows: [token: string, meaning: string][] = [
+    ...LAYOUT_BOX_PLACEHOLDERS.map((name): [string, string] => [`{{${name}}}`, t(`snippets.placeholders.${name}`, { example: '{{root}}/static/images/logo.png' })]),
+    [frontmatterExample, t('snippets.placeholders.frontmatter')]
+  ]
+  return (
+    <details className="text-micro text-text-secondary">
+      <summary className="inline-flex cursor-pointer items-center gap-1.5 font-medium">
+        <Braces size={12} aria-hidden />
+        {t('snippets.placeholders.summary', { count: rows.length })}
+      </summary>
+      <div className="mt-1.5 flex flex-col gap-1.5">
+        <p className="text-text-muted">{onInsert ? t('snippets.placeholders.introInsert') : t('snippets.placeholders.intro')}</p>
+        {off && <p className="text-amber-700 dark:text-amber-300">{t('snippets.placeholders.off')}</p>}
+        <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1">
+          {rows.map(([token, meaning]) => (
+            <div key={token} className="contents">
+              <dt>
+                {onInsert ? (
+                  <button
+                    type="button"
+                    onClick={() => onInsert(token)}
+                    title={t('snippets.placeholders.insertNamed', { token })}
+                    className="rounded border border-ink/10 bg-surface px-1.5 py-0.5 font-mono text-xs text-text hover:border-accent hover:text-accent-text"
+                  >
+                    {token}
+                  </button>
+                ) : (
+                  <code className="font-mono text-xs text-text">{token}</code>
+                )}
+              </dt>
+              <dd className="text-text-muted">{meaning}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </details>
   )
 }
 
@@ -548,6 +597,7 @@ export function SnippetEditor({
         </div>
       )}
       <p className="text-micro text-text-muted">{t('snippets.saveHint')}</p>
+      <PlaceholderList onInsert={insert} off={placeholdersOff} />
       <div className="flex flex-wrap items-start gap-1.5">
         <ImageButton projectPath={projectPath} format={format} placeholdersOff={placeholdersOff} onInsert={insert} />
         <span className="flex-1" />

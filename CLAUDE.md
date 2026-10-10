@@ -107,7 +107,8 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   wurde, nicht ob die Abschrift stimmt — und beim ersten Lauf am 2026-10-09 (gui-test, alle drei in
   der gelesenen Version) wichen 20 von 637 Antworten ab, alle seither in den Abschriften behoben
   (641 Fälle; seit quartz-layout-box 0.4.1 645, die Abschrift fragt dort die installierte
-  Version). Ein fehlendes Plugin zählt als „nicht geprüft“
+  Version; seit dem 2026-10-10 dazu die acht Platzhalter, die „Zusätzliche Inhalte“ anbietet,
+  gegen `placeholders.ts` in beide Richtungen). Ein fehlendes Plugin zählt als „nicht geprüft“
 - `npm run check:inline-svg -- [projektpfad]` — der SVG-Bereiniger (`src/utils/inlineSvg.ts`, „Als Code einfügen“
   im Snippet-Editor) gegen 38 böse Eingaben, ein gewöhnliches Icon, zwei Icons mit denselben Ids auf einer Seite und (seit dem vierundvierzigsten Review) vier Schreibweisen eines Verweises, die das Präfix der Ids mitziehen muss: jedes Ergebnis in Chrome als
   HTML in eine Box, wie die Website es rendert — und seit dem dreiundvierzigsten Review auch durch

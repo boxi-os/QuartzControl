@@ -1299,6 +1299,21 @@ export default {
     noMatch: 'Keine Option passt zur Suche.'
   },
   snippets: {
+    placeholders: {
+      summary: 'Verfügbare Platzhalter ({{count}})',
+      intro: 'Beim Bauen ersetzt, im Text und im Titel des Kastens. Ein unbekannter Platzhalter bleibt stehen, wie er geschrieben ist.',
+      introInsert: 'Beim Bauen ersetzt, im Text und im Titel des Kastens. Ein Klick fügt ihn am Cursor ein.',
+      off: 'Ausgeschaltet: Die Platzhalter bleiben stehen, wie sie geschrieben sind. Schalte „placeholders“ ein.',
+      insertNamed: '{{token}} einfügen',
+      title: 'Titel der Seite, aus ihrem Frontmatter',
+      slug: 'Pfad der Seite, etwa „ordner/notiz“',
+      root: 'Relativer Weg zur Startseite, für Links und Bilder: {{example}}',
+      siteTitle: 'Titel der Website (pageTitle)',
+      baseUrl: 'Adresse der Website (baseUrl)',
+      locale: 'Sprache der Seite, etwa „de-DE“ — aus ihrem Frontmatter, sonst die der Website',
+      lang: 'Nur der Sprachcode, etwa „de“',
+      frontmatter: 'Jeder Eintrag im Frontmatter der Seite — statt „author“ den Namen des Eintrags'
+    },
     imageFilter: 'Bilder',
     snippetFilter: 'Snippets',
     insertImage: 'Bild einfügen…',

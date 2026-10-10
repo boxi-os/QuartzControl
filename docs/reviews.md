@@ -2242,10 +2242,12 @@ und Smoke (46 Aufrufe, Kopie von gui-test), gemessen jeweils vorher gegen den al
 - **9** `5671b0b` — Plan (basic-vorlage auf 0.4.0) und `layout-frames.md` (Gruppenzeile,
   P#G-Regel); die Sätze über den Bereiniger stimmen seit `c576a8f`.
 
-Nicht erledigt, nur gesammelt (die Nebenbei-Liste des Reviews): vier `configChange`-Snapshots je
-Vorlagen-Import; geteilte Ids mehrerer eingefügter SVGs auf einer Seite; ein Restore je Datei kann
-die zwölf mit Kopfzeile ungeladen neben den 31 stehen lassen; `projectLock()` steht in
-`styleLock.ts`. Der Regelvorschlag des Reviews („eine Zahl, die einen Fix belegen soll, nennt
+Aus der Nebenbei-Liste danach auf `fix/review-2026-10-17-nebenbei`: `290b710` — die Teile des
+Vorlagen-Imports schreiben die Config ohne eigenen Snapshot (vorher ein zusätzlicher `configChange`
+mitten im Import, nachher nur der `styleChange` davor); `58d8f5c` — die Ids eines eingefügten SVG
+bekommen ein Präfix je Datei, alle Verweise ziehen mit (vorher 5 doppelte Ids und 6 Verweise ins
+andere SVG, nachher 0). Weiter offen: ein Restore je Datei kann die zwölf mit Kopfzeile ungeladen
+neben den 31 stehen lassen; `projectLock()` steht in `styleLock.ts`. Der Regelvorschlag des Reviews („eine Zahl, die einen Fix belegen soll, nennt
 mindestens einen ihrer Fälle mit seiner Ursache“) steht auf Wunsch des Nutzers in `conventions.md`.
 
 **Keinen dieser Fixes hat ein Review gelesen.**

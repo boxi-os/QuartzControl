@@ -21,7 +21,7 @@ const repo = path.join(import.meta.dirname, '..')
 const quelle = fs.readFileSync(path.join(repo, 'shared/stylesheetConsolidation.ts'), 'utf-8')
 const tmp = path.join(os.tmpdir(), `consolidation-${process.pid}.mts`)
 fs.writeFileSync(tmp, quelle)
-const { planConsolidation, canConsolidate, wasConsolidated, CONSOLIDATED_ORDER } = await import(`file://${tmp}`)
+const { planConsolidation, canConsolidate, wasConsolidated, CONSOLIDATED_ORDER, TEMPLATE_FIRST_LINES } = await import(`file://${tmp}`)
 fs.unlinkSync(tmp)
 
 const show = (rev, p) => execFileSync('git', ['-C', repo, 'show', `${rev}:${p}`], { encoding: 'utf8', maxBuffer: 1e8 })
@@ -87,6 +87,28 @@ pruefe(
   'ein Projekt aus der Vorlage von 1.1 mit einer der 31 dazu bietet nichts an und schreibt nichts'
 )
 pruefe(!wasConsolidated({}, ['custom/callouts.scss', ...order]), 'eine eigene callouts.scss in der Reihenfolge macht die 31 nicht zu zusammengelegten')
+
+// Die zwei Ränder der Schwelle, die bis zum vierundvierzigsten Review galt (Niedrig 7): Erkannt
+// wird seither an der ersten Zeile der Vorlage, nicht an der Zahl geladener neuer Namen.
+// 1. Vorlage von 1.1, sechs der zehn neuen abgeschaltet (sie liegen weiter auf der Platte), dazu
+//    nav-explorer aus den 31.
+const abgeschaltet = ['components-header', 'plugin-multilanguage', 'components-navigation', 'plugin-navigations', 'components-note', 'pages']
+const wenige = [...CONSOLIDATED_ORDER.filter((t) => !abgeschaltet.includes(t)).map((t) => `custom/${t}.scss`), 'custom/nav-explorer.scss']
+pruefe(
+  !canConsolidate(wenige, wasConsolidated(vorlage, wenige)) && Object.keys(planConsolidation(wenige, { ...vorlage, 'custom/nav-explorer.scss': files['custom/nav-explorer.scss'] }, wenige).write).length === 0,
+  'Vorlage von 1.1 mit vier der zehn neuen geladen und nav-explorer dazu: nichts angeboten, nichts geschrieben'
+)
+// 2. Die 31 von 1.0 und fünf eigene Dateien mit Namen der zwölf.
+const fuenf = ['layout', 'content', 'callouts', 'pages', 'foundation']
+const mitEigenen = [...order.filter((p) => p !== 'custom/callouts.scss'), ...fuenf.map((t) => `custom/${t}.scss`)]
+const eigene = { ...files, ...Object.fromEntries(fuenf.map((t) => [`custom/${t}.scss`, `// meine ${t}\n.x { color: red; }\n`])) }
+pruefe(canConsolidate(mitEigenen, wasConsolidated(eigene, mitEigenen)), 'die 31 mit fünf eigenen Dateien namens layout, content, callouts, pages, foundation: wird angeboten')
+// Die Tabelle der ersten Zeilen ist eine Abschrift der Vorlage; sie wird hier gegen sie gehalten.
+const abweichend = Object.entries(TEMPLATE_FIRST_LINES).filter(([t, zeile]) => vorlage[`custom/${t}.scss`].split('\n', 1)[0].trimEnd() !== zeile)
+pruefe(
+  abweichend.length === 0 && Object.keys(TEMPLATE_FIRST_LINES).length === 10,
+  `TEMPLATE_FIRST_LINES stimmt mit der ersten Zeile der zehn neuen Stylesheets der Vorlage überein${abweichend.length ? ` (abweichend: ${abweichend.map(([t]) => t).join(', ')})` : ''}`
+)
 
 // Ein Restore je Datei kann die 31 samt Reihenfolge zurückholen und die zwölf mit Kopfzeile
 // ungeladen liegen lassen. Dann ist das Projekt wieder in der Form der 31, und das Angebot muss

@@ -23,8 +23,8 @@
  *   switched on later is a stylesheet of its own from there on: a second run wrapped a11y and
  *   plugin-layout-box into themselves again, moved the first components-header aside as a user's
  *   file and put the new one in front of both (forty-second review, finding 4). Told apart by the
- *   header line each of the twelve gets, or by most of the new names loaded at once - not by one
- *   name, since a user's own `callouts.scss` has one (wasConsolidated).
+ *   header line each of the twelve gets, or by the first line the 1.1 template gives them - not
+ *   by a name, since a user's own `callouts.scss` has one (wasConsolidated).
  *
  * Pure, so `shared/` can hold it and a check can load it: the caller reads the files and writes
  * the result (styleService.consolidateStylesheets).
@@ -81,18 +81,37 @@ const isLegacyOnly = (relativePath: string): boolean => isLegacy(relativePath) &
 
 const header = (target: string): string => `// ${target} - put together by QuartzControl; each section is named after its former stylesheet.`
 
-/** The ten names only the twelve have - a11y and plugin-layout-box were already there before. */
-const NEW_NAMES = CONSOLIDATED_ORDER.filter((t) => !LEGACY_STYLESHEETS.has(t))
+/**
+ * The first line of each of the ten new names as the 1.1 template writes it (scripts/example-
+ * template/styles). A project made from that template is recognised by it - the template writes
+ * the line, so it can carry it, and a user's own `layout.scss` does not start with it.
+ * check:stylesheet-consolidation holds the table against the template, so a reworded first line
+ * fails there and not silently here. a11y and plugin-layout-box are left out for the reason above.
+ */
+export const TEMPLATE_FIRST_LINES: Readonly<Record<string, string>> = {
+  foundation: '// Foundation: box model, icons, disclosure chevron, focus, skip link, reduced motion.',
+  layout: '// Layout: sticky header, columns and their scrolling, panels, breakpoints, footer.',
+  'components-header': '// Header components: the bar, search and its results, colour scheme, reader mode.',
+  'plugin-multilanguage': '// quartz-multilanguage: language switcher and translation notice.',
+  'components-navigation': "// Navigation components: Quartz's explorer and the breadcrumbs.",
+  'plugin-navigations': '// quartz-navigations: all ten variants. This site uses the accordion (left column, drawer on',
+  'components-note': '// Note components: properties and tags above it; outline, backlinks, graph and recent notes beside it.',
+  content: '// Content: title and date, typographic rhythm, text, code, maths, diagrams and media.',
+  callouts: '// Callouts: colours per type, fold, nesting.',
+  pages: '// Generated pages: folder and tag listings, Bases, Canvas, Excalidraw, link preview, 404.'
+}
 
 /**
  * Whether the project is in the form of the twelve already: a loaded one of them was written by a
- * run before (its header line; `files` maps `custom/<name>.scss` to its content, for every one of
- * the twelve names that is on disk, loaded or not), or most of the ten new names are in the load
- * order.
- * The second half is the project made from the 1.1 template, whose twelve carry their own first
- * lines and no header: with one of the 31 added later it was offered the run, and the run did what
- * finding 4 of the forty-second review fixed (forty-third review, finding 6). Half of the ten, so
- * that a user's own `callouts.scss` or `layout.scss` next to the 31 does not count.
+ * run before (its header line) or comes from the 1.1 template (its first line, TEMPLATE_FIRST_LINES).
+ * `files` maps `custom/<name>.scss` to its content, for every one of the twelve names that is on
+ * disk, loaded or not.
+ *
+ * Until the forty-fourth review the template's half was a count - half of the ten new names
+ * loaded - and both sides of it were reachable: a 1.1 project with six of the ten switched off and
+ * one of the 31 added was offered the run, which wrapped a11y and plugin-layout-box into
+ * themselves again; a 1.0 project with five own files named like the twelve was never offered it
+ * (review 2026-10-18, Niedrig 7).
  */
 export function wasConsolidated(files: Record<string, string>, order: string[]): boolean {
   const loaded = new Set(order)
@@ -100,8 +119,12 @@ export function wasConsolidated(files: Record<string, string>, order: string[]):
   // leave the twelve lying there unloaded, and the project, back in the form of the 31, was never
   // offered the run again (forty-third review, nebenbei). The forty-second's case is unaffected -
   // after one of the 31 is switched on, the twelve are still loaded.
-  if (CONSOLIDATED_ORDER.some((t) => loaded.has(`${DIR}${t}.scss`) && (files[`${DIR}${t}.scss`] ?? '').startsWith(header(t)))) return true
-  return NEW_NAMES.filter((t) => loaded.has(`${DIR}${t}.scss`)).length * 2 >= NEW_NAMES.length
+  const firstLine = (t: string): string => (files[`${DIR}${t}.scss`] ?? '').split('\n', 1)[0].trimEnd()
+  return CONSOLIDATED_ORDER.some((t) => {
+    if (!loaded.has(`${DIR}${t}.scss`)) return false
+    const content = files[`${DIR}${t}.scss`] ?? ''
+    return content.startsWith(header(t)) || (TEMPLATE_FIRST_LINES[t] !== undefined && firstLine(t) === TEMPLATE_FIRST_LINES[t])
+  })
 }
 
 /**

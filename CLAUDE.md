@@ -77,7 +77,10 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   git-Geschichte. Existiert, weil die erste Fassung an den zwei Namen scheiterte, die alt und neu
   gleich sind (`a11y`, `plugin-layout-box`): geschrieben und gleich wieder gelöscht, und beim
   zweiten Lauf noch einmal eingepackt — seit dem zweiundvierzigsten Review auch dann, wenn zwischen
-  den Läufen eine beim ersten abgeschaltete Datei eingeschaltet wurde
+  den Läufen eine beim ersten abgeschaltete Datei eingeschaltet wurde. Seit dem vierundvierzigsten
+  erkennt die Funktion ein Projekt aus der Vorlage von 1.1 an der ersten Zeile ihrer Stylesheets
+  (`TEMPLATE_FIRST_LINES`), und das Skript hält diese Tabelle gegen `scripts/example-template/styles/`:
+  Wer dort eine erste Zeile umformuliert, sieht es hier
 - `npm run check:plugin-names -- [projektpfad]` — die 18 Quellen, aus denen der Name entsteht, gegen
   den Quartz `layout.byPageType.<typ>.exclude` vergleicht. Ohne Pfad nur gegen eine Tabelle; mit Pfad
   zusätzlich gegen Quartz' **eigene** `extractPluginName`, aus `config-loader.ts` herausgeschnitten

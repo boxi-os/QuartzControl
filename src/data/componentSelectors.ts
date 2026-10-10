@@ -76,3 +76,22 @@ export function componentSelectors(plugins: PluginEntry[]): ComponentSelector[] 
   }
   return out
 }
+
+/**
+ * The selector that finds one entry of a plugin on the built page, for the preview's marks: the
+ * plugin's root, narrowed by the entry's own class where the plugin puts it on the root. Null for a
+ * plugin whose root has not been measured - marking the guess `.<name>` would mark nothing and look
+ * like "not on this page". `matches` counts the entries that share the selector, so a page can say
+ * "all of them" when an entry has no class of its own.
+ */
+export function entrySelector(entry: PluginEntry, siblings: PluginEntry[]): { selector: string; matches: number } | null {
+  const of = (e: PluginEntry): string | null => {
+    const root = ROOT_SELECTOR[e.name]
+    if (!root) return null
+    const own = e.options?.className
+    return INSTANCE_CLASS.has(e.name) && typeof own === 'string' && /^[A-Za-z_][\w-]*$/.test(own) ? `${root}.${own}` : root
+  }
+  const selector = of(entry)
+  if (!selector) return null
+  return { selector, matches: siblings.filter((e) => of(e) === selector).length || 1 }
+}

@@ -8,7 +8,8 @@ import { Badge, Button, Card, CardHeading, DetailLayout, FoldBox, IconButton, In
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
-import SitePreview from '../../components/SitePreview'
+import SitePreview, { type PreviewHighlight } from '../../components/SitePreview'
+import { entrySelector } from '../../data/componentSelectors'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
@@ -293,7 +294,13 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
         </ul>
       </Card>
       <ExtraContentFiles projectPath={project.path} boxes={boxes} labelOf={labelOf} onSnippetRenamed={snippetRenamed} />
-      <SitePreview projectId={project.id} projectPath={project.path} stickyPrefix="extraContent" hint={t('extraContent.previewHint')} />
+      <SitePreview
+        projectId={project.id}
+        projectPath={project.path}
+        stickyPrefix="extraContent"
+        hint={t('extraContent.previewHint')}
+        highlight={previewHighlight(current, boxes, labelOf)}
+      />
     </DetailLayout>
   )
 }
@@ -454,4 +461,11 @@ function BoxPanel({
       </PanelSection>
     </Card>
   )
+}
+
+// The selected box, for the marks in the preview.
+function previewHighlight(current: BoxInstance | null, all: BoxInstance[], label: (box: BoxInstance) => string): PreviewHighlight | null {
+  if (!current) return null
+  const found = entrySelector(current.plugin, all.map((b) => b.plugin))
+  return found && { ...found, name: label(current) }
 }

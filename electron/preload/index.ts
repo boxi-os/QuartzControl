@@ -30,6 +30,7 @@ import type {
   TemplateImportProgress,
   TemplatePartId,
   ConfirmDialogOptions,
+  SitePreviewHighlightInput,
   PreviewFontsInput,
   PluginSource,
   StaticFileKind
@@ -264,6 +265,9 @@ const api: QuartzGuiApi = {
       onEvent<[string, ServerStatus]>(IPC.serverStatusChanged, cb),
     discover: (input?: { ports?: number[] }) => ipcRenderer.invoke(IPC.serverDiscover, input),
     kill: (input: { pid: number }) => ipcRenderer.invoke(IPC.serverKill, input)
+  },
+  sitePreview: {
+    highlight: (input: SitePreviewHighlightInput) => ipcRenderer.invoke(IPC.sitePreviewHighlight, input)
   },
   build: {
     run: (projectId: string, projectPath: string, outputDir?: string) =>

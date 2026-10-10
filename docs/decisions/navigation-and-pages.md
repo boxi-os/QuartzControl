@@ -730,3 +730,34 @@ beantwortet hatte, die eine andere beantwortet. Gemessen an der gebauten App geg
 Daraus die Regel in `conventions.md`. Offen bleibt ihr letzter Satz: Die Leisten der
 Plugin-Reiter sagen nicht selbst, dass sie sofort schreiben.
 
+
+## Die Vorschau neben den Plugin-Editoren markiert, was bearbeitet wird (2026-10-10)
+
+Nutzerbefund: In der Vorschau unter „Plugins“ verschwand nach einem Klick ins Inhaltsverzeichnis
+der Header und kam bis zum Neustart des Servers nicht wieder. Gemessen an der gebauten App
+(`werkstatt/basic-gegenprobe`): Der Kasten um das verkleinerte iframe war `overflow-hidden`, also
+ein Scroll-Container, und der Sprung zum Anker scrollte ihn mit (`scrollTop` 0 → 116,5). Von Hand
+zurückrollen lässt sich ein solcher Kasten nicht, und Neuladen oder Seitenwechsel ersetzen nur das
+iframe. `overflow-clip` ist kein Scroll-Container (`a1575d8`). Danach nahm derselbe Sprung das
+`<main>` der App mit (307,5 px): Quartz' Router und quartz-navigations rufen `scrollIntoView`, und
+das scrollt jeden Container um das Frame, auch über die Origin-Grenze. Quartz' Router fragt
+`defaultPrevented` nicht, ein eigener Klick-Abfänger half also nicht.
+
+Seither setzt der Hauptprozess bei jedem Laden des Frames ein Skript ein
+(`services/previewHighlight.ts`, über `WebFrameMain.executeJavaScript` — am cross-origin,
+sandboxten Unterframe gemessen: Er antwortet, und sein `postMessage` kommt mit dem Frame als
+`source` an). Das Skript ersetzt `scrollIntoView` durch eine Fassung, die nur innerhalb der Seite
+scrollt (danach: `<main>` 0, Kasten 0, Website 355), und markiert, was der Editor gewählt hat: der
+Selektor aus `componentSelectors.ts` (Wurzel des Plugins, mit der eigenen `className` der Instanz),
+ein Rahmen, der Rest abgedunkelt. Es meldet Anzahl, Sichtbarkeit und Rechteck zurück; die Seite
+sagt daraus „nicht auf dieser Seite“, „nicht zu sehen“ (gemessen: das Akkordeon in „Mobil“) oder
+„keine eigene Klasse, alle markiert“. „Auf Element zoomen“ verschiebt und skaliert nur das
+`transform` — die Größe des iframes bleibt, sonst wäre es ein neuer Viewport, und die Website
+legte sich darunter neu aus. Höchstens 150 %: bei 200 % füllten vier Einträge eines Akkordeons den
+Kasten. Gescrollt wird nur, wenn das Element nicht ganz zu sehen ist, und dann in die Mitte —
+oben an den Rand gestellt, lag der klebende Header der Basis-Vorlage über dem ersten Eintrag.
+
+Was das Skript nicht kann: Eine Instanz ohne eigene `className` ist von ihren Geschwistern nicht
+zu unterscheiden. Und Chromium hält `requestAnimationFrame` in einem fremden Frame außerhalb des
+Fensters an — die Rahmen erscheinen also erst, wenn die Karte in Sicht kommt; die Meldung an die
+Seite kommt trotzdem (gemessen auf „Zusätzliche Inhalte“: Satz da, 0 Rahmen, nach dem Scrollen 1).

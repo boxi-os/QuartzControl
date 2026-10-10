@@ -561,6 +561,15 @@ export const serverKillInput = z.looseObject({
   pid: z.number().int().min(1).max(4_294_967_295)
 })
 
+// The selector goes into a script that runs in the preview frame, so it is a shape, not a string:
+// one or two class names, nothing a CSS parser or the script around it could read differently.
+// The script quotes it with JSON.stringify as well; this is the line before that one.
+export const sitePreviewHighlightInput = z.looseObject({
+  projectId: uuid,
+  selector: z.string().regex(/^\.[A-Za-z_][\w-]{0,80}(\.[A-Za-z_][\w-]{0,80})?$/).nullable(),
+  focus: z.boolean()
+})
+
 export const projectPrefs = z.looseObject({
   // Empty is the meaningful default (Quartz's own public/), so this is a union with '' rather than
   // an optional field - buildOutputDir itself rejects the empty string.

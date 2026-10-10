@@ -43,6 +43,7 @@ import { forgetManifest } from '../services/deploy/manifest'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as serverDiscovery from '../services/serverDiscovery'
+import { highlightInPreview } from '../services/previewHighlight'
 import * as buildOutputGuard from '../services/buildOutputGuard'
 import { resolveBuildDir } from '../services/projectDirs'
 import * as projectPrefsService from '../services/projectPrefsService'
@@ -476,6 +477,7 @@ export function registerIpcHandlers(): void {
     serverDiscovery.discoverServers(input?.ports)
   )
   handle(IPC.serverKill, t([s.serverKillInput]), (input) => serverDiscovery.killServer(input.pid))
+  handle(IPC.sitePreviewHighlight, t([s.sitePreviewHighlightInput]), (input) => highlightInPreview(input))
 
   handle(IPC.buildLastOutput, t([s.absolutePath, s.buildOutputDir.optional()]), (projectPath, outputDir) =>
     buildService.getBuildOutput(projectPath, outputDir)

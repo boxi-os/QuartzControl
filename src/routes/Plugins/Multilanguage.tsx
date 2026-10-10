@@ -9,6 +9,7 @@ import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { enumLabel, fieldText, type FormLanguage } from '../../components/PluginOptionsForm/text'
 import SitePreview from '../../components/SitePreview'
+import { entrySelector } from '../../data/componentSelectors'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
@@ -436,7 +437,22 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
         </ul>
       </Card>
 
-      <SitePreview projectId={project.id} projectPath={project.path} stickyPrefix="multilanguage" hint={t('multilanguageEditor.previewHint')} />
+      {/* One component for the whole plugin, so whatever is selected on the left, the switcher is
+          what it changes on the page - marked once something is selected, like on the other two. */}
+      <SitePreview
+        projectId={project.id}
+        projectPath={project.path}
+        stickyPrefix="multilanguage"
+        hint={t('multilanguageEditor.previewHint')}
+        highlight={
+          entry && selected !== null
+            ? (() => {
+                const found = entrySelector(entry.plugin, [entry.plugin])
+                return found && { ...found, name: t('multilanguageEditor.sections.switcher.title') }
+              })()
+            : null
+        }
+      />
     </DetailLayout>
   )
 }

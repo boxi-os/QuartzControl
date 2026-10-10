@@ -1030,7 +1030,12 @@ export default {
     remote: 'The dev server runs through a remote host and cannot be embedded here. Open it on the “Preview & Build” page.',
     page: 'Page',
     pagePlaceholder: 'Home page – or e.g. folder/page',
-    scaled: 'Rendered {{width}} px wide, shown at {{percent}}%.'
+    scaled: 'Rendered {{width}} px wide, shown at {{percent}}%.',
+    zoom: 'Zoom onto element',
+    marked: 'Marked: “{{name}}”.',
+    markShared: '“{{name}}” has no CSS class of its own — all {{count}} that share this class are marked.',
+    markNotFound: '“{{name}}” does not appear on this page.',
+    markHidden: '“{{name}}” is on this page but cannot be seen in this view — hidden, say, or inside a drawer.'
   },
   extraContent: {
     intro: 'Each box is an entry of quartz-layout-box of its own. Its content is either text in the configuration or a file under quartz/static. Where it sits is set on the layout stage. Every change is saved at once.',

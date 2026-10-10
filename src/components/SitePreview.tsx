@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { MonitorPlay, Play, RefreshCw, Square } from 'lucide-react'
-import type { FrameBreakpoint, FrameBreakpointWidths, ServerOptions, ServerStatus } from '@shared/ipc-contract'
+import type { FrameBreakpoint, FrameBreakpointWidths, ServerOptions, ServerStatus, SitePreviewReport } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS } from '@shared/gridFrameCss'
-import { Button, Card, CardHeading, SegmentedControl, TextInput } from './ui'
+import { Button, Card, CardHeading, SegmentedControl, TextInput, Toggle } from './ui'
 import { useStickyState, peekStickyState } from '../state/uiState'
 import { serverErrorText } from '../utils/serverStatus'
-import { DEFAULT_SERVER_OPTIONS, previewWidthPx, urlFor } from '../utils/sitePreview'
+import { DEFAULT_SERVER_OPTIONS, parsePreviewReport, previewWidthPx, urlFor, zoomOnto } from '../utils/sitePreview'
 
 /**
  * The project's real site beside an editor: the dev server's page in a frame, the way the Vorschau
@@ -19,6 +20,11 @@ import { DEFAULT_SERVER_OPTIONS, previewWidthPx, urlFor } from '../utils/sitePre
  * A server started here asks for the ports the Vorschau & Build page holds, so the two pages do not
  * start servers on different ports. A remote dev host is not framed (index.html allows only this
  * machine in frame-src) and the card says so instead.
+ *
+ * `highlight` is the component the editor beside it has selected. The main process runs a script
+ * in the frame that outlines it and reports where it is (previewHighlight.ts); with "Auf Element
+ * zoomen" the frame is scaled and moved onto that rectangle. The site keeps its device width
+ * either way - only the cut-out changes, so the media queries see what they saw before.
  */
 const DESKTOP_WIDTH = 1280
 const FRAME_HEIGHT = 640
@@ -27,7 +33,8 @@ export default function SitePreview({
   projectId,
   projectPath,
   stickyPrefix,
-  hint
+  hint,
+  highlight
 }: {
   projectId: string
   projectPath: string
@@ -35,6 +42,11 @@ export default function SitePreview({
   stickyPrefix: string
   /** A line under the heading: what to look for on the page. */
   hint?: string
+  /**
+   * What to mark: a selector from componentSelectors, the name the list shows, and how many
+   * entries of the editor that selector matches - more than one means it has no class of its own.
+   */
+  highlight?: PreviewHighlight | null
 }): JSX.Element {
   const { t } = useTranslation()
   const [status, setStatus] = useState<ServerStatus>({ state: 'stopped' })
@@ -48,6 +60,13 @@ export default function SitePreview({
   // The column's width, for the scale below.
   const boxRef = useRef<HTMLDivElement>(null)
   const [boxWidth, setBoxWidth] = useState(0)
+  const frameRef = useRef<HTMLIFrameElement>(null)
+  const [zoom, setZoom] = useStickyState(`${stickyPrefix}.previewZoom`, false)
+  // Counts loads of the frame, so the marks are installed again after every reload - Quartz's own
+  // live reload included, which the page hears of only through this event.
+  const [loads, setLoads] = useState(0)
+  const [report, setReport] = useState<SitePreviewReport | null>(null)
+  const selector = highlight?.selector ?? null
 
   useEffect(() => {
     void window.quartzGui.server.status(projectId).then(setStatus)
@@ -68,6 +87,23 @@ export default function SitePreview({
     setBoxWidth(el.clientWidth)
     return () => observer.disconnect()
   })
+
+  useEffect(() => {
+    function onMessage(e: MessageEvent): void {
+      // Only the frame itself; anything the site's scripts post is checked field by field.
+      if (!frameRef.current || e.source !== frameRef.current.contentWindow) return
+      const parsed = parsePreviewReport(e.data)
+      if (parsed) setReport(parsed)
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [])
+
+  useEffect(() => {
+    setReport(null)
+    if (loads === 0) return
+    void window.quartzGui.sitePreview.highlight({ projectId, selector, focus: zoom })
+  }, [projectId, selector, zoom, loads])
 
   async function start(): Promise<void> {
     setStarting(true)
@@ -91,6 +127,12 @@ export default function SitePreview({
   // (conventions.md: a surface something is dragged onto is not scaled).
   const width = previewWidthPx(mode, widths) ?? Math.max(widths.tablet + 1, DESKTOP_WIDTH)
   const scale = boxWidth > 0 ? Math.min(1, boxWidth / width) : 1
+  const frameHeight = FRAME_HEIGHT / scale
+  const zoomed =
+    zoom && selector && report?.rect && boxWidth > 0
+      ? zoomOnto(report.rect, { width, height: frameHeight }, { width: boxWidth, height: FRAME_HEIGHT }, scale)
+      : null
+  const shownScale = zoomed?.scale ?? scale
   const error = serverErrorText(status, t)
 
   function commitPage(): void {
@@ -163,6 +205,7 @@ export default function SitePreview({
                 { value: 'mobile', label: t('buildServer.viewport.mobile') }
               ]}
             />
+            {highlight && <Toggle label={t('sitePreview.zoom')} checked={zoom} onChange={setZoom} />}
           </div>
           <div
             ref={boxRef}
@@ -174,24 +217,51 @@ export default function SitePreview({
             style={{ height: FRAME_HEIGHT }}
           >
             <iframe
+              ref={frameRef}
               key={`${url}#${nonce}`}
               src={url}
               title={t('sitePreview.title')}
               sandbox="allow-scripts allow-same-origin allow-forms"
+              onLoad={() => setLoads((n) => n + 1)}
               style={{
+                // The frame's own size never changes with the zoom: a new size would be a new
+                // viewport, and the site would lay itself out again under the cut-out.
                 width,
-                height: FRAME_HEIGHT / scale,
-                transform: `scale(${scale})`,
+                height: frameHeight,
+                transform: zoomed
+                  ? `translate(${-zoomed.x * zoomed.scale}px, ${-zoomed.y * zoomed.scale}px) scale(${zoomed.scale})`
+                  : `scale(${scale})`,
                 transformOrigin: 'top left',
                 // Centred when narrower than the column (a phone).
-                marginLeft: width * scale < boxWidth ? (boxWidth - width * scale) / 2 : 0
+                marginLeft: width * shownScale < boxWidth ? (boxWidth - width * shownScale) / 2 : 0
               }}
-              className="block bg-white"
+              className="block bg-white motion-safe:transition-transform motion-safe:duration-200"
             />
           </div>
-          <p className="text-micro text-text-muted">{t('sitePreview.scaled', { width, percent: Math.round(scale * 100) })}</p>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            {/* Rendered empty, so the sentence is announced when it appears (conventions.md). */}
+            <p role="status" className="text-micro text-text-secondary">
+              {highlight && report ? markSentence(report, highlight, t) : null}
+            </p>
+            <p className="text-micro text-text-muted">{t('sitePreview.scaled', { width, percent: Math.round(shownScale * 100) })}</p>
+          </div>
         </>
       )}
     </Card>
   )
+}
+
+export interface PreviewHighlight {
+  selector: string
+  /** The entry as the editor's list names it. */
+  name: string
+  /** How many entries of the editor the selector matches; above one, it has no class of its own. */
+  matches: number
+}
+
+function markSentence(report: SitePreviewReport, highlight: PreviewHighlight, t: TFunction): string {
+  if (report.found === 0) return t('sitePreview.markNotFound', { name: highlight.name })
+  if (report.visible === 0) return t('sitePreview.markHidden', { name: highlight.name })
+  if (highlight.matches > 1) return t('sitePreview.markShared', { name: highlight.name, count: highlight.matches })
+  return t('sitePreview.marked', { name: highlight.name })
 }

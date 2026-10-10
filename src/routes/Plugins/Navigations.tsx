@@ -8,7 +8,8 @@ import { Badge, Button, Card, CardHeading, DetailLayout, FoldBox, IconButton, In
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
-import SitePreview from '../../components/SitePreview'
+import SitePreview, { type PreviewHighlight } from '../../components/SitePreview'
+import { entrySelector } from '../../data/componentSelectors'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
@@ -311,6 +312,7 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
         projectPath={project.path}
         stickyPrefix="navigations"
         hint={t('navigationsEditor.previewHint')}
+        highlight={previewHighlight(current, instances, instanceLabel)}
       />
     </DetailLayout>
   )
@@ -436,4 +438,11 @@ function NavigationPanel({
       </PanelSection>
     </Card>
   )
+}
+
+// The selected navigation, for the marks in the preview.
+function previewHighlight(current: NavInstance | null, all: NavInstance[], label: (item: NavInstance) => string): PreviewHighlight | null {
+  if (!current) return null
+  const found = entrySelector(current.plugin, all.map((i) => i.plugin))
+  return found && { ...found, name: label(current) }
 }

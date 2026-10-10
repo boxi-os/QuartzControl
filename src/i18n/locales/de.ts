@@ -1035,7 +1035,12 @@ export default {
     remote: 'Der Dev-Server läuft über einen entfernten Host und lässt sich hier nicht einbetten. Öffne ihn auf der Seite „Vorschau & Build“.',
     page: 'Seite',
     pagePlaceholder: 'Startseite – oder z. B. ordner/seite',
-    scaled: 'Gerendert mit {{width}} px Breite, gezeigt mit {{percent}} %.'
+    scaled: 'Gerendert mit {{width}} px Breite, gezeigt mit {{percent}} %.',
+    zoom: 'Auf Element zoomen',
+    marked: 'Markiert: „{{name}}“.',
+    markShared: '„{{name}}“ hat keine eigene CSS-Klasse — markiert sind alle {{count}}, die sich diese Klasse teilen.',
+    markNotFound: '„{{name}}“ kommt auf dieser Seite nicht vor.',
+    markHidden: '„{{name}}“ steht auf dieser Seite, ist in dieser Ansicht aber nicht zu sehen — etwa ausgeblendet oder in einer Schublade.'
   },
   extraContent: {
     intro: 'Jeder Kasten ist ein eigener Eintrag von quartz-layout-box. Sein Inhalt steht entweder als Text in der Konfiguration oder in einer Datei unter quartz/static. Wo er steht, legst du auf der Layout-Bühne fest. Jede Änderung wird sofort gespeichert.',

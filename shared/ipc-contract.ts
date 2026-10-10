@@ -1661,6 +1661,7 @@ export const IPC = {
   serverLog: 'server:log',
   serverDiscover: 'server:discover',
   serverKill: 'server:kill',
+  sitePreviewHighlight: 'sitePreview:highlight',
 
   buildRun: 'build:run',
   buildLog: 'build:log',
@@ -1714,6 +1715,27 @@ export type AppCommand = 'save'
  * answer (see `altLabel`); `confirmDialog()` in the renderer still hands the two-answer callers a
  * boolean, so the eighteen existing questions are unchanged.
  */
+export interface SitePreviewHighlightInput {
+  projectId: string
+  /** One class, optionally narrowed by a second: `.quartz-nav` or `.quartz-nav.nav-menue`. */
+  selector: string | null
+  focus: boolean
+}
+
+/**
+ * What the script in the preview frame posts to the page, each time it has looked: after being
+ * installed, after Quartz's SPA navigation, after a resize. `rect` is the union of the visible
+ * matches in the frame's viewport, in CSS pixels of the site; null when none is visible.
+ * Comes from a frame the site's own scripts share, so the page checks every field before use.
+ */
+export interface SitePreviewReport {
+  source: 'quartzcontrol-preview'
+  found: number
+  visible: number
+  rect: { x: number; y: number; width: number; height: number } | null
+  viewport: { width: number; height: number }
+}
+
 export type ConfirmAnswer = 'cancel' | 'alt' | 'confirm'
 
 /** One object argument on purpose (new-channel rule): an optional field later is one key here
@@ -2136,6 +2158,17 @@ export interface QuartzGuiApi {
      * status and log keep working.
      */
     kill(input: { pid: number }): Promise<ServerKillResult>
+  }
+  sitePreview: {
+    /**
+     * Marks one component in the preview beside a plugin editor: the main process finds the frame
+     * that shows this project's dev server and runs a fixed script in it, which outlines what
+     * `selector` matches and reports back to the page over postMessage (SitePreviewReport).
+     * `selector: null` takes the marks away. `focus` asks the script to bring the element into
+     * view, which is what zooming needs. `applied` is false when no such frame exists (yet) -
+     * the page calls again when its iframe has loaded.
+     */
+    highlight(input: SitePreviewHighlightInput): Promise<{ applied: boolean }>
   }
   build: {
     /** A second call while this project builds joins the running build instead of starting another. */

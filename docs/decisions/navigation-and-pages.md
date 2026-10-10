@@ -780,5 +780,7 @@ Seit dem Nachzug am selben Tag gilt das für jedes Duplikat: Die Klasse entsteht
 `duplicateEntry` (`LayoutEditor/utils.ts`), durch das die beiden Editoren, „Duplizieren“ im
 Inspektor der Bühne und ein auf die Bühne gezogener Vorrats-Chip gehen; die Plugin-Liste
 dupliziert nicht. Gemessen: Bühne → `nav-menue nav-menue-2`, danach Seite → `nav-menue
-nav-menue-3`. Offen und älter als dieser Durchgang: Die Bühne kopiert die `id` einer Navigation
-mit, die Seite Navigationen nicht.
+nav-menue-3`. Ebenfalls dort bleibt seither die `id` einer Navigation zurück, die vorher nur die
+Seite Navigationen entfernte und die Bühne mitkopierte (zwei Navigationen mit derselben `id`
+teilen Element-Ids und ihren localStorage-Schlüssel). Gemessen: Bühne und Seite je einmal
+dupliziert, danach steht `id: menue` einmal in der Config, vorher zweimal.

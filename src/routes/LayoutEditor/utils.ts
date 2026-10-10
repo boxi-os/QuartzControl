@@ -7,7 +7,9 @@ import type {
   PluginLayoutDeclaration,
   QuartzConfig
 } from '@shared/ipc-contract'
+import { quartzPluginName } from '@shared/quartzPluginName'
 import { withOwnClassForCopy } from '../Plugins/instanceClass'
+import { NAVIGATIONS_PLUGIN } from '../Plugins/navigationVariants'
 
 // The width band a breakpoint actually covers, for the tab labels - three reiters called
 // "Desktop/Tablet/Mobil" say nothing about where they switch, and once the thresholds are the
@@ -106,10 +108,17 @@ export function duplicateRanks(plugins: PluginEntry[]): Map<number, number> {
 // A new entry duplicating `source`, carrying over `options` as a starting point but with its own
 // `layout` (position/priority set by the caller) so it doesn't collide with the original's slot.
 // A navigation or a layout box gets a CSS class of its own on the way (instanceClass.ts), so the copy
-// can be told from the original by a stylesheet and by the preview's marks.
+// can be told from the original by a stylesheet and by the preview's marks. A navigation's `id`
+// stays behind: two with the same one share element ids and their localStorage key - the plugin
+// README's reason to set one at all. Until 2026-10-10 only the Navigations page left it behind, and
+// a duplicate made on the board carried it along.
 export function duplicateEntry(source: PluginEntry, layout: PluginLayoutDeclaration, plugins: PluginEntry[], name?: string): PluginEntry {
-  const copy = { ...source, layout, options: source.options ? { ...source.options } : undefined }
-  return withOwnClassForCopy(copy, source, plugins, name)
+  let options = source.options ? { ...source.options } : undefined
+  if (options && 'id' in options && quartzPluginName(source.source) === NAVIGATIONS_PLUGIN) {
+    const { id: _id, ...rest } = options
+    options = rest
+  }
+  return withOwnClassForCopy({ ...source, layout, options }, source, plugins, name)
 }
 
 export function getLayout(plugin: PluginEntry): PluginLayoutDeclaration | null {

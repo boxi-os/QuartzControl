@@ -165,18 +165,12 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
   async function duplicate(item: NavInstance): Promise<void> {
     const base = configRef.current
     if (!base) return
-    // The copy gets a class of its own on the way (instanceClass.ts), named like this list names it.
+    // The copy gets a class of its own on the way and leaves the `id` behind (duplicateEntry),
+    // its class named like this list names it.
     const result = duplicateAfter(base.plugins, item.index, baseName(item.plugin))
     if (!result) return
-    // A copied `id` would give both navigations the same element ids and localStorage key - the
-    // README's reason to set one at all. The copy goes without it.
-    const plugins = result.plugins.map((p, i) => {
-      if (i !== result.newIndex || !p.options || !('id' in p.options)) return p
-      const { id: _id, ...rest } = p.options
-      return { ...p, options: rest }
-    })
     setSelected(instances.length + 1)
-    await write({ ...base, plugins }, t('navigationsEditor.duplicatedAnnounce', { name: instanceLabel(item) }))
+    await write({ ...base, plugins: result.plugins }, t('navigationsEditor.duplicatedAnnounce', { name: instanceLabel(item) }))
   }
 
   async function remove(item: NavInstance): Promise<void> {

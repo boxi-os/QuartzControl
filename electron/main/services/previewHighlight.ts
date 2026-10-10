@@ -18,8 +18,11 @@ function previewFrames(origin: string): WebFrameMain[] {
   const out: WebFrameMain[] = []
   for (const win of BrowserWindow.getAllWindows()) {
     if (win.isDestroyed()) continue
-    for (const frame of win.webContents.mainFrame.framesInSubtree) {
-      if (frame.parent && frame.origin === origin) out.push(frame)
+    // The app page's own children, not every frame below it: framesInSubtree also lists the site's
+    // frames, and one on the same origin (an embedded PDF) got the script too (review 2026-10-18,
+    // Niedrig 6).
+    for (const frame of win.webContents.mainFrame.frames) {
+      if (frame.origin === origin) out.push(frame)
     }
   }
   return out

@@ -162,6 +162,21 @@ const render = async (markup) => {
     }
     return null
   })
+  // Ein Link, der die Seite verlässt, wird beim Klick angehalten: Chrome reicht mailto: an das
+  // System weiter, und jeder Lauf öffnete Fenster des Mail-Programms (ein Autolink im Text wird
+  // ein mailto:-Link). Ob ein Link nach außen führt, ist oben schon gefragt; javascript: bleibt
+  // ungehindert, denn genau das soll der Klick zeigen.
+  await site.evaluate(() => {
+    document.addEventListener(
+      'click',
+      (e) => {
+        const a = e.target instanceof Element ? e.target.closest('a') : null
+        const href = a ? (typeof a.href === 'string' ? a.href : (a.href?.animVal ?? '')) : ''
+        if (/^\s*(mailto|https?|ftp|tel):/i.test(href)) e.preventDefault()
+      },
+      true
+    )
+  })
   // Ein Klick auf jedes Element der Box.
   await site.evaluate(() => {
     for (const el of document.querySelectorAll('.layout-box-content *')) {

@@ -56,7 +56,11 @@ const NONE: ReadonlySet<string> = new Set()
 export function uniqueClass(candidate: string, plugins: PluginEntry[], styled: ReadonlySet<string> = NONE): string {
   const taken = new Set([...plugins.flatMap(classTokens), ...styled])
   if (!taken.has(candidate)) return candidate
-  const stem = candidate.replace(/-\d+$/, '')
+  // A trailing number is a counter only when the name without it is taken too: `layout-box-mark-2`
+  // beside `layout-box-mark` counts on to -3, while `nav-2024` alone is a name and becomes
+  // `nav-2024-2`, not `nav-2` (review 2026-10-18, nebenbei).
+  const counted = candidate.replace(/-\d+$/, '')
+  const stem = counted !== candidate && taken.has(counted) ? counted : candidate
   for (let n = 2; ; n++) if (!taken.has(`${stem}-${n}`)) return `${stem}-${n}`
 }
 

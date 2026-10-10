@@ -38,6 +38,7 @@ type Align = NonNullable<NonNullable<PluginLayoutDeclaration['groupOptions']>['a
  */
 export default function Inspector({
   projectPath,
+  styledClasses,
   languages,
   plugins,
   index,
@@ -50,6 +51,8 @@ export default function Inspector({
   onChange
 }: {
   projectPath: string
+  /** The instance classes stylesheets and plugins already name, for the class of a copy. */
+  styledClasses: ReadonlySet<string>
   /** The site's language codes, for an option keyed by language (PluginOptionsForm). */
   languages: string[]
   plugins: PluginEntry[]
@@ -301,7 +304,7 @@ export default function Inspector({
           <Button
             variant="ghost"
             onClick={() => {
-              const result = duplicateAfter(plugins, index)
+              const result = duplicateAfter(plugins, index, undefined, styledClasses)
               if (result) onChange(result.plugins, result.newIndex)
             }}
           >

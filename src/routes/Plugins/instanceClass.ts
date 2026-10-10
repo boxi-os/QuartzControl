@@ -45,17 +45,24 @@ function slug(text: string): string {
     .replace(/-+$/, '')
 }
 
-/** `candidate`, or with -2, -3 … until no entry of the config has it. */
-export function uniqueClass(candidate: string, plugins: PluginEntry[]): string {
-  const taken = new Set(plugins.flatMap(classTokens))
+const NONE: ReadonlySet<string> = new Set()
+
+/**
+ * `candidate`, or with -2, -3 … until neither an entry of the config nor `styled` has it. `styled`
+ * is what the project's stylesheets and plugins already name (useStyledClasses): a class unique in
+ * the config can still be one a rule is written for - `layout-box-title` is layout-box's own
+ * heading, `layout-box-hint` the template's hint box (review 2026-10-18, Niedrig 2).
+ */
+export function uniqueClass(candidate: string, plugins: PluginEntry[], styled: ReadonlySet<string> = NONE): string {
+  const taken = new Set([...plugins.flatMap(classTokens), ...styled])
   if (!taken.has(candidate)) return candidate
   const stem = candidate.replace(/-\d+$/, '')
   for (let n = 2; ; n++) if (!taken.has(`${stem}-${n}`)) return `${stem}-${n}`
 }
 
 /** A new class from a name the user sees (a title, a variant, a file), prefixed and unique. */
-export function suggestClass(prefix: string, name: string, fallback: string, plugins: PluginEntry[]): string {
-  return uniqueClass(prefix + (slug(name) || fallback), plugins)
+export function suggestClass(prefix: string, name: string, fallback: string, plugins: PluginEntry[], styled: ReadonlySet<string> = NONE): string {
+  return uniqueClass(prefix + (slug(name) || fallback), plugins, styled)
 }
 
 /** The options with `cls` appended to their className. */
@@ -68,9 +75,16 @@ export function withClass(options: Record<string, unknown> | undefined, cls: str
  * The class a copy of `entry` gets: the original's own one counted up (`layout-box-mark-2`), or,
  * when it has none, one from its name.
  */
-export function classForCopy(entry: PluginEntry, prefix: string, name: string, fallback: string, plugins: PluginEntry[]): string {
+export function classForCopy(
+  entry: PluginEntry,
+  prefix: string,
+  name: string,
+  fallback: string,
+  plugins: PluginEntry[],
+  styled: ReadonlySet<string> = NONE
+): string {
   const own = ownClass(entry)
-  return own ? uniqueClass(own, plugins) : suggestClass(prefix, name, fallback, plugins)
+  return own ? uniqueClass(own, plugins, styled) : suggestClass(prefix, name, fallback, plugins, styled)
 }
 
 const PREFIX: Record<string, string> = { 'quartz-navigations': NAV_CLASS_PREFIX, 'quartz-layout-box': BOX_CLASS_PREFIX }
@@ -94,9 +108,18 @@ function nameOf(entry: PluginEntry): string {
  * "Duplizieren" and a palette chip dropped on the board. `name` is what the editor calls the entry;
  * without it, nameOf().
  */
-export function withOwnClassForCopy(copy: PluginEntry, source: PluginEntry, plugins: PluginEntry[], name?: string): PluginEntry {
+export function withOwnClassForCopy(
+  copy: PluginEntry,
+  source: PluginEntry,
+  plugins: PluginEntry[],
+  name?: string,
+  styled: ReadonlySet<string> = NONE
+): PluginEntry {
   const prefix = PREFIX[source.name]
   if (!prefix) return copy
-  const cls = classForCopy(source, prefix, name ?? nameOf(source), FALLBACK[source.name], plugins)
+  const cls = classForCopy(source, prefix, name ?? nameOf(source), FALLBACK[source.name], plugins, styled)
   return { ...copy, options: withClass(copy.options, cls) }
 }
+
+/** The prefixes of the classes the app gives, for the question which of them are already styled. */
+export const CLASS_PREFIXES = [NAV_CLASS_PREFIX, BOX_CLASS_PREFIX]

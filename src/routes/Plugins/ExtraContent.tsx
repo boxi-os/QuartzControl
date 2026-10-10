@@ -17,6 +17,7 @@ import { useIpcQuery } from '../../state/useIpcQuery'
 import { confirmDialog } from '../../utils/confirm'
 import { componentRef, duplicateAfter, getLayout } from '../LayoutEditor/utils'
 import { useProject } from '../ProjectLayout'
+import { useStyledClasses } from './useStyledClasses'
 import ExtraContentFiles from './ExtraContentFiles'
 import {
   LAYOUT_BOX_PLUGIN,
@@ -48,6 +49,7 @@ import { SavesImmediately } from './SavesImmediately'
 export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (stickyKey: string) => void }): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
+  const styled = useStyledClasses(project.path)
   const navigate = useNavigate()
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -160,7 +162,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
       options: {
         title: t('extraContent.newTitle'),
         html: t('extraContent.newHtml'),
-        className: suggestClass(BOX_CLASS_PREFIX, t('extraContent.newTitle'), 'box', base.plugins)
+        className: suggestClass(BOX_CLASS_PREFIX, t('extraContent.newTitle'), 'box', base.plugins, styled)
       },
       layout: { position, priority: (priorities.length ? Math.max(...priorities) : 0) + 10 }
     }
@@ -172,7 +174,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
     const base = configRef.current
     if (!base) return
     // The copy gets a class of its own on the way (instanceClass.ts), named like this list names it.
-    const result = duplicateAfter(base.plugins, box.index, baseLabel(box))
+    const result = duplicateAfter(base.plugins, box.index, baseLabel(box), styled)
     if (!result) return
     // The copy lands right after the original, so it is the next box by number.
     setSelected(box.occurrence + 1)
@@ -182,7 +184,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
   async function assignClass(box: BoxInstance): Promise<void> {
     const base = configRef.current
     if (!base) return
-    const cls = suggestClass(BOX_CLASS_PREFIX, baseLabel(box), 'box', base.plugins)
+    const cls = suggestClass(BOX_CLASS_PREFIX, baseLabel(box), 'box', base.plugins, styled)
     const plugins = base.plugins.map((p, i) => (i === box.index ? { ...p, options: withClass(p.options, cls) } : p))
     await write({ ...base, plugins }, t('sitePreview.classAssigned', { name: labelOf(box), cls }))
   }

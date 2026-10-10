@@ -803,3 +803,13 @@ nav-menue-3`. Ebenfalls dort bleibt seither die `id` einer Navigation zurück, d
 Seite Navigationen entfernte und die Bühne mitkopierte (zwei Navigationen mit derselben `id`
 teilen Element-Ids und ihren localStorage-Schlüssel). Gemessen: Bühne und Seite je einmal
 dupliziert, danach steht `id: menue` einmal in der Config, vorher zweimal.
+**Eindeutig heißt auch: kein Name, für den schon eine Regel steht** (vierundvierzigstes Review,
+Niedrig 2). Geprüft war nur die Config; ein Kasten „Title“ wurde `.layout-box-title` und bekam die
+Regel, mit der quartz-layout-box seinen eigenen Titel gestaltet, „Hint“ den Hinweiskasten der
+Vorlage, eine Navigation „File title“ die Regeln von `.nav-file-title`. Der Kanal
+`styles.takenClasses` sammelt jetzt jede Klasse mit dem Präfix aus `allStylesheets` und aus dem
+gebauten Code unter `.quartz/plugins/*/dist`, breit wie die Schriftsuche: ein Fund zu viel kostet
+ein `-2`, einer zu wenig ein fremdes Aussehen. Gemessen an `werkstatt/basic-gegenprobe`: 32 Namen in
+11 ms, darunter alle neun, die das Review nennt; „Title“ wird `layout-box-title-2`, „File title“
+`nav-file-title-2`. Gelesen wird einmal je Seite; was die Seite selbst vergibt, steht danach in der
+Config.

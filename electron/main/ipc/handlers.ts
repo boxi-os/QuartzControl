@@ -317,6 +317,7 @@ export function registerIpcHandlers(): void {
     styleService.readPreviewFonts(input.projectPath, input.families)
   )
   handle(IPC.stylesVariableCollisions, t([s.projectPathArgs]), ({ projectPath }) => styleService.variableCollisions(projectPath))
+  handle(IPC.stylesTakenClasses, t([s.stylesTakenClassesInput]), ({ projectPath, prefixes }) => styleService.takenClasses(projectPath, prefixes))
   handle(IPC.stylesMigrate, t([s.stylesMigrateInput]), ({ projectPath, snapshot }) =>
     styleService.migrateManagedStyles(projectPath, { snapshot })
   )

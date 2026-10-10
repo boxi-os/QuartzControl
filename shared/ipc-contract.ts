@@ -1587,6 +1587,7 @@ export const IPC = {
   stylesPreviewFonts: 'styles:previewFonts',
   stylesGetVariableOverrides: 'styles:getVariableOverrides',
   stylesVariableCollisions: 'styles:variableCollisions',
+  stylesTakenClasses: 'styles:takenClasses',
   stylesMigrate: 'styles:migrate',
   stylesConsolidate: 'styles:consolidate',
   stylesSaveVariableOverrides: 'styles:saveVariableOverrides',
@@ -1988,6 +1989,11 @@ export interface QuartzGuiApi {
     getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]>
     /** Variables this page sets that custom.scss's own body sets as well - there the own rule wins. */
     variableCollisions(args: { projectPath: string }): Promise<string[]>
+    /**
+     * The class names starting with one of `prefixes` that the project's stylesheets or its
+     * plugins' built code already name - what a new instance class must not be.
+     */
+    takenClasses(args: { projectPath: string; prefixes: string[] }): Promise<string[]>
     /**
      * Moves the managed blocks out of custom.scss into _quartzcontrol.scss, with a snapshot before
      * it unless `snapshot` is false (a project created here a moment ago).

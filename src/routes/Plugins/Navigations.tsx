@@ -17,6 +17,7 @@ import { useIpcQuery } from '../../state/useIpcQuery'
 import { confirmDialog } from '../../utils/confirm'
 import { componentRef, duplicateAfter, getLayout } from '../LayoutEditor/utils'
 import { useProject } from '../ProjectLayout'
+import { useStyledClasses } from './useStyledClasses'
 import { ReadAgainstNote } from './ReadAgainstNote'
 import { SavesImmediately } from './SavesImmediately'
 import { NAVIGATIONS_PLUGIN, NAVIGATIONS_READ_AGAINST, NAV_VARIANTS, hasNoEffect, variantOf, type NavVariant } from './navigationVariants'
@@ -41,6 +42,7 @@ interface NavInstance {
 export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (stickyKey: string) => void }): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
+  const styled = useStyledClasses(project.path)
   const navigate = useNavigate()
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -143,7 +145,7 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
       enabled: true,
       ...(first.plugin.order !== undefined ? { order: first.plugin.order } : {}),
       // A class of its own from the start, so a stylesheet and the preview can tell it apart.
-      options: { variant, className: suggestClass(NAV_CLASS_PREFIX, variantLabel(variant), 'navigation', base.plugins) },
+      options: { variant, className: suggestClass(NAV_CLASS_PREFIX, variantLabel(variant), 'navigation', base.plugins, styled) },
       layout: { position, priority: (priorities.length ? Math.max(...priorities) : 0) + 10 }
     }
     setAdding(false)
@@ -157,7 +159,7 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
   async function assignClass(item: NavInstance): Promise<void> {
     const base = configRef.current
     if (!base) return
-    const cls = suggestClass(NAV_CLASS_PREFIX, baseName(item.plugin), 'navigation', base.plugins)
+    const cls = suggestClass(NAV_CLASS_PREFIX, baseName(item.plugin), 'navigation', base.plugins, styled)
     const plugins = base.plugins.map((p, i) => (i === item.index ? { ...p, options: withClass(p.options, cls) } : p))
     await write({ ...base, plugins }, t('sitePreview.classAssigned', { name: instanceLabel(item), cls }))
   }
@@ -167,7 +169,7 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
     if (!base) return
     // The copy gets a class of its own on the way and leaves the `id` behind (duplicateEntry),
     // its class named like this list names it.
-    const result = duplicateAfter(base.plugins, item.index, baseName(item.plugin))
+    const result = duplicateAfter(base.plugins, item.index, baseName(item.plugin), styled)
     if (!result) return
     setSelected(instances.length + 1)
     await write({ ...base, plugins: result.plugins }, t('navigationsEditor.duplicatedAnnounce', { name: instanceLabel(item) }))

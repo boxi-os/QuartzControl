@@ -1383,6 +1383,40 @@ export async function allStylesheets(projectPath: string): Promise<string[]> {
   return out
 }
 
+/**
+ * Every class name starting with one of `prefixes` that a stylesheet of the project or the built
+ * code of a plugin under .quartz/plugins names - for a new instance class, which must not pick up
+ * rules written for something else (review 2026-10-18, Niedrig 2: a box titled "Title" became
+ * `.layout-box-title` and got layout-box's own heading rule, one titled "Hint" the template's
+ * hint box). Broad on purpose, like allStylesheets: a name found too many costs a `-2`, one found
+ * too few a foreign look. A CSS variable (`--nav-gap`) is not a class and is not counted.
+ */
+export async function takenClasses(projectPath: string, prefixes: string[]): Promise<string[]> {
+  if (prefixes.length === 0) return []
+  const escaped = prefixes.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const pattern = new RegExp(`(?<![\\w-])(?:${escaped.join('|')})[A-Za-z0-9_-]+`, 'g')
+  const files = await allStylesheets(projectPath)
+  const walk = async (dir: string, depth = 0): Promise<void> => {
+    if (depth > 6 || !existsSync(dir)) return
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name)
+      const kind = entry.isSymbolicLink() ? await stat(full).catch(() => null) : entry
+      if (kind?.isDirectory()) await walk(full, depth + 1)
+      else if (kind?.isFile() && /\.(m?js|css)$/.test(entry.name)) files.push(full)
+    }
+  }
+  const pluginsDir = join(projectPath, '.quartz', 'plugins')
+  if (existsSync(pluginsDir)) {
+    for (const entry of await readdir(pluginsDir, { withFileTypes: true })) await walk(join(pluginsDir, entry.name, 'dist'))
+  }
+  const found = new Set<string>()
+  for (const file of files) {
+    const text = await readFile(file, 'utf8').catch(() => '')
+    for (const m of text.matchAll(pattern)) found.add(m[0].replace(/-+$/, ''))
+  }
+  return [...found].sort()
+}
+
 export async function projectStylesheets(projectPath: string): Promise<string[]> {
   const files = [customScssPath(projectPath), managedScssPath(projectPath)]
   for (const dir of STYLE_DIRS) {

@@ -78,6 +78,7 @@ import {
   withTemplate,
   withoutOverride
 } from './pageTypeOverride'
+import { useStyledClasses } from '../Plugins/useStyledClasses'
 
 // Plain closestCenter compares the *dragged rect's* center (not the cursor) against each
 // droppable's center - grabbing a wide card by its left-edge handle offsets that rect's center
@@ -136,6 +137,7 @@ export default function GlobalBoard({
   builtinPageTypeFrames?: Record<string, string>
 }): JSX.Element {
   const { t } = useTranslation()
+  const styled = useStyledClasses(projectPath)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [breakpoint, setBreakpoint] = useState<FrameBreakpoint>('desktop')
   // Which component the side panel shows - by name and occurrence, not by index (componentRef).
@@ -500,7 +502,7 @@ export default function GlobalBoard({
         setFocusAfterDrop(`placed:${sourceIndex}`)
         return
       }
-      const result = appendDuplicateToPosition(config.plugins, sourceIndex, toContainer, insertAt)
+      const result = appendDuplicateToPosition(config.plugins, sourceIndex, toContainer, insertAt, styled)
       if (!result) return
       applyPlugins(withGroup(result.plugins, result.newIndex, target.group ?? ''), result.newIndex)
       return
@@ -691,6 +693,7 @@ export default function GlobalBoard({
               <Inspector
                 key={`${selected?.name}#${selected?.occurrence}`}
                 projectPath={projectPath}
+                styledClasses={styled}
                 languages={languages}
                 pageType={
                   pageType && override

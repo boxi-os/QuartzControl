@@ -292,6 +292,12 @@ export const dropGoogleFontsInput = z.looseObject({ projectPath: absolutePath })
 // A read that needs nothing but the project - styles.variableCollisions and whatever follows it.
 export const projectPathArgs = z.looseObject({ projectPath: absolutePath })
 export const stylesMigrateInput = z.looseObject({ projectPath: absolutePath, snapshot: z.boolean() })
+// A class prefix such as `nav-` or `layout-box-`: it goes into a regular expression, escaped, but
+// there is no reason to let anything else through.
+export const stylesTakenClassesInput = z.looseObject({
+  projectPath: absolutePath,
+  prefixes: z.array(z.string().regex(/^[A-Za-z_][\w-]{0,39}$/)).max(8)
+})
 
 export const logHistoryInput = z.looseObject({ projectId: uuid })
 export const logClearInput = z.looseObject({ projectId: uuid, stream: z.enum(['server', 'build']) })

@@ -9,25 +9,55 @@
 // Instruction ließ ohne Klick Skript laufen und meldete „0 entfernt“ (42. Review, Befund 1).
 // Ein Markdown-Schnipsel liest erst remark, dann parse5: Text im SVG, das in einem Absatz steht,
 // ist für remark Markdown, und `[x](javascript:…)` wurde dort ein Link (43. Review, Befund 1).
-// Deshalb geht jedes Ergebnis zusätzlich durch die Kette von quartz-layout-box (src/markdown.ts,
-// hier als devDependencies in denselben Bereichen) — als eigener Block, in einer Zeile mit Text
-// davor und direkt unter einer Textzeile, wo „Bild einfügen…“ am Cursor einfügt.
-// Braucht Google Chrome, weder App noch Projekt.
+// Deshalb geht jedes Ergebnis zusätzlich durch die Kette von quartz-layout-box — als eigener
+// Block, in einer Zeile mit Text davor und direkt unter einer Textzeile, wo „Bild einfügen…“ am
+// Cursor einfügt. Die Kette kommt aus dem Plugin selbst, nicht aus einer Abschrift: Es bündelt sie
+// in dist/index.js (tsup, nur preact und vfile extern), also lädt das Skript dieses Bündel aus dem
+// Projekt, das es nennt, und holt sich renderMarkdown heraus. Bis zum vierundvierzigsten Review
+// (Niedrig 9) stand die Kette hier als sechs devDependencies mit `^`-Bereichen, die mit jedem
+// `npm install` des einen oder des anderen Repos auseinanderliefen.
+// Braucht Google Chrome und für die Markdown-Lagen ein Projekt mit quartz-layout-box; ohne
+// Projekt wird nur als HTML geprüft, und das Skript sagt, wie viele Lagen das auslässt.
 //
-//   npm run check:inline-svg
+//   npm run check:inline-svg -- [projektpfad]
 import { build } from 'esbuild'
+import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { chromium } from 'playwright-core'
-import { unified } from 'unified'
-import remarkParse from 'remark-parse'
-import remarkGfm from 'remark-gfm'
-import remarkRehype from 'remark-rehype'
-import rehypeRaw from 'rehype-raw'
-import rehypeStringify from 'rehype-stringify'
 
-// Wörtlich die Kette aus quartz-layout-box/src/markdown.ts.
-const markdown = unified().use(remarkParse).use(remarkGfm).use(remarkRehype, { allowDangerousHtml: true }).use(rehypeRaw).use(rehypeStringify)
-const renderMarkdown = (md) => String(markdown.processSync(md))
+const projekt = process.argv[2] ? path.resolve(process.argv[2]) : null
+let renderMarkdown = null
+let kette = 'nicht geprüft: kein Projekt genannt'
+if (projekt) {
+  const dir = path.join(projekt, '.quartz/plugins/quartz-layout-box')
+  const dist = path.join(dir, 'dist/index.js')
+  if (!fs.existsSync(dist)) kette = `nicht geprüft: ${dist} fehlt`
+  else {
+    const echt = fs.realpathSync(dist)
+    const text = fs.readFileSync(echt, 'utf-8')
+    if (!/\bfunction renderMarkdown\(/.test(text)) kette = 'nicht geprüft: das Bündel hat keine Funktion renderMarkdown'
+    else {
+      const out = path.join(os.tmpdir(), `layout-box-${process.pid}.mjs`)
+      await build({
+        stdin: { contents: `${text}\nexport { renderMarkdown as __renderMarkdown };\n`, resolveDir: path.dirname(echt), sourcefile: echt, loader: 'js' },
+        bundle: true,
+        platform: 'node',
+        format: 'esm',
+        outfile: out,
+        logLevel: 'error'
+      })
+      try {
+        renderMarkdown = (await import(`file://${out}`)).__renderMarkdown
+      } finally {
+        fs.unlinkSync(out)
+      }
+      const version = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8')).version
+      kette = `aus quartz-layout-box ${version} (${path.basename(projekt)})`
+    }
+  }
+}
+console.log(`Markdown-Kette: ${kette}`)
 // Die drei Lagen, in denen ein eingefügtes SVG in einem Schnipsel stehen kann.
 const LAGEN = [
   ['HTML', (m) => m],
@@ -35,7 +65,14 @@ const LAGEN = [
   ['Markdown, in einer Zeile', (m) => `Text davor ${m} danach\n`],
   ['Markdown, unter einer Textzeile', (m) => `Text davor\n${m}\n`]
 ]
-const lagen = (markup) => LAGEN.map(([name, f]) => [name, name === 'HTML' ? markup : renderMarkdown(f(markup))])
+let ausgelassen = 0
+const lagen = (markup) => {
+  if (!renderMarkdown) {
+    ausgelassen += LAGEN.length - 1
+    return [['HTML', markup]]
+  }
+  return LAGEN.map(([name, f]) => [name, name === 'HTML' ? markup : renderMarkdown(f(markup))])
+}
 
 const repo = path.join(import.meta.dirname, '..')
 const bundle = await build({
@@ -333,5 +370,6 @@ if (formen.ok) {
 pruefe(!(await clean('<html/>')).ok && !(await clean('kein xml')).ok, 'was kein SVG ist, wird abgelehnt')
 
 await browser.close()
-console.log(fehler ? `\n✗ ${fehler} Prüfung(en) fehlgeschlagen` : '\n✓ alle Prüfungen bestanden')
+if (ausgelassen) console.log(`\n${ausgelassen} Markdown-Lagen ausgelassen — ${kette}.`)
+console.log(fehler ? `\n✗ ${fehler} Prüfung(en) fehlgeschlagen` : ausgelassen ? '\n✓ alle Prüfungen bestanden, die laufen konnten' : '\n✓ alle Prüfungen bestanden')
 process.exit(fehler ? 1 : 0)

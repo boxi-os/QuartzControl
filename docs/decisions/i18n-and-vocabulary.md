@@ -153,3 +153,34 @@ schneidet Doppelpunkt und Leerraum am Ende ab, beide Aufrufstellen gehen durch i
 gebauten App mit `pageTitle: "abc` in der Datei: vorher „… column 1:. Repariere sie …“, nachher
 „… column 1. Repariere sie …“. Dieselbe Bewegung wie überall sonst hier — ein fremder Satz, der in
 einen eigenen eingesetzt wird, wird dafür zurechtgeschnitten, nicht durchgereicht.
+
+## Plugin-Optionen: Gruppen aus dem Schema, Variante als eigener Abschnitt (2026-10-15)
+
+Die Leisten „Navigationen“ und „Zusätzliche Inhalte“ zeigten die Optionen in den Gruppen der
+Plugin-Schemas, dazu einen Sammelkorb „N weitere Einstellungen“ für alles mit
+`x-quartz-advanced` aus allen Gruppen (bei Navigations: Klasse, Id, ARIA-Label, Symbolnamen,
+Breakpoints, Präfix-Sortierung, Indexordner, Frontmatter-Schlüssel, Spaltenzahl) und einen
+zweiten Kasten „Ohne Wirkung bei …“ als eigenes Formular. Der Korb zählte im Titel, also hieß er
+bei einer Suche anders, und den zweiten Kasten durchsuchte die Suche gar nicht.
+
+Neu: Die Gruppen stehen in den Schemas der beiden Plugins (quartz-navigations: Variante,
+Seitenauswahl, Ausblenden, Reihenfolge, Beschriftung und Symbole, Auf dem Smartphone,
+Technisches; quartz-layout-box: Inhalt, Box, Je Sprache und Seite, Technisches). Ein selten
+gebrauchtes Feld bleibt in seiner Gruppe unter „Selten gebraucht“. Die App legt nur einen
+Abschnitt darüber: die Optionen der gewählten Variante bzw. des Inhalts (`optionFormExtras.ts`,
+auch im Inspektor der Layout-Bühne). Was gerade nicht wirkt, bleibt an seinem Platz, mit gedämpftem
+Label und dem Grund darunter; eine Option einer anderen Variante steht nur da, solange sie gesetzt
+ist. Gemessen an der gebauten App mit gui-test: bei allen zehn Varianten dieselben sechs Gruppen
+mit denselben Feldzahlen; bei der Suche „folder“ behalten sie ihre Titel und zählen Treffer.
+
+`hasNoEffect` kennt dafür fünf weitere gemeinsame Optionen, aus `render.tsx` von 0.4.1 gelesen
+und von `check:plugin-copies` gegen die echte Komponente bestätigt (vorher 45 abweichende Fälle,
+danach 0 von 910): `icons` und `nodeIcons` wirken nicht bei der Auswahlliste (ihre Einträge sind
+Text), `showHome` nicht bei Reiter, Auswahlliste und Zurück/Weiter (`homeEntry` wird dort nie
+gerufen), `showScopeRoot` und `indexEntry` nicht bei den zwei eigenen Renderern. `columns.max`
+liest das Plugin nirgends (README: „reserviert“).
+
+Die freie Zeile für Schlüssel ohne Beschreibung steht nur noch, wo ein Schema unvollständig ist;
+gesetzte, aber unbeschriebene Schlüssel heißen „Unbekannte Schlüssel“ und erscheinen nur, wenn es
+welche gibt.
+

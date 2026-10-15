@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Copy, Navigation, Plus, Shapes, SlidersHorizontal, Trash2, type LucideIcon } from 'lucide-react'
 import { quartzPluginName } from '@shared/quartzPluginName'
 import type { LayoutPosition, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, DetailLayout, FoldBox, IconButton, InfoNote, PanelSection, SegmentedControl, SelectableRow, Toggle } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, InfoNote, PanelSection, SegmentedControl, SelectableRow, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
@@ -21,7 +21,8 @@ import { useProject } from '../ProjectLayout'
 import { useStyledClasses } from './useStyledClasses'
 import { ReadAgainstNote } from './ReadAgainstNote'
 import { SavesImmediately } from './SavesImmediately'
-import { NAVIGATIONS_PLUGIN, NAVIGATIONS_READ_AGAINST, NAV_VARIANTS, hasNoEffect, variantOf, type NavVariant } from './navigationVariants'
+import { NAVIGATIONS_PLUGIN, NAVIGATIONS_READ_AGAINST, NAV_VARIANTS, variantOf, type NavVariant } from './navigationVariants'
+import { navigationRoot } from './optionFormExtras'
 
 interface NavInstance {
   plugin: PluginEntry
@@ -351,7 +352,7 @@ function NavigationPanel({
   onOpenOnStage: () => void
   onShowAllOptions: () => void
 }): JSX.Element {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const project = useProject()
   const { plugin } = item
   const values = plugin.options ?? {}
@@ -362,13 +363,9 @@ function NavigationPanel({
     () => window.quartzGui.plugins.optionSchema({ projectPath: project.path, source: plugin.source }),
     [project.path, sourceKey]
   )
-  const [restOpen, setRestOpen] = useStickyState('navigations.noEffectOpen', false)
-
-  const noEffect = (key: string): boolean => hasNoEffect(key, variant, values.mobile)
-  const pickMain = useCallback((key: string) => key !== 'variant' && !hasNoEffect(key, variant, values.mobile), [variant, values.mobile])
-  const pickRest = useCallback((key: string) => hasNoEffect(key, variant, values.mobile), [variant, values.mobile])
-  const restKeys = (schemaQuery.data?.schema?.fields ?? []).map((f) => f.key).filter(noEffect)
-  const restSet = restKeys.filter((k) => k in values).length
+  const lang = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'de'
+  const pickMain = useCallback((key: string) => key !== 'variant', [])
+  const root = navigationRoot(values, schemaQuery.data?.schema?.fields ?? [], t, lang)
 
   return (
     <Card className="flex flex-col gap-4">
@@ -414,38 +411,17 @@ function NavigationPanel({
         ) : schemaQuery.error || !schemaQuery.data ? (
           <p className="text-micro text-red-600 dark:text-red-400">{t('layoutEditor.inspector.optionsError', { reason: schemaQuery.error ?? '' })}</p>
         ) : (
-          <>
-            <PluginOptionsForm
-              schema={schemaQuery.data.schema}
-              values={values}
-              onChange={onOptions}
-              explicitEmpty
-              languages={languages}
-              projectPath={project.path}
-              pick={pickMain}
-            />
-            {restKeys.length > 0 && (
-              <FoldBox
-                title={t('navigationsEditor.noEffectHeading', { variant: t(`navigationsEditor.variants.${variant}.label`) })}
-                aside={restSet > 0 ? t('pluginOptions.groupCountChanged', { count: restKeys.length, changed: restSet }) : restKeys.length}
-                open={restOpen}
-                onToggle={() => setRestOpen(!restOpen)}
-                bodyClassName="gap-3"
-              >
-                <p className="text-micro text-text-muted">{t('navigationsEditor.noEffectText')}</p>
-                <PluginOptionsForm
-                  schema={schemaQuery.data.schema}
-                  values={values}
-                  onChange={onOptions}
-                  explicitEmpty
-                  languages={languages}
-                  projectPath={project.path}
-                  pick={pickRest}
-                  freeKeys={false}
-                />
-              </FoldBox>
-            )}
-          </>
+          <PluginOptionsForm
+            schema={schemaQuery.data.schema}
+            values={values}
+            onChange={onOptions}
+            explicitEmpty
+            languages={languages}
+            projectPath={project.path}
+            pick={pickMain}
+            freeKeys={false}
+            root={root}
+          />
         )}
       </PanelSection>
     </Card>

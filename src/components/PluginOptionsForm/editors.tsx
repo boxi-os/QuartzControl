@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { ArrowDown, ArrowUp, RotateCcw, Trash2 } from 'lucide-react'
 import type { OptionEnumValue, OptionField, OptionNode } from '@shared/ipc-contract'
 import { evaluateCondition, nodeAccepts, setAtPath } from '@shared/pluginOptionSchema'
@@ -34,7 +35,24 @@ interface Inherited {
 // fixed 14rem field with its reset button ran past it (P7.4, measured: 25 px at navigations).
 const INPUT_WIDTH = 'w-56 max-w-full'
 
-// ── one object: its fields in order, by group, the advanced ones folded, the inactive ones apart ──
+// ── one object: its fields in order, by group, the inactive ones greyed where they stand ──
+
+/**
+ * What the two editors with tiles above the form (navigations, layout-box) add on the top level -
+ * the form alone knows only the schema's `when`.
+ */
+export interface RootExtras {
+  /** A reason beyond `when` why a field does nothing right now - quartz-navigations' rendering
+   *  code says more than its schema (navigationVariants.ts, hasNoEffect). */
+  inactiveReason?: (key: string) => string | null
+  /** Shown only while set: the options of the variants not chosen. Set, they stay in sight,
+   *  greyed, so a value that does nothing is not also a value nobody can see. */
+  hideUnlessSet?: (key: string) => boolean
+  /** These fields first, open and not foldable, under the given title - the section the tiles
+   *  above it switch. Chosen by the app's table, not by a group name, so an older schema of the
+   *  plugin fills it too. */
+  lead?: { has: (key: string) => boolean; title: string; empty: string }
+}
 
 export function ObjectBlock({
   fields,
@@ -42,7 +60,8 @@ export function ObjectBlock({
   onValue,
   ctx,
   inherit,
-  extra
+  extra,
+  root
 }: {
   fields: readonly OptionField[]
   values: Record<string, unknown>
@@ -51,6 +70,7 @@ export function ObjectBlock({
   inherit?: Inherited
   /** Rendered at the end of the block - the root puts the free key/value row there. */
   extra?: React.ReactNode
+  root?: RootExtras
 }): JSX.Element {
   const { t } = useTranslation()
   // A child that leaves its object empty takes the key with it: `byLang: { en: {} }` says
@@ -63,21 +83,25 @@ export function ObjectBlock({
     : [...fields]
   const conditionValues = inherit ? { ...inherit.values, ...values } : values
   const conditionFields = inherit ? inherit.fields : fields
-  const applies = (f: OptionField): boolean => evaluateCondition(f.when, conditionValues, conditionFields)
+  // Why a field does nothing now, or null. The app's reason first: where it has one, it names the
+  // variants, which says more than the schema's condition on the same field.
+  const inactiveReason = (f: OptionField): string | null =>
+    root?.inactiveReason?.(f.key) ??
+    (evaluateCondition(f.when, conditionValues, conditionFields) ? null : conditionText(f, conditionFields, ctx.lang, t))
 
   // While searching, a field stays when it or something inside it matches - and one that matched
   // by its own words hands its children an empty search, so they are all there under it.
   const searching = ctx.query !== ''
   const match = (f: OptionField): 'self' | 'child' | 'none' => fieldMatch(f, ctx.query, ctx.lang)
-  const found = ordered.filter((f) => match(f) !== 'none')
+  const shown = ordered.filter((f) => values[f.key] !== undefined || !root?.hideUnlessSet?.(f.key) || !inactiveReason(f))
+  const found = shown.filter((f) => match(f) !== 'none')
   const described = found.filter((f) => f.origin !== 'config')
   const unknown = found.filter((f) => f.origin === 'config')
-  const active = described.filter(applies)
-  // Set but switched off by its condition: kept on screen rather than hidden with its block, so
-  // a value that does nothing is not also a value nobody can see.
-  const inactive = described.filter((f) => !applies(f) && values[f.key] !== undefined)
-  const main = active.filter((f) => !f.advanced)
-  const advanced = active.filter((f) => f.advanced)
+  const lead = root?.lead
+  // In the lead, what works comes first: what does nothing there belongs to another variant and
+  // stands only because it is set. In the groups below every field keeps its place.
+  const leading = lead ? described.filter((f) => lead.has(f.key)).sort((a, b) => Number(inactiveReason(a) !== null) - Number(inactiveReason(b) !== null)) : []
+  const rest = lead ? described.filter((f) => !lead.has(f.key)) : described
 
   // In a record entry an unset field is not "the plugin's default" but "what stands above": the
   // entry is laid over the options of its parent. Shown as such, a switch that is on above read as
@@ -97,12 +121,35 @@ export function ObjectBlock({
       ctx={searching && match(f) === 'self' ? { ...ctx, query: '' } : ctx}
       inherit={{ values: conditionValues, fields: conditionFields }}
       inherited={fallbackOf(f)}
+      inactive={inactiveReason(f) ?? undefined}
     />
   )
+  // A group's rarely needed fields stay in it, after the others: one basket for all of them was a
+  // box called "2 more settings" holding a class name, a sort switch and a breakpoint.
+  const rows = (list: OptionField[]): React.ReactNode => {
+    const common = list.filter((f) => !f.advanced)
+    const rare = list.filter((f) => f.advanced)
+    return (
+      <>
+        {common.map(row)}
+        {rare.length > 0 && (
+          <div className="flex flex-col gap-2.5">
+            <p className="text-micro font-semibold uppercase tracking-wide text-text-muted">{t('pluginOptions.rarelyUsed')}</p>
+            <div className={`flex flex-col gap-3.5 ${DIVIDED_ROWS}`}>{rare.map(row)}</div>
+          </div>
+        )}
+      </>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-3">
-      {groupsOf(main, ctx.lang).map(([group, list], i) =>
+      {lead && (leading.length > 0 || !searching) && (
+        <FoldBox title={lead.title} aside={searching ? t('pluginOptions.matches', { count: leading.length }) : undefined} open locked onToggle={() => {}} bodyClassName={`gap-3.5 ${DIVIDED_ROWS}`}>
+          {leading.length > 0 ? rows(leading) : <p className="text-micro text-text-muted">{lead.empty}</p>}
+        </FoldBox>
+      )}
+      {groupsOf(rest, ctx.lang).map(([group, list], i) =>
         group ? (
           // Folded unless it is the first group or holds a value someone set: navigations has 46
           // options in seven groups, and all of them open is the list this form was meant to end.
@@ -112,34 +159,15 @@ export function ObjectBlock({
             count={list.length}
             changed={list.filter((f) => values[f.key] !== undefined).length}
             defaultOpen={i === 0 || list.some((f) => values[f.key] !== undefined)}
-            forceOpen={searching}
+            searching={searching}
           >
-            {list.map(row)}
+            {rows(list)}
           </GroupSection>
         ) : (
           <section key="" className={`flex flex-col gap-3.5 ${DIVIDED_ROWS}`}>
-            {list.map(row)}
+            {rows(list)}
           </section>
         )
-      )}
-      {advanced.length > 0 && (
-        <GroupSection
-          title={t('pluginOptions.advanced', { count: advanced.length })}
-          count={advanced.length}
-          changed={advanced.filter((f) => values[f.key] !== undefined).length}
-          defaultOpen={false}
-          forceOpen={searching}
-          framed
-        >
-          {advanced.map(row)}
-        </GroupSection>
-      )}
-      {inactive.length > 0 && (
-        <section className="flex flex-col gap-2.5 rounded-md border border-dashed border-ink/15 p-2.5 dark:border-ink/15">
-          <h4 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{t('pluginOptions.inactiveHeading')}</h4>
-          <p className="text-micro text-text-muted">{t('pluginOptions.inactiveHint')}</p>
-          {inactive.map(row)}
-        </section>
       )}
       {(unknown.length > 0 || (extra && !searching)) && (
         <section className="flex flex-col gap-2.5 border-t border-dashed border-ink/10 pt-2.5 dark:border-ink/10">
@@ -153,24 +181,32 @@ export function ObjectBlock({
   )
 }
 
-/** A group of options that folds - FoldBox, with the count on the right. */
+/** "Only applies with variant = Bar, Tabs." - a field's `when`, in the words of the form. */
+function conditionText(field: OptionField, siblings: readonly OptionField[], lang: FormLanguage, t: TFunction): string {
+  const parts = Object.entries(field.when ?? {}).map(([path, allowed]) => {
+    const head = siblings.find((f) => f.key === path)
+    const name = (head && fieldText(head, lang).title) ?? path
+    const list = (Array.isArray(allowed) ? allowed : [allowed]).map((v) => enumLabel(head, v, lang))
+    return t('pluginOptions.conditionPart', { name, values: list.join(', ') })
+  })
+  return t('pluginOptions.onlyWhen', { conditions: parts.join('; ') })
+}
+
+/** A group of options that folds - FoldBox, with the count on the right. While searching it is
+ *  held open and the count says how many fields matched; the title stays what it is. */
 function GroupSection({
   title,
   count,
   changed,
   defaultOpen,
-  forceOpen,
-  framed = false,
+  searching,
   children
 }: {
   title: string
   count: number
   changed: number
   defaultOpen: boolean
-  forceOpen: boolean
-  /** The advanced options: their title carries the count already, so the right-hand side says
-   *  only how many are changed. */
-  framed?: boolean
+  searching: boolean
   children: React.ReactNode
 }): JSX.Element {
   const { t } = useTranslation()
@@ -179,14 +215,14 @@ function GroupSection({
     <FoldBox
       title={title}
       aside={
-        framed
-          ? changed > 0 && t('pluginOptions.changedCount', { count: changed })
+        searching
+          ? t('pluginOptions.matches', { count })
           : changed > 0
             ? t('pluginOptions.groupCountChanged', { count, changed })
             : count
       }
-      open={open || forceOpen}
-      locked={forceOpen}
+      open={open || searching}
+      locked={searching}
       onToggle={() => setOpen((v) => !v)}
       bodyClassName={`gap-3.5 ${DIVIDED_ROWS}`}
     >
@@ -215,7 +251,8 @@ function FieldRow({
   onValue,
   ctx,
   inherit,
-  inherited
+  inherited,
+  inactive
 }: {
   field: OptionField
   value: unknown
@@ -224,6 +261,10 @@ function FieldRow({
   inherit: Inherited
   /** In a record entry: the value an unset field takes from above. */
   inherited?: { value: unknown }
+  /** Why the field does nothing right now. Greyed where it stands, not disabled: the label goes
+   *  muted, the control stays readable and usable, the reason stands under it (CLAUDE.md, a field
+   *  whose value does not apply is not disabled). */
+  inactive?: string
 }): JSX.Element {
   const { t } = useTranslation()
   const id = useId()
@@ -239,8 +280,8 @@ function FieldRow({
   const Key = field.node.kind === 'boolean' ? 'span' : 'label'
   const label = (
     <Key {...(field.node.kind === 'boolean' ? {} : { htmlFor: id })} className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-      {text.title && <span className="text-ui font-medium text-text">{text.title}</span>}
-      <span className={`break-all font-mono ${text.title ? 'text-micro text-text-muted' : 'text-xs font-medium text-text-secondary'}`}>{field.key}</span>
+      {text.title && <span className={`text-ui font-medium ${inactive ? 'text-text-muted' : 'text-text'}`}>{text.title}</span>}
+      <span className={`break-all font-mono ${text.title || inactive ? 'text-micro text-text-muted' : 'text-xs font-medium text-text-secondary'}`}>{field.key}</span>
       {isSet && <span className="text-micro font-medium text-accent-text">{t('pluginOptions.changed')}</span>}
     </Key>
   )
@@ -281,6 +322,7 @@ function FieldRow({
           <div className="min-w-0 flex-1">{label}</div>
           {reset}
         </div>
+        {inactive && <p className="text-micro italic text-text-muted">{inactive}</p>}
         {text.description && <p className="text-micro text-text-muted">{text.description}</p>}
         <div className="ml-1 border-l border-ink/10 pl-3 dark:border-ink/10">{editor}</div>
       </div>
@@ -298,6 +340,7 @@ function FieldRow({
         <div className="min-w-0 flex-1">{label}</div>
         {reset}
       </div>
+      {inactive && <p className="text-micro italic text-text-muted">{inactive}</p>}
       <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5 [&>*]:min-w-0">{editor}</div>
       {text.description && <p className="text-micro text-text-muted">{text.description}</p>}
       {/* layout-box's `placeholders` switch has no list of its own: the `html` field stands two

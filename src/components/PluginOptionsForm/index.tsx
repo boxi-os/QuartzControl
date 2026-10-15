@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Search } from 'lucide-react'
 import type { NormalizedOptionSchema } from '@shared/ipc-contract'
 import { withPresentKeys } from '@shared/pluginOptionSchema'
-import { ObjectBlock, type FormContext } from './editors'
+import { ObjectBlock, type FormContext, type RootExtras } from './editors'
 import { AddOptionRow } from './AddOptionRow'
 import { fieldMatch, isEmptyObject } from './text'
 import { TextInput } from '../ui'
@@ -17,10 +17,12 @@ const SEARCH_FROM = 8
  * the plugins page: the layout builder shows the same form in its sidebar (P7 of 1.1).
  *
  * - a field shows its value, or the plugin's default where none is set; resetting removes the key
- * - a field whose condition (`x-quartz-when`) does not hold is hidden, unless it is set - then it
- *   stands under "has no effect with this setting", so no value is lost from sight
- * - keys the config sets and no schema names stand under "more keys", beside a free key/value row
- * - named groups fold; above SEARCH_FROM options a search field narrows the form to what matches
+ * - a field whose condition (`x-quartz-when`) does not hold stays in its group, greyed, with the
+ *   condition under it - the groups look the same whatever is chosen above them
+ * - keys the config sets and no schema names stand under "unknown keys"; the free key/value row
+ *   beside them only where the schema does not describe every option
+ * - named groups fold, a group's rarely needed fields stand at its end; above SEARCH_FROM options
+ *   a search field narrows the form to what matches, and the groups keep their titles
  *
  * `onChange` gets the whole new options object, or undefined when nothing is left - the caller
  * writes it in one place. Every editor below works on values, not paths, because the items of a
@@ -34,7 +36,8 @@ export default function PluginOptionsForm({
   languages = [],
   projectPath,
   pick,
-  freeKeys = true
+  freeKeys = true,
+  root
 }: {
   schema: NormalizedOptionSchema | null
   values: Record<string, unknown>
@@ -48,8 +51,12 @@ export default function PluginOptionsForm({
    *  editor's variant tiles and its "no effect" section). Applied after the entry's own keys have
    *  joined the schema, so a set key that is picked away does not come back as "more keys". */
   pick?: (key: string) => boolean
-  /** The free key/value row; off where a second form on the same entry already offers it. */
+  /** The free key/value row; off in the editors that know every option. Shown anyway only where
+   *  the schema is incomplete - for a plugin whose options are all described it was one more row
+   *  under every form, for keys nobody needs. */
   freeKeys?: boolean
+  /** What an editor with tiles above the form adds on the top level (editors.tsx, RootExtras). */
+  root?: RootExtras
 }): JSX.Element {
   const { t, i18n } = useTranslation()
   const lang = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'de'
@@ -67,6 +74,7 @@ export default function PluginOptionsForm({
   }, [schema, values, pick])
   const emit = (next: Record<string, unknown>): void => onChange(isEmptyObject(next) ? undefined : next)
   const noMatch = query !== '' && !merged.fields.some((f) => fieldMatch(f, query, lang) !== 'none')
+  const incomplete = !schema || schema.source === 'defaults' || schema.notes.length > 0
 
   return (
     <div className="flex flex-col gap-3">
@@ -107,7 +115,8 @@ export default function PluginOptionsForm({
         values={values}
         onValue={emit}
         ctx={ctx}
-        extra={freeKeys ? <AddOptionRow existingKeys={Object.keys(values)} onAdd={(key, value) => emit({ ...values, [key]: value })} /> : undefined}
+        root={root}
+        extra={freeKeys && incomplete ? <AddOptionRow existingKeys={Object.keys(values)} onAdd={(key, value) => emit({ ...values, [key]: value })} /> : undefined}
       />
     </div>
   )

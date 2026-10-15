@@ -738,7 +738,10 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   er auf Wunsch des Nutzers wieder „Übersicht“. Das Handbuch nennt ihn deshalb immer mit seiner
   Seite („der Reiter ‚Übersicht‘ im Layout“), so wie der Smoke-Test („Layout · Übersicht“). Eine
   zweite solche Ausnahme wird hier eingetragen, nicht mit dieser begründet (zweiundvierzigstes
-  Review, Befund 5). Deutsch „…“,
+  Review, Befund 5). **Festgelegt vom Nutzer:** „Variante“ für die Darstellung einer Navigation (nicht
+  „Art“; das Plugin sagt es ebenso), „Box“ für einen Eintrag von quartz-layout-box (nicht
+  „Kasten“), „Smartphone“ in neuen Texten über das kleine Gerät (nicht „Telefon“) — der
+  Breakpoint heißt weiter „Mobil“ (2026-10-15). Deutsch „…“,
   Englisch “…”, Gedankenstrich als Em-Dash. Jeder Nutzertext steht in `de.ts`/`en.ts`
   (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
   bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben.

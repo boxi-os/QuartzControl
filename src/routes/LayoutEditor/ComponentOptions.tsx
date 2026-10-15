@@ -3,6 +3,10 @@ import type { PluginEntry } from '@shared/ipc-contract'
 import { FieldGroup } from '../../components/ui'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import type { PluginOptionSchemaResult } from '@shared/ipc-contract'
+import { quartzPluginName } from '@shared/quartzPluginName'
+import { NAVIGATIONS_PLUGIN } from '../Plugins/navigationVariants'
+import { LAYOUT_BOX_PLUGIN } from '../Plugins/layoutBoxes'
+import { layoutBoxRoot, navigationRoot } from '../Plugins/optionFormExtras'
 
 /**
  * The selected component's own options in the side panel - the same form the plugins page shows,
@@ -26,7 +30,19 @@ export default function ComponentOptions({
   schemaQuery: { data: PluginOptionSchemaResult | null; loading: boolean; error: string | null }
   onChange: (next: Record<string, unknown> | undefined) => void
 }): JSX.Element {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'de'
+  const options = plugin.options ?? {}
+  // A navigation and a box look here as they do on their pages: the variant's or the content's
+  // section first, the shared groups below (optionFormExtras.ts). Here the variant is a field of
+  // the section - there are no tiles above it.
+  const name = quartzPluginName(plugin.source)
+  const root =
+    name === NAVIGATIONS_PLUGIN
+      ? navigationRoot(options, data?.schema?.fields ?? [], t, lang, true)
+      : name === LAYOUT_BOX_PLUGIN
+        ? layoutBoxRoot(options, data?.packageVersion, t)
+        : undefined
 
   return (
     <FieldGroup label={t('layoutEditor.inspector.options')} className="gap-2">
@@ -41,11 +57,12 @@ export default function ComponentOptions({
           )}
           <PluginOptionsForm
             schema={data.schema}
-            values={plugin.options ?? {}}
+            values={options}
             onChange={onChange}
             explicitEmpty
             languages={languages}
             projectPath={projectPath}
+            root={root}
           />
         </>
       )}

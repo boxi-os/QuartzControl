@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Code2, Copy, FileText, PanelTop, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { LayoutPosition, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, DetailLayout, FoldBox, IconButton, InfoNote, PanelSection, SegmentedControl, SelectableRow, Toggle, focusRowAt } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, InfoNote, PanelSection, SegmentedControl, SelectableRow, Toggle, focusRowAt } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
+import { layoutBoxRoot } from './optionFormExtras'
 import SitePreview, { type PreviewHighlight } from '../../components/SitePreview'
 import { entrySelector } from '../../data/componentSelectors'
 import { BOX_CLASS_PREFIX, classSource, ownClass, suggestClass, withClass } from './instanceClass'
@@ -28,7 +29,6 @@ import {
   boxesOf,
   brokenOptions,
   langsWithOwnText,
-  nullBreaks,
   renameSnippetRefs,
   snippetRefs,
   type BoxContentKind,
@@ -356,19 +356,12 @@ function BoxPanel({
     () => window.quartzGui.plugins.optionSchema({ projectPath: project.path, source: plugin.source }),
     [project.path, sourceKey]
   )
-  const [restOpen, setRestOpen] = useStickyState('extraContent.noEffectOpen', false)
 
-  // While text is set, `file` (and the folder it is read from) does nothing - the only pair of
-  // options in this plugin where one silences the other. An `html:` left empty is no text: since
-  // 0.4.1 it does nothing either, before that it is the error and stays in sight above.
   const installed = schemaQuery.data?.packageVersion
-  const emptyHtmlBreaks = values.html === null && nullBreaks(installed)
-  const silenced = useCallback(
-    (key: string) => (kind === 'html' ? key === 'file' || key === 'dir' : key === 'html' && values.html === null && !emptyHtmlBreaks),
-    [kind, values.html, emptyHtmlBreaks]
-  )
-  const pickMain = useCallback((key: string) => !silenced(key) && !(kind === 'file' && key === 'html' && !emptyHtmlBreaks), [kind, silenced, emptyHtmlBreaks])
-  const restKeys = ['file', 'dir', 'html'].filter((k) => silenced(k) && k in values)
+  // Text is not offered while a file is the content - the tile above switches to it. An `html:`
+  // without a value is shown, in the content section: greyed, or as the error it is before 0.4.1.
+  const pickMain = useCallback((key: string) => !(kind === 'file' && key === 'html' && values.html === undefined), [kind, values.html])
+  const root = layoutBoxRoot(values, installed, t)
   const ownText = kind === 'file' ? langsWithOwnText(values) : []
   const broken = brokenOptions(values, installed)
 
@@ -446,38 +439,17 @@ function BoxPanel({
         ) : schemaQuery.error || !schemaQuery.data ? (
           <p className="text-micro text-red-600 dark:text-red-400">{t('layoutEditor.inspector.optionsError', { reason: schemaQuery.error ?? '' })}</p>
         ) : (
-          <>
-            <PluginOptionsForm
-              schema={schemaQuery.data.schema}
-              values={values}
-              onChange={onOptions}
-              explicitEmpty
-              languages={languages}
-              projectPath={project.path}
-              pick={pickMain}
-            />
-            {restKeys.length > 0 && (
-              <FoldBox
-                title={kind === 'html' ? t('extraContent.noEffectHeading') : t('extraContent.noEffectEmptyHeading')}
-                aside={restKeys.length}
-                open={restOpen}
-                onToggle={() => setRestOpen(!restOpen)}
-                bodyClassName="gap-3"
-              >
-                <p className="text-micro text-text-muted">{kind === 'html' ? t('extraContent.noEffectText') : t('extraContent.noEffectEmptyText')}</p>
-                <PluginOptionsForm
-                  schema={schemaQuery.data.schema}
-                  values={values}
-                  onChange={onOptions}
-                  explicitEmpty
-                  languages={languages}
-                  projectPath={project.path}
-                  pick={(key) => restKeys.includes(key)}
-                  freeKeys={false}
-                />
-              </FoldBox>
-            )}
-          </>
+          <PluginOptionsForm
+            schema={schemaQuery.data.schema}
+            values={values}
+            onChange={onOptions}
+            explicitEmpty
+            languages={languages}
+            projectPath={project.path}
+            pick={pickMain}
+            freeKeys={false}
+            root={root}
+          />
         )}
       </PanelSection>
     </Card>

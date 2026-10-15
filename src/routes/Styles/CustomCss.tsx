@@ -425,6 +425,10 @@ export default function CustomCss(): JSX.Element {
           <option value="">{t('styleEditor.componentPlaceholder')}</option>
           {components.map(({ name, selector, measured, reach }) => (
             <option key={selector} value={selector}>
+              {/* "von jetzt": the :not() names the copies there are; a later copy carries the
+                  original's class and a new one of its own, and a rule already written meets it
+                  (forty-fifth review, nebenbei). Excluding every later copy would need a selector
+                  the highlight schema and the preview do not speak. */}
               {reach
                 ? t(reach.kind === 'all' ? 'styleEditor.componentOptionWithCopies' : 'styleEditor.componentOptionOnly', {
                     name,

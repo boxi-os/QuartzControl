@@ -622,6 +622,8 @@ function StringEditor({
 }): JSX.Element {
   const { t } = useTranslation()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // The one-line field of an older layout-box, once focused: where a placeholder goes in.
+  const lineRef = useRef<HTMLInputElement | null>(null)
   const widget = field?.widget
   // layout-box's `placeholders`: off, `{{root}}` stays as written and an inserted picture does not
   // load. Read by its key, because that is the option layout-box names in its schema; a plugin
@@ -687,6 +689,34 @@ function StringEditor({
             />
           )}
           {hasPlaceholders && <PlaceholderList onInsert={insertImage} off={placeholdersOff} />}
+        </span>
+      ) : hasPlaceholders && field?.key === 'html' ? (
+        // layout-box before 0.4 describes `html` without a widget, so it is one line - and the list
+        // beside the textarea was then the one that never came; since 96e4775 took the switch's
+        // copy away, there was none at all (forty-fifth review, Niedrig 5).
+        <span className="flex min-w-0 flex-col gap-1.5">
+          <TextInput
+            key={current}
+            id={id}
+            type="text"
+            defaultValue={current}
+            placeholder={placeholder}
+            onFocus={(e) => {
+              lineRef.current = e.currentTarget
+            }}
+            onBlur={(e) => commit(e.target.value)}
+            className={INPUT_WIDTH}
+          />
+          <PlaceholderList
+            off={placeholdersOff}
+            onInsert={(text) => {
+              const el = lineRef.current
+              if (!el?.isConnected) return commit(current + text)
+              const at = el.selectionStart ?? el.value.length
+              const to = el.selectionEnd ?? at
+              commit(el.value.slice(0, at) + text + el.value.slice(to))
+            }}
+          />
         </span>
       ) : (
         <TextInput key={current} id={id} type="text" defaultValue={current} placeholder={placeholder} onBlur={(e) => commit(e.target.value)} className={INPUT_WIDTH} />

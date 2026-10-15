@@ -1447,14 +1447,12 @@ export default function FrameBuilder({
         panel={
           selectedArea ? (
             <Card key={selectedArea.id} className="flex flex-col gap-3">
-              <div className="flex items-start justify-between gap-2">
-                <CardHeading icon={SlidersHorizontal} className="min-w-0 break-all">
-                  {t('layoutEditor.frameBuilder.areaPanelTitle', { name: selectedArea.name })}
-                </CardHeading>
-                <Button variant="ghost" onClick={() => setSelectedAreaId(null)}>
-                  {t('layoutEditor.frameBuilder.deselectArea')}
-                </Button>
-              </div>
+              {/* No "Auswahl aufheben" here any more: it wrapped the heading in a panel this
+                  narrow, and every way it offered is there without it - Escape, a click into the
+                  empty space, a second click on the area (Nutzerbefund 2026-10-15). */}
+              <CardHeading icon={SlidersHorizontal} className="min-w-0 break-all">
+                {t('layoutEditor.frameBuilder.areaPanelTitle', { name: selectedArea.name })}
+              </CardHeading>
               {areaForm(selectedArea, layout.placements[selectedArea.id])}
             </Card>
           ) : (

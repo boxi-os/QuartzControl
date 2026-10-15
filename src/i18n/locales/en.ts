@@ -1635,7 +1635,6 @@ export default {
       framePanelTitle: 'Frame',
       framePanelHint: 'Click an area on the grid to set it up here.',
       areaPanelEmpty: 'Area',
-      deselectArea: 'Deselect',
       placeArea: 'Place area {{name}}',
       moveArea: 'Move area {{name}}',
       cellName: 'Cell row {{row}}, column {{col}}',

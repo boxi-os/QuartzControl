@@ -1640,7 +1640,6 @@ export default {
       framePanelTitle: 'Frame',
       framePanelHint: 'Klicke im Raster auf einen Bereich, um ihn hier einzustellen.',
       areaPanelEmpty: 'Bereich',
-      deselectArea: 'Auswahl aufheben',
       placeArea: 'Bereich {{name}} platzieren',
       moveArea: 'Bereich {{name}} verschieben',
       cellName: 'Zelle Zeile {{row}}, Spalte {{col}}',

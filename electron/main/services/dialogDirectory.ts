@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import { app, BrowserWindow, dialog, type OpenDialogOptions, type OpenDialogReturnValue, type SaveDialogOptions, type SaveDialogReturnValue } from 'electron'
 import { statSync } from 'fs'
 import { dirname, join } from 'path'
 import { readJsonFileOr, writeJsonFile } from './jsonStore'
@@ -44,4 +44,21 @@ export function rememberDialogResult(chosen: string): void {
   if (folder === last) return
   last = folder
   void writeJsonFile(statePath(), { lastDirectory: folder }).catch((err) => console.error('[dialogDirectory] write failed:', err))
+}
+
+// Attached to the window, the way the confirm dialog is: on macOS a sheet, and while it is open the
+// window takes no clicks. Without a window the panel floated free, and a second click on the same
+// button opened a second one beside it (Nutzerbefund 2026-10-14).
+function parentWindow(): BrowserWindow | undefined {
+  return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+}
+
+export function showOpenDialog(options: OpenDialogOptions): Promise<OpenDialogReturnValue> {
+  const win = parentWindow()
+  return win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options)
+}
+
+export function showSaveDialog(options: SaveDialogOptions): Promise<SaveDialogReturnValue> {
+  const win = parentWindow()
+  return win ? dialog.showSaveDialog(win, options) : dialog.showSaveDialog(options)
 }

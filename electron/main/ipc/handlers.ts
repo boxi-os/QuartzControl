@@ -60,7 +60,7 @@ import * as environmentService from '../services/environmentService'
 import * as nodeRuntime from '../services/nodeRuntime'
 import * as gitRuntime from '../services/gitRuntime'
 import * as settingsService from '../services/settingsService'
-import { dialogStartDirectory, rememberDialogResult } from '../services/dialogDirectory'
+import { dialogStartDirectory, rememberDialogResult, showOpenDialog, showSaveDialog } from '../services/dialogDirectory'
 import * as templatePackageService from '../services/templatePackage'
 import { applyTheme } from '../theme'
 import { applyAppMenu, openHandbook } from '../menu'
@@ -430,7 +430,7 @@ export function registerIpcHandlers(): void {
   // A folder is selectable as well as a file: packages written before the single-file format are
   // folders, and they stay importable.
   handleNoArgs(IPC.templatePackagePick, async () => {
-    const result = await dialog.showOpenDialog({
+    const result = await showOpenDialog({
       properties: ['openFile', 'openDirectory'],
       defaultPath: await dialogStartDirectory(),
       filters: [{ name: 'QuartzControl-Vorlage', extensions: [TEMPLATE_PACKAGE_EXTENSION.slice(1)] }]
@@ -445,7 +445,7 @@ export function registerIpcHandlers(): void {
   // The target file is chosen here rather than taken from the renderer, the same rule snapshot
   // export follows: an arbitrary path from there would let a page write a file anywhere on disk.
   handle(IPC.templatePackageExport, t([s.absolutePath, s.templateExportOptions]), async (projectPath, options) => {
-    const result = await dialog.showSaveDialog({
+    const result = await showSaveDialog({
       defaultPath: join(await dialogStartDirectory(), `${templatePackageService.slugifyFileName(options.name)}${TEMPLATE_PACKAGE_EXTENSION}`),
       filters: [{ name: 'QuartzControl-Vorlage', extensions: [TEMPLATE_PACKAGE_EXTENSION.slice(1)] }]
     })
@@ -594,7 +594,7 @@ export function registerIpcHandlers(): void {
   // The target file is chosen here rather than taken from the renderer: an arbitrary path from
   // there would let a page write a zip anywhere on disk.
   handle(IPC.snapshotExport, t([s.absolutePath, s.snapshotId]), async (projectPath, id) => {
-    const result = await dialog.showSaveDialog({
+    const result = await showSaveDialog({
       defaultPath: join(await dialogStartDirectory(), `${id}.zip`),
       filters: [{ name: 'ZIP', extensions: ['zip'] }]
     })
@@ -656,7 +656,7 @@ export function registerIpcHandlers(): void {
   handleNoArgs(IPC.settingsClearThemeDocsCache, () => styleSettingsSchemaService.clearThemeDocsCache())
 
   handle(IPC.dialogPickFolder, t([s.absolutePath.optional()]), async (defaultPath) => {
-    const result = await dialog.showOpenDialog({
+    const result = await showOpenDialog({
       properties: ['openDirectory', 'createDirectory'],
       // Only honoured when it still exists - the last-used folder otherwise, and a stale default
       // project directory must not make the dialog open somewhere surprising.
@@ -687,7 +687,7 @@ export function registerIpcHandlers(): void {
   })
 
   handle(IPC.dialogPickFile, t([s.dialogFileFilters.optional()]), async (filters) => {
-    const result = await dialog.showOpenDialog({ properties: ['openFile'], defaultPath: await dialogStartDirectory(), filters })
+    const result = await showOpenDialog({ properties: ['openFile'], defaultPath: await dialogStartDirectory(), filters })
     if (result.canceled || result.filePaths.length === 0) return null
     rememberDialogResult(result.filePaths[0])
     return result.filePaths[0]

@@ -1296,8 +1296,7 @@ export default {
   snippets: {
     placeholders: {
       summary: 'Available placeholders ({{count}})',
-      intro: 'Replaced when the site is built, in the text and the title of the box. A placeholder it does not know stays as written.',
-      introInsert: 'Replaced when the site is built, in the text and the title of the box. A click puts it in at the cursor.',
+      introInsert: 'Replaced when the site is built, in the text and the title of the box; an unknown one stays as written. A click puts it in at the cursor.',
       off: 'Switched off: the placeholders stay as they are written. Switch “placeholders” on.',
       insertNamed: 'Insert {{token}}',
       title: 'Title of the page, from its frontmatter',

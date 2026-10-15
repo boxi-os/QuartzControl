@@ -147,11 +147,11 @@ export function ImageButton({
 
 /**
  * The placeholders a layout box can use, folded under a summary (Wunsch des Nutzers, 2026-10-10:
- * the option `placeholders` said that it replaces `{{placeholder}}` tokens, not which). Beside a
- * text editor each token is a button that puts it in at the cursor; under the option itself the
- * list only reads. `off`: the plugin's `placeholders` is false, and the tokens would stay as text.
+ * the option `placeholders` said that it replaces `{{placeholder}}` tokens, not which). It stands
+ * beside a text editor, and each token is a button that puts it in at the cursor. `off`: the
+ * plugin's `placeholders` is false, and the tokens would stay as text.
  */
-export function PlaceholderList({ onInsert, off }: { onInsert?: (text: string) => void; off: boolean }): JSX.Element {
+export function PlaceholderList({ onInsert, off }: { onInsert: (text: string) => void; off: boolean }): JSX.Element {
   const { t } = useTranslation()
   const frontmatterExample = `{{${LAYOUT_BOX_FRONTMATTER_PLACEHOLDER}author}}`
   const rows: [token: string, meaning: string][] = [
@@ -165,24 +165,20 @@ export function PlaceholderList({ onInsert, off }: { onInsert?: (text: string) =
         {t('snippets.placeholders.summary', { count: rows.length })}
       </summary>
       <div className="mt-1.5 flex flex-col gap-1.5">
-        <p className="text-text-muted">{onInsert ? t('snippets.placeholders.introInsert') : t('snippets.placeholders.intro')}</p>
+        <p className="text-text-muted">{t('snippets.placeholders.introInsert')}</p>
         {off && <p className="text-amber-700 dark:text-amber-300">{t('snippets.placeholders.off')}</p>}
         <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1">
           {rows.map(([token, meaning]) => (
             <div key={token} className="contents">
               <dt>
-                {onInsert ? (
-                  <button
-                    type="button"
-                    onClick={() => onInsert(token)}
-                    title={t('snippets.placeholders.insertNamed', { token })}
-                    className="rounded border border-ink/10 bg-surface px-1.5 py-0.5 font-mono text-xs text-text hover:border-accent hover:text-accent-text"
-                  >
-                    {token}
-                  </button>
-                ) : (
-                  <code className="font-mono text-xs text-text">{token}</code>
-                )}
+                <button
+                  type="button"
+                  onClick={() => onInsert(token)}
+                  title={t('snippets.placeholders.insertNamed', { token })}
+                  className="rounded border border-ink/10 bg-surface px-1.5 py-0.5 font-mono text-xs text-text hover:border-accent hover:text-accent-text"
+                >
+                  {token}
+                </button>
               </dt>
               <dd className="text-text-muted">{meaning}</dd>
             </div>

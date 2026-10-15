@@ -300,11 +300,9 @@ function FieldRow({
       </div>
       <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5 [&>*]:min-w-0">{editor}</div>
       {text.description && <p className="text-micro text-text-muted">{text.description}</p>}
-      {/* layout-box's switch: which tokens it replaces, not only that it does. Not in a language
-          entry, which takes the list from above. */}
-      {field.key === 'placeholders' && field.node.kind === 'boolean' && !inherited && inherit.fields.some((f) => f.key === 'html') && (
-        <PlaceholderList off={(isSet ? value : field.hasDefault ? field.default : true) === false} />
-      )}
+      {/* layout-box's `placeholders` switch has no list of its own: the `html` field stands two
+          rows above it with the same list, there with buttons that insert (Nutzerbefund
+          2026-10-14: "stehen doppelt da"). */}
     </div>
   )
 }

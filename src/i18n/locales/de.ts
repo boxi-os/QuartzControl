@@ -1301,8 +1301,7 @@ export default {
   snippets: {
     placeholders: {
       summary: 'Verfügbare Platzhalter ({{count}})',
-      intro: 'Beim Bauen ersetzt, im Text und im Titel der Box. Ein unbekannter Platzhalter bleibt stehen, wie er geschrieben ist.',
-      introInsert: 'Beim Bauen ersetzt, im Text und im Titel der Box. Ein Klick fügt ihn am Cursor ein.',
+      introInsert: 'Beim Bauen ersetzt, im Text und im Titel der Box; ein unbekannter bleibt stehen, wie er geschrieben ist. Ein Klick fügt ihn am Cursor ein.',
       off: 'Ausgeschaltet: Die Platzhalter bleiben stehen, wie sie geschrieben sind. Schalte „placeholders“ ein.',
       insertNamed: '{{token}} einfügen',
       title: 'Titel der Seite, aus ihrem Frontmatter',

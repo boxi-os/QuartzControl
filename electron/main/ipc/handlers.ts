@@ -60,7 +60,7 @@ import * as environmentService from '../services/environmentService'
 import * as nodeRuntime from '../services/nodeRuntime'
 import * as gitRuntime from '../services/gitRuntime'
 import * as settingsService from '../services/settingsService'
-import { dialogStartDirectory, rememberDialogResult, showOpenDialog, showSaveDialog } from '../services/dialogDirectory'
+import { dialogStartDirectory, rememberDialogResult, saveDialogStartDirectory, showOpenDialog, showSaveDialog } from '../services/dialogDirectory'
 import * as templatePackageService from '../services/templatePackage'
 import { applyTheme } from '../theme'
 import { applyAppMenu, openHandbook } from '../menu'
@@ -446,7 +446,7 @@ export function registerIpcHandlers(): void {
   // export follows: an arbitrary path from there would let a page write a file anywhere on disk.
   handle(IPC.templatePackageExport, t([s.absolutePath, s.templateExportOptions]), async (projectPath, options) => {
     const result = await showSaveDialog({
-      defaultPath: join(await dialogStartDirectory(), `${templatePackageService.slugifyFileName(options.name)}${TEMPLATE_PACKAGE_EXTENSION}`),
+      defaultPath: join(await saveDialogStartDirectory(), `${templatePackageService.slugifyFileName(options.name)}${TEMPLATE_PACKAGE_EXTENSION}`),
       filters: [{ name: 'QuartzControl-Vorlage', extensions: [TEMPLATE_PACKAGE_EXTENSION.slice(1)] }]
     })
     if (result.canceled || !result.filePath) return null
@@ -595,7 +595,7 @@ export function registerIpcHandlers(): void {
   // there would let a page write a zip anywhere on disk.
   handle(IPC.snapshotExport, t([s.absolutePath, s.snapshotId]), async (projectPath, id) => {
     const result = await showSaveDialog({
-      defaultPath: join(await dialogStartDirectory(), `${id}.zip`),
+      defaultPath: join(await saveDialogStartDirectory(), `${id}.zip`),
       filters: [{ name: 'ZIP', extensions: ['zip'] }]
     })
     if (result.canceled || !result.filePath) return false

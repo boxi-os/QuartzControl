@@ -1,7 +1,9 @@
 import { app, BrowserWindow, dialog, type OpenDialogOptions, type OpenDialogReturnValue, type SaveDialogOptions, type SaveDialogReturnValue } from 'electron'
 import { statSync } from 'fs'
-import { dirname, join } from 'path'
+import { realpath } from 'fs/promises'
+import { dirname, join, sep } from 'path'
 import { readJsonFileOr, writeJsonFile } from './jsonStore'
+import { listProjects } from './projectStore'
 
 // Where an open or save dialog starts when its caller names no folder of its own: the folder the
 // last dialog ended in, otherwise Documents. Without a defaultPath (or with a bare file name, which
@@ -33,6 +35,29 @@ export async function dialogStartDirectory(): Promise<string> {
     last = typeof raw.lastDirectory === 'string' ? raw.lastDirectory : null
   }
   return last && isDirectory(last) ? last : app.getPath('documents')
+}
+
+/**
+ * The folder a save dialog opens in: the remembered one, unless it lies in the `content/` of a
+ * registered project - followed through its symlink into a vault. Quartz copies every file there
+ * that is not Markdown into the site, so a snapshot or a template saved where the last picture
+ * came from went online with the next publish, the whole project inside (forty-fifth review,
+ * Niedrig 6). Then Documents. An open dialog may start there; it only reads.
+ */
+export async function saveDialogStartDirectory(): Promise<string> {
+  const start = await dialogStartDirectory()
+  return (await inPublishedContent(start)) ? app.getPath('documents') : start
+}
+
+async function inPublishedContent(folder: string): Promise<boolean> {
+  const real = await realpath(folder).catch(() => folder)
+  const within = (dir: string, root: string): boolean => dir === root || dir.startsWith(root + sep)
+  for (const project of await listProjects().catch(() => [])) {
+    const content = join(project.path, 'content')
+    const roots = [content, await realpath(content).catch(() => content)]
+    if (roots.some((root) => within(folder, root) || within(real, root))) return true
+  }
+  return false
 }
 
 /**

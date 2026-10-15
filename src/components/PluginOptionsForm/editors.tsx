@@ -18,6 +18,10 @@ export interface FormContext {
   projectPath?: string
   /** The form's search, lower-cased; empty: no search. See fieldMatch. */
   query: string
+  /** The search as typed, lower-cased, for marking it in the texts. Unlike `query` it is not
+   *  emptied under a field that matched by its own words: its children are all shown then, and
+   *  where the word stands in them is still what the reader looks for. */
+  mark: string
   /** Inside an option that does nothing right now: the labels below it are muted too, or the
    *  sub-fields of a greyed `tabs` stood in full colour under its grey name. */
   muted?: boolean
@@ -157,21 +161,28 @@ export function ObjectBlock({
   return (
     <div className="flex flex-col gap-3">
       {lead && (leading.length > 0 || !searching) && (
-        <FoldBox title={lead.title} aside={searching ? t('pluginOptions.matches', { count: leading.length }) : undefined} open bodyClassName={`gap-3.5 ${DIVIDED_ROWS}`}>
+        <GroupSection
+          title={<Marked text={lead.title} query={ctx.mark} />}
+          aside={searching ? t('pluginOptions.matches', { count: leading.length }) : null}
+          defaultOpen
+          searching={searching}
+        >
           {lead.note && <p className="text-micro text-text-muted">{lead.note}</p>}
           {leading.length > 0 ? rows(leading) : <p className="text-micro text-text-muted">{lead.empty}</p>}
-        </FoldBox>
+        </GroupSection>
       )}
       {groupsOf(rest, ctx.lang).map(([group, list], i) =>
         group ? (
           // Folded unless it is the first group or holds a value someone set: navigations has 46
           // options in seven groups, and all of them open is the list this form was meant to end.
+          // Under a lead every group starts folded: the lead is what the tiles above it switch,
+          // and the reader came for it (Nutzerwunsch 2026-10-15).
           <GroupSection
             key={group}
-            title={group}
+            title={<Marked text={group} query={ctx.mark} />}
             count={list.length}
             changed={list.filter((f) => values[f.key] !== undefined).length}
-            defaultOpen={i === 0 || list.some((f) => values[f.key] !== undefined)}
+            defaultOpen={!lead && (i === 0 || list.some((f) => values[f.key] !== undefined))}
             searching={searching}
           >
             {rows(list)}
@@ -210,18 +221,21 @@ function conditionText(field: OptionField, siblings: readonly OptionField[], lan
 }
 
 /** A group of options that folds - FoldBox, with the count on the right. While searching it is
- *  held open and the count says how many fields matched; the title stays what it is. */
+ *  held open and the count says how many fields matched; the title stays what it is. `aside`
+ *  replaces the count; null: nothing there (the lead, outside a search). */
 function GroupSection({
   title,
-  count,
-  changed,
+  count = 0,
+  changed = 0,
+  aside,
   defaultOpen,
   searching,
   children
 }: {
-  title: string
-  count: number
-  changed: number
+  title: React.ReactNode
+  count?: number
+  changed?: number
+  aside?: React.ReactNode
   defaultOpen: boolean
   searching: boolean
   children: React.ReactNode
@@ -232,11 +246,13 @@ function GroupSection({
     <FoldBox
       title={title}
       aside={
-        searching
-          ? t('pluginOptions.matches', { count })
-          : changed > 0
-            ? t('pluginOptions.groupCountChanged', { count, changed })
-            : count
+        aside !== undefined
+          ? aside
+          : searching
+            ? t('pluginOptions.matches', { count })
+            : changed > 0
+              ? t('pluginOptions.groupCountChanged', { count, changed })
+              : count
       }
       open={open || searching}
       locked={searching}
@@ -256,6 +272,27 @@ function groupsOf(fields: OptionField[], lang: FormLanguage): [string | undefine
   }
   // Ungrouped first: a schema that groups some fields and not others means the rest to come first.
   return [...groups].sort((a, b) => (a[0] === undefined ? -1 : b[0] === undefined ? 1 : 0))
+}
+
+/** The text with each place the search matches in a <mark> - fieldMatch says a field matched,
+ *  not where, and in a three-line explanation the word was hard to find (Nutzerwunsch 2026-10-15).
+ *  Matched as fieldMatch matches: lower-cased, anywhere in the text. */
+function Marked({ text, query }: { text: string; query: string }): JSX.Element {
+  if (!query) return <>{text}</>
+  const lower = text.toLowerCase()
+  const parts: React.ReactNode[] = []
+  let from = 0
+  for (let at = lower.indexOf(query); at !== -1; at = lower.indexOf(query, from)) {
+    if (at > from) parts.push(text.slice(from, at))
+    parts.push(
+      <mark key={at} className="rounded-[2px] bg-amber-200 text-inherit dark:bg-amber-400/35">
+        {text.slice(at, at + query.length)}
+      </mark>
+    )
+    from = at + query.length
+  }
+  if (from < text.length) parts.push(text.slice(from))
+  return <>{parts}</>
 }
 
 // ── one field: label, control, reset, explanation ─────────────────────────────
@@ -298,8 +335,14 @@ function FieldRow({
   const Key = field.node.kind === 'boolean' ? 'span' : 'label'
   const label = (
     <Key {...(field.node.kind === 'boolean' ? {} : { htmlFor: id })} className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-      {text.title && <span className={`text-ui font-medium ${dim ? 'text-text-muted' : 'text-text'}`}>{text.title}</span>}
-      <span className={`break-all font-mono ${text.title || dim ? 'text-micro text-text-muted' : 'text-xs font-medium text-text-secondary'}`}>{field.key}</span>
+      {text.title && (
+        <span className={`text-ui font-medium ${dim ? 'text-text-muted' : 'text-text'}`}>
+          <Marked text={text.title} query={ctx.mark} />
+        </span>
+      )}
+      <span className={`break-all font-mono ${text.title || dim ? 'text-micro text-text-muted' : 'text-xs font-medium text-text-secondary'}`}>
+        <Marked text={field.key} query={ctx.mark} />
+      </span>
       {isSet && <span className="text-micro font-medium text-accent-text">{t('pluginOptions.changed')}</span>}
       {/* The reason is part of the control's name: under it, it was only grey and italic, and a
           screen reader read the field as any other. A switch is named by Toggle, see NodeEditor. */}
@@ -345,7 +388,11 @@ function FieldRow({
           {reset}
         </div>
         {inactive && <p className="text-micro italic text-text-muted">{inactive}</p>}
-        {text.description && <p className="text-micro text-text-muted">{text.description}</p>}
+        {text.description && (
+          <p className="text-micro text-text-muted">
+            <Marked text={text.description} query={ctx.mark} />
+          </p>
+        )}
         <div className="ml-1 border-l border-ink/10 pl-3 dark:border-ink/10">{editor}</div>
       </div>
     )
@@ -368,7 +415,11 @@ function FieldRow({
         </p>
       )}
       <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5 [&>*]:min-w-0">{editor}</div>
-      {text.description && <p className="text-micro text-text-muted">{text.description}</p>}
+      {text.description && (
+          <p className="text-micro text-text-muted">
+            <Marked text={text.description} query={ctx.mark} />
+          </p>
+        )}
       {/* layout-box's `placeholders` switch has no list of its own: the `html` field stands two
           rows above it with the same list, there with buttons that insert (Nutzerbefund
           2026-10-14: "stehen doppelt da"). */}

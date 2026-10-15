@@ -154,10 +154,13 @@ function buildGroupOptionsFields(t: TFunction): PluginOptionField[] {
 }
 
 // What a row is called on screen: a frame carries its own name, everything else the plugin name
-// quartz addresses it by. Used for the sticky key, the drag narration and the reorder message, so
-// all three speak of the same thing.
+// quartz addresses it by - with its number where there are several, as on the layout board
+// ("quartz-navigations #2"); two rows of the same name were told apart by nothing (forty-fifth
+// review, nebenbei). Used for the row, the side panel, the drag narration and the reorder message,
+// so all of them speak of the same thing.
 function displayName(item: IndexedPlugin): string {
-  return item.frame ? item.frame.frameName : item.plugin.name
+  if (item.frame) return item.frame.frameName
+  return item.of > 1 ? `${item.plugin.name} #${item.occurrence}` : item.plugin.name
 }
 
 // The name alone is not an identity: one plugin can be installed several times, and a real project
@@ -214,6 +217,8 @@ interface IndexedPlugin {
   frame?: GridFrameDefinition
   /** Which of the same-named entries this is, counted from 1. See stickyKey(). */
   occurrence: number
+  /** How many entries carry this name. */
+  of: number
 }
 
 type EnabledFilter = 'all' | 'active' | 'inactive'
@@ -514,6 +519,8 @@ export default function PluginsInstalled(): JSX.Element {
 
   const items: IndexedPlugin[] = useMemo(() => {
     const seen = new Map<string, number>()
+    const total = new Map<string, number>()
+    for (const p of config?.plugins ?? []) total.set(p.name, (total.get(p.name) ?? 0) + 1)
     return (config?.plugins ?? []).map((plugin, index) => {
       // Both halves have to agree before an entry counts as a frame: the frame list says a frame
       // with that id exists, and the entry really points at that frame's directory. A plugin that
@@ -523,7 +530,7 @@ export default function PluginsInstalled(): JSX.Element {
         frame !== undefined && typeof plugin.source === 'string' && plugin.source.includes('authored-frames')
       const occurrence = (seen.get(plugin.name) ?? 0) + 1
       seen.set(plugin.name, occurrence)
-      return { plugin, index, frame: isFrame ? frame : undefined, occurrence }
+      return { plugin, index, frame: isFrame ? frame : undefined, occurrence, of: total.get(plugin.name) ?? 1 }
     })
   }, [config, frameById])
 
@@ -1034,7 +1041,7 @@ function PluginRow({
         </button>
         <div className="pt-px">
           <Toggle
-            label={t('pluginsInstalled.enabledSwitch', { name: frame ? frame.frameName : plugin.name })}
+            label={t('pluginsInstalled.enabledSwitch', { name: rowName })}
             hideLabel
             checked={plugin.enabled}
             onChange={() => toggleEnabled(index)}

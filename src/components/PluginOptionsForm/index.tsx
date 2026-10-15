@@ -77,7 +77,7 @@ export default function PluginOptionsForm({
   const incomplete = !schema || schema.source === 'defaults' || schema.notes.length > 0
 
   return (
-    <div className="flex flex-col gap-3">
+    <div data-options-form className="flex flex-col gap-3">
       {merged.fields.length >= SEARCH_FROM && (
         <div className="relative">
           <Search size={14} aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" />

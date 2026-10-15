@@ -146,6 +146,7 @@ export function ObjectBlock({
       inherited={fallbackOf(f)}
       inactive={inactiveReason(f) ?? undefined}
       keyLabel={root?.keyPrefix ? root.keyPrefix + f.key : undefined}
+      vanishOnReset={!searching && root?.hideUnlessSet?.(f.key) === true && inactiveReason(f) !== null}
     />
   )
   // A group's rarely needed fields stay in it, after the others: one basket for all of them was a
@@ -285,6 +286,17 @@ function groupsOf(fields: OptionField[], lang: FormLanguage): [string | undefine
   return [...groups].sort((a, b) => (a[0] === undefined ? -1 : b[0] === undefined ? 1 : 0))
 }
 
+const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]'
+
+/** Focuses the control after `row` in its form, or the one before when it is the last. */
+function focusBeside(row: HTMLElement): void {
+  const form = row.closest('[data-options-form]') ?? row.parentElement
+  if (!form) return
+  const all = [...form.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => !row.contains(el))
+  const after = all.find((el) => row.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)
+  ;(after ?? all.at(-1))?.focus()
+}
+
 /** The text with each place the search matches in a <mark> - fieldMatch says a field matched,
  *  not where, and in a three-line explanation the word was hard to find (Nutzerwunsch 2026-10-15).
  *  Matched as fieldMatch matches: lower-cased, anywhere in the text. */
@@ -318,7 +330,8 @@ function FieldRow({
   inherit,
   inherited,
   inactive,
-  keyLabel
+  keyLabel,
+  vanishOnReset = false
 }: {
   field: OptionField
   value: unknown
@@ -333,9 +346,12 @@ function FieldRow({
   inactive?: string
   /** The key as shown, where it is not the field's own (RootExtras.keyPrefix). */
   keyLabel?: string
+  /** The row goes once reset (RootExtras.hideUnlessSet): its reset button hands the focus on first. */
+  vanishOnReset?: boolean
 }): JSX.Element {
   const { t } = useTranslation()
   const id = useId()
+  const rowRef = useRef<HTMLDivElement>(null)
   const shownKey = keyLabel ?? field.key
   const text = fieldText(field, ctx.lang)
   const isSet = value !== undefined
@@ -377,7 +393,13 @@ function FieldRow({
             ? t('pluginOptions.resetNamed', { name: shownKey })
             : t('pluginOptions.removeNamed', { name: shownKey })
       }
-      onClick={() => onValue(undefined)}
+      onClick={() => {
+        // The row takes its reset button with it, and the focus fell to <body>, where Escape no
+        // longer reaches the panel (forty-fifth review, Niedrig 1). Moved first to the next control
+        // of the form, or the one before - the same rule as removing a row from a list.
+        if (vanishOnReset && rowRef.current) focusBeside(rowRef.current)
+        onValue(undefined)
+      }}
     />
   ) : null
   const editor = (
@@ -397,7 +419,7 @@ function FieldRow({
   )
   if (block) {
     return (
-      <div className="flex flex-col gap-1.5">
+      <div ref={rowRef} className="flex flex-col gap-1.5">
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">{label}</div>
           {reset}
@@ -419,7 +441,7 @@ function FieldRow({
   // The reset sits beside the name, as in a block row: beside the control it wrapped under a
   // textarea and its image button once the option groups became boxes with their own padding.
   return (
-    <div className="flex flex-col gap-1">
+    <div ref={rowRef} className="flex flex-col gap-1">
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">{label}</div>
         {reset}

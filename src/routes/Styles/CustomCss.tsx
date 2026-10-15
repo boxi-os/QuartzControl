@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import CodeMirror, { Transaction } from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
 import { sass } from '@codemirror/lang-sass'
+import { indentationMarkers } from '@replit/codemirror-indentation-markers'
 import type { EditorView } from '@codemirror/view'
 import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, FileCode, FileWarning, Palette, Pencil, Plus, Trash2, X } from 'lucide-react'
 import type { FontFaceInfo, ScssCheckResult, StyleFile, StyleReferenceFile } from '@shared/ipc-contract'
@@ -34,9 +35,14 @@ const MAIN_TAB = ':main'
 // Sass reads every .scss here, so `//` is a comment there and the editor shows it as one; the CSS
 // grammar coloured it as selector text (Nutzerbefund 2026-10-14). A plain .css stays CSS - Sass
 // does not take `//` as a comment in one either. Module constants, because a new array on every
-// render makes the editor reconfigure itself.
-const SCSS_EXTENSIONS = [sass()]
-const CSS_EXTENSIONS = [css()]
+// render makes the editor reconfigure itself. The vertical lines mark what belongs to one block,
+// the way other editors do (Nutzerbefund 2026-10-14). The package's own grey (#F0F1F2) was not
+// visible on the white editor; the block the cursor is in gets the darker line.
+const INDENT_MARKERS = indentationMarkers({
+  colors: { light: '#dcdfe4', activeLight: '#a3a9b3', dark: '#3a3f4b', activeDark: '#6b7280' },
+})
+const SCSS_EXTENSIONS = [sass(), INDENT_MARKERS]
+const CSS_EXTENSIONS = [css(), INDENT_MARKERS]
 function languageFor(file: string) {
   return file.toLowerCase().endsWith('.css') ? CSS_EXTENSIONS : SCSS_EXTENSIONS
 }

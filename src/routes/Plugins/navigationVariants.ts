@@ -61,8 +61,9 @@ const OWN_RENDERER = new Set<NavVariant>(['select', 'pager'])
 /**
  * Whether an option does nothing with this variant and mobile setting - read from the plugin's
  * rendering code, not from its README, and only for the options where the code says so plainly.
- * Everything not listed here counts as having an effect. The schema's own `x-quartz-when` covers
- * align, trigger and the per-variant objects already; this is the part it does not say.
+ * Everything not listed here counts as having an effect. Where the schema's own `x-quartz-when`
+ * says the same (align, trigger, the per-variant objects), this answers first: it names the
+ * variants, the condition only the values.
  *
  * Such an option is not hidden: it stays in its group, greyed, with the variants it works with
  * under it - and an option of the variant section (VARIANT_KEYS) that does nothing is shown only
@@ -77,8 +78,11 @@ export function hasNoEffect(key: string, variant: NavVariant, mobile: unknown): 
   switch (key) {
     case 'mobile':
       return false
-    // Only drawn inside a collapsible folder row - and a split row draws one anyway.
+    // Only drawn inside a collapsible folder row, and a split row draws one anyway. A folder that
+    // folds only on mobile is a split row only where it has a link target (`folderLink: none`
+    // leaves it without), so there chevrons decides - folderClick is never read for it.
     case 'chevrons':
+      return !COLLAPSIBLE.has(variant) && !mobileFolds
     case 'folderClick':
       return !COLLAPSIBLE.has(variant)
     // The `name` of a <details>, mobile-only ones included.

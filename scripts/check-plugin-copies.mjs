@@ -315,7 +315,14 @@ function tally(label, cases, diffs) {
       expandActive: [{}, { persistState: true }],
       icons: [{ nodeIcons: ICON_EVERYWHERE }],
       nodeIcons: [{ icons: 'custom' }],
-      showScopeRoot: [{}, { rootPath: 'docs' }]
+      showScopeRoot: [{}, { rootPath: 'docs' }],
+      // A mobile-only folder without a link target is no split row - there chevrons decides
+      // (found by a review on 2026-10-15: with only `{}` every folder of the fixture had a target).
+      chevrons: [{}, { folderLink: 'none' }, { folderClick: 'link' }],
+      folderClick: [{}, { folderLink: 'none' }],
+      exclusive: [{}, { folderLink: 'none' }],
+      folderDefaultState: [{}, { folderLink: 'none' }, { expandActive: false }],
+      showHome: [{}, { rootPath: 'docs' }]
     }
     const effectDiffs = []
     let cases = 0

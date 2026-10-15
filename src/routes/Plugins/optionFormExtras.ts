@@ -39,11 +39,14 @@ export function navigationRoot(
       // Whichever list is shorter: "only with Accordion" for a variant's own option, "not with
       // Jump menu" for one nearly every variant shares - nine names to read for the one missing.
       const without = NAV_VARIANTS.map((v) => v.value).filter((v) => !why.variants.includes(v))
+      // Quoted, behind "der Variante": a bare name after "bei" read as a broken sentence once it
+      // had an adjective ("Wirkt nur bei Seitliche Panels", forty-fifth review, nebenbei).
+      const names = (list: NavVariant[]): string => list.map((v) => quote(name(v))).join(', ')
       if (why.variants.length > 0)
         parts.push(
           without.length < why.variants.length
-            ? t('navigationsEditor.notWith', { variants: without.map(name).join(', ') })
-            : t('navigationsEditor.onlyWith', { variants: why.variants.map(name).join(', ') })
+            ? t('navigationsEditor.notWith', { count: without.length, variants: names(without) })
+            : t('navigationsEditor.onlyWith', { count: why.variants.length, variants: names(why.variants) })
         )
       if (why.mobile.length > 0)
         parts.push(t('navigationsEditor.withMobile', { variant: name(variant), mobile: why.mobile.map((m) => quote(enumLabel(mobileField, m, lang))).join(', ') }))

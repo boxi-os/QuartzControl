@@ -174,9 +174,18 @@ const readingBreakpoints = () => ({
   desktop: {
     // Six rows, not five: row 4 is the free area below the text (EXTRA_AREAS), the full width of
     // the text column - the two boxes inside it divide it between themselves, as a flex group.
+    //
+    // **The flexible row is the last one above the footer, not the text.** The side columns span
+    // rows 2 to 5, and a spanning item that is taller than the rows it crosses puts its surplus into
+    // the flexible track among them. That was the text row, so a short page with a long explorer
+    // stretched the text area and pushed the two boxes and `afterBody` down by the difference -
+    // measured on gui-test before this change: 125 of 184 pages at 1440px, up to 514px of nothing
+    // under the text. On `afterBody` the surplus lands below everything instead, where it was
+    // always meant to go: it is also what keeps the footer at the bottom of a short page. Not an
+    // empty row of its own, which would have cost one more 2rem row gap on every page.
     rows: 6,
     cols: 12,
-    rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
+    rowSizes: ['auto', 'auto', 'auto', 'auto', '1fr', 'auto'],
     ...DESKTOP_BOX(),
     placements: {
       'area-header': place(1, 1, 1, 12),
@@ -198,9 +207,12 @@ const readingBreakpoints = () => ({
     // box and the properties table. `right` therefore stands between `custom-8` and `afterBody`
     // rather than behind both; until 2026-09-10 it was last, so the outline of the page sat below a
     // box inviting the reader to leave it.
+    //
+    // The flexible row is `afterBody`'s for the reason given on desktop: `left` spans rows 2 to 6
+    // (up to 308px under the text before, on gui-test at 1000px).
     rows: 7,
     cols: 12,
-    rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto', 'auto'],
+    rowSizes: ['auto', 'auto', 'auto', 'auto', 'auto', '1fr', 'auto'],
     ...TABLET_BOX(),
     placements: {
       'area-header': place(1, 1, 1, 12),

@@ -825,13 +825,29 @@ export function FoldBox({
   /** Right of the title: a count, "2 geändert". */
   aside?: ReactNode
   open: boolean
-  onToggle: () => void
+  /** Without it the box does not fold at all: the band is a heading, not a button - the section
+   *  of the options form under the variant tiles, which a disabled button with a chevron
+   *  announced as "expanded, dimmed". */
+  onToggle?: () => void
   /** Held open from outside (the form's search); the band does not fold then. */
   locked?: boolean
   bodyClassName?: string
   children: ReactNode
 }): JSX.Element {
   const bodyId = useId()
+  const asideNode = aside !== undefined && aside !== null && aside !== false && (
+    <span className="shrink-0 font-normal normal-case tracking-normal text-text-muted">{aside}</span>
+  )
+  if (!onToggle)
+    return (
+      <section className="rounded-md border border-ink/10 dark:border-ink/10">
+        <div className="flex w-full items-center gap-1.5 rounded-t-md bg-ink/[0.03] px-3 py-2 text-micro font-semibold uppercase tracking-wide text-text-secondary">
+          <h4 className="min-w-0 flex-1">{title}</h4>
+          {asideNode}
+        </div>
+        <div className={`flex flex-col border-t border-ink/[0.06] px-3 py-3 dark:border-ink/10 ${bodyClassName}`}>{children}</div>
+      </section>
+    )
   return (
     <section className="rounded-md border border-ink/10 dark:border-ink/10">
       <button
@@ -846,9 +862,7 @@ export function FoldBox({
       >
         <ChevronRight size={13} aria-hidden className={`shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} />
         <span className="min-w-0 flex-1">{title}</span>
-        {aside !== undefined && aside !== null && aside !== false && (
-          <span className="shrink-0 font-normal normal-case tracking-normal text-text-muted">{aside}</span>
-        )}
+        {asideNode}
       </button>
       {open && (
         <div id={bodyId} className={`flex flex-col border-t border-ink/[0.06] px-3 py-3 dark:border-ink/10 ${bodyClassName}`}>

@@ -147,7 +147,7 @@ export function ObjectBlock({
   return (
     <div className="flex flex-col gap-3">
       {lead && (leading.length > 0 || !searching) && (
-        <FoldBox title={lead.title} aside={searching ? t('pluginOptions.matches', { count: leading.length }) : undefined} open locked onToggle={() => {}} bodyClassName={`gap-3.5 ${DIVIDED_ROWS}`}>
+        <FoldBox title={lead.title} aside={searching ? t('pluginOptions.matches', { count: leading.length }) : undefined} open bodyClassName={`gap-3.5 ${DIVIDED_ROWS}`}>
           {leading.length > 0 ? rows(leading) : <p className="text-micro text-text-muted">{lead.empty}</p>}
         </FoldBox>
       )}

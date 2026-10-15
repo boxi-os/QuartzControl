@@ -18,6 +18,9 @@ export interface FormContext {
   projectPath?: string
   /** The form's search, lower-cased; empty: no search. See fieldMatch. */
   query: string
+  /** Inside an option that does nothing right now: the labels below it are muted too, or the
+   *  sub-fields of a greyed `tabs` stood in full colour under its grey name. */
+  muted?: boolean
 }
 
 /**
@@ -276,6 +279,7 @@ function FieldRow({
   const text = fieldText(field, ctx.lang)
   const isSet = value !== undefined
   const block = BLOCK_KINDS.has(field.node.kind)
+  const dim = inactive !== undefined || ctx.muted === true
   // The key is the control's label, as on the rest of the page; a switch names itself (Toggle's
   // hidden label), so its visible key is not a <label> of a second control.
   // The plugin's own words first where it has any, the key beside them - the key is what stands in
@@ -285,9 +289,12 @@ function FieldRow({
   const Key = field.node.kind === 'boolean' ? 'span' : 'label'
   const label = (
     <Key {...(field.node.kind === 'boolean' ? {} : { htmlFor: id })} className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-      {text.title && <span className={`text-ui font-medium ${inactive ? 'text-text-muted' : 'text-text'}`}>{text.title}</span>}
-      <span className={`break-all font-mono ${text.title || inactive ? 'text-micro text-text-muted' : 'text-xs font-medium text-text-secondary'}`}>{field.key}</span>
+      {text.title && <span className={`text-ui font-medium ${dim ? 'text-text-muted' : 'text-text'}`}>{text.title}</span>}
+      <span className={`break-all font-mono ${text.title || dim ? 'text-micro text-text-muted' : 'text-xs font-medium text-text-secondary'}`}>{field.key}</span>
       {isSet && <span className="text-micro font-medium text-accent-text">{t('pluginOptions.changed')}</span>}
+      {/* The reason is part of the control's name: under it, it was only grey and italic, and a
+          screen reader read the field as any other. A switch is named by Toggle, see NodeEditor. */}
+      {inactive && !block && field.node.kind !== 'boolean' && <span className="sr-only">{inactive}</span>}
     </Key>
   )
   // "Back to what the plugin does without me": the key goes. Named after what it does - with a
@@ -316,8 +323,9 @@ function FieldRow({
       hasDefault={inherited ? true : field.hasDefault}
       fromAbove={inherited !== undefined}
       onValue={onValue}
-      ctx={ctx}
+      ctx={inactive !== undefined ? { ...ctx, muted: true } : ctx}
       inherit={inherit}
+      note={inactive}
     />
   )
   if (block) {
@@ -345,7 +353,11 @@ function FieldRow({
         <div className="min-w-0 flex-1">{label}</div>
         {reset}
       </div>
-      {inactive && <p className="text-micro italic text-text-muted">{inactive}</p>}
+      {inactive && (
+        <p aria-hidden className="text-micro italic text-text-muted">
+          {inactive}
+        </p>
+      )}
       <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5 [&>*]:min-w-0">{editor}</div>
       {text.description && <p className="text-micro text-text-muted">{text.description}</p>}
       {/* layout-box's `placeholders` switch has no list of its own: the `html` field stands two
@@ -367,7 +379,8 @@ function NodeEditor({
   fromAbove = false,
   onValue,
   ctx,
-  inherit
+  inherit,
+  note
 }: {
   id?: string
   node: OptionNode
@@ -380,6 +393,8 @@ function NodeEditor({
   onValue: (v: unknown) => void
   ctx: FormContext
   inherit?: Inherited
+  /** Why the option does nothing right now - a switch carries it in its name (FieldRow). */
+  note?: string
 }): JSX.Element {
   const { t } = useTranslation()
   switch (node.kind) {
@@ -387,7 +402,7 @@ function NodeEditor({
       const effective = value === undefined ? defaultValue === true : value === true
       return (
         <span className="flex items-center gap-2">
-          <Toggle label={field?.key ?? ''} hideLabel checked={effective} onChange={(checked) => onValue(checked)} />
+          <Toggle label={note ? `${field?.key ?? ''}. ${note}` : (field?.key ?? '')} hideLabel checked={effective} onChange={(checked) => onValue(checked)} />
           {value === undefined && (
             <span className="text-micro text-text-muted">
               {fromAbove ? t('pluginOptions.asAbove') : hasDefault ? t('pluginOptions.isDefault') : t('pluginOptions.notSet')}

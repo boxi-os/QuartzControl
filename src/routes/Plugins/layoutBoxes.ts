@@ -17,6 +17,9 @@ import type { PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 export const LAYOUT_BOX_PLUGIN = 'quartz-layout-box'
 /** The version whose LayoutBox.tsx the rules below are read from. */
 export const LAYOUT_BOX_READ_AGAINST = '0.4.2'
+/** Versions whose src/ is the same as that one's (`git diff v0.4.1 v0.4.2 -- src` is empty; 0.4.0
+ *  differs). See NAVIGATIONS_SAME_CODE. */
+export const LAYOUT_BOX_SAME_CODE = ['0.4.1'] as const
 /** The first version that reads a null option as a missing one; the ones before throw on it. */
 export const NULL_SAFE_SINCE = '0.4.1'
 export const DEFAULT_SNIPPET_DIR = 'quartz/static/snippets'

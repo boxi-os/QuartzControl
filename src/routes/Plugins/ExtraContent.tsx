@@ -24,6 +24,7 @@ import ExtraContentFiles from './ExtraContentFiles'
 import {
   LAYOUT_BOX_PLUGIN,
   LAYOUT_BOX_READ_AGAINST,
+  LAYOUT_BOX_SAME_CODE,
   boxContentKind,
   boxDir,
   boxesOf,
@@ -400,7 +401,7 @@ function BoxPanel({
           <span className="text-micro text-text-secondary">{layout ? t(`positions.${layout.position}`, layout.position) : t('extraContent.notPlaced')}</span>
           <SavesImmediately saved={saved} />
         </div>
-        <ReadAgainstNote plugin={LAYOUT_BOX_PLUGIN} readAgainst={LAYOUT_BOX_READ_AGAINST} installed={schemaQuery.data?.packageVersion} />
+        <ReadAgainstNote plugin={LAYOUT_BOX_PLUGIN} readAgainst={LAYOUT_BOX_READ_AGAINST} sameCode={LAYOUT_BOX_SAME_CODE} installed={schemaQuery.data?.packageVersion} />
       </div>
 
       <Toggle label={t('extraContent.enabled')} checked={plugin.enabled} onChange={onToggle} />

@@ -21,7 +21,7 @@ import { useProject } from '../ProjectLayout'
 import { useStyledClasses } from './useStyledClasses'
 import { ReadAgainstNote } from './ReadAgainstNote'
 import { SavesImmediately } from './SavesImmediately'
-import { NAVIGATIONS_PLUGIN, NAVIGATIONS_READ_AGAINST, NAV_VARIANTS, variantOf, type NavVariant } from './navigationVariants'
+import { NAVIGATIONS_PLUGIN, NAVIGATIONS_READ_AGAINST, NAVIGATIONS_SAME_CODE, NAV_VARIANTS, variantOf, type NavVariant } from './navigationVariants'
 import { navigationRoot } from './optionFormExtras'
 
 interface NavInstance {
@@ -381,7 +381,7 @@ function NavigationPanel({
           )}
           <SavesImmediately saved={saved} />
         </div>
-        <ReadAgainstNote plugin={NAVIGATIONS_PLUGIN} readAgainst={NAVIGATIONS_READ_AGAINST} installed={schemaQuery.data?.packageVersion} />
+        <ReadAgainstNote plugin={NAVIGATIONS_PLUGIN} readAgainst={NAVIGATIONS_READ_AGAINST} sameCode={NAVIGATIONS_SAME_CODE} installed={schemaQuery.data?.packageVersion} />
       </div>
 
       <Toggle label={t('navigationsEditor.enabled')} checked={plugin.enabled} onChange={onToggle} />

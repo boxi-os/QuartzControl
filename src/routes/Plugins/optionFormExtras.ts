@@ -100,12 +100,18 @@ export function layoutBoxRoot(options: Record<string, unknown>, installed: strin
  * The extras for a form without tiles above it - the layout board's inspector and the plugin
  * list. Both show every option of the entry, the variant (or the text) included, and grey what
  * does nothing the way the two pages do: an option said one thing about itself here and another
- * there (review of 2026-10-15).
+ * there (review of 2026-10-15). Greyed, not hidden: "Alle Optionen" is where the version note
+ * sends someone whose plugin may disagree with the app's table, and nine options of other
+ * variants stood there only when searched for (forty-fifth review, Niedrig 2).
  */
 export function rootWithoutTiles(plugin: PluginEntry, data: PluginOptionSchemaResult | null, t: TFunction, lang: FormLanguage): RootExtras | undefined {
   const options = plugin.options ?? {}
   const name = quartzPluginName(plugin.source)
-  if (name === NAVIGATIONS_PLUGIN) return navigationRoot(options, data?.schema?.fields ?? [], t, lang, true)
-  if (name === LAYOUT_BOX_PLUGIN) return layoutBoxRoot(options, data?.packageVersion, t, false)
-  return undefined
+  const root =
+    name === NAVIGATIONS_PLUGIN
+      ? navigationRoot(options, data?.schema?.fields ?? [], t, lang, true)
+      : name === LAYOUT_BOX_PLUGIN
+        ? layoutBoxRoot(options, data?.packageVersion, t, false)
+        : undefined
+  return root && { ...root, hideUnlessSet: undefined }
 }

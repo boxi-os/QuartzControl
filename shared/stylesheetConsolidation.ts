@@ -93,6 +93,10 @@ export function isConsolidatedOrder(order: string[]): boolean {
 }
 
 const header = (target: string): string => `// ${target} - put together by QuartzControl; each section is named after its former stylesheet.`
+// The header of f957201, before a06f654 shortened it. Never shipped, but projects on the machine
+// that built 1.1 were put together with it (gui-test), and read as never put together they would
+// be offered the run again once one of the 31 is switched on (forty-fifth review, nebenbei).
+const earlierHeader = (target: string): string => `// ${target} - put together by QuartzControl from the stylesheets named in the sections below.`
 
 /**
  * The first line of each of the ten new names as the 1.1 template writes it (scripts/example-
@@ -136,7 +140,7 @@ export function wasConsolidated(files: Record<string, string>, order: string[]):
   return CONSOLIDATED_ORDER.some((t) => {
     if (!loaded.has(`${DIR}${t}.scss`)) return false
     const content = files[`${DIR}${t}.scss`] ?? ''
-    return content.startsWith(header(t)) || (TEMPLATE_FIRST_LINES[t] !== undefined && firstLine(t) === TEMPLATE_FIRST_LINES[t])
+    return content.startsWith(header(t)) || content.startsWith(earlierHeader(t)) || (TEMPLATE_FIRST_LINES[t] !== undefined && firstLine(t) === TEMPLATE_FIRST_LINES[t])
   })
 }
 

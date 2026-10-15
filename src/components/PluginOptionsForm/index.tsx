@@ -63,8 +63,8 @@ export default function PluginOptionsForm({
   const [search, setSearch] = useState('')
   const query = search.trim().toLowerCase()
   const ctx: FormContext = useMemo(
-    () => ({ lang, explicitEmpty, languages, projectPath, query }),
-    [lang, explicitEmpty, languages, projectPath, query]
+    () => ({ lang, explicitEmpty, languages, projectPath, query, entryReason: root?.entryReason }),
+    [lang, explicitEmpty, languages, projectPath, query, root?.entryReason]
   )
   // The entry's own keys join the schema here, per entry: two instances of one plugin set
   // different keys, and a key no schema names is still shown (withPresentKeys).

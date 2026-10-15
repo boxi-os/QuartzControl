@@ -3,7 +3,7 @@ import type { OptionField } from '@shared/ipc-contract'
 import type { RootExtras } from '../../components/PluginOptionsForm/editors'
 import { enumLabel, type FormLanguage } from '../../components/PluginOptionsForm/text'
 import { NAV_VARIANTS, VARIANT_KEYS, noEffectReason, variantOf, type NavVariant } from './navigationVariants'
-import { boxContentKind, nullBreaks } from './layoutBoxes'
+import { boxContentKind, nullBreaks, withoutNulls } from './layoutBoxes'
 
 // What the form adds for the two plugins whose editors know more than the schema says, in one
 // place: the plugins page (Navigations.tsx, ExtraContent.tsx) and the layout board's inspector
@@ -77,6 +77,10 @@ export function layoutBoxRoot(options: Record<string, unknown>, installed: strin
       has: (key) => CONTENT_KEYS.has(key),
       title: kind === 'html' ? t('extraContent.leadText') : t('extraContent.leadFile'),
       empty: ''
-    }
+    },
+    // In a language entry: the entry laid over the box, nulls leaving the value above (since
+    // 0.4.1, mergedVariants) - text there, from the entry or from above, silences file and dir.
+    entryReason: (key, entry, above) =>
+      (key === 'file' || key === 'dir') && boxContentKind({ ...withoutNulls(above), ...withoutNulls(entry) }) === 'html' ? t('extraContent.silencedByText') : null
   }
 }

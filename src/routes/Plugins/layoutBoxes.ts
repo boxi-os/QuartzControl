@@ -42,7 +42,7 @@ export interface BoxInstance {
 type Options = Record<string, unknown>
 
 /** The options as the plugin reads them: keys whose value is null are dropped (its withoutNulls). */
-function withoutNulls(options: unknown): Options {
+export function withoutNulls(options: unknown): Options {
   if (!options || typeof options !== 'object' || Array.isArray(options)) return {}
   return Object.fromEntries(Object.entries(options).filter(([, value]) => value !== null))
 }

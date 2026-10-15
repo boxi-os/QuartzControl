@@ -21,6 +21,8 @@ export interface FormContext {
   /** Inside an option that does nothing right now: the labels below it are muted too, or the
    *  sub-fields of a greyed `tabs` stood in full colour under its grey name. */
   muted?: boolean
+  /** RootExtras.entryReason, handed to the record entries wherever they stand. */
+  entryReason?: RootExtras['entryReason']
 }
 
 /**
@@ -55,6 +57,10 @@ export interface RootExtras {
    *  above it switch. Chosen by the app's table, not by a group name, so an older schema of the
    *  plugin fills it too. */
   lead?: { has: (key: string) => boolean; title: string; empty: string }
+  /** The same as inactiveReason for a field of a record entry (layout-box's byLang): the entry's
+   *  own values and the options it is laid over. Without it `file` stood active in an entry whose
+   *  text silences it. */
+  entryReason?: (key: string, entry: Record<string, unknown>, above: Record<string, unknown>) => string | null
 }
 
 export function ObjectBlock({
@@ -90,6 +96,7 @@ export function ObjectBlock({
   // variants, which says more than the schema's condition on the same field.
   const inactiveReason = (f: OptionField): string | null =>
     root?.inactiveReason?.(f.key) ??
+    (inherit ? ctx.entryReason?.(f.key, values, inherit.values) : null) ??
     (evaluateCondition(f.when, conditionValues, conditionFields) ? null : conditionText(f, conditionFields, ctx.lang, t))
 
   // While searching, a field stays when it or something inside it matches - and one that matched

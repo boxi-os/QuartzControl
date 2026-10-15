@@ -812,3 +812,19 @@ geladen sind. Ein Lauf danach schreibt die zwölf neu, und die zehn liegengeblie
 weichen wie jede fremde Datei mit einem dieser Namen nach `-2` aus, ungeladen — überschrieben wird
 nichts. Gemessen an der reinen Funktion (`check:stylesheet-consolidation`, zwei neue Prüfungen):
 vorher kein Angebot und kein Plan, nachher Angebot, zwölf geschrieben, zehn umbenannt.
+
+## `//` im SCSS-Editor und eine protokollrelative URL (2026-10-16, 1.1)
+
+Seit `3e9d3b6` malt der Editor `//`-Kommentare in SCSS wie `/* */`. Das fünfundvierzigste Review
+hat die Grammatik dahinter (`@lezer/sass` 1.1.0, über `@codemirror/lang-sass` 6.0.2) direkt
+befragt: `url(http://…)` und `"// …"` in einem String liest sie richtig, ein protokollrelatives
+`url(//cdn.example/y.png)` aber als Zeilenkommentar bis zum Zeilenende — auch in
+`src: url(//x/y.woff2) format("woff2")`. Sass selbst übernimmt die Zeile unverändert (gemessen mit
+dem `sass` eines Projekts), und der Editor ändert am Wert nichts; falsch ist nur die Farbe.
+
+**Hingenommen**, aus zwei Gründen: Eine protokollrelative URL ist in einer Quartz-Website selten
+(Schriften und Bilder liegen im Projekt, und Googles Adressen schreibt die App mit `https:`), und
+eine eigene Grammatik oder ein Nachfärben über der von CodeMirror wäre mehr Code als der Fall wert
+ist. Wer `https:` davorschreibt, sieht die Regel normal. Der Kommentar steht an `EXTENSIONS` in
+`src/routes/Styles/CustomCss.tsx`; meldenswert ist es bei `@lezer/sass`, wenn es jemanden trifft.
+

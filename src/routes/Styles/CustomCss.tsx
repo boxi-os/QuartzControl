@@ -49,6 +49,10 @@ const INDENT_MARKERS = indentationMarkers({
 const LIGHT_HIGHLIGHT = syntaxHighlighting(
   HighlightStyle.define(defaultHighlightStyle.specs.map((spec) => (spec.tag === tags.comment ? { ...spec, color: '#8b929c' } : spec))),
 )
+// @lezer/sass reads a protocol-relative `url(//cdn…)` as a line comment to the end of the line, and
+// paints it grey; url(http://…) and `//` inside a string it reads right. Only the painting - what is
+// saved is what stands there, and Sass compiles it (forty-fifth review, Niedrig 4; accepted, see
+// docs/decisions/styles-and-fonts.md).
 const EXTENSIONS = {
   scss: { light: [sass(), INDENT_MARKERS, LIGHT_HIGHLIGHT], dark: [sass(), INDENT_MARKERS] },
   css: { light: [css(), INDENT_MARKERS, LIGHT_HIGHLIGHT], dark: [css(), INDENT_MARKERS] },

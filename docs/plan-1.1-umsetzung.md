@@ -283,6 +283,15 @@ berührt sind, `npm run check:option-schema -- <gui-test>` (277/267/10/0).
   Vorrat schaltet aus, Formulare ab den neuen Plugin-Fassungen, 1.0.x liest „nur hell“ als beide.
 - Ein Review der 1.1-Commits vor dem Release (selbst, frischer Agent, wie das 39., sofern kein anderes
   Modell verfügbar ist).
+- Aus dem 45. Review (2026-10-16), Nebenbei:
+  - `scripts/example-template/custom-scss-body.scss` nennt seit `f66105b` „Stile → Eigenes CSS“
+    statt `_quartzcontrol.scss`. Die Projekte tragen noch den alten Satz, und `--sync` holt den
+    Rumpf aus dem Projekt zurück: **vor dem Neubau mit `--only 5` vorschieben, nicht `--sync`**,
+    sonst ist die Änderung wieder weg. `--check-sync` meldet die Abweichung bis dahin zu Recht.
+  - Bis die Vorlagen online auf 1.1 stehen, holt „Basis-Template“ online das Paket 1.0 und offline
+    das mitgelieferte von 1.1 — welche Form ein Projekt bekommt, hängt am Netz. Deshalb die drei
+    Kopien von `qc-basic.qtpl` **am selben Tag wie die App** veröffentlichen, nicht vorher und
+    nicht Tage danach.
 
 ## Kritische Dateien
 

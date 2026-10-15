@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ArrowDown, ArrowUp, ArrowUpDown, Blocks, ChevronRight, Languages, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, DetailLayout, Field, FoldBox, IconButton, InfoNote, PanelSection, SelectableRow, TextInput, Toggle, focusRowAt } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, Field, IconButton, InfoNote, PanelSection, SelectableRow, TextInput, Toggle, focusRowAt } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
-import { enumLabel, fieldText, type FormLanguage } from '../../components/PluginOptionsForm/text'
+import { enumLabel, fieldText, isPlainObject, type FormLanguage } from '../../components/PluginOptionsForm/text'
 import SitePreview from '../../components/SitePreview'
 import { entrySelector } from '../../data/componentSelectors'
 import { announce } from '../../state/announcer'
@@ -21,7 +21,7 @@ import {
   LANGUAGE_KEYS,
   MULTILANGUAGE_PLUGIN,
   MULTILANGUAGE_READ_AGAINST,
-  SECTIONS,
+  UNKNOWN_GROUP,
   codeProblem,
   defaultLanguageOf,
   isPublished,
@@ -32,11 +32,12 @@ import {
   publishedOf,
   removeLanguage,
   renameLanguage,
-  sectionPick,
+  settingsGroups,
+  soleObject,
   withLanguages,
   withPublished,
   type LanguageEntry,
-  type SectionId
+  type SettingsGroup
 } from './multilanguageOptions'
 import { ReadAgainstNote } from './ReadAgainstNote'
 import { SavesImmediately } from './SavesImmediately'
@@ -173,9 +174,11 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
   const list = (v: unknown, labels: string): string =>
     Array.isArray(v) && v.length ? v.map((x) => t(`multilanguageEditor.${labels}.${String(x)}`, String(x))).join(', ') : t('multilanguageEditor.none')
 
-  // One line per section, in the words of its rows - what the section is set to, not what it is.
-  const summary = (id: SectionId): string => {
-    switch (id) {
+  // One line per group, in the words of its rows - what it is set to, not what it is. Built per
+  // key, so a group the plugin rearranges still says what the app knows about its keys; a key it
+  // knows nothing about adds nothing.
+  const summaryPart = (key: string): string | null => {
+    switch (key) {
       case 'detection':
         return `${t('multilanguageEditor.summaryDetection')}: ${list(valueOf('detection'), 'detectionValues')}`
       case 'switcher': {
@@ -190,32 +193,33 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
       }
       case 'seo':
         return `hreflang ${onOff(sub('seo', 'hreflang'))} · og:locale ${onOff(sub('seo', 'ogLocale'))}`
-      case 'redirects': {
+      case 'rootRedirect': {
         const root = valueOf('rootRedirect')
-        return [
-          `${t('multilanguageEditor.summaryRoot')}: ${typeof root === 'string' ? enumLabel(field('rootRedirect'), root, lang) : '—'}`,
-          valueOf('rememberChoice') === true ? t('multilanguageEditor.summaryRemember') : null
-        ]
-          .filter(Boolean)
-          .join(' · ')
+        return `${t('multilanguageEditor.summaryRoot')}: ${typeof root === 'string' ? enumLabel(field('rootRedirect'), root, lang) : '—'}`
       }
-      case 'notices':
-      case 'linksDates': {
-        const keys: readonly string[] = SECTIONS.find((s) => s.id === id)!.keys
-        const on = keys.filter((k) => valueOf(k) === true).map((k) => t(`multilanguageEditor.short.${k}`))
-        return on.length ? on.join(', ') : t('multilanguageEditor.allOff')
-      }
+      case 'rememberChoice':
+        return valueOf('rememberChoice') === true ? t('multilanguageEditor.summaryRemember') : null
       default:
-        return ''
+        return null
     }
   }
+  const summary = (group: SettingsGroup): string => {
+    if (group.id === UNKNOWN_GROUP) return group.keys.join(', ')
+    const parts = group.keys.map(summaryPart).filter((x): x is string => !!x)
+    const switches = group.keys.filter((k) => SWITCHES.includes(k))
+    if (switches.length) {
+      const on = switches.filter((k) => valueOf(k) === true).map((k) => t(`multilanguageEditor.short.${k}`))
+      parts.push(on.length ? on.join(', ') : t('multilanguageEditor.allOff'))
+    }
+    return parts.join(' · ')
+  }
 
-  const otherPick = sectionPick('other')
-  const hasOther = (schema?.fields ?? []).some((f) => otherPick(f.key)) || Object.keys(options).some(otherPick)
-  const sectionIds: SectionId[] = [...SECTIONS.map((s) => s.id), ...(hasOther ? (['other'] as const) : [])]
+  const groups = settingsGroups(schema, options, lang)
+  const groupTitle = (g: SettingsGroup): string =>
+    g.title || (g.id === UNKNOWN_GROUP ? t('pluginOptions.moreKeys') : t('multilanguageEditor.otherGroup'))
 
   const selectedLang = selected?.startsWith('lang:') ? (languages.find((l) => l.code === selected.slice(5)) ?? null) : null
-  const selectedSection = selected?.startsWith('section:') ? (sectionIds.find((id) => id === selected.slice(8)) ?? null) : null
+  const selectedSection = selected?.startsWith('section:') ? (groups.find((g) => g.id === selected.slice(8)) ?? null) : null
 
   function addLanguage(code: string): void {
     const c = normalizeCode(code)
@@ -315,11 +319,12 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
           />
         ) : selectedSection ? (
           <SectionPanel
-            key={selectedSection}
-            id={selectedSection}
+            key={selectedSection.id}
+            group={selectedSection}
+            title={groupTitle(selectedSection)}
             values={options}
             schema={schema}
-            schemaState={schemaQuery.loading ? 'loading' : schemaQuery.error ? schemaQuery.error : null}
+            lang={lang}
             saved={savedFlash}
             languages={languageCodes}
             placement={getLayout(entry.plugin)}
@@ -420,23 +425,29 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
 
       <Card className="flex flex-col gap-3">
         <CardHeading icon={SlidersHorizontal}>{t('multilanguageEditor.sectionsTitle')}</CardHeading>
-        <ul className="flex flex-col gap-1.5">
-          {sectionIds.map((id) => {
-            const key = `section:${id}`
-            const isSelected = selected === key
-            const line = summary(id)
-            return (
-              <SelectableRow
-                key={id}
-                selected={isSelected}
-                onSelect={() => setSelected(key)}
-                title={t(`multilanguageEditor.sections.${id}.title`)}
-                subtitle={line || undefined}
-                trailing={<ChevronRight size={14} aria-hidden className="shrink-0 text-text-muted" />}
-              />
-            )
-          })}
-        </ul>
+        {/* The rows are the plugin's own groups, so they wait for its schema. */}
+        {schemaQuery.loading ? (
+          <p className="text-micro text-text-muted">{t('layoutEditor.inspector.optionsLoading')}</p>
+        ) : schemaQuery.error ? (
+          <p className="text-micro text-red-600 dark:text-red-400">{t('layoutEditor.inspector.optionsError', { reason: schemaQuery.error })}</p>
+        ) : (
+          <ul className="flex flex-col gap-1.5">
+            {groups.map((g) => {
+              const key = `section:${g.id}`
+              const line = summary(g)
+              return (
+                <SelectableRow
+                  key={g.id}
+                  selected={selected === key}
+                  onSelect={() => setSelected(key)}
+                  title={groupTitle(g)}
+                  subtitle={line || undefined}
+                  trailing={<ChevronRight size={14} aria-hidden className="shrink-0 text-text-muted" />}
+                />
+              )
+            })}
+          </ul>
+        )}
       </Card>
 
       {/* One component for the whole plugin, so whatever is selected on the left, the switcher is
@@ -450,7 +461,8 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
           entry && selected !== null
             ? (() => {
                 const found = entrySelector(entry.plugin, [entry.plugin])
-                return found && { ...found, name: t('multilanguageEditor.sections.switcher.title') }
+                const switcher = groups.find((g) => g.keys.includes('switcher'))
+                return found && { ...found, name: switcher ? groupTitle(switcher) : entry.plugin.name }
               })()
             : null
         }
@@ -527,7 +539,7 @@ function AddLanguageForm({
         }
       }}
     >
-      <Field label={t('multilanguageEditor.code')} hint={t('multilanguageEditor.addHint')}>
+      <Field label="code" configKey hint={t('multilanguageEditor.addHint')}>
         <TextInput data-autofocus autoFocus value={code} onChange={(e) => setCode(e.target.value)} placeholder="fr" aria-invalid={tried && !!problem} />
       </Field>
       {tried && problem && <p className="text-micro text-red-600 dark:text-red-400">{t(`multilanguageEditor.codeProblem.${problem}`)}</p>}
@@ -541,9 +553,13 @@ function AddLanguageForm({
   )
 }
 
-// The fields of one language, in the order the plugin's schema gives them; `home` and `flag` are
-// advanced there and fold away here.
+// The fields of one language, in the order the plugin's schema gives them, named by their keys as
+// everywhere else; `home` and `flag` are advanced there and stand under "rarely used" here, as in
+// the options form.
 const LANGUAGE_FIELDS = ['label', 'native', 'locale'] as const
+
+// The switches a group summary names when they are on (multilanguageEditor.short).
+const SWITCHES = ['missingTranslationNotice', 'availableTranslationNotice', 'rewriteCrossLanguageLinks', 'localizeDates']
 const LANGUAGE_ADVANCED = ['home', 'flag'] as const
 
 function LanguagePanel({
@@ -581,7 +597,6 @@ function LanguagePanel({
 }): JSX.Element {
   const { t } = useTranslation()
   const [codeDraft, setCodeDraft] = useState<string | null>(null)
-  const [advancedOpen, setAdvancedOpen] = useStickyState('multilanguage.advancedOpen', false)
   const problem = codeDraft === null ? null : codeProblem(codeDraft, languages, language.code)
 
   // The schema's own words for each field of a language: the object variant of `languages`' items.
@@ -604,7 +619,7 @@ function LanguagePanel({
     onChange(next)
   }
   const textField = (key: string): JSX.Element => (
-    <Field key={key} label={t(`multilanguageEditor.fields.${key}`)} hint={hintOf(key)}>
+    <Field key={key} label={key} configKey hint={hintOf(key)}>
       <DraftInput value={typeof language[key] === 'string' ? (language[key] as string) : ''} onCommit={(v) => setKey(key, v)} />
     </Field>
   )
@@ -621,7 +636,7 @@ function LanguagePanel({
         </div>
       </div>
 
-      <Field label={t('multilanguageEditor.code')} hint={t('multilanguageEditor.codeHint')}>
+      <Field label="code" configKey hint={t('multilanguageEditor.codeHint')}>
         <DraftInput
           value={language.code}
           aria-invalid={!!problem}
@@ -672,29 +687,31 @@ function LanguagePanel({
         </div>
       </PanelSection>
 
-      <FoldBox title={t('multilanguageEditor.advanced')} open={advancedOpen} onToggle={() => setAdvancedOpen(!advancedOpen)}>
+      <div className="flex flex-col gap-3">
+        <p className="text-micro font-semibold uppercase tracking-wide text-text-muted">{t('pluginOptions.rarelyUsed')}</p>
         {LANGUAGE_ADVANCED.map(textField)}
-      </FoldBox>
+      </div>
     </Card>
   )
 }
 
 function SectionPanel({
-  id,
+  group,
+  title,
   values,
   schema,
-  schemaState,
+  lang,
   saved,
   languages,
   placement,
   onOptions,
   onOpenOnStage
 }: {
-  id: SectionId
+  group: SettingsGroup
+  title: string
   values: Options
   schema: NormalizedOptionSchema | null
-  /** 'loading', an error text, or null once the schema is there. */
-  schemaState: string | null
+  lang: FormLanguage
   saved: boolean
   languages: string[]
   placement: ReturnType<typeof getLayout>
@@ -703,19 +720,30 @@ function SectionPanel({
 }): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
-  const pick = useCallback((key: string) => sectionPick(id)(key) && !LANGUAGE_KEYS.includes(key), [id])
+  const pick = useCallback((key: string) => group.keys.includes(key), [group])
+  // A group that is one object (`switcher`, `seo`) shows what is inside it: the heading already
+  // names it, and the wrapper row said the same a second time, its explanation a third.
+  const sole = soleObject(schema, group)
+  const soleKey = sole?.key
+  const soleSchema = useMemo<NormalizedOptionSchema | null>(
+    () => (sole && schema && sole.node.kind === 'object' ? { source: schema.source, fields: sole.node.fields, notes: [] } : null),
+    [sole, schema]
+  )
+  const soleValues = soleKey && isPlainObject(values[soleKey]) ? (values[soleKey] as Options) : {}
+  const description = sole ? fieldText(sole, lang).description : undefined
+  const flat = useMemo(() => ({ flat: true, ...(soleKey ? { keyPrefix: `${soleKey}.` } : {}) }), [soleKey])
 
   return (
     <Card className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <CardHeading icon={SlidersHorizontal}>{t(`multilanguageEditor.sections.${id}.title`)}</CardHeading>
-        <p className="text-micro text-text-secondary">{t(`multilanguageEditor.sections.${id}.text`)}</p>
+        <CardHeading icon={SlidersHorizontal}>{title}</CardHeading>
+        {description && <p className="text-micro text-text-secondary">{description}</p>}
         <div className="flex flex-wrap items-center gap-2">
           <SavesImmediately saved={saved} />
         </div>
       </div>
 
-      {id === 'switcher' && (
+      {group.keys.includes('switcher') && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-micro text-text-secondary">
             {placement ? t('multilanguageEditor.switcherAt', { position: t(`positions.${placement.position}`, placement.position) }) : t('multilanguageEditor.switcherNotPlaced')}
@@ -726,10 +754,22 @@ function SectionPanel({
         </div>
       )}
 
-      {schemaState === 'loading' ? (
-        <p className="text-micro text-text-muted">{t('layoutEditor.inspector.optionsLoading')}</p>
-      ) : schemaState ? (
-        <p className="text-micro text-red-600 dark:text-red-400">{t('layoutEditor.inspector.optionsError', { reason: schemaState })}</p>
+      {soleKey && soleSchema ? (
+        <PluginOptionsForm
+          schema={soleSchema}
+          values={soleValues}
+          onChange={(next) => {
+            const rest = { ...values }
+            if (next) rest[soleKey] = next
+            else delete rest[soleKey]
+            onOptions(Object.keys(rest).length ? rest : undefined)
+          }}
+          explicitEmpty
+          languages={languages}
+          projectPath={project.path}
+          freeKeys={false}
+          root={flat}
+        />
       ) : (
         <PluginOptionsForm
           schema={schema}
@@ -739,7 +779,8 @@ function SectionPanel({
           languages={languages}
           projectPath={project.path}
           pick={pick}
-          freeKeys={id === 'other'}
+          freeKeys={group.id === '' || group.id === UNKNOWN_GROUP}
+          root={flat}
         />
       )}
     </Card>

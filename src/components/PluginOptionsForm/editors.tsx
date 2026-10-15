@@ -65,6 +65,13 @@ export interface RootExtras {
    *  own values and the options it is laid over. Without it `file` stood active in an entry whose
    *  text silences it. */
   entryReason?: (key: string, entry: Record<string, unknown>, above: Record<string, unknown>) => string | null
+  /** The groups as plain sections, without a fold: for a caller that shows one group at a time
+   *  under its own heading (the settings of the multilanguage editor). A fold there was the same
+   *  name a second time, and the only thing in the panel could be folded away. */
+  flat?: boolean
+  /** Put before every key on the top level: the form shows the inside of one object option
+   *  (`switcher`), and the key stands as it does in quartz.config.yaml's terms, `switcher.style`. */
+  keyPrefix?: string
 }
 
 export function ObjectBlock({
@@ -101,7 +108,7 @@ export function ObjectBlock({
   const inactiveReason = (f: OptionField): string | null =>
     root?.inactiveReason?.(f.key) ??
     (inherit ? ctx.entryReason?.(f.key, values, inherit.values) : null) ??
-    (evaluateCondition(f.when, conditionValues, conditionFields) ? null : conditionText(f, conditionFields, ctx.lang, t))
+    (evaluateCondition(f.when, conditionValues, conditionFields) ? null : conditionText(f, conditionFields, ctx.lang, t, inherit ? '' : (root?.keyPrefix ?? '')))
 
   // While searching, a field stays when it or something inside it matches - and one that matched
   // by its own words hands its children an empty search, so they are all there under it.
@@ -138,6 +145,7 @@ export function ObjectBlock({
       inherit={{ values: conditionValues, fields: conditionFields }}
       inherited={fallbackOf(f)}
       inactive={inactiveReason(f) ?? undefined}
+      keyLabel={root?.keyPrefix ? root.keyPrefix + f.key : undefined}
     />
   )
   // A group's rarely needed fields stay in it, after the others: one basket for all of them was a
@@ -172,7 +180,7 @@ export function ObjectBlock({
         </GroupSection>
       )}
       {groupsOf(rest, ctx.lang).map(([group, list], i) =>
-        group ? (
+        group && !root?.flat ? (
           // Folded unless it is the first group or holds a value someone set: navigations has 46
           // options in seven groups, and all of them open is the list this form was meant to end.
           // Under a lead every group starts folded: the lead is what the tiles above it switch,
@@ -188,7 +196,7 @@ export function ObjectBlock({
             {rows(list)}
           </GroupSection>
         ) : (
-          <section key="" className={`flex flex-col gap-3.5 ${DIVIDED_ROWS}`}>
+          <section key={group ?? ''} className={`flex flex-col gap-3.5 ${DIVIDED_ROWS}`}>
             {rows(list)}
           </section>
         )
@@ -196,7 +204,10 @@ export function ObjectBlock({
       {(unknown.length > 0 || (extra && !searching)) && (
         <section className="flex flex-col gap-2.5 border-t border-dashed border-ink/10 pt-2.5 dark:border-ink/10">
           {/* Over the free row alone it is not "unknown keys" - there are none yet. */}
-          <h4 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{unknown.length > 0 ? t('pluginOptions.moreKeys') : t('pluginOptions.freeKey')}</h4>
+          {/* A flat form of nothing but unknown keys stands under a heading that says so already. */}
+          {!(root?.flat && described.length === 0) && (
+            <h4 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{unknown.length > 0 ? t('pluginOptions.moreKeys') : t('pluginOptions.freeKey')}</h4>
+          )}
           {unknown.length > 0 && <p className="text-micro text-text-muted">{t('pluginOptions.moreKeysHint')}</p>}
           {unknown.map(row)}
           {!searching && extra}
@@ -209,10 +220,10 @@ export function ObjectBlock({
 /** "Only applies when "Sort" is set to Date." - a field's `when`, in the words of the form. A
  *  switch is "is on", not "= true": layout-box's `collapsed` said "collapsible = true" on every box
  *  that does not fold. A field without a title, or a path to a nested one, is named by its key. */
-function conditionText(field: OptionField, siblings: readonly OptionField[], lang: FormLanguage, t: TFunction): string {
+function conditionText(field: OptionField, siblings: readonly OptionField[], lang: FormLanguage, t: TFunction, keyPrefix = ''): string {
   const parts = Object.entries(field.when ?? {}).map(([path, allowed]) => {
     const head = siblings.find((f) => f.key === path)
-    const name = (head && fieldText(head, lang).title) ?? path
+    const name = (head && fieldText(head, lang).title) ?? keyPrefix + path
     const list = Array.isArray(allowed) ? allowed : [allowed]
     if (list.length === 1 && typeof list[0] === 'boolean') return t(list[0] ? 'pluginOptions.conditionOn' : 'pluginOptions.conditionOff', { name })
     return t('pluginOptions.conditionPart', { name, values: list.map((v) => enumLabel(head, v, lang)).join(t('pluginOptions.conditionOr')) })
@@ -306,7 +317,8 @@ function FieldRow({
   ctx,
   inherit,
   inherited,
-  inactive
+  inactive,
+  keyLabel
 }: {
   field: OptionField
   value: unknown
@@ -319,9 +331,12 @@ function FieldRow({
    *  muted, the control stays readable and usable, the reason stands under it (CLAUDE.md, a field
    *  whose value does not apply is not disabled). */
   inactive?: string
+  /** The key as shown, where it is not the field's own (RootExtras.keyPrefix). */
+  keyLabel?: string
 }): JSX.Element {
   const { t } = useTranslation()
   const id = useId()
+  const shownKey = keyLabel ?? field.key
   const text = fieldText(field, ctx.lang)
   const isSet = value !== undefined
   const block = BLOCK_KINDS.has(field.node.kind)
@@ -341,7 +356,7 @@ function FieldRow({
         </span>
       )}
       <span className={`break-all font-mono ${text.title || dim ? 'text-micro text-text-muted' : 'text-xs font-medium text-text-secondary'}`}>
-        <Marked text={field.key} query={ctx.mark} />
+        <Marked text={shownKey} query={ctx.mark} />
       </span>
       {isSet && <span className="text-micro font-medium text-accent-text">{t('pluginOptions.changed')}</span>}
       {/* The reason is part of the control's name: under it, it was only grey and italic, and a
@@ -357,10 +372,10 @@ function FieldRow({
       tone="neutral"
       title={
         inherited
-          ? t('pluginOptions.resetInheritNamed', { name: field.key })
+          ? t('pluginOptions.resetInheritNamed', { name: shownKey })
           : field.hasDefault
-            ? t('pluginOptions.resetNamed', { name: field.key })
-            : t('pluginOptions.removeNamed', { name: field.key })
+            ? t('pluginOptions.resetNamed', { name: shownKey })
+            : t('pluginOptions.removeNamed', { name: shownKey })
       }
       onClick={() => onValue(undefined)}
     />

@@ -1,5 +1,6 @@
 import { quartzPluginName } from '@shared/quartzPluginName'
-import type { PluginEntry, QuartzConfig } from '@shared/ipc-contract'
+import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
+import { fieldText, type FormLanguage } from '../../components/PluginOptionsForm/text'
 
 // What the Mehrsprachigkeit editor needs to know about quartz-multilanguage 0.2.0, read from its
 // options.ts rather than its README: a language is a string (its code) or an object with `code`;
@@ -181,26 +182,51 @@ export function codeProblem(code: string, languages: LanguageEntry[], own?: stri
   return null
 }
 
-// The settings below the languages, by the plugin's own groups (`x-quartz-group`). Keys a later
-// version adds and no section names land in `other`, so nothing is out of reach.
-export const SECTIONS = [
-  { id: 'detection', keys: ['detection', 'linking', 'frontmatterKeys'] },
-  { id: 'switcher', keys: ['switcher'] },
-  { id: 'seo', keys: ['seo'] },
-  { id: 'redirects', keys: ['rootRedirect', 'rememberChoice', 'fallbackPages'] },
-  { id: 'notices', keys: ['missingTranslationNotice', 'availableTranslationNotice'] },
-  { id: 'linksDates', keys: ['rewriteCrossLanguageLinks', 'localizeDates'] }
-] as const
-
-export type SectionId = (typeof SECTIONS)[number]['id'] | 'other'
-
 /** The keys the language list itself edits. */
 export const LANGUAGE_KEYS = ['languages', 'defaultLanguage', 'publishLanguages']
 
-const KNOWN = new Set<string>([...LANGUAGE_KEYS, ...SECTIONS.flatMap((s) => s.keys)])
+/**
+ * One row of the settings below the languages: a group of the plugin's own schema
+ * (`x-quartz-group`), in the order its fields give. `id` is the group's untranslated name, stable
+ * across the page's languages; '' is the fields without a group, and 'unknown' the keys the
+ * config sets and no schema names. Read from the installed schema rather than kept here: a group
+ * the plugin adds or renames is a row without anyone touching the app.
+ */
+export interface SettingsGroup {
+  id: string
+  /** The group's name in the page's language; '' for the two rows the caller names itself. */
+  title: string
+  keys: string[]
+}
 
-export function sectionPick(id: SectionId): (key: string) => boolean {
-  if (id === 'other') return (key) => !KNOWN.has(key)
-  const keys: readonly string[] = SECTIONS.find((s) => s.id === id)!.keys
-  return (key) => keys.includes(key)
+export const UNKNOWN_GROUP = 'unknown'
+
+export function settingsGroups(schema: NormalizedOptionSchema | null, options: Options, lang: FormLanguage): SettingsGroup[] {
+  const fields = (schema?.fields ?? []).filter((f) => !LANGUAGE_KEYS.includes(f.key))
+  const ordered = fields.some((f) => f.order !== undefined)
+    ? [...fields].sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER))
+    : fields
+  const groups = new Map<string, SettingsGroup>()
+  for (const f of ordered) {
+    const id = f.group ?? ''
+    const group = groups.get(id) ?? { id, title: id ? (fieldText(f, lang).group ?? id) : '', keys: [] }
+    group.keys.push(f.key)
+    groups.set(id, group)
+  }
+  // The group without a name last, as the form puts it.
+  const out = [...groups.values()].sort((a, b) => Number(a.id === '') - Number(b.id === ''))
+  const named = new Set([...LANGUAGE_KEYS, ...fields.map((f) => f.key)])
+  const unknown = Object.keys(options).filter((k) => !named.has(k))
+  if (schema && unknown.length) out.push({ id: UNKNOWN_GROUP, title: '', keys: unknown })
+  return out
+}
+
+/**
+ * The fields of a group that is one object and nothing else (`switcher`, `seo`), so its panel can
+ * show what is inside without the wrapper - the panel's heading already names it. null otherwise.
+ */
+export function soleObject(schema: NormalizedOptionSchema | null, group: SettingsGroup): OptionField | null {
+  if (group.keys.length !== 1 || group.id === UNKNOWN_GROUP) return null
+  const f = schema?.fields.find((x) => x.key === group.keys[0])
+  return f?.node.kind === 'object' ? f : null
 }

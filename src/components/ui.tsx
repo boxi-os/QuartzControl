@@ -147,6 +147,7 @@ export function Field({
   label,
   hint,
   muted,
+  configKey,
   children,
   className = ''
 }: {
@@ -159,12 +160,16 @@ export function Field({
   // dimmed the line explaining the state to 2.88:1; the control itself stays as it is, because it
   // is still editable and still the value that applies once the override is gone.
   muted?: boolean
+  // The label is a key as it stands in quartz.config.yaml, set like the keys of the plugin
+  // options form (PluginOptionsForm/editors.tsx, FieldRow) - for a page that edits some options
+  // with its own fields beside that form.
+  configKey?: boolean
   children: ReactNode
   className?: string
 }): JSX.Element {
   return (
     <label className={`flex flex-col gap-1 text-ui ${className}`}>
-      <span className={`font-medium ${muted ? 'text-text-muted' : 'text-text-secondary'}`}>{label}</span>
+      <span className={`font-medium ${configKey ? 'break-all font-mono text-xs' : ''} ${muted ? 'text-text-muted' : 'text-text-secondary'}`}>{label}</span>
       {children}
       {hint && <span className="text-micro text-text-muted">{hint}</span>}
     </label>

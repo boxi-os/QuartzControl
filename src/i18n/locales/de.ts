@@ -1178,14 +1178,12 @@ export default {
       rewriteCrossLanguageLinks: 'Links umschreiben',
       localizeDates: 'Datum übersetzen'
     },
-    code: 'Code',
     codeHint: 'Ordner und Dateinamen im Inhalt ändert ein neuer Code nicht; Standardsprache und Veröffentlichen ziehen mit.',
     codeProblem: {
       empty: 'Der Code darf nicht leer sein.',
       taken: 'Diese Sprache gibt es schon.',
       form: 'Ein Code enthält keine Leerzeichen und keine Schrägstriche.'
     },
-    fields: { label: 'Anzeigename', native: 'Eigenname', locale: 'Locale', home: 'Startseite', flag: 'Flagge' },
     positionOf: 'Stelle {{n}} von {{count}}',
     isDefault: 'Standardsprache',
     isDefaultHint: 'Gilt für Seiten, die keine Erkennung einer Sprache zuordnet.',
@@ -1195,17 +1193,8 @@ export default {
     publishOnlyHint: 'Die einzige veröffentlichte Sprache bleibt an.',
     order: 'Reihenfolge',
     orderHint: 'In dieser Reihenfolge stehen die Sprachen im Sprachwechsler.',
-    advanced: 'Erweitert',
+    otherGroup: 'Weitere Optionen',
     sectionsTitle: 'Einstellungen',
-    sections: {
-      detection: { title: 'Erkennen und Verknüpfen', text: 'Woran das Plugin die Sprache einer Seite erkennt und wie es Übersetzungen derselben Seite zusammenfindet.' },
-      switcher: { title: 'Sprachwechsler', text: 'Die Komponente, mit der Besucher die Sprache wechseln. Wo sie steht, legst du auf der Layout-Bühne fest.' },
-      seo: { title: 'Adressen (SEO)', text: 'Was Suchmaschinen und Link-Vorschauen über die Sprachen erfahren.' },
-      redirects: { title: 'Weiterleitungen', text: 'Wohin die Startseite und fehlende Übersetzungen führen.' },
-      notices: { title: 'Hinweise', text: 'Hinweise auf einer Seite, wenn es sie in der Sprache des Besuchers gibt oder nicht gibt.' },
-      linksDates: { title: 'Links und Datum', text: 'Links zwischen den Sprachen und Datumsangaben in der Sprache der Seite.' },
-      other: { title: 'Weitere Optionen', text: 'Optionen, die dieser Editor noch nicht einordnet.' }
-    },
     switcherAt: 'Steht im Bereich {{position}}.',
     switcherNotPlaced: 'Steht noch nirgends auf der Seite.',
     previewHint: 'Der Sprachwechsler sitzt dort, wo ihn die Layout-Bühne hinstellt.'

@@ -1173,14 +1173,12 @@ export default {
       rewriteCrossLanguageLinks: 'Rewrite links',
       localizeDates: 'Localize dates'
     },
-    code: 'Code',
     codeHint: 'A new code does not rename folders or files in the content; default language and publishing follow it.',
     codeProblem: {
       empty: 'The code cannot be empty.',
       taken: 'This language exists already.',
       form: 'A code has no spaces and no slashes.'
     },
-    fields: { label: 'Display name', native: 'Native name', locale: 'Locale', home: 'Home page', flag: 'Flag' },
     positionOf: 'Number {{n}} of {{count}}',
     isDefault: 'Default language',
     isDefaultHint: 'Applies to pages that no detection assigns to a language.',
@@ -1190,17 +1188,8 @@ export default {
     publishOnlyHint: 'The only published language stays on.',
     order: 'Order',
     orderHint: 'The language switcher lists the languages in this order.',
-    advanced: 'Advanced',
+    otherGroup: 'More options',
     sectionsTitle: 'Settings',
-    sections: {
-      detection: { title: 'Detection and linking', text: 'How the plugin tells the language of a page and how it finds translations of the same page.' },
-      switcher: { title: 'Language switcher', text: 'The component visitors switch the language with. Where it stands is set on the layout stage.' },
-      seo: { title: 'Addresses (SEO)', text: 'What search engines and link previews learn about the languages.' },
-      redirects: { title: 'Redirects', text: 'Where the home page and missing translations lead.' },
-      notices: { title: 'Notices', text: 'Notices on a page when it does or does not exist in the visitor’s language.' },
-      linksDates: { title: 'Links and dates', text: 'Links between the languages, and dates in the language of the page.' },
-      other: { title: 'More options', text: 'Options this editor does not place yet.' }
-    },
     switcherAt: 'Stands in {{position}}.',
     switcherNotPlaced: 'Is not placed on the page yet.',
     previewHint: 'The language switcher sits where the layout stage puts it.'

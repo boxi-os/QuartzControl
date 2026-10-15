@@ -4,6 +4,8 @@ import CodeMirror, { Transaction } from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
 import { sass } from '@codemirror/lang-sass'
 import { indentationMarkers } from '@replit/codemirror-indentation-markers'
+import { defaultHighlightStyle, HighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { tags } from '@lezer/highlight'
 import type { EditorView } from '@codemirror/view'
 import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, FileCode, FileWarning, Palette, Pencil, Plus, Trash2, X } from 'lucide-react'
 import type { FontFaceInfo, ScssCheckResult, StyleFile, StyleReferenceFile } from '@shared/ipc-contract'
@@ -41,10 +43,18 @@ const MAIN_TAB = ':main'
 const INDENT_MARKERS = indentationMarkers({
   colors: { light: '#dcdfe4', activeLight: '#a3a9b3', dark: '#3a3f4b', activeDark: '#6b7280' },
 })
-const SCSS_EXTENSIONS = [sass(), INDENT_MARKERS]
-const CSS_EXTENSIONS = [css(), INDENT_MARKERS]
-function languageFor(file: string) {
-  return file.toLowerCase().endsWith('.css') ? CSS_EXTENSIONS : SCSS_EXTENSIONS
+// The light theme's comment colour (#940) stood out more than the code around it (user request);
+// the light scheme gets CodeMirror's default style with a grey comment instead. The dark theme
+// already greys its comments and keeps its own style.
+const LIGHT_HIGHLIGHT = syntaxHighlighting(
+  HighlightStyle.define(defaultHighlightStyle.specs.map((spec) => (spec.tag === tags.comment ? { ...spec, color: '#8b929c' } : spec))),
+)
+const EXTENSIONS = {
+  scss: { light: [sass(), INDENT_MARKERS, LIGHT_HIGHLIGHT], dark: [sass(), INDENT_MARKERS] },
+  css: { light: [css(), INDENT_MARKERS, LIGHT_HIGHLIGHT], dark: [css(), INDENT_MARKERS] },
+}
+function languageFor(file: string, scheme: 'light' | 'dark') {
+  return EXTENSIONS[file.toLowerCase().endsWith('.css') ? 'css' : 'scss'][scheme]
 }
 
 const SUMMARY_COLORS = ['light', 'lightgray', 'gray', 'darkgray', 'dark', 'secondary', 'tertiary', 'highlight', 'textHighlight']
@@ -452,7 +462,7 @@ export default function CustomCss(): JSX.Element {
               value={contentOf(activeTab)}
               height="65vh"
               theme={scheme}
-              extensions={languageFor(activeTab)}
+              extensions={languageFor(activeTab, scheme)}
               onChange={setContent}
               onCreateEditor={(view) => {
                 viewRef.current = view
@@ -498,7 +508,7 @@ export default function CustomCss(): JSX.Element {
                       {t('styleEditor.openExternally')}
                     </button>
                   </div>
-                  <CodeMirror value={ref.content} height="200px" theme={scheme} extensions={languageFor(ref.path)} editable={false} />
+                  <CodeMirror value={ref.content} height="200px" theme={scheme} extensions={languageFor(ref.path, scheme)} editable={false} />
                 </Card>
               ))}
             </div>

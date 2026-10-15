@@ -157,7 +157,7 @@ Vier Dinge, die dabei zu wissen sind:
   bei ihnen leer. Die Szenen heißen entsprechend `dialog-…` oder `formular-…`, und die Kapitel
   sagen es genauso.
 - **Zwischen zwei Szenen auf derselben Route muss man weg und wieder hin.** Ein Hash, der sich
-  nicht ändert, mountet nichts neu, und das Formular der vorigen Szene verdeckte den Knopf der
+  nicht ändert, mountet nichts neu, und das Formular der vorigen Szene verdeckte den Button der
   nächsten. Beim Frame-Editor reicht das nicht einmal: Er überlebt einen Routenwechsel (sticky per
   Pathname) und wird deshalb ausdrücklich geschlossen.
 - **Das Ziehen wird mit Escape abgebrochen, nicht losgelassen.** Ein Loslassen würde den Bereich

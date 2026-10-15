@@ -883,7 +883,7 @@ function ExternalLink({ url, label }: { url: string; label: string }): JSX.Eleme
   return <LinkButton onClick={() => void window.quartzGui.dialog.openExternal(url)} label={label} />
 }
 
-// Sieht aus wie ein Link und ist ein Knopf - beide Ziele hier verlassen die App, das eine in den
+// Sieht aus wie ein Link und ist ein Button - beide Ziele hier verlassen die App, das eine in den
 // Browser des Systems, das andere in eine Datei, die dort geöffnet wird.
 function LinkButton({ onClick, label }: { onClick: () => void; label: string }): JSX.Element {
   return (

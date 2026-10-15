@@ -178,7 +178,7 @@ sein. P4 migriert Nutzerdateien und soll am längsten auf dem Branch liegen.
   'images/x.png'`. Dateiwahl über bestehendes `dialog.pickFile`.
 - Renderer-Widgets (am Schema-`widget`, nicht am Plugin-Namen): `SnippetFilePicker` (Auswahl aus
   `dir`, Neu, Importieren, Bearbeiten), `SnippetEditor` (CodeMirror, neu `@codemirror/lang-html` und
-  `@codemirror/lang-markdown`, eigener Knopf „Snippet speichern“), „Bild hochladen“ fügt
+  `@codemirror/lang-markdown`, eigener Button „Snippet speichern“), „Bild hochladen“ fügt
   `<img src="{{root}}/static/images/x.png" alt="">` bzw. `![](<{{root}}/static/images/x.png>)` an der
   Cursorposition ein (Layout-Box ersetzt `{{root}}` auch URL-kodiert); Hinweis bei
   `placeholders: false`.
@@ -207,7 +207,7 @@ sein. P4 migriert Nutzerdateien und soll am längsten auf dem Branch liegen.
   Logik nach `pageTypeOverride.ts`. Danach `PageTypeOverrides.tsx` löschen; `?tab=pagetypes` →
   `global`; `scripts/routes.mjs` und Tabelle `HANDBOOK` anpassen.
 - **7.4** `PluginOptionsForm` in der Seitenleiste, schreibt in den Config-Entwurf; Speichern über
-  den Kopfknopf (`dirty` deckt es ab). Snippet-Widgets erscheinen dort automatisch.
+  den Button im Kopf (`dirty` deckt es ab). Snippet-Widgets erscheinen dort automatisch.
 - Messung je Schritt: Maus und Tastatur (Leertaste/Pfeile/Leertaste, Ansagen lesen), Smoke bei 1280
   und 1728 ohne waagerechten Bildlauf, Gegenprobe gegen eine `byPageType`-YAML aus 1.0.2 (Ausschlüsse,
   geleerte Bereiche, unbekanntes Template), neue Screenshot-Szenen.
@@ -227,7 +227,7 @@ berührt sind, `npm run check:option-schema -- <gui-test>` (277/267/10/0).
   und 950 px — bei 850 sind Desktop-only-Komponenten `display: none`, Mobile-only
   `display: contents`.
 - **Auswahl lösen, Zusammenfassung** (`600d886`): Chip → Klick auf leere Bühne → Zusammenfassung;
-  Escape auf Chip, im Textfeld der Leiste und auf einem Knopf der Leiste → Zusammenfassung, Fokus auf
+  Escape auf Chip, im Textfeld der Leiste und auf einem Button der Leiste → Zusammenfassung, Fokus auf
   Chip bzw. Leiste; ein Zeiger-Drag, der über leerer Bühne endet, behält die Auswahl; im
   Frame-Editor dasselbe für Bereiche.
 - **Frames ohne Vorschaltseite, Seitentypen** (`ddb7143`): Reiter öffnet das erste eigene Frame;
@@ -255,11 +255,11 @@ berührt sind, `npm run check:option-schema -- <gui-test>` (277/267/10/0).
   unberührtes ohne Frage, fragt bei einem geänderten. `publish-targets.json` danach `cmp`-gleich.
 - **Zugänge in den Einstellungen** (`7f34418`): die drei Zugänge dieses Rechners (nur lesen, keine
   Screenshots); Leiste 544/448 px, Escape mit geändertem Namen fragt, „+ FTP“ ohne markierte Zeile,
-  Auswahl übersteht den Weg zur Startseite, Schlüsseldatei-Knopf 13 px innerhalb der Leiste.
+  Auswahl übersteht den Weg zur Startseite, Schlüsseldatei-Button 13 px innerhalb der Leiste.
   `connections.json` unberührt (mtime).
 - **Marktplatz** (`c9e52de`): gegen die echte GitHub-API, 47 Zeilen; die READMEs von explorer und
   graph (4/5 Codeblöcke, 12/23 Listenpunkte, kein Tag-Text, kein Überlauf); installierte Plugins
-  ohne Installieren-Knopf. Nichts installiert.
+  ohne Installieren-Button. Nichts installiert.
 - **Variablen** (`ad49cbc`): Zusammenfassung 64/151/67; `--secondary` zeigt fünf Abschnitte, Tippen
   in der Leiste ändert den Wert der Zeile sofort, ein Chip springt mit Fokus auf die Zielzeile,
   Escape leert. `custom.scss` `cmp`-gleich. Nicht neu gemessen: Tastendruck-Kosten bei großem Theme.
@@ -388,12 +388,12 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   und 1600, Wegwerf-Profil, `cp -Rc`-Kopie von `gui-test`, Menüpunkt über `MenuItem.click()`,
   Dialog im Hauptprozess gespiegelt): vorher landete Cmd+, mit geändertem Seitentitel auf
   Konfiguration in allen drei Antworten ohne Dialog auf den Einstellungen, die Änderung war weg;
-  nachher drei Knöpfe, Abbrechen bleibt, Speichern schreibt den Titel und geht, Verwerfen geht
+  nachher drei Buttons, Abbrechen bleibt, Speichern schreibt den Titel und geht, Verwerfen geht
   ohne zu schreiben. Die Sidebar antwortet nach dem Umzug wie vorher (dieselben drei Fälle).
-  Nicht verändert: „Zurück“ der Einstellungen fragt weiter mit eigenem Zwei-Knopf-Dialog.
+  Nicht verändert: „Zurück“ der Einstellungen fragt weiter mit eigenem Zwei-Button-Dialog.
 - ~~Die Leisten der Plugin-Reiter sagen nur in der `InfoNote` über der Liste, dass sie sofort
   schreiben~~ — behoben (2026-10-09): `SavesImmediately` (`src/routes/Plugins/`) steht im Kopf
-  jeder Leiste neben dem „Gespeichert“ und sagt „Speichert ohne Knopf — ein Schalter sofort, ein
+  jeder Leiste neben dem „Gespeichert“ und sagt „Speichert ohne Button — ein Schalter sofort, ein
   Textfeld beim Verlassen.“ Gemessen an der gebauten App (1280 und 1600, Wegwerf-Profil,
   `cp -Rc`-Kopie von `gui-test`), je erste Zeile von Installiert, Navigationen, Zusätzliche Inhalte,
   Mehrsprachigkeit und dort zusätzlich ein Abschnitt: vorher stand der Satz in 0 von 5 Leisten
@@ -504,7 +504,7 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   längste Erklärzeile 139 Zeichen, breitestes Feld 891 px; mit der Kappung von `ProjectLayout`
   (1800 px) bei 1728 1670 px, 240 Zeichen und ein Feld von 1537 px. Die Seite ist eine Spalte
   Formulare und hat keine zweite, in die die Breite gehen könnte.
-- ~~Eine Variable hat zwei Rücksetz-Knöpfe mit zwei Wörtern für dieselbe Handlung
+- ~~Eine Variable hat zwei Rücksetz-Buttons mit zwei Wörtern für dieselbe Handlung
   (`styles.variables.reset` in der Zeile, `resetToOriginal` im Panel)~~ — behoben (2026-10-09):
   Die Zeile trägt das Symbol der Plugin-Optionen (`RotateCcw`) mit dem Titel „--name auf
   Originalwert zurücksetzen“, die Leiste behält das Wort, das auch das Handbuch nennt (Kapitel 4.4).

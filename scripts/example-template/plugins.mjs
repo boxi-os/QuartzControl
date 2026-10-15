@@ -603,7 +603,7 @@ export const MULTILANGUAGE_ENTRY = {
 // eine der acht anderen einschaltet, bekommt sie fertig, so wie es beim Explorer der Fall ist.
 //
 // **Die Vorlage setzt 0.3.1 voraus, und nichts sorgt dafür.** plugin-navigations.scss hat seit
-// `b785f8a` keine Übergangsregeln mehr für den leeren Pager-Platz und die Knöpfe am Telefon, weil
+// `b785f8a` keine Übergangsregeln mehr für den leeren Pager-Platz und die Buttons am Telefon, weil
 // das Plugin beides seit 0.3.1 selbst tut. Wer das Plugin nicht hat, bekommt beim Import `main`;
 // wer es schon hat, behält seine Fassung (parts.ts installiert eine github:-Quelle nur, wenn
 // `.quartz/plugins/<name>` fehlt). So stand das Navigations-Handbuch bis zum 35. Review auf 0.3.0
@@ -720,7 +720,7 @@ export const NAVIGATION_ENTRIES = [
     // Platz, an dem ein Leser „Zurück/Weiter" sucht: Artikel, die zwei Kästen, „Weiterlesen",
     // Eigenschaften, und dann der Weg zur nächsten Seite.
     //
-    // `mobile` bleibt auf der Vorgabe `same`: Zwei Knöpfe nebeneinander sind auf einem Telefon
+    // `mobile` bleibt auf der Vorgabe `same`: Zwei Buttons nebeneinander sind auf einem Telefon
     // dasselbe wie auf einem Bildschirm, nur untereinander — das tut das Plugin seit 0.3.1 selbst
     // (navigations.scss, der `@media`-Block am Ende des Pager-Abschnitts).
     source: NAVIGATIONS_SOURCE,

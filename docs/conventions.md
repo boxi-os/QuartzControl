@@ -127,7 +127,7 @@ Projektwurzel.
   gemessen hat und die jetzt dazugehören: **Die zwei Dateien werden nicht weggeworfen, sondern an
   git gegeben** (`git stash push -m 'QuartzControl: core update'`), weil ein Merge aus mehr Gründen
   hängen bleibt als wegen ihrer — bei einem halb fertigen Merge bleibt der Stash stehen und
-  `abortCoreMerge` poppt ihn nach `merge --abort`. **Ob der Knopf ihn tragen wird, wird nach gits
+  `abortCoreMerge` poppt ihn nach `merge --abort`. **Ob der Button ihn tragen wird, wird nach gits
   Regel gefragt, nicht nach einer Vereinfachung davon**: `reset --merge` behält die *ungestagete*
   Hälfte einer Änderung und wirft die gestagete weg, und wo der Merge um denselben Pfad geht,
   verweigert es den Abbruch ganz — drei Ausgänge, drei Sätze. **Und die Notiz trägt nicht nur den
@@ -157,7 +157,7 @@ Projektwurzel.
   mit dem Bereich der Notiz nicht, wer geschrieben hat — gemessen war vorher nur an einer
   Attrappe, die wörtlich schrieb (siebenundzwanzigstes Review, Befund 1). Und die Nadel des
   `-G` steht in Anführungszeichen, weil ein blanker Name jede Zeile trifft, die ihn *enthält*. Und ein vierter Satz für den Eintrag, der
-  auf HEAD passt, während gar kein Merge offen ist: Dann gibt es keinen Knopf, aber auch keinen
+  auf HEAD passt, während gar kein Merge offen ist: Dann gibt es keinen Button, aber auch keinen
   „Stand, den es nicht mehr gibt“ — `git stash pop` trägt ihn ein (alles zwanzigstes Review). **Der Plan
   fragt die Merge-Basis, die Türen öffnen sich gegen HEAD**, also gibt es einen zweiten Vergleich (`localPackageChanges(head, ours,
   head)`) für das, was der Reset wegnimmt, und `stillMissing()` für das, was die gemergte Datei
@@ -219,7 +219,7 @@ Projektwurzel.
   den zwei Wegen in der Meldung; „Starten“ dagegen **wartet** auf den laufenden Build, weil nur
   diese Richtung warten kann, ohne dass jemand ein zweites Mal klickt — und sagt in der Konsole,
   worauf. **Das Warten hat dafür einen Eintrag** (`pendingStarts`, Status `starting`): Ein Fenster,
-  in dem der Status „stopped“ heißt und der Knopf „Starten“ dasteht, ist genau das, worauf ein
+  in dem der Status „stopped“ heißt und der Button „Starten“ dasteht, ist genau das, worauf ein
   zweites Mal geklickt wird — und ohne den Eintrag war dieses Fenster die Dauer des Builds statt
   der 38 ms von `refreshAuthoredFrames`, die es vor der Sperre war. Wer während des Wartens stoppt,
   bricht das Warten ab; es gibt nichts zu signalisieren, und beide Seiten bieten dafür bei
@@ -341,13 +341,13 @@ Projektwurzel.
   gemessen, vorher zwei falsch).
 - **Ein Satz über einen Zustand steht nicht in dem Kasten, den dieser Zustand mit sich nimmt.** Der
   Abbruch-Satz auf Git-Sync hing im Merge-Band; ein geglückter Abbruch räumt das Band ab, und genau
-  die Hälfte der Antworten, für die es den Knopf gibt, wird *nach* dem Abbruch gesagt — die
+  die Hälfte der Antworten, für die es den Button gibt, wird *nach* dem Abbruch gesagt — die
   verworfene vorgemerkte Datei, der gescheiterte Stash-Pop. Zu sehen war der Satz für die Dauer
   eines Status-Reads (fünfundzwanzigstes Review, an der gebauten App gemessen).
 - **Eine Bedingung fragt das, was sie anzeigt.** Die Zeile „n Commits fehlen“ hing am Zustand
   `behind`; seit `pending` gegen alle drei anderen Antworten gewinnt, fiel die Zahl genau dann weg,
   wenn ein Projekt halb aktualisiert *und* zugleich hinterher war — also dort, wo zwei verschiedene
-  Hashes nebeneinander stehen und der Knopf zwei Dinge tut (vierundzwanzigstes Review).
+  Hashes nebeneinander stehen und der Button zwei Dinge tut (vierundzwanzigstes Review).
 - **Was im Renderer lebt, stirbt mit dem Fenster - unter macOS aber nicht die App.** Ein
   geschlossenes Fenster beendet weder die App noch die Dev-Server; alles, was danach noch stimmen
   soll, gehört in den Hauptprozess. Für die Log-Zeilen ist das `services/logBuffer.ts`, gelesen über
@@ -395,7 +395,7 @@ Projektwurzel.
   `SELECTING` stehen Bedienelemente, keine Rollen überhaupt. Nach Auswahl, Lösen und Entfernen
   steht der Fokus auf der Zeile, ihrer Nachbarin (`focusRowAt`, nach einem `flushSync` des
   Entfernens) oder der Leiste, nie auf `<body>` — dort erreicht Escape nichts mehr. Eine Leiste
-  sagt, ob sie sofort schreibt oder einen Speichern-Knopf hat — in der Leiste selbst, nicht nur in
+  sagt, ob sie sofort schreibt oder einen Speichern-Button hat — in der Leiste selbst, nicht nur in
   der `InfoNote` über der Liste; die Plugin-Reiter tun das seit 2026-10-09 über
   `SavesImmediately` neben ihrem „Gespeichert“. Elf Stellen tragen das Muster (die
   zwei Layout-Boards und neun Seiten mit Liste), und jede Abweichung, die das einundvierzigste Review fand, war eine Frage, die eine Seite nicht
@@ -405,7 +405,7 @@ Projektwurzel.
   Verlassen-Dialog lesen dasselbe Flag; ein Save, der weniger schreibt, macht aus der dritten Tür
   einen Datenverlust - „Speichern" gesagt, `true` zurückgemeldet, navigiert, und die Entwürfe der
   übrigen Reiter sterben mit der Route (*Eigenes CSS*, elftes Review). Wer eine Teilmenge speichern
-  will, braucht einen eigenen Knopf, der seine Reichweite im Namen trägt - und der muss dann auch
+  will, braucht einen eigenen Button, der seine Reichweite im Namen trägt - und der muss dann auch
   dastehen.
 - **Ein Rückruf, den ein Effekt bei jedem Render neu setzt, ist nicht der Stand, den der Aufrufer
   meint.** Wer ihn nach einem `await` ruft, ruft die Fassung eines *späteren* Renders, und deren
@@ -496,20 +496,20 @@ Projektwurzel.
   tragen ihn seit U3 ebenfalls.
   Und er ist seine eigene Flex-Zeile (`inline-flex items-center justify-center gap-1.5`): Ein Icon
   kommt direkt neben das Wort, ohne `<span>` und ohne Klassen am Aufrufer. Vorher löste jeder der
-  14 Icon-Knöpfe Tailwinds `svg { display: block }` selbst, in zwei Formen (vier mit
-  `inline-flex` am Knopf, zehn mit `<span>`), und die standen mit 31,5 und 32,8–33,3 px
+  14 Icon-Buttons Tailwinds `svg { display: block }` selbst, in zwei Formen (vier mit
+  `inline-flex` am Button, zehn mit `<span>`), und die standen mit 31,5 und 32,8–33,3 px
   nebeneinander (fünfundzwanzigstes Review; gezählt im sechsundzwanzigsten, Befund 8).
 - **Einen Eintrag aus einer Liste nehmen ist ein Mülleimer.** `IconButton` (`ui.tsx`) mit
   `Trash2`, neben dem Eintrag, und sein `title` nennt ihn (`common.deleteNamed` /
-  `common.removeNamed`) — in einer Liste hießen sonst zehn Knöpfe gleich. Bis zum 2026-09-24 war
-  dieselbe Handlung je nach Seite ein roter gefüllter Knopf (eigene Frames, Snapshots, verschobene
-  Ordner), ein unterstrichenes Wort (Theme-Presets, CSS-Dateien, Gruppen, Ziele), ein grauer Knopf
+  `common.removeNamed`) — in einer Liste hießen sonst zehn Buttons gleich. Bis zum 2026-09-24 war
+  dieselbe Handlung je nach Seite ein roter gefüllter Button (eigene Frames, Snapshots, verschobene
+  Ordner), ein unterstrichenes Wort (Theme-Presets, CSS-Dateien, Gruppen, Ziele), ein grauer Button
   (Zugänge, ungenutzte Schriften) oder ein selbstgebauter Mülleimer (Startseite). Gefragt wird
   weiter über `confirmDialog()`, wo die Handlung nicht über „Speichern“ läuft; das Preset löschte
   vorher ohne Frage. **Eine Aktion in einem Formular oder Panel behält ihr Wort** („Bereich
   löschen“, „Duplikat entfernen“, „Bild entfernen“, „Frame löschen“ unter dem Editor): Dort steht
   sie zwischen anderen Wörtern, und ein Symbol wäre das eine, was man entziffern muss.
-- **`SegmentedControl` ist eine Radiogruppe, keine Knopfreihe.** `role="radiogroup"` mit
+- **`SegmentedControl` ist eine Radiogruppe, keine Button-Reihe.** `role="radiogroup"` mit
   `role="radio"`-Segmenten, `aria-checked`, Roving-Tabindex (die Gruppe ist ein Tabstopp), Pfeile
   links/rechts/hoch/runter wandern durch die Optionen und *ändern dabei die Auswahl*, mit Umbruch an
   beiden Enden - so wie es die native Radiogruppe in diesem Chromium tut und wie jeder Klick hier
@@ -555,7 +555,7 @@ Projektwurzel.
   auftaucht, gehört in eine Live-Region: der `status`-Platz des `PageHeader` (`role="status"`), eine
   Konsole in `role="log"`. Die Region muss *vor* ihrem Text im Dokument stehen - sie wird also leer
   gerendert, nicht mit dem Inhalt zusammen; im `PageHeader` heißt `status={null}` „leer, aber
-  da“ und eine fehlende Eigenschaft „diese Seite sagt nichts“. Knöpfe und Badges bleiben draußen: die
+  da“ und eine fehlende Eigenschaft „diese Seite sagt nichts“. Buttons und Badges bleiben draußen: die
   ändern sich, weil jemand tippt. Eine `<h1>` pro Seite, jede `<nav>` mit Namen. Messungen in
   [`navigation-and-pages.md`](decisions/navigation-and-pages.md).
 - **Eine Ansage, die schweigt, sagt den Satz von vorhin.** Der Guard, der beim Aufnehmen eines
@@ -596,7 +596,7 @@ Projektwurzel.
 - **Ein deaktiviertes Control muss noch lesbar sein.** Explizite disabled-Farben, keine Opazität:
   Text wird `text-text-muted`, ein Feld sinkt auf `bg-ground`, ein Icon-Button geht von
   `text-text-secondary` auf `text-text-muted`. Gedimmt werden darf nur, was keine eigene Information
-  trägt (der Toggle-Knopf, die native Checkbox). Ein Feld, dessen Wert gerade nicht gilt, ist nicht
+  trägt (der Toggle-Button, die native Checkbox). Ein Feld, dessen Wert gerade nicht gilt, ist nicht
   deaktiviert: `Field muted` setzt nur das Label auf Muted, Control und Hinweis bleiben.
 - **`darkMode: 'media'`, und das ist der App-Schalter.** `nativeTheme.themeSource` flippt
   `prefers-color-scheme` im Renderer mit; `color-scheme: light dark` auf `:root`, explizite Farben
@@ -740,8 +740,10 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   zweite solche Ausnahme wird hier eingetragen, nicht mit dieser begründet (zweiundvierzigstes
   Review, Befund 5). **Festgelegt vom Nutzer:** „Variante“ für die Darstellung einer Navigation (nicht
   „Art“; das Plugin sagt es ebenso), „Box“ für einen Eintrag von quartz-layout-box (nicht
-  „Kasten“), „Smartphone“ in neuen Texten über das kleine Gerät (nicht „Telefon“) — der
-  Breakpoint heißt weiter „Mobil“ (2026-10-15). Deutsch „…“,
+  „Kasten“), „Smartphone“ in neuen Texten über das kleine Gerät (nicht „Telefon“; der
+  Breakpoint heißt weiter „Mobil“) und „Button“ für ein Bedienelement, auf das man klickt (nicht
+  „Knopf“; in App, Handbüchern, Plugin-Schemas und Kommentaren ersetzt, die Review-Protokolle
+  bleiben, wie sie geschrieben wurden) — alle vier am 2026-10-15. Deutsch „…“,
   Englisch “…”, Gedankenstrich als Em-Dash. Jeder Nutzertext steht in `de.ts`/`en.ts`
   (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
   bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben.
@@ -838,7 +840,7 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   nicht, dass das Handbuch drei Prüfzustände aufzählt, während die Updates-Seite vier zeigt und
   genau dieses Kapitel im Kopf verlinkt.
 - **Ein Ausweg, den eine Meldung nennt, wird an der Oberfläche gemessen, nicht am Kanal darunter.**
-  „Behebe den Fehler oben und starte das Update erneut“ stand vier Runden lang über einem Knopf,
+  „Behebe den Fehler oben und starte das Update erneut“ stand vier Runden lang über einem Button,
   den derselbe Lauf deaktiviert hatte — HEAD enthielt den Merge, der Status hieß „Aktuell“. Gesehen
   hat es keine dieser Runden, weil ihre echten Läufe `runCoreUpdate` per `evalfile` riefen und die
   Attrappen keine Seite kennen. Dazu gehört die Gegenrichtung: Ein Zustand, den die App sich selbst
@@ -846,7 +848,7 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   nachsieht — die Namen der fehlenden Pakete standen an genau einer Stelle, bis zum ersten
   Routenwechsel. **Und dieselbe Lücke eine Tür weiter:** Ein Kanal, der einen Satz *antwortet*
   statt zu werfen, braucht einen Aufrufer, der ihn liest. `abortCoreMerge` hat zwei, und beide
-  warfen das Ergebnis weg — ein verweigerter Abbruch war damit ein Knopf, der nichts tut, und die
+  warfen das Ergebnis weg — ein verweigerter Abbruch war damit ein Button, der nichts tut, und die
   vorgemerkte Datei, die der Abbruch wegwirft, ging ohne ein Wort, obwohl der Kanal sie nennt
   (vierundzwanzigstes Review).
 - **Zwei Arten zu scheitern bekommen zwei Antworten.** „Fehlt“ und „ist da, aber kaputt“ in einem

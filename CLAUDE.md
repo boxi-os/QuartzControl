@@ -397,7 +397,7 @@ hat.
   Kapitelnamen sind 880 px, der Kopf hat neben Marke und Bedienelementen 680 px.
 - **Drei Befunde gingen ins Plugin zurück** (quartz-navigations 0.3.1): `persistState` schloss mit
   `exclusive` den Ordner der gelesenen Seite, der Pager zeigte einen leeren Kasten, und er quetschte
-  zwei Knöpfe in 48 % einer Telefonzeile. Eine Vorlage zu bauen ist der schärfste Test für das
+  zwei Buttons in 48 % einer Telefonzeile. Eine Vorlage zu bauen ist der schärfste Test für das
   Plugin, auf dem sie steht.
 - **Schriften:** Noto Sans und Noto Sans Mono, zwei Familien statt drei, drei Dateien statt vier.
   Phase 6 räumt jetzt auf — der Baustein `fonts` packt ein, was im Ordner liegt, nicht, was der
@@ -407,7 +407,7 @@ hat.
   stehen bleibt oder mitläuft.
 - **Fünf Websites sind auf diesem Stand veröffentlicht**: die App-Website, die drei
   Plugin-Handbücher und die Example-Vorführung. Die zwei Doku-Pakete sind neu gebaut; das
-  Benutzerhandbuch nennt den richtigen Knopf (heute vier Nennungen je Sprache,
+  Benutzerhandbuch nennt den richtigen Button (heute vier Nennungen je Sprache,
   gezählt am 2026-09-21).
 - **Gegengeprüft in drei Engines.** Chromium und WebKit auf dem Mac, Gecko in der Debian-VM — auf
   dem Mac startet Firefox nicht, und die VM braucht Playwrights eigenen Build, nicht ihr

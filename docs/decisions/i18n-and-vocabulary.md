@@ -180,7 +180,7 @@ Ein Review mit frischem Kontext fand am selben Tag, was die Messung nicht gefrag
 Suche nach einer ausgeblendeten Option („flyout“ unter Akkordeon) zeigte ein leeres Formular ohne
 „Keine Option passt“, weil der Satz die Felder des Schemas zählte und das Formular weniger
 zeigte; ein boolesches `when` las sich „collapsible = true“; der Variantenabschnitt war ein
-deaktivierter Knopf; in den Einträgen von `byLang` graute nichts; und die Plugin-Liste zeigte
+deaktivierter Button; in den Einträgen von `byLang` graute nichts; und die Plugin-Liste zeigte
 dieselbe Navigation ohne all das.
 
 `hasNoEffect` kennt dafür fünf weitere gemeinsame Optionen, aus `render.tsx` von 0.4.1 gelesen

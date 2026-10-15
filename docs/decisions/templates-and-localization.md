@@ -24,7 +24,7 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
 schlüsselt, hält einen davon. Genau das tat der `plugins`-Baustein, und es kostete die anderen
 fünf: Die Beispielvorlage liefert sechs Instanzen aus, im Zielprojekt kam **eine** an (BEFUNDE 1).
 Mehrfachverwendung ist keine Randerscheinung — das Plugin ist dafür gemacht, und der Layout-Editor
-hat einen Knopf „Duplizieren“.
+hat einen Button „Duplizieren“.
 
 `instanceKeys()` vergibt `quartz-layout-box#0`, `#1`, … in Dokumentreihenfolge, und die drei
 Stellen, die vorher nach dem Namen suchten, suchen jetzt danach: die Zuordnung in `apply`, die

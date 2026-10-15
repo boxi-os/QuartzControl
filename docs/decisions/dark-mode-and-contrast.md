@@ -41,7 +41,7 @@ die verdunkelt, was hinter ihr liegt: der Muted-Text darauf kam auf 4,00:1 auf d
 `disabled:bg-ground`, dieselbe Bewegung wie beim deaktivierten `TextInput` und aus derselben
 Messung. Im laufenden Programm nachgemessen, an einem Ghost-Button, den das Messskript selbst
 deaktiviert: **4,37:1 in Hell** (Muted `#64748b` auf `#f5f5f7`) und **6,5:1 in Dunkel** (`#94a3b8`
-auf `#1e1e1e`). Die Fläche bleibt sichtbar, der Knopf liest sich also weiter als Bedienelement.
+auf `#1e1e1e`). Die Fläche bleibt sichtbar, der Button liest sich also weiter als Bedienelement.
 
 **`select option` nimmt die Tokens.** Die Regel wiederholte die Hex-Werte von `--surface` und
 `--text` und brauchte dafür einen eigenen Dark-Block; jetzt `rgb(var(--surface))`/`rgb(var(--text))`,

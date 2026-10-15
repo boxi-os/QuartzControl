@@ -46,7 +46,7 @@ Variablen und scrollen zu ihrer Zeile. Mit zugeklappten Kategorien gibt es diese
 Umständen nicht — `navigateTo` schlägt den Schlüssel deshalb in `CSS_VARIABLES` nach und öffnet
 seine Kategorie mit, bevor der Scroll läuft.
 
-**Die Schriftvorschau zeigte die Ersatzschrift und sagte es nicht (2026-09-03).** Der Musterknopf in
+**Die Schriftvorschau zeigte die Ersatzschrift und sagte es nicht (2026-09-03).** Der Muster-Button in
 „Aktuell geltende Schriften" setzt `fontFamily` auf den Stack der Website — nur lädt dieses Fenster
 die Schriften der Website nirgends: die CSP lässt keinen externen Host zu, und eine Schrift, die
 Quartz beim Seitenaufruf von Google holt, hat im Projekt auch keine Datei zum Lesen. Im Alpha-Test
@@ -271,18 +271,18 @@ von Hand verdoppelten Namensraum derselbe ist), ob eine Kopie des Import-Blocks 
 steht, und setzt `nestedImportBlock`; „Eigenes CSS“ sagt dann einen Satz und bietet
 „Ladereihenfolge neu schreiben“ an, das die bestehende Reihenfolge über `setImportOrder` schreibt.
 Gemessen an der gebauten App mit der Zwei-Kopien-Datei des Reviews: Fehler in Zeile 36 mit Satz
-und Knopf; nach dem Klick ein Import-Block statt zwei, 30 von 30 Einträgen in derselben
+und Button; nach dem Klick ein Import-Block statt zwei, 30 von 30 Einträgen in derselben
 Reihenfolge, „SCSS kompiliert fehlerfrei“. Die Übersicht zeigt denselben Fehler weiter ohne den
 Satz.
 
 **Nachtrag (2026-09-18, neunundzwanzigstes Review, nebenbei 1): Das Band über einem veralteten
 Entwurf sagt, wer die Datei geschrieben hat.** Es hieß für jeden Schreiber „von einem anderen Tab
 geändert (Variablen-Überschreibung oder Font-Import)“, auch nach Ladereihenfolge, Pfeilen und dem
-Knopf „Ladereihenfolge neu schreiben“ auf demselben Reiter, und nach einer CSS-Korrektur aus den
+Button „Ladereihenfolge neu schreiben“ auf demselben Reiter, und nach einer CSS-Korrektur aus den
 Grundlagen, die ebenfalls den Import-Block schreibt. `reloadScss` nimmt jetzt den Schreiber
 (`'variables' | 'fontImport' | 'stylesheets'`, oder `'force'` für Speichern und Neu laden), und
 das Band hat einen Satz je Schreiber. Gemessen an der gebauten App mit der Zwei-Kopien-Datei des
-Reviews: Entwurf getippt, Knopf geklickt — das Band sagt „… geändert, weil sich die Stylesheets
+Reviews: Entwurf getippt, Button geklickt — das Band sagt „… geändert, weil sich die Stylesheets
 geändert haben (Ladereihenfolge, Import oder neue Datei) …“. Handbuch 4.5 in beiden Sprachen
 nachgezogen.
 
@@ -680,7 +680,7 @@ hinterlässt, gewinnt wie im Browser. Gemessen an APFS-Klonen von gui-test und E
   wurde (`#A1A1A1`).
 
 Drei Fallen des Messgeschirrs, damit sie keiner zweimal tritt: Playwrights Tastendruck erreicht das
-Kürzel des nativen Menüs nicht (Cmd+S speichert nicht, der Knopf schon); CodeMirror rendert nur die
+Kürzel des nativen Menüs nicht (Cmd+S speichert nicht, der Button schon); CodeMirror rendert nur die
 sichtbaren Zeilen, `textContent` des Editors ist nicht die Datei; und Quartz minifiziert die
 ausgelieferte CSS — `rgb(203, 203, 203)` kommt als `#cbcbcb` an, ein Vergleich auf den getippten Wert
 meldet dann „nicht übernommen“, obwohl er nach einer Sekunde da war.
@@ -710,7 +710,7 @@ gui-test, vorher (`fbdfa32`) gegen nachher:
   und nachher, Sass grün; ein zweiter Aufruf schreibt nichts. Im Snapshot steht `custom.scss` mit 657
   Zeilen und keine `_quartzcontrol.scss`.
 - **Gebaute App** (Wegwerf-Profil, 1280 px): der Hinweis steht über den Reitern, kein waagerechter
-  Bildlauf; mit einem Entwurf im CSS-Reiter ist der Knopf gesperrt und sagt warum; geklickt
+  Bildlauf; mit einem Entwurf im CSS-Reiter ist der Button gesperrt und sagt warum; geklickt
   verschwindet der Hinweis, der Satz mit dem Snapshot steht unter dem Kopf, der Reiter
   `_quartzcontrol.scss` erscheint, und unter Snapshots steht „Vor Umstellung der Stile“.
 
@@ -742,7 +742,7 @@ beiden ohne Wirkung (`scripts/example-template/BEFUNDE.md`, 99).
 
 Die Vorlage hat ihre 31 Stylesheets in `f2cdb69` zu zwölf zusammengelegt; bestehende Projekte
 behielten sie, und wer „Jetzt umstellen“ drückte, erwartete die zwölf und bekam weiter 31 (der
-Knopf zieht nur die verwalteten Blöcke um). „Zusammenlegen“ im Reiter „Eigenes CSS“ tut für ein
+Button zieht nur die verwalteten Blöcke um). „Zusammenlegen“ im Reiter „Eigenes CSS“ tut für ein
 Projekt, was `f2cdb69` für die Vorlage tat — mit den Dateien des Projekts, also mit allem, was der
 Nutzer darin geändert hat. Reine Verkettung: jeder Abschnitt beginnt mit der Markierungszeile von
 `f2cdb69`, `base.scss` wird an seinen eigenen Überschriften geteilt, eine unbekannte Überschrift

@@ -169,7 +169,7 @@ Notwendigkeit mehr, bleibt aber, weil sie den Weg `html:` vorführt.
 
 - **Quartz kappt den zugeklappten Explorer bei `1.2em`.** Wer seiner Überschrift eine
   Mindesthöhe von 44 px gibt — was für ein Bedienelement richtig ist — verliert sie damit
-  vollständig: gemessen 19 px Container gegen 44 px Knopf, Überschrift unsichtbar. Die Vorlage
+  vollständig: gemessen 19 px Container gegen 44 px Button, Überschrift unsichtbar. Die Vorlage
   verlegt das Einklappen deshalb auf den Inhalt.
 - **Quartz rendert keinen Skip-Link.** `.skip-to-content` matcht auf keiner Seite, und ein
   Stylesheet kann keinen hinzufügen — das Element muss im Markup stehen, um fokussierbar zu sein.
@@ -328,9 +328,9 @@ das Plugin sie liest.
 
 Hausgemacht, gefunden und behoben — hier, weil die Kette selbst lehrreich ist. `nav-explorer.scss`
 gab `.mobile-explorer` ein `display: grid`, ohne es auf schmale Fenster zu beschränken. Das
-Explorer-Plugin versteckt den Knopf mit `.explorer button.mobile-explorer { display: none }` in
+Explorer-Plugin versteckt den Button mit `.explorer button.mobile-explorer { display: none }` in
 `@layer quartz-base`; alles in dieser Vorlage steht ungeschichtet und schlägt das unabhängig von
-der Spezifität. Der Knopf war also auch bei 1600 px sichtbar — und das Skript des Plugins endet mit
+der Spezifität. Der Button war also auch bei 1600 px sichtbar — und das Skript des Plugins endet mit
 
 ```js
 if (mobileButton.checkVisibility()) explorer.classList.add("collapsed")
@@ -355,7 +355,7 @@ nach, ein vollständig richtiges Ergebnis gab es erst nach `rm -rf public`. Die 
 sich aus (`docs/decisions/navigation-and-pages.md`, Build-Ausgabeverzeichnis); wer von Hand baut,
 muss daran denken.
 
-### 24. Die mobile Schublade des Explorers lässt sich nur über ihren Knopf schließen
+### 24. Die mobile Schublade des Explorers lässt sich nur über ihren Button schließen
 
 Das Plugin bringt weder eine Escape-Behandlung noch einen Klick-Fänger hinter der Schublade mit.
 Der Auslöser bleibt über ihr liegen und schaltet zurück, es gibt also immer einen Weg heraus — aber
@@ -391,7 +391,7 @@ Dateilinks absolute `href`s bekommen — beides am gebauten DOM abgelesen, nicht
 englischen Seite fällt zusätzlich die Kopfzeile des `en`-Ordners weg, sonst stünde der ganze Baum
 eine Ebene eingerückt unter einem Ordner namens „en“.
 
-### 27. Drei Pfeile an einem Knopf
+### 27. Drei Pfeile an einem Button
 
 Der aufklappbare Sprachumschalter zeigte „English ▾ ⌄“. Drei Quellen trafen sich auf demselben
 Element: `base.scss` gibt **jedem** `<summary>` dieser Vorlage die Lucide-Chevron als `::before`,
@@ -399,15 +399,15 @@ das Plugin setzt ein Text-„▾“ als `::after`, und die erste Fassung von
 `nav-language-switcher.scss` fügte noch eine eigene hinzu. Geblieben ist die aus `base.scss` — sie
 dreht sich beim Aufklappen bereits über `details[open] > summary::before` und ist dieselbe wie an
 allen anderen Ausklappstellen; sie wandert nur mit `order: 1` hinter die Beschriftung, weil ein
-Menüknopf seinen Pfeil rechts trägt. Das `::after` des Plugins wird ausdrücklich auf
+Menü-Button seinen Pfeil rechts trägt. Das `::after` des Plugins wird ausdrücklich auf
 `content: none` gesetzt und am Telefon mit dem Sprachkürzel gefüllt.
 
 Dazu ein zweiter Fund am selben Element: Das Plugin setzt `padding: 0.15rem 0.5rem`. Wer nur
 `padding-inline` überschreibt, behält 2,4 px oben und unten — und weil ein `<summary>` ohne
-`box-sizing` als `content-box` rechnet, wurde der Knopf 51 px hoch neben drei 44-px-Nachbarn.
+`box-sizing` als `content-box` rechnet, wurde der Button 51 px hoch neben drei 44-px-Nachbarn.
 Beide Hälften des Paddings und das Box-Modell stehen jetzt ausdrücklich da.
 
-### 28. Der vierte Knopf kostet den Seitennamen
+### 28. Der vierte Button kostet den Seitennamen
 
 Gemessen bei 390 px: Mit drei Bedienelementen in der Werkzeugleiste hatte der Seitentitel in der
 App-Leiste 84 px, mit dem Sprachumschalter als viertem noch 24 px — dargestellt als „M…“. Die
@@ -464,7 +464,7 @@ entsprechenden Datei. Kein Fehler des Plugins, sondern die Grenze der Verankerun
 
 Die Regel, auf der diese Vorlage überall aufbaut — Komponenten-CSS liegt in `@layer quartz-base`,
 `custom.scss` liegt ungeschichtet dahinter und gewinnt deshalb unabhängig von der Spezifität — gilt
-nicht für alles, was Quartz ausliefert. Der Kopierknopf am Codeblock wird in
+nicht für alles, was Quartz ausliefert. Der Kopier-Button am Codeblock wird in
 `static/resource-style-….css` gestaltet: **kein Layer**, und im `<head>` *nach* `index.css`
 verlinkt. Bei gleicher Spezifität entscheidet die Reihenfolge, also das Plugin:
 
@@ -474,7 +474,7 @@ verlinkt. Bei gleicher Spezifität entscheidet die Reihenfolge, also das Plugin:
 ```
 
 Gemessen: Mit `border: none`, `background: transparent` und `appearance: none` in dieser Vorlage
-meldete der Knopf weiterhin `border-width: 1px` und `rgb(252,252,250)` — und malte sie auch. Selbst
+meldete der Button weiterhin `border-width: 1px` und `rgb(252,252,250)` — und malte sie auch. Selbst
 ein Inline-`style` änderte nichts, weil die spätere Regel dieselbe Kaskadenebene hat und *nach* ihr
 gelesen wird. Ein Nachfahre im Selektor (`pre .clipboard-button`) hebt es auf.
 
@@ -731,7 +731,7 @@ div (ohne Klasse)      110px  flex: 0 1 auto    ← und hier scheitern sie
 div.flex-component     322px
 ```
 
-Damit las sich der Knopf als Knopf statt als Feld — genau das, was die Breite verhindern sollte.
+Damit las sich der Button als Button statt als Feld — genau das, was die Breite verhindern sollte.
 
 **Behoben am 05.09.2026**, und nicht im Stylesheet: Die Flex-Werte des Wrappers sind ein
 **Inline-Stil**, den Quartz aus der Konfiguration schreibt, und ein Inline-Stil schlägt jedes
@@ -744,7 +744,7 @@ auf zwei Zeilen um und der Kopfbereich wuchs von 61 auf 101 px — auf jeder Sei
 misst die Gruppe 452 px, die Leiste ist eine Zeile, der Kopf wieder 61 px.
 
 Am Telefon nimmt `nav-toolbar.scss` die Breite mit `!important` wieder weg; ohne das stand dort eine
-216 px breite Box um einen 44-px-Knopf (gemessen bei 480, 390 und 360 px). Der Kommentar daneben
+216 px breite Box um einen 44-px-Button (gemessen bei 480, 390 und 360 px). Der Kommentar daneben
 sagt, warum es hier keinen anderen Weg gibt — anders als bei den übrigen `!important` dieser
 Vorlage, die alle gegen ein fremdes Stylesheet arbeiten und nicht gegen einen Inline-Stil.
 
@@ -799,7 +799,7 @@ gemessen:
   „Weiterlesen"-Box wurden **über** die Zeichnung gemalt statt um sie herum.
 - **Excalidraw** bringt einen eigenen Frame mit, und der rendert überhaupt keine Kopfleiste: kein
   Link zur Startseite, keine Suche, kein Farbschema, keine Brotkrumen. Der einzige Weg aus der
-  Seite war der Zurück-Knopf des Browsers. Seine eigene Antwort darauf ist ein Burger-Knopf, der
+  Seite war der Zurück-Button des Browsers. Seine eigene Antwort darauf ist ein Burger-Button, der
   eine 300 px breite Schublade mit den Bausteinen der *linken* Spalte öffnet — die in dieser
   Vorlage für eine 335-px-Spalte gemacht sind und am Fensterrand abgeschnitten wurden.
 
@@ -974,7 +974,7 @@ Quartz' Lesemodus ist eine Regel im Stylesheet des Plugins:
 
 `.sidebar` ist, wie die *eingebaute* Anordnung von Quartz ihre beiden Spalten nennt. Ein Projekt mit
 selbstgebauten Frames hat so ein Element nicht — die Bereiche heißen `.qgframe-area-left` und
-`.qgframe-area-right` —, die Regel traf hier also nichts. Gemessen: Der Knopf setzte
+`.qgframe-area-right` —, die Regel traf hier also nichts. Gemessen: Der Button setzte
 `reader-mode="on"`, färbte sich selbst ein, und beide Seitenleisten standen unverändert da. Ein
 Bedienelement, das nur sein eigenes Aussehen ändert, ist schlechter als keines.
 
@@ -1021,7 +1021,7 @@ auch auf seitliches Scrollen sah.
 Eine Breite am Element macht die Inhaltsbreite des Wrappers zu 240 px, und darüber sind sich alle
 drei Engines einig — nachgemessen: Gruppe 436 px in Chrome, Firefox und WebKit. `wrap: 'nowrap'`
 bleibt trotzdem, weil eine umbrechende Flex-Gruppe auch sonst keine verlässliche Größe hat, und
-`shrink: false` bleibt, damit das Feld seine Breite nicht an die Icon-Knöpfe abgibt.
+`shrink: false` bleibt, damit das Feld seine Breite nicht an die Icon-Buttons abgibt.
 
 Der ganze Durchgang danach in drei Engines: 38 Seiten × 3 Breiten × 3 Engines = 342 Aufrufe, kein
 seitliches Scrollen, kein zu hoher Kopf, keine umgebrochene Gruppe.
@@ -1717,13 +1717,13 @@ sollte `{{frontmatter.section|}}` geben. Das ist ein eigenes Repo und wäre dort
 ### 82. Ein Bereich, der nichts trägt, kostet trotzdem zwei Rasterrinnen
 
 Die linke Spalte enthält auf dem Telefon nichts, was Platz braucht: Der Explorer ist ein
-`position: fixed`-Knopf in der App-Leiste und eine `position: absolute`-Schublade, die
+`position: fixed`-Button in der App-Leiste und eine `position: absolute`-Schublade, die
 Seitennotiz ist `desktop-only`. Trotzdem stand zwischen der Leiste und der ersten Zeile jeder Seite
 ein Block von **135 px**, aufgeschlüsselt:
 
 | | |
 | --- | --- |
-| Explorer | 34 px — Quartz' `flex: 0 0 34px`, Platz für den Knopf, der längst in der Leiste sitzt |
+| Explorer | 34 px — Quartz' `flex: 0 0 34px`, Platz für den Button, der längst in der Leiste sitzt |
 | Rinne | 24 px |
 | `spacer` | 8 px — dessen einziger Zweck es war, genau diesen Streifen offenzuhalten |
 | Rinne | 24 px |

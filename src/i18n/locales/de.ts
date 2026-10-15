@@ -10,8 +10,8 @@ export default {
     select: 'Auswählen',
     copy: 'Kopieren',
     remove: 'Entfernen',
-    // Der Name eines Mülleimer-Knopfs: sein Tooltip und das, was ein Screenreader vorliest. Mit dem
-    // Namen des Eintrags, weil in einer Liste sonst zehn Knöpfe gleich heißen.
+    // Der Name eines Mülleimer-Buttons: sein Tooltip und das, was ein Screenreader vorliest. Mit dem
+    // Namen des Eintrags, weil in einer Liste sonst zehn Buttons gleich heißen.
     removeNamed: '„{{name}}“ entfernen',
     deleteNamed: '„{{name}}“ löschen',
     edit: 'Bearbeiten',
@@ -1009,7 +1009,7 @@ export default {
     }
   },
   plugins: {
-    savesImmediately: 'Speichert ohne Knopf — ein Schalter sofort, ein Textfeld beim Verlassen.',
+    savesImmediately: 'Speichert ohne Button — ein Schalter sofort, ein Textfeld beim Verlassen.',
     readAgainst: 'Dieser Editor kennt {{plugin}} {{read}}, installiert ist {{installed}}. Was er „ohne Wirkung“ nennt oder als Vorgabe annimmt, kann deshalb abweichen; „Alle Optionen“ zeigt jede Option, die das Plugin selbst beschreibt.',
     tabs: {
       installed: 'Installiert',
@@ -1941,7 +1941,7 @@ export default {
       overrides: '{{count}} Variable(n) überschrieben.'
     },
     // Einer je Schreiber: Der eine Satz „von einem anderen Tab (Variablen-Überschreibung oder
-    // Font-Import)“ stand auch nach der Ladereihenfolge und dem Reparaturknopf dieses Reiters.
+    // Font-Import)“ stand auch nach der Ladereihenfolge und dem Reparatur-Button dieses Reiters.
     scssStaleBy: {
       variables:
         '{{file}} wurde inzwischen beim Speichern der Variablen geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
@@ -2259,7 +2259,7 @@ export default {
       title: 'GitHub Pages',
       reload: 'Status neu laden',
       noGithubOrigin: 'Das „origin“-Remote dieses Projekts zeigt nicht auf github.com. Pages lässt sich von hier aus erst einrichten, wenn das Repository auf GitHub liegt — siehe Git-Sync.',
-      notConfigured: 'Für dieses Repository sind noch keine Pages eingerichtet. Mit dem Knopf unten wird Pages angelegt und auf diesen Branch gestellt.',
+      notConfigured: 'Für dieses Repository sind noch keine Pages eingerichtet. Mit dem Button unten wird Pages angelegt und auf diesen Branch gestellt.',
       source: 'Quelle: {{branch}}',
       status: {
         built: 'Veröffentlicht',
@@ -2588,7 +2588,7 @@ export default {
   pluginsMarketplace: {
     panelLabel: 'Plugin',
     panelEmptyTitle: 'Plugin wählen',
-    panelEmptyText: 'Wähle links ein Plugin: Hier stehen dann seine Beschreibung aus dem Repository und der Knopf zum Installieren.',
+    panelEmptyText: 'Wähle links ein Plugin: Hier stehen dann seine Beschreibung aus dem Repository und der Button zum Installieren.',
     panelEmptyCount: '{{count}} Plugins im Katalog, {{installed}} davon in diesem Projekt.',
     readmeLoading: 'Lade die Beschreibung…',
     readmeMissing: 'Dieses Repository hat keine README.',

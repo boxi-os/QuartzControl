@@ -151,7 +151,7 @@ export async function captureScenes(ctx) {
     const hash = scene.app ? scene.route : `/project/${projectId}${scene.route}`
     // Erst weg, dann hin: Zwei Szenen auf derselben Route setzen denselben Hash, und ein Hash, der
     // sich nicht ändert, mountet die Seite nicht neu - das geöffnete Formular der vorigen Szene
-    // blieb dann stehen und verdeckte den Knopf der nächsten.
+    // blieb dann stehen und verdeckte den Button der nächsten.
     await page.evaluate((h) => {
       location.hash = h
     }, `/project/${projectId}`)

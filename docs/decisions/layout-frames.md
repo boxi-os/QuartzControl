@@ -659,7 +659,7 @@ Belegung, Gruppe und das Löschen gehören dem Bereich selbst und sind immer da.
 derselben Aufnahme: Ein platzierter Bereich zeigt vorher wie nachher dasselbe Formular in derselben
 Reihenfolge — an der gebauten App nachgezählt (2026-09-08, Bereich `right` des `editorial`-Frames)
 sind das **sechs beschriftete Felder** (Bereichsname, Belegung, Eigener Bereich, Zeilen-Spanne,
-Spalten-Spanne, Sichtbar auf Desktop) und **zwei Knöpfe**; mit dem Ziehgriff und dem Kasten selbst
+Spalten-Spanne, Sichtbar auf Desktop) und **zwei Buttons**; mit dem Ziehgriff und dem Kasten selbst
 zehn Tabstopps. Die Zahl zehn stand hier einmal für die Felder — sie war keine Messung.
 
 Ein ausgewählter Chip nimmt eine ganze Zeile der umbrechenden Ablage, statt chipgroß zu bleiben —
@@ -676,7 +676,7 @@ fehlte damit im einzigen Formular, das der Bereich noch hatte; der einzige Weg z
 Ziehen, und das vergibt eine neue Zelle. Die Ablage reicht die Platzierung jetzt durch, und weil
 die beiden Arten von Chips sonst gleich aussehen, sagt der Chip, welche er ist (`hiddenShort`).
 Gemessen an der gebauten App, Bereich `right` des `editorial`-Frames: vorher drei Felder, ein
-Schalter, ein Knopf; jetzt sechs Felder, zwei Schalter, zwei Knöpfe — und Schalter aus, Schalter
+Schalter, ein Button; jetzt sechs Felder, zwei Schalter, zwei Buttons — und Schalter aus, Schalter
 wieder an legt den Bereich auf `2 / span 4`, `10 / span 3` zurück, genau dorthin, wo er lag.
 
 **Und ein Tastendruck im Formular blieb nicht im Formular.** Der Kasten eines platzierten Bereichs
@@ -1351,7 +1351,7 @@ dem Rendern auf das neue Element (`data-board-focus`).
 
 Seitenleiste, gemessen am selben Klon: „Später“ an search → „search steht jetzt an Stelle 4 von 5 in
 Kopfbereich.“, Reihenfolge in der Datei entsprechend; am Listenende springt der Fokus vom
-deaktivierten Knopf auf „Früher“ (vorher wäre er auf `<body>` gefallen). Bedingung, eigene Bedingung
+deaktivierten Button auf „Früher“ (vorher wäre er auf `<body>` gefallen). Bedingung, eigene Bedingung
 und „Immer“ (Schlüssel fällt weg), Position per Auswahl (Gruppe bleibt), Duplizieren und Entfernen
 (Panel folgt dem neuen bzw. schließt), Auswahl über einen Wechsel zu Stile und zurück: alle wie
 erwartet.
@@ -1429,7 +1429,7 @@ alten Reiter und am Wähler — Komponente aus- und wieder einblenden, Bereich l
 Frame wechseln, eine Komponente mit sieben Instanzen ausblenden, zwei Anpassungen entfernen —, nach
 jedem Speichern `byPageType` aus der Datei: **alle neun gleich**, auch das Wegräumen von `search`.
 Bühne mit Ordnerseiten bei 1280 und 1728 px in allen drei Ansichten ohne waagerechten Bildlauf.
-Tastatur: Enter auf dem Radierer leert und sagt es an, der Fokus bleibt auf dem Knopf (jetzt „wieder
+Tastatur: Enter auf dem Radierer leert und sagt es an, der Fokus bleibt auf dem Button (jetzt „wieder
 füllen“); Leertaste auf dem Schalter der Seitenleiste blendet aus; ein Tastatur-Drag mit gewähltem
 Seitentyp bewegt wie vorher; nach „Anpassung entfernen“ steht der Fokus auf dem Wähler statt auf
 `<body>`. `?tab=pagetypes` öffnet die Bühne.
@@ -1443,13 +1443,13 @@ zurückgezogen, steht sie ausgegraut mit dem Grund auf der Bühne und der Schalt
 
 Unter den Feldern einer gewählten Komponente steht ihr eigenes Optionen-Formular — dasselbe
 `PluginOptionsForm` wie auf der Plugins-Seite, aber es schreibt in den Entwurf der Seite statt in die
-Datei: gespeichert wird mit dem Knopf im Kopf, und `dirty` sieht es, weil es die ganze Config
+Datei: gespeichert wird mit dem Button im Kopf, und `dirty` sieht es, weil es die ganze Config
 vergleicht. Das Schema liest `LayoutEditor/ComponentOptions.tsx` über `useIpcQuery`, weil jeder Klick
 auf einen anderen Chip die Frage ändert.
 
 **Drei Funde beim Messen, alle behoben:**
 
-- **Waagerechter Bildlauf.** Die Felder waren für die Plugins-Seite gebaut: 14rem fest, Knopf
+- **Waagerechter Bildlauf.** Die Felder waren für die Plugins-Seite gebaut: 14rem fest, Button
   daneben, nicht schrumpfbar. In der 20rem-Seitenleiste lief `<main>` bei navigations 60 px und bei
   layout-box 2 px quer. Die Zeilen brechen jetzt um und die Felder tragen `max-w-full`. Gegenprobe
   auf der Plugins-Seite gegen `aa3beb2` (alle 56 Optionen-Blöcke von gui-test aufgeklappt): 8467

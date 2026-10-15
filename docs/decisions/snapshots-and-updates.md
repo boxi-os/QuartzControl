@@ -26,7 +26,7 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
 
 **"Installiert" on the core card is the newest upstream commit the project contains, not HEAD — and naming it may fetch only on the Updates page.** The card used to put `git rev-parse HEAD` next to upstream's HEAD, which once a project has a commit of its own is that commit: measured on `Example` before its last update, "Installiert: 09a888c · Neueste Version: f1fba3f", and GitHub answers "No commit found for SHA" for 09a888c. The status computation beside it was already right; only the label had not learned the same lesson. The answer is `git merge-base HEAD <upstream HEAD>` (075afd3 there, f1fba3f's parent) plus `rev-list --count HEAD..<upstream HEAD>` for "1 Commit fehlt", and when up to date it is upstream's HEAD itself, with no git call. Both need upstream's commit as a local object, which a project that is behind usually does not have — so `coreStatus` takes `{ resolveInstalled }`, and only the Updates page passes it: then a `git fetch --no-tags <TEMPLATE_REPO> HEAD` into FETCH_HEAD (the same way `runCoreUpdate` fetches, so no ref is left for a push to carry) runs once per new upstream state. The Übersicht reads the same status and does not pass it, keeping its "costs nothing to open" rule; there an unknown installed commit is an empty string, never HEAD standing in for it. Measured through an esbuild bundle of `updateService` against two clones — `Example` reset to 09a888c (object present: 075afd3, 1 missing, no fetch) and `brain-handbuch` plus one own commit (object absent: without the flag `""` and the object still absent afterwards; with it 075afd3, 1 missing, 1.5 s, 0.8 s on the second call) — against the real `Example` (up to date: f1fba3f, 0) and a folder without git (`unknown`); and in the built app with a throwaway profile, where the card reads "Installiert: 075afd3 · Neueste Version: f1fba3f · 1 Commit fehlt" and the clone holds f1fba3f afterwards. A version number is no substitute: Quartz's `package.json` says `5.0.0` on its current HEAD and on a state 292 commits older.
 
-**`package.json` und `package-lock.json` werden beim Core-Update nicht gemergt, sondern von Quartz übernommen und von npm neu geschrieben (2026-09-16, aus dem Beta-Betrieb).** Quartz' `3dff48b` hob am 2026-09-15 jedes `@quartz-community/*` auf `^1.0.0` und `@quartz-themes/core` auf `^2.0.0` und erzeugte das Lockfile neu — 106 Zeilen in `package.json`, fast die ganze Lockdatei. Auf diesem Rechner trugen fünf von neun Projekten eigene Einträge in denselben zwei Dateien, eingetragen von npm beim Installieren eines Themes. Daraus wurden **zwei Symptome mit einer Ursache**: nicht committet verweigerte git den Merge, bevor er begann (`error: Your local changes to the following files would be overwritten by merge` — die Meldung, die der Nutzer sah); committet über Git-Sync (`gui-test`, `ab888db`) begann git und ließ beide Dateien im Konflikt zurück, und **jeder weitere Versuch** starb danach an `Merging is not possible because you have unmerged files`. Das ist der teuerste der drei Zustände, weil er sich selbst festhält: Die App bot zwar „Merge abbrechen“ an, aber ihre Fehlermeldung war die rohe von git und nannte weder das frühere Update noch den Knopf.
+**`package.json` und `package-lock.json` werden beim Core-Update nicht gemergt, sondern von Quartz übernommen und von npm neu geschrieben (2026-09-16, aus dem Beta-Betrieb).** Quartz' `3dff48b` hob am 2026-09-15 jedes `@quartz-community/*` auf `^1.0.0` und `@quartz-themes/core` auf `^2.0.0` und erzeugte das Lockfile neu — 106 Zeilen in `package.json`, fast die ganze Lockdatei. Auf diesem Rechner trugen fünf von neun Projekten eigene Einträge in denselben zwei Dateien, eingetragen von npm beim Installieren eines Themes. Daraus wurden **zwei Symptome mit einer Ursache**: nicht committet verweigerte git den Merge, bevor er begann (`error: Your local changes to the following files would be overwritten by merge` — die Meldung, die der Nutzer sah); committet über Git-Sync (`gui-test`, `ab888db`) begann git und ließ beide Dateien im Konflikt zurück, und **jeder weitere Versuch** starb danach an `Merging is not possible because you have unmerged files`. Das ist der teuerste der drei Zustände, weil er sich selbst festhält: Die App bot zwar „Merge abbrechen“ an, aber ihre Fehlermeldung war die rohe von git und nannte weder das frühere Update noch den Button.
 
 Ein Drei-Wege-Merge ist für beide Dateien das falsche Werkzeug. Das Lockfile ist erzeugt und ein Konflikt darin von Hand gar nicht auflösbar; der Abhängigkeitsblock ist eine alphabetische Liste, deren Konflikte reines Rauschen sind. `runCoreUpdate` rechnet deshalb **vor** dem Merge einen Plan (`shared/packageJsonDeps.ts`, rein, deshalb von `npm run check:core-update` geladen statt abgeschrieben): Was hat dieses Projekt gegenüber der Merge-Basis geändert, was davon kann `npm install name@range` wieder eintragen, und was nicht. Dann gewinnt Quartz' Fassung beider Dateien — vor dem Merge durch ein `git checkout HEAD --`, im Konfliktfall durch `--theirs` plus Commit —, und npm schreibt die eigenen Pakete zurück. Drei Ränder, die den Plan begrenzen: Hat Quartz dasselbe Paket ebenfalls angefasst, gewinnt Quartz und die Ausgabe sagt es (`@quartz-themes/core`); ein **lokal entferntes** Paket und jede Änderung außerhalb der Abhängigkeitsblöcke (`scripts`, `exports`, der Name) sind nicht nachspielbar, und dann fasst die App die Dateien nicht an, sondern lässt git entscheiden und den Nutzer die alte Meldung lesen — „kann nicht nachspielen“ ist kein „wird schon passen“. Der Commit, den die Konfliktauflösung schreibt, wird nach dem `npm install` ergänzt (`--amend`), weil die zwei Dateien vorher committet waren und sonst als Änderung dastünden, die niemand gemacht hat; eine Vorspulung amendet nichts, denn dort steht Quartz' eigener Commit an HEAD.
 
@@ -34,7 +34,7 @@ Gemessen an einem esbuild-Bündel von `updateService`, alter gegen neuen Stand, 
 
 **Die zwei Paketdateien werden nicht weggeworfen, sondern an git gegeben — und der Stash gehört dem HEAD, auf dem er entstand (2026-09-16, sechzehntes bis achtzehntes Review).** Bis zum sechzehnten Review nahm `runCoreUpdate` sie mit `git checkout HEAD --` zurück. Das reicht genau so lange, wie der Merge durchkommt: Jeder Konflikt außerhalb der zwei Dateien endet in einem halb fertigen Merge, und dann waren die eigenen Pakete endgültig weg — nicht im Arbeitsbereich, nicht nach „Merge abbrechen“, und auch nicht von einem zweiten Update zurückgeholt, weil der Plan gegen die Merge-Basis vergleicht und der Arbeitsbereich sich von ihr nicht mehr unterscheidet. Gemessen (sechzehntes Review, Szene 4): das Theme stand vorher in `package.json` und danach in nichts außer dem Snapshot. `holdNpmOwnedFiles` legt sie deshalb in einen Stash, der den halb fertigen Merge übersteht, in `git stash list` sichtbar ist und den `abortCoreMerge` poppt.
 
-Das siebzehnte Review hat den Preis dieses Stashes gemessen. **Er gehört zu *einem* Merge gegen *einen* HEAD, und ein Pop gegen jeden anderen ist ein Merge gegen einen Stand, den es nicht mehr gibt.** Szene s2b, am esbuild-Bündel gegen ein lokales Upstream-Repo mit den Ständen A/B/C und npm/npx-Attrappen: Lauf 1 bleibt im Konflikt stehen und legt den Stash; der Nutzer löst den Merge im Terminal auf statt mit dem Knopf, also bleibt der Stash liegen; zwei weitere Updates sagen kein Wort darüber (`holdNpmOwnedFiles` meldet `clean`, weil der Arbeitsbereich HEAD entspricht); beim nächsten Konflikt ist der Arbeitsbereich sauber, es entsteht kein neuer Stash, und „Merge abbrechen“ poppt den alten: `UU package.json`, `UU package-lock.json`, Konfliktmarker in beiden, kein gültiges JSON mehr — unter `success: true`. Die Nachricht trägt deshalb den Commit (`QuartzControl: core update <sha>`), `abortCoreMerge` liest `MERGE_HEAD`, *bevor* `merge --abort` ihn wegwirft, und poppt nur einen Stash, der diesen SHA nennt. Nachher in derselben Szene: kein Pop, `git status` leer, `package.json` gültig, und sowohl der Lauf als auch der Abbruch nennen den liegengebliebenen Stash. Die vier Ausgänge, die tragen sollen, tragen unverändert: Merge kommt nicht zustande (Pop sofort), Merge hängt und „Merge abbrechen“ (Pop, `Dropped refs/stash@{0}`), Erfolg (Drop), fremder Stash darunter (bleibt `stash@{0}`).
+Das siebzehnte Review hat den Preis dieses Stashes gemessen. **Er gehört zu *einem* Merge gegen *einen* HEAD, und ein Pop gegen jeden anderen ist ein Merge gegen einen Stand, den es nicht mehr gibt.** Szene s2b, am esbuild-Bündel gegen ein lokales Upstream-Repo mit den Ständen A/B/C und npm/npx-Attrappen: Lauf 1 bleibt im Konflikt stehen und legt den Stash; der Nutzer löst den Merge im Terminal auf statt mit dem Button, also bleibt der Stash liegen; zwei weitere Updates sagen kein Wort darüber (`holdNpmOwnedFiles` meldet `clean`, weil der Arbeitsbereich HEAD entspricht); beim nächsten Konflikt ist der Arbeitsbereich sauber, es entsteht kein neuer Stash, und „Merge abbrechen“ poppt den alten: `UU package.json`, `UU package-lock.json`, Konfliktmarker in beiden, kein gültiges JSON mehr — unter `success: true`. Die Nachricht trägt deshalb den Commit (`QuartzControl: core update <sha>`), `abortCoreMerge` liest `MERGE_HEAD`, *bevor* `merge --abort` ihn wegwirft, und poppt nur einen Stash, der diesen SHA nennt. Nachher in derselben Szene: kein Pop, `git status` leer, `package.json` gültig, und sowohl der Lauf als auch der Abbruch nennen den liegengebliebenen Stash. Die vier Ausgänge, die tragen sollen, tragen unverändert: Merge kommt nicht zustande (Pop sofort), Merge hängt und „Merge abbrechen“ (Pop, `Dropped refs/stash@{0}`), Erfolg (Drop), fremder Stash darunter (bleibt `stash@{0}`).
 
 **Ein angelegter Stash gehört uns, was der Exit-Code auch sagt.** Gemessen an git 2.54 (Apple Git-157) allein, in vier Ausgangslagen: steht der Index vor HEAD und der Arbeitsbereich wieder auf HEAD, dann legt `git stash push -m … -- package.json package-lock.json` den Stash **an**, nimmt beide Dateien aus Index und Arbeitsbereich — und endet trotzdem mit 1 und `error: No valid patches in input (allow with "--allow-empty")`. Die drei anderen Lagen (nur Arbeitsbereich; Arbeitsbereich und Index gleich; nur Lockfile gestaget) enden mit 0. `holdNpmOwnedFiles` las die 1 als „nichts gehalten“: der Stash blieb für immer liegen, weil kein `drop` ihn je anfasste, und der gestagete Eintrag war ohne Zeile aus Index und Arbeitsbereich verschwunden. Der Besitz hängt jetzt am Ref — ein neuer `refs/stash` ist ein gehaltener Stash —, und erst wenn keiner entstand, zählt der Exit-Code.
 
@@ -98,7 +98,7 @@ unschreibbare war etwas anderes — siehe den Nachtrag unten.
 Merge kann zweimal versucht werden, und zwischen den Versuchen kann HEAD sich bewegen — der
 gewöhnliche Weg nach einem Konflikt, den jemand im Terminal abbricht und danach committet. Szene x2
 (Konflikt in `quartz/index.ts`, Stash; `git merge --abort` im Terminal; `explorer ^0.2.0` in
-`package.json` committet; dasselbe Update noch einmal; dann der Knopf): vorher `UU package.json`,
+`package.json` committet; dasselbe Update noch einmal; dann der Button): vorher `UU package.json`,
 ein Konfliktmarker, kein gültiges JSON, unter `success: false`; mit gestagetem Theme verweigerte
 `pop --index` sauber und der **Rückfall-Pop** schrieb die Marker dann selbst. git hält die richtige
 Frage bereit: Der erste Elternteil eines Stash-Commits ist der HEAD, auf dem er entstand, und
@@ -115,14 +115,14 @@ Dateien auf HEAD, HEAD ist die Basis des Stashes, also wendet der Index-Diff imm
 Rückfall stattdessen tat, war, aus einer sauberen Verweigerung („conflicts in index. Try without
 --index.“) eine `package.json` mit Konfliktmarkern zu machen.
 
-*Und der Satz über den liegengebliebenen Stash stellt jetzt dieselbe Frage wie der Knopf.* Er
+*Und der Satz über den liegengebliebenen Stash stellt jetzt dieselbe Frage wie der Button.* Er
 nannte jeden Eintrag der App „gehört nicht zu diesem Update“ und riet zu `git stash pop` — in x2h
-Sekunden bevor der Abbruch-Knopf genau diesen Eintrag selbst aufnahm, und in x2 mit einem Rat, der
+Sekunden bevor der Abbruch-Button genau diesen Eintrag selbst aufnahm, und in x2 mit einem Rat, der
 in die Marker führt. Erhoben wird vor dem Lauf, ob überhaupt einer lag (sonst antwortete ein Stash
 dieses Laufs selbst); *welcher* Satz es ist, wird danach gefragt: unserer, von diesem HEAD, und ein
 Merge hängt → `updateStashMine` („Merge abbrechen“ trägt ihn wieder ein); sonst `updateStashLeftover`
 mit `git stash show -p` und `drop`. Szene x7 (der Lauf legt einen eigenen Stash über den alten):
-der untere bekommt „gehört zu einem Stand, den es nicht mehr gibt“, der Knopf poppt den oberen, der
+der untere bekommt „gehört zu einem Stand, den es nicht mehr gibt“, der Button poppt den oberen, der
 untere bleibt `stash@{0}` — dass der Abbruch ihn dabei nicht erwähnt, steht weiter offen.
 
 **Zwei Ausgänge des Konfliktzweigs sagten nicht, was geschah.** Szene s4: Der Lauf bleibt mit „Diese eigenen Pakete stehen gerade nicht in package.json“ stehen, der Nutzer trägt daraufhin ein Paket von Hand ein, und „Merge abbrechen“ antwortet roh mit `error: Entry 'package.json' not uptodate. Cannot merge.` / `fatal: Could not reset index file to revision 'HEAD'.` — git nennt die Datei, aber nicht den einen Weg weiter, und es ist genau die Datei, die die Meldung davor selbst genannt hat. Szene s13: ein `pre-commit`-Hook mit `exit 1` im Projekt lässt den Merge-Commit scheitern; zurück kam die Merge-Ausgabe mit `conflicts: [package.json]` für eine Datei, die die App gerade selbst aufgelöst hatte, während der Grund in `committed.output` liegen blieb. `explainGitFailure` kennt jetzt `not uptodate`, und der `!committed`-Zweig hängt die Ausgabe des Commits an; „Merge abbrechen“ nach s13 räumt weiter auf und stellt den vorgefundenen Arbeitsbereich her.
@@ -153,12 +153,12 @@ Ergebnis: Ein Lauf, der sie nicht schreiben kann, soll installieren und es sagen
 beiseitegelegt, eine fehlende liest sich als „nichts“.
 
 **Nachtrag (2026-09-16, neunzehntes Review): „Merge abbrechen trägt ihn wieder ein“ fragt jetzt
-auch das, woran der Pop scheitert.** Der Satz stellte drei der vier Fragen, die der Knopf stellt —
+auch das, woran der Pop scheitert.** Der Satz stellte drei der vier Fragen, die der Button stellt —
 unserer, von diesem HEAD, ein Merge hängt — und nicht die vierte: ob der Arbeitsbereich die
 Dateien des Stashes frei hat. Szene n7 (Upstream ändert nur `quartz/index.ts`, eigene
 `index.ts` committet, Theme uncommittet; nach dem ersten Lauf `git merge --abort` im Terminal und
 ein ungestageter `scripts`-Eintrag in `package.json`, für den Plan unnachspielbar, also kein neuer
-Stash): Der zweite Lauf sagte „Merge abbrechen trägt ihn wieder ein“, und der Knopf antwortete
+Stash): Der zweite Lauf sagte „Merge abbrechen trägt ihn wieder ein“, und der Button antwortete
 `Your local changes to the following files would be overwritten by merge: package.json`, Stash
 blieb liegen, Theme weiter weg.
 
@@ -179,7 +179,7 @@ nennt. Drei Szenen, je frischer Klon, vorher und nachher:
 **Und nicht `git stash show -p | git apply --check`**, der Gürtel, den das achtzehnte Review
 vorgeschlagen hatte: Der fragt den Baum, der *jetzt* dasteht, mitten im Merge — nicht den, den der
 Abbruch macht. In denselben drei Szenen gemessen antwortet er „würde nicht anwenden“ in n7 **und**
-in n7b, hätte also einem Nutzer, dessen Einträge der Knopf gleich zurückträgt, gesagt, sie gehörten
+in n7b, hätte also einem Nutzer, dessen Einträge der Button gleich zurückträgt, gesagt, sie gehörten
 zu einem Stand, den es nicht mehr gibt — samt Rat `git stash drop`. Das ist Befund 4 des
 achtzehnten Reviews noch einmal, in der anderen Richtung und mit dem schlechteren Ausgang.
 
@@ -219,11 +219,11 @@ eingetragen:
     s4 gestaget    dasselbe, Eintrag gestaget          Abbruch läuft, Pop gelingt
 
     vorher   s3 gestaget „gehört zu einem Stand, den es nicht mehr gibt“ samt Rat zu
-             `git stash drop` — und der Knopf trug ihn Sekunden später zurück;
-             s4 ungestaget „Merge abbrechen trägt ihn wieder ein“ — und der Knopf verweigerte
-    nachher  beide sagen, was der Knopf tut; n7h und n7b unverändert
+             `git stash drop` — und der Button trug ihn Sekunden später zurück;
+             s4 ungestaget „Merge abbrechen trägt ihn wieder ein“ — und der Button verweigerte
+    nachher  beide sagen, was der Button tut; n7h und n7b unverändert
 
-Für die dritte Antwort gibt es einen dritten Satz (`updateStashMineBlocked`): Der Knopf *ist* der
+Für die dritte Antwort gibt es einen dritten Satz (`updateStashMineBlocked`): Der Button *ist* der
 Weg, nur steht die eigene, nicht vorgemerkte Änderung davor. Das ist derselbe Fehler, den der
 Vorgänger dem `apply --check` nachgewiesen hat — in der eigenen Fassung, eine Lage weiter.
 
@@ -272,8 +272,8 @@ Zusätzlich `@{upstream}` zu verlangen wäre teurer als der Rand: Ein Projekt oh
 keines, und dort fiele der Amend aus, obwohl nichts die Maschine verlassen kann.
 
 **Nachtrag (2026-09-17, zwanzigstes Review): ein Stash auf diesem HEAD gehört nicht zu einem
-Stand, den es nicht mehr gibt.** Der Leftover-Satz meinte „der Knopf trägt ihn nicht zurück“ und
-sagte etwas Stärkeres — samt Rat zu `git stash drop`. Ohne offenen Merge gibt es keinen Knopf, der
+Stand, den es nicht mehr gibt.** Der Leftover-Satz meinte „der Button trägt ihn nicht zurück“ und
+sagte etwas Stärkeres — samt Rat zu `git stash drop`. Ohne offenen Merge gibt es keinen Button, der
 Eintrag passt aber weiter, denn seine Basis *ist* HEAD. Szene s2 gestaget (erster Lauf lässt
 hängenden Merge und Stash, `git merge --abort` im Terminal, gestagete Änderung an `package.json`,
 zweiter Lauf: git beginnt den Merge gar nicht, HEAD unbewegt und gleich der Stash-Basis): vorher
@@ -364,9 +364,9 @@ Die Auskunft, die trägt, wird **vor** dem Merge genommen: standen beide Dateien
 
 **Nachtrag (2026-09-17, einundzwanzigstes Review): ein Pfad im Konflikt ist keine eigene Änderung, und ein Rat ohne Argument trifft den falschen Stash.** Zwei Ränder derselben Sätze.
 
-`git diff --name-only` nennt auch die **unmerged** Pfade, und die vierte Frage am Stash-Satz (`abortOutcomeForStash`) las sie als „eigene, nicht vorgemerkte Änderung, um die der Merge geht“ — also `abortRefused`. `reset --merge` setzt einen Pfad im Konflikt dagegen ohne Weiteres zurück. Gemessen (h6: Theme A committet, Theme B uncommittet, eigener Commit an `quartz/index.ts`, Upstream E): Lauf 1 lässt Stash und hängenden Merge mit `UU package.json` und `UU quartz/index.ts`, `git merge --abort` im Terminal, Lauf 2 sagte „…sobald die geänderte Datei aus dem Zusammenführen unter Git-Sync verworfen ist“ — es gab keine —, während der Knopf Sekunden später lief und Theme B zurücktrug. Vierte Fassung derselben Vorhersage in vier Runden. Gegenprobe (s4, beide Lagen, vorher wie nachher gleich): eine *echte* nicht vorgemerkte Änderung an `package.json`, während nur `quartz/index.ts` im Konflikt steht, bleibt `abortRefused` und der Knopf verweigert; vorgemerkt bleibt es „trägt ihn wieder ein“ und der Knopf läuft.
+`git diff --name-only` nennt auch die **unmerged** Pfade, und die vierte Frage am Stash-Satz (`abortOutcomeForStash`) las sie als „eigene, nicht vorgemerkte Änderung, um die der Merge geht“ — also `abortRefused`. `reset --merge` setzt einen Pfad im Konflikt dagegen ohne Weiteres zurück. Gemessen (h6: Theme A committet, Theme B uncommittet, eigener Commit an `quartz/index.ts`, Upstream E): Lauf 1 lässt Stash und hängenden Merge mit `UU package.json` und `UU quartz/index.ts`, `git merge --abort` im Terminal, Lauf 2 sagte „…sobald die geänderte Datei aus dem Zusammenführen unter Git-Sync verworfen ist“ — es gab keine —, während der Button Sekunden später lief und Theme B zurücktrug. Vierte Fassung derselben Vorhersage in vier Runden. Gegenprobe (s4, beide Lagen, vorher wie nachher gleich): eine *echte* nicht vorgemerkte Änderung an `package.json`, während nur `quartz/index.ts` im Konflikt steht, bleibt `abortRefused` und der Button verweigert; vorgemerkt bleibt es „trägt ihn wieder ein“ und der Button läuft.
 
-Und `git stash show -p` wie `git stash drop` meinen ohne Argument den **obersten** Eintrag — der dem Nutzer gehört, sobald er selbst einen zurückgelegt hat. Gemessen (h7): mit `stash@{0}: own index` über `stash@{1}: QuartzControl: core update …` zeigte der Rat wörtlich befolgt seine eigene Arbeit und verwarf sie, unserer blieb liegen. Der Satz nennt jetzt die Position, und `leftoverStashNote` überspringt dabei den Eintrag, den der Lauf selbst geschrieben hat (h7b, zwei Einträge der App übereinander: genannt wird `stash@{1}`, denn `stash@{0}` trägt der Abbruch-Knopf gleich zurück). Derselbe Platzhalter steht in `updateStashFitsHead`, wo die Befehle ohne Argument richtig wären — gesagt wird der Name trotzdem, weil der Nutzer den Satz neben `git stash list` liest. Findet sich gar kein Eintrag der App mehr, sagt der Lauf nichts, statt einen zu nennen, den es nicht gibt.
+Und `git stash show -p` wie `git stash drop` meinen ohne Argument den **obersten** Eintrag — der dem Nutzer gehört, sobald er selbst einen zurückgelegt hat. Gemessen (h7): mit `stash@{0}: own index` über `stash@{1}: QuartzControl: core update …` zeigte der Rat wörtlich befolgt seine eigene Arbeit und verwarf sie, unserer blieb liegen. Der Satz nennt jetzt die Position, und `leftoverStashNote` überspringt dabei den Eintrag, den der Lauf selbst geschrieben hat (h7b, zwei Einträge der App übereinander: genannt wird `stash@{1}`, denn `stash@{0}` trägt der Abbruch-Button gleich zurück). Derselbe Platzhalter steht in `updateStashFitsHead`, wo die Befehle ohne Argument richtig wären — gesagt wird der Name trotzdem, weil der Nutzer den Satz neben `git stash list` liest. Findet sich gar kein Eintrag der App mehr, sagt der Lauf nichts, statt einen zu nennen, den es nicht gibt.
 
 **Nachtrag (2026-09-17, nachgeholt): die zwei Fixes oben an echten Daten.** Die Runde hatte sie an Attrappen gemessen; hier sind sie an `github.com/jackyzha0/quartz` mit echtem `git fetch`, echtem npm und durch die gebaute App gemessen. Ausgangslage je Szene: `cp -Rc` von `navigations-testprojekt`, `git reset --hard f1fba3f` (sieben Commits zurück, fünf davon an den Paketdateien), die zwei eigenen Themes wieder in `package.json`, `npm install`.
 
@@ -411,22 +411,22 @@ Was weiterhin **nicht** gemessen ist: ERESOLVE, ein echter Push unter Git-Sync, 
 
 Das ist die Kehrseite von `carried` ohne SHA-Bindung (Nachtrag oben): Die Bindung hatte diese Tür zugehalten, und das Argument, das sie ersetzte („nach dem Merge ist `package.json` upstreams, er kann es gar nicht entfernt haben“), gilt für den Lauf, der unmittelbar folgt, nicht für eine Notiz, die liegen bleibt. Gegenproben: h1 (npm scheitert zweimal, der dritte Lauf trägt beide Themes wieder ein) und der gewöhnliche Lauf, beide unverändert.
 
-**Nachtrag (2026-09-17): was der Abbruch nebenbei wegwirft, wird genannt.** `git merge --abort` ist `reset --merge`, und das behält die *ungestagete* Hälfte einer Änderung und setzt den Rest zurück — ein vorgemerkter Edit an einer Datei, um die der Merge gar nicht geht, ist danach weg, ohne eine Zeile darüber. Der Stash-Satz rechnet diese Regel seit dem zwanzigsten Review ein; ausgesprochen hat sie niemand. Gemessen (h9, Upstream D): eine vorgemerkte Zeile in `README.md` neben einem Konflikt in `quartz/index.ts` — nach dem Abbruch steht die Datei wieder auf ihrem alten Stand und `git status` nennt sie nicht mehr. Der Knopf bleibt ein Knopf, weil git das erlaubt und eine Verweigerung die App wäre, die für den Nutzer entscheidet; gelesen wird **vor** dem Abbruch, weil `MERGE_HEAD` zu dem gehört, was er wegwirft, und ohne ihn die Arbeit des Nutzers nicht von der des Merges zu trennen ist.
+**Nachtrag (2026-09-17): was der Abbruch nebenbei wegwirft, wird genannt.** `git merge --abort` ist `reset --merge`, und das behält die *ungestagete* Hälfte einer Änderung und setzt den Rest zurück — ein vorgemerkter Edit an einer Datei, um die der Merge gar nicht geht, ist danach weg, ohne eine Zeile darüber. Der Stash-Satz rechnet diese Regel seit dem zwanzigsten Review ein; ausgesprochen hat sie niemand. Gemessen (h9, Upstream D): eine vorgemerkte Zeile in `README.md` neben einem Konflikt in `quartz/index.ts` — nach dem Abbruch steht die Datei wieder auf ihrem alten Stand und `git status` nennt sie nicht mehr. Der Button bleibt ein Button, weil git das erlaubt und eine Verweigerung die App wäre, die für den Nutzer entscheidet; gelesen wird **vor** dem Abbruch, weil `MERGE_HEAD` zu dem gehört, was er wegwirft, und ohne ihn die Arbeit des Nutzers nicht von der des Merges zu trennen ist.
 
 **Und was sein Pop freilegt.** Unter dem Stash, den der Abbruch zurückträgt, kann ein älterer der App liegen — von einem Lauf, der seinen nie wieder eintragen konnte. Bis hierher war genau dieser Augenblick der eine, in dem er sicher unerwähnt blieb: Der Lauf danach sagt nichts, weil sein eigener Eintrag dann weg ist und der übrige einer ist, den er nicht geschrieben hat. Gemessen (h8, zwei Einträge übereinander): vorher „Dropped refs/stash@{0}“ und sonst nichts, nachher derselbe Pop plus der Satz, der den verbliebenen beim Namen nennt — welchen der beiden Sätze er bekommt, entscheidet dieselbe Frage wie in `leftoverStashNote`.
 
-**Nachtrag (2026-09-17, dreiundzwanzigstes Review): „Starte das Update erneut“ — der Knopf dafür war aus.** Vier Runden Arbeit an der Notiz, am `resuming`-Amend, an `carried` und `filesAtHead` beschreiben einen zweiten Klick; angesehen hatte den Knopf niemand. Ein Lauf, der an `npm install` scheitert, hat den Merge schon committet, also enthält HEAD upstreams neuesten Commit, `getCoreUpdateStatus` antwortet `upToDate`, und `disabled={coreBusy || coreStatus?.state === 'upToDate'}` (seit `62ab802`, 2026-08-27) schaltet ihn ab — bis upstream den nächsten Commit veröffentlicht. Gesehen hat es keine der Runden davor, weil ihre echten Läufe `window.quartzGui.updates.runCoreUpdate` direkt riefen und die Attrappen keine Seite kennen. Gemessen an der gebauten App über den echten Knopf (Wegwerf-Profil, `cp -Rc` von `navigations-testprojekt` auf `f1fba3f`, zwei eigene Themes committet, echtes `git fetch`, echtes npm, das an diesen zwei Paketen scheitert):
+**Nachtrag (2026-09-17, dreiundzwanzigstes Review): „Starte das Update erneut“ — der Button dafür war aus.** Vier Runden Arbeit an der Notiz, am `resuming`-Amend, an `carried` und `filesAtHead` beschreiben einen zweiten Klick; angesehen hatte den Button niemand. Ein Lauf, der an `npm install` scheitert, hat den Merge schon committet, also enthält HEAD upstreams neuesten Commit, `getCoreUpdateStatus` antwortet `upToDate`, und `disabled={coreBusy || coreStatus?.state === 'upToDate'}` (seit `62ab802`, 2026-08-27) schaltet ihn ab — bis upstream den nächsten Commit veröffentlicht. Gesehen hat es keine der Runden davor, weil ihre echten Läufe `window.quartzGui.updates.runCoreUpdate` direkt riefen und die Attrappen keine Seite kennen. Gemessen an der gebauten App über den echten Button (Wegwerf-Profil, `cp -Rc` von `navigations-testprojekt` auf `f1fba3f`, zwei eigene Themes committet, echtes `git fetch`, echtes npm, das an diesen zwei Paketen scheitert):
 
     vorher   Badge „Aktuell“, „Installiert: 3dff48b · Neueste Version: 3dff48b“,
-             Knopf disabled; Übersicht ohne Leiste, „Nichts zu tun“, Kachel „Alles aktuell“;
+             Button disabled; Übersicht ohne Leiste, „Nichts zu tun“, Kachel „Alles aktuell“;
              die Paketnamen stehen genau einmal da, bis zum ersten Routenwechsel (`coreResult`
              ist `useState`)
-    nachher  Badge „Nicht abgeschlossen“, Kasten mit beiden Namen, Knopf an; Übersicht:
+    nachher  Badge „Nicht abgeschlossen“, Kasten mit beiden Namen, Button an; Übersicht:
              HANDLUNGSBEDARF 1 mit beiden Namen und Weg zu Updates, Kachel „Update nicht
              abgeschlossen“ mit Zähler
     Klick    läuft (neuer Snapshot-Link), scheitert wieder an denselben Paketen
     bezahlt  beide Zeilen von Hand zurück in `package.json`, „Erneut prüfen“: Badge „Aktuell“,
-             Kasten weg, Knopf wieder aus
+             Kasten weg, Button wieder aus
 
 Der Kern bekommt dafür eine vierte Antwort, die die Plugins nicht haben (`CoreUpdateState`). Sie ist keine Aussage darüber, wie das Projekt zu upstream steht — dazu hat es dessen neuesten Commit —, sondern darüber, wie es selbst dasteht: `package.json` ist upstreams, `node_modules` ist es nicht. Sie gewinnt gegen alle drei anderen, weil sie unabhängig von ihnen wahr ist und als einzige etwas zu tun gibt, und sie braucht kein Netz. Gefragt wird sie aus denselben drei Funktionen, die der Lauf selbst fragt (`readPendingInstall`, `packageJsonCommittedSince`, `stillMissing`), damit Seite und Lauf nicht auseinanderlaufen können. Der Zustand zwischen erfolgreichem npm und Aufwärm-Build — Notiz mit leerer Liste — ist bewusst keiner: Dort fehlt nichts, und der Preis ist ein Lauf, der einen Build nicht überspringt.
 
@@ -457,7 +457,7 @@ Nicht gefangen: eine Reparatur und eine Entfernung, die beide uncommittet bleibe
     neu   A `true`, Merge-Commit steht, Theme wieder eingetragen; B `false` mit
           „Für dieses Projekt läuft gerade ein Kern-Update.“
 
-**Nachtrag (2026-09-17, vierundzwanzigstes Review): was „Merge abbrechen“ antwortet, zeigt jetzt eine Seite.** `abortCoreMerge` wirft nicht, es antwortet: eine Verweigerung von git, ein gescheiterter Stash-Pop und das Lauf-Schloss sind `success: false` mit einem Satz, die vorgemerkte Datei, die der Abbruch wegwirft, `success: true` mit einem. Beide Aufrufer — Updates und Git-Sync — haben den Rückgabewert seit `2573477` nicht gelesen; die Updates-Seite setzte danach sogar `coreResult` auf `null`, also das Feld ab, in dem der Satz stehen könnte. Damit erreichte keiner der Sätze, die die siebzehnte bis einundzwanzigste Runde für diesen Weg geschrieben haben, je eine Oberfläche. Gemessen an der gebauten App (Attrappen-Projekt, Upstream F, halber Merge; der Kanal je an einer `cp -Rc`-Kopie desselben Zustands direkt gefragt, der Knopf am Original gedrückt):
+**Nachtrag (2026-09-17, vierundzwanzigstes Review): was „Merge abbrechen“ antwortet, zeigt jetzt eine Seite.** `abortCoreMerge` wirft nicht, es antwortet: eine Verweigerung von git, ein gescheiterter Stash-Pop und das Lauf-Schloss sind `success: false` mit einem Satz, die vorgemerkte Datei, die der Abbruch wegwirft, `success: true` mit einem. Beide Aufrufer — Updates und Git-Sync — haben den Rückgabewert seit `2573477` nicht gelesen; die Updates-Seite setzte danach sogar `coreResult` auf `null`, also das Feld ab, in dem der Satz stehen könnte. Damit erreichte keiner der Sätze, die die siebzehnte bis einundzwanzigste Runde für diesen Weg geschrieben haben, je eine Oberfläche. Gemessen an der gebauten App (Attrappen-Projekt, Upstream F, halber Merge; der Kanal je an einer `cp -Rc`-Kopie desselben Zustands direkt gefragt, der Button am Original gedrückt):
 
     Lage 1   vorgemerkte `eigene.txt`, die der Merge nicht anfasst
              Kanal  success: true, „Der Abbruch hat den vorgemerkten Stand dieser Dateien
@@ -466,9 +466,9 @@ Nicht gefangen: eine Reparatur und eine Entfernung, die beide uncommittet bleibe
     Lage 2   `README.md` im halben Merge geändert
              Kanal  success: false, „Eine Datei aus dem Zusammenführen wurde inzwischen
                     geändert …“ + „Entry 'README.md' not uptodate“
-             Seite  unverändert: ein Knopf, der nichts tut
+             Seite  unverändert: ein Button, der nichts tut
 
-Gesehen hat es keine der acht Runden davor, weil `abortCoreMerge` seit der sechzehnten an Bündeln gemessen wird und ein Bündel kein `setCoreResult(null)` hat — dieselbe Lücke wie beim Knopf der Vorrunde, eine Tür weiter.
+Gesehen hat es keine der acht Runden davor, weil `abortCoreMerge` seit der sechzehnten an Bündeln gemessen wird und ein Bündel kein `setCoreResult(null)` hat — dieselbe Lücke wie beim Button der Vorrunde, eine Tür weiter.
 
 **Nachtrag (2026-09-17, vierundzwanzigstes Review): „seit der Notiz committet“ fragt nach den Zeilen der Liste.** Die Frage der Vorrunde — „gibt es zwischen Notiz-Commit und HEAD irgendeinen Commit, der `package.json` anfasst“ — feuert für drei Commits, die nichts beantworten: einen eigenen aus anderem Grund, upstreams eigene, sobald sie über einen von Hand aufgelösten Merge nach HEAD kommen (`rev-list` mit Pfad folgt bei einem baumgleichen Merge diesem Elternteil, und das ist upstream), und den Amend der App selbst, wenn die Notiz aus einem Restore zurückkommt. Gefragt wird deshalb `git log -G<name>` je Eintrag: hat ein Commit eine Zeile hinzugefügt oder entfernt, die dieses Paket nennt. Die drei bleiben draußen, jeder aus eigenem Grund — der fremde Commit nennt sie nicht, upstream kennt die eigenen Pakete des Projekts nicht, und ein Merge-Commit zeigt ohne `--diff-merges` gar keinen Diff, was den handaufgelösten Merge und den eigenen Amend mitnimmt. Gemessen (Bündel beider Fassungen, Upstream A/E/E3, je Szene ein frischer Klon, Status über `url.<bare>.insteadOf` ohne Netz):
 
@@ -513,7 +513,7 @@ gebauten App.
 *Der Satz des Abbruchs stand im Band, das der Abbruch abräumt* (Befund 1). Auf Git-Sync wurde
 `abortNote` innerhalb von `{status.inProgress && …}` gerendert — nach dem Klick kam der Status ohne
 `inProgress` zurück, der Block verschwand und der Satz mit ihm. Betroffen ist genau die Hälfte, für
-die der Knopf überhaupt einen Satz hat: die verworfene vorgemerkte Datei (`success: true`) und ein
+die der Button überhaupt einen Satz hat: die verworfene vorgemerkte Datei (`success: true`) und ein
 gescheiterter Stash-Pop. Gemessen an der gebauten App mit einem Attrappen-Projekt im halben Merge
 und vorgemerkter `eigene.txt`: vorher stand nach dem Klick kein Wort mehr auf der Seite (ein
 MutationObserver sah den Satz dreimal aufblitzen, solange `sync.status()` unterwegs war), nachher
@@ -554,7 +554,7 @@ steht auch auf dem Fehlerweg.
 *Eine leere Liste war „nichts offen“, auch nach einem gescheiterten npm* (Befund 5). Szene G0, ein
 Projekt ohne eigene Pakete: `package.json` ist upstreams, `node_modules` nicht, die Notiz sagt es
 (`installPendingFor: <merge>, reinstall: []`) — und die Seite zeigte „Aktuell“ mit deaktiviertem
-Knopf, also keinen Weg. Die leere Liste nach einem *erfolgreichen* npm ist von dort aus nicht zu
+Button, also keinen Weg. Die leere Liste nach einem *erfolgreichen* npm ist von dort aus nicht zu
 unterscheiden, also sagt es der Lauf, der es weiß: die Notiz trägt `installFailed`, und „Nicht
 abgeschlossen“ hat einen zweiten Grund mit einem eigenen Satz auf der Seite (der alte nennt Pakete,
 und hier gibt es keine). Eine Notiz ohne das Feld liest sich wie bisher, damit keine
@@ -562,8 +562,8 @@ liegengebliebene plötzlich pending wird.
 
 Dazu zwei Sätze, die zu viel versprachen: `updatePackagesMissing` nannte nach einem Fehlschlag den
 Stand *vor* npm (also auch Pakete, die der erste Aufruf schon zurückgeschrieben hatte), und der
-Satz des Schlosses riet zu „Erneut prüfen“ — ein Knopf, der auf Git-Sync anders heißt und auf
-Updates während des Laufs deaktiviert ist. Beide sagen jetzt, was gilt, ohne einen Knopf zu nennen.
+Satz des Schlosses riet zu „Erneut prüfen“ — ein Button, der auf Git-Sync anders heißt und auf
+Updates während des Laufs deaktiviert ist. Beide sagen jetzt, was gilt, ohne einen Button zu nennen.
 
 **Nachtrag (2026-09-18, sechsundzwanzigstes Review, Befunde 1 bis 6 und nebenbei 2): die Ränder
 des Zustands `installFailed` und der Preis einer Kürzung.** Gemessen an einem Bündel dieses Standes

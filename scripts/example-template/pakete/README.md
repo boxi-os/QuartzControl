@@ -27,7 +27,7 @@ Import den Seitenleisten-Kasten der vier Websites, die sie anwenden (35. Review,
 zwei Dateien, alles andere außer `createdAt` ist gleich (`diff -r` der entpackten Pakete).
 Um 09:16 noch einmal, mit dem `base.scss`, das den Fokusring in den Seitenspalten nicht mehr
 abschneidet (Befund 2 derselben Runde). Um 10:26 ein drittes Mal, mit den Stylesheets aus
-Befund 9: Die offene Suche liegt über Graph-Vollansicht und Burger, und Burger und „Los“-Knopf
+Befund 9: Die offene Suche liegt über Graph-Vollansicht und Burger, und Burger und „Los“-Button
 haben ihren Hover zurück. Am selben Tag noch einmal: Beide tragen
 jetzt **quartz-navigations** wie das Example (Akkordeon `menue` und Pager `seiten-pager`), der
 Explorer ist aus. Vorher navigierten die Doku-Websites mit dem Explorer, und den hatte das Example

@@ -71,7 +71,7 @@ bedienbar — dass er kommt, ist gemessen, sein Aussehen nicht.
 
 ## Der Ziel-Wähler ist eine Radiogruppe (2026-09-03)
 
-„Ziel“ war eine handgebaute Knopfreihe: das gewählte Ziel blau, alle anderen grau, jeder Knopf ein
+„Ziel“ war eine handgebaute Button-Reihe: das gewählte Ziel blau, alle anderen grau, jeder Button ein
 eigener Tabstopp, und nichts daran sagte, dass es sich um *eine* Wahl aus mehreren handelt — kein
 `radiogroup`, keine Pfeiltasten. Genau das ist `SegmentedControl` seit U3, also ist es das jetzt
 auch hier. „Neues Ziel“ bleibt außerhalb der Gruppe: ein Ziel anzulegen ist keine der Optionen.

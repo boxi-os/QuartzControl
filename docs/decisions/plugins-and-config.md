@@ -134,7 +134,7 @@ Was das erzwingt:
   beantwortet — es gibt genau einen Schreiber.
 - **Der Zustand des Favicon-Plugins wird gezeigt, nicht geschaltet.** Die Zeile unter dem Bild sagt,
   ob das Plugin an, aus oder nicht installiert ist, und verlinkt auf die Plugin-Seite. Ein Schalter
-  hier hätte einen zweiten Schreiber auf `quartz.config.yaml` neben dem Speichern-Knopf derselben
+  hier hätte einen zweiten Schreiber auf `quartz.config.yaml` neben dem Speichern-Button derselben
   Seite gehabt, die die Config in `useState` hält.
 
 Am laufenden Produktions-Build geprüft (1728×1000, hell und dunkel): Startseite und Seitenleiste
@@ -315,14 +315,14 @@ Renderer keine Vertrauensgrenze ist:
   die Layout-Box ersetzt `{{root}}` auch in der prozentkodierten Form, die der Markdown-Renderer in
   eine URL schreibt. Gemessen an einem gebauten Klon von gui-test, ausgeliefert unter `/sub/`: beide
   Bilder (eines mit Leerzeichen im Namen) laden auf der Startseite und zwei Ebenen tief. Ist
-  `placeholders` aus, sagt der Knopf, dass das Bild nicht laden wird. Der Vorlagenteil `static`
+  `placeholders` aus, sagt der Button, dass das Bild nicht laden wird. Der Vorlagenteil `static`
   nimmt den Ordner schon mit.
 - **Welcher Editor offen ist, gehört dem Feld, nicht dem Ordner.** Der erste Bau hielt es als
   Sticky-State je Ordner — der Editor stand damit in jeder Box mit demselben `dir` offen, auch im
   `byLang`-Eintrag, und „Bild einfügen…“ der zweiten Box schrieb in die Kopie der ersten. Nur der
   Entwurf bleibt sticky, je Datei, damit ein Routenwechsel ihn nicht verliert.
 - Der Editor speichert mit „Snippet speichern“, nicht über die Seite: Die Plugins-Seite schreibt
-  jede Option sofort, das Snippet ist eine eigene Datei, und ein Knopf, der einen Teil schreibt,
+  jede Option sofort, das Snippet ist eine eigene Datei, und ein Button, der einen Teil schreibt,
   trägt seine Reichweite im Namen.
 
 Native Dialoge (Dateiwahl, Rückfrage) sind in der Messung im Hauptprozess gespiegelt, also nicht am

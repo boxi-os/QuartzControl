@@ -138,28 +138,28 @@ const STRINGS = {
     // obersten Eintrag meinen und der dem Nutzer gehört, sobald er selbst einen zurückgelegt hat.
     updateStashLeftover:
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen ({{entry}} in „git stash list“). Er gehört zu einem Stand, den es nicht mehr gibt: „git stash show -p {{entry}}“ zeigt ihn an, „git stash drop {{entry}}“ verwirft ihn.',
-    // Derselbe Stand, nur gehört er zu genau diesem Update - dann ist der Knopf auf der Seite der
+    // Derselbe Stand, nur gehört er zu genau diesem Update - dann ist der Button auf der Seite der
     // Weg, und ein geratenes „git stash pop“ wäre die schlechtere Hälfte desselben Vorgangs.
     updateStashMine:
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). „Merge abbrechen“ trägt ihn wieder ein.',
-    // Derselbe Stand, und der Knopf ist auch hier der Weg - nur steht eine eigene, nicht
+    // Derselbe Stand, und der Button ist auch hier der Weg - nur steht eine eigene, nicht
     // vorgemerkte Änderung davor, an der git den Abbruch verweigert. Gesagt, bevor der Nutzer drückt,
     // statt danach - und ohne eigenen Rat: Ob die Datei aus dem Merge stammt („git checkout --“)
-    // oder selbst vorgemerkt ist („git reset --“), sagt der Knopf je Datei (zweiunddreißigstes
+    // oder selbst vorgemerkt ist („git reset --“), sagt der Button je Datei (zweiunddreißigstes
     // Review, Befund 2); hier stand der eine Rat für beide.
     updateStashMineBlocked:
-      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). „Merge abbrechen“ trägt ihn wieder ein, sobald git den Abbruch zulässt; woran es gerade scheitert und was zu tun ist, sagt der Knopf selbst.',
-    // Derselbe Stand, der Knopf bricht auch ab - aber eine Datei, die er hält, steht ungestaget
+      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). „Merge abbrechen“ trägt ihn wieder ein, sobald git den Abbruch zulässt; woran es gerade scheitert und was zu tun ist, sagt der Button selbst.',
+    // Derselbe Stand, der Button bricht auch ab - aber eine Datei, die er hält, steht ungestaget
     // geändert da, und daran scheitert das Eintragen. Nicht „gehört zu einem Stand, den es nicht mehr
     // gibt“: er passt auf HEAD und hält die eigenen Pakete (zweiunddreißigstes Review, nebenbei).
     updateStashMineOccupied:
-      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen ({{entry}} in „git stash list“). „Merge abbrechen“ kann ihn nicht wieder eintragen, solange diese Dateien geändert sind: {{files}}. Sichere deine Änderung daran und verwirf sie (im Terminal: „git checkout -- <Datei>“), dann trägt der Knopf ihn ein.',
+      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen ({{entry}} in „git stash list“). „Merge abbrechen“ kann ihn nicht wieder eintragen, solange diese Dateien geändert sind: {{files}}. Sichere deine Änderung daran und verwirf sie (im Terminal: „git checkout -- <Datei>“), dann trägt der Button ihn ein.',
     // Drei Arten, wie quartz.config.yaml unlesbar ist, drei Sätze. Gesagt wird jede, statt die
     // Datei als halb leer zu lesen und dem Nutzer eine leere Seite ohne Begründung zu zeigen; die
     // Datei selbst ist dabei nie in Gefahr, das Speichern scheitert an ihr ebenfalls.
     configNotAMapping:
       'In quartz.config.yaml steht keine Zuordnung aus Schlüsseln und Werten. Die App liest die Datei deshalb nicht; repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
-    // Nennt keinen Knopf: Der Satz wird an zwei Stellen gelesen, und der Knopf heißt dort
+    // Nennt keinen Button: Der Satz wird an zwei Stellen gelesen, und der Button heißt dort
     // verschieden („Erneut prüfen“ auf Updates, „Aktualisieren“ auf Git-Sync) — auf Updates ist er
     // während des Laufs obendrein deaktiviert (fünfundzwanzigstes Review, Befund 1 und
     // „nebenbei“ 4).
@@ -190,7 +190,7 @@ const STRINGS = {
       'Das Projekt „{{path}}“ lässt sich nicht duplizieren, weil seine Konfiguration nicht lesbar ist. {{reason}}',
     configPluginsNotAList:
       'In quartz.config.yaml ist „plugins“ keine Liste. Die App liest die Datei deshalb nicht; repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
-    // Derselbe Stand, und er passt noch - nur ist kein Merge mehr offen, an dem der Knopf hinge.
+    // Derselbe Stand, und er passt noch - nur ist kein Merge mehr offen, an dem der Button hinge.
     // Was die App nicht mehr tun kann, tut „git stash pop“; deshalb steht hier kein „drop“.
     updateStashFitsHead:
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen ({{entry}} in „git stash list“). Er passt auf den jetzigen Stand, wird aber von dieser App nicht mehr eingetragen: „git stash show -p {{entry}}“ zeigt ihn an, „git stash pop {{entry}}“ trägt ihn ein.',

@@ -79,7 +79,7 @@ Geprüft nicht über die Attribute im DOM, sondern über Playwrights `getByRole`
 ## Was von selbst erscheint, muss gesagt werden (A4, 2026-09-03)
 
 Vor diesem Durchgang gab es im ganzen Renderer kein `aria-live` und kein `role="log"` — per grep,
-null Fundstellen. Sichtbar war das nicht, hörbar schon: „Gespeichert.“ erscheint neben dem Knopf,
+null Fundstellen. Sichtbar war das nicht, hörbar schon: „Gespeichert.“ erscheint neben dem Button,
 ohne dass jemand hinsieht, und für einen Screenreader passierte nach dem Speichern nichts.
 
 **Der Statusplatz gehört in den `PageHeader`, nicht in `actions`.** `PageHeader` hat jetzt eine
@@ -89,11 +89,11 @@ einen technischen Grund: eine Live-Region muss im Dokument stehen, *bevor* ihr T
 die zusammen mit ihrem Inhalt erscheint, sagt niemand an. Deshalb ist die Unterscheidung
 `undefined` gegen `null` bedeutungstragend: eine Seite ohne Statusmeldung lässt die Eigenschaft weg
 und bekommt keine Region, eine Seite mit Speichern übergibt `null` und bekommt die leere. Umgestellt
-sind die drei Seiten, die ein ganzes Dokument hinter einem Speichern-Knopf halten (Konfiguration,
+sind die drei Seiten, die ein ganzes Dokument hinter einem Speichern-Button halten (Konfiguration,
 Layout, Stile), die Einstellungen (die keinen `PageHeader` haben und die Region deshalb selbst
 tragen) und die drei Kopier-Bestätigungen (CSS-Seitenleiste, Eigenes CSS, die URL in Vorschau &
 Build — dort war das Häkchen das einzige Zeichen, und ein Häkchen ist kein Wort; die Region ist
-`sr-only`). Der Unsaved-Badge und der Knopf bleiben außerhalb: sie ändern sich, weil der Nutzer
+`sr-only`). Der Unsaved-Badge und der Button bleiben außerhalb: sie ändern sich, weil der Nutzer
 tippt, nicht von selbst.
 
 **`role="log"` an beiden Konsolen, und die Konsole ist jetzt ein Element statt zweier.** `LogConsole`
@@ -118,8 +118,8 @@ bräuchten.
 
 ## Cmd+S (A2, 2026-09-03)
 
-Drei Seiten halten ein ganzes Dokument hinter einem Speichern-Knopf — Konfiguration, Layout, Stile —
-und der Knopf war die einzige Art, es loszuwerden. Cmd+S tat nichts, nicht einmal hörbar nichts.
+Drei Seiten halten ein ganzes Dokument hinter einem Speichern-Button — Konfiguration, Layout, Stile —
+und der Button war die einzige Art, es loszuwerden. Cmd+S tat nichts, nicht einmal hörbar nichts.
 
 **Der Weg ist derselbe wie bei `app:navigate`, nur andersherum gedacht.** Ein zweiter Kanal
 `app:command` trägt eine `AppCommand`-Union (heute genau `'save'`) vom Menü zum Renderer; `App.tsx`
@@ -132,7 +132,7 @@ dem Zustand, den es beim Betreten der Seite hatte.
 
 **Der Menüpunkt bleibt aktiv, auch wenn nichts zu speichern ist.** Ihn auszugrauen hieße, dem
 Hauptprozess jeden Mount und jeden Tastendruck zu melden. Stattdessen registriert eine Seite ihr
-Speichern nur, solange der Knopf daneben auch etwas täte: keine Änderungen, ein laufender
+Speichern nur, solange der Button daneben auch etwas täte: keine Änderungen, ein laufender
 Speichervorgang oder ein Sub-Tab, der woanders speichert (`Frames`, die beiden Nicht-Site-Tabs der
 Konfiguration), heißt `null` — und ein Kommando ohne Registrierung tut nichts. Das ist die ehrlichere
 Hälfte: Cmd+S auf einem unveränderten Dokument würde sonst die Datei neu schreiben und den
@@ -187,7 +187,7 @@ Aufnahme-Meldung nie stehen blieb.
 
 Geprüft im Produktions-Build gegen `gui-test`: Aufnehmen, Pfeiltaste, Ablegen ergibt „reader-mode
 aufgenommen.“ → „reader-mode liegt über darkmode.“ → „reader-mode bei darkmode abgelegt.“ und
-danach „reader-mode ist jetzt an Position 3 von 5.“; ein Pfeil-Knopf ergibt denselben letzten Satz
+danach „reader-mode ist jetzt an Position 3 von 5.“; ein Pfeil-Button ergibt denselben letzten Satz
 allein; eine Option zu ändern ergibt „Einstellungen von darkmode gespeichert.“ neben dem sichtbaren
 Grün. Im Layout-Editor tragen alle 34 Griffe die deutsche Anleitung, und eine Aufnahme mit Abbruch
 sagt „table-of-contents abgebrochen, nichts verschoben.“ Konfiguration danach wiederhergestellt.
@@ -222,24 +222,24 @@ jede andere Meldung im Hauptprozess, die einen Fehler und keine Eingabe beschrei
 ## Drei Antworten im Bestätigungsdialog (2026-09-03)
 
 Der Befund stand seit dem Doku-Durchgang offen, mit der ausdrücklichen Notiz „nicht jetzt
-entscheiden“ — offen war, ob der bestehende Kanal einen dritten Knopf bekommt oder ein zweiter
+entscheiden“ — offen war, ob der bestehende Kanal einen dritten Button bekommt oder ein zweiter
 danebengestellt wird. Entschieden für den bestehenden: die Regel in `CLAUDE.md` sagt, dass es keinen
 neuen Kanal für etwas gibt, das ein bestehender mit einem Feld kann, und `showMessageBox` kann drei
-Knöpfe ohnehin.
+Buttons ohnehin.
 
 `ConfirmDialogOptions` hat jetzt ein optionales `altLabel`, und der Kanal antwortet mit
 `'cancel' | 'alt' | 'confirm'` statt mit einem Boolean. Im Renderer bleibt `confirmDialog()` bei
 seiner Ja/Nein-Signatur — achtzehn Aufrufstellen stellen eine Ja/Nein-Frage, und für die ist ein
 Boolean die ehrliche Form; die dritte Antwort holt sich `askDialog()`. Die sichere Antwort sitzt
-weiter in `buttons[0]` mit `cancelId: 0`, der dritte Knopf kommt in die Mitte, damit der bestätigende
+weiter in `buttons[0]` mit `cancelId: 0`, der dritte Button kommt in die Mitte, damit der bestätigende
 seinen Platz am Ende behält.
 
 Gebraucht wird das vom Unsaved-Guard, und der konnte es erst jetzt: „Speichern“ als Antwort setzt
 voraus, dass jemand weiß, wie diese Seite speichert — das ist das Register aus dem Cmd+S-Durchgang.
-Der Guard fragt `hasSaveCommand()` und stellt danach seine Frage: mit Speichern-Knopf lautet sie „Was
+Der Guard fragt `hasSaveCommand()` und stellt danach seine Frage: mit Speichern-Button lautet sie „Was
 soll damit geschehen?“, ohne ihn bleibt es beim alten „Trotzdem wechseln?“. Zwei Antworten sind kein
 toter Zweig: die Konfiguration meldet ungespeicherte Änderungen auch auf den Tabs, die nicht über
-ihren Speichern-Knopf gehen, und registriert dort nichts.
+ihren Speichern-Button gehen, und registriert dort nichts.
 
 Die drei Dokumentseiten geben aus ihrem `save()` jetzt zurück, ob es geklappt hat. Sie fangen ihre
 Fehler selbst und schreiben sie in den `PageHeader`, also sagt ein `await` allein nichts — und nach
@@ -248,10 +248,10 @@ Nutzer gerade retten wollte. Bei `false` bleibt der Guard auf der Seite, wo die 
 
 Gemessen im Produktions-Build, mit einem im Hauptprozess ersetzten `dialog.showMessageBox` (der echte
 Dialog blockiert Playwright; die Ersatzfunktion notiert ihre Optionen und antwortet auf Kommando):
-Die Knopfreihe ist `['Abbrechen', 'Speichern', 'Änderungen verwerfen']` mit `cancelId: 0`. Antwort 0
+Die Button-Reihe ist `['Abbrechen', 'Speichern', 'Änderungen verwerfen']` mit `cancelId: 0`. Antwort 0
 bleibt auf der Seite und lässt die Datei, wie sie war; Antwort 1 schreibt die Datei *und* wechselt;
 Antwort 2 wechselt und lässt die Datei, wie sie war. **Nicht am Betriebssystem gemessen** ist, in
-welcher Reihenfolge macOS die drei Knöpfe zeichnet und was die Eingabetaste dort trifft — dafür
+welcher Reihenfolge macOS die drei Buttons zeichnet und was die Eingabetaste dort trifft — dafür
 müsste jemand den Dialog von Hand bedienen.
 
 ## `useIpcQuery`, und wo ein Abbruch-Guard wirklich fehlt (S1, 2026-09-03)
@@ -470,7 +470,7 @@ Der `Section` der Einstellungen bleibt bewusst, wie er ist: Die Einstellungen ha
 `PageHeader`, ihre Abschnitte *sind* die Gliederung der Seite, und dort trägt das Quadrat.
 
 Gemessen an der gebauten App auf fünf Seiten in beiden Schemata und mit `npm run smoke`
-(38 Aufrufe): keine Karte bricht anders um, keine Überschrift kollidiert mit dem Knopf, der in
+(38 Aufrufe): keine Karte bricht anders um, keine Überschrift kollidiert mit dem Button, der in
 derselben Zeile sitzt.
 
 **Ein Projekt umzubenennen zieht die Pfade nach, die in es hineinzeigen (2026-09-06).**
@@ -671,9 +671,9 @@ färbt, was sie selbst geschrieben hat.
 
 **Nachtrag (2026-09-16, zwölftes Review): one activity, two writers, and a join that did not look at the folder.** Four of the sentences above no longer hold, and all four were measured wrong in the built app with a throwaway profile, a copy of `gui-test` and its dev server on 8099/3099, events recorded in the renderer. (1) `followQuartzOutput` was called by the one-off build's stdout and by the dev server's log tail without knowing which: with the dev server running, a note changed in the third second of `quartz build` made the server's "Detected change, rebuilding..." replace the `build` activity and its "Done rebuilding" clear it — the build ran on for 3.3 of its 6.9 s with no line and no lock, and the build's own `.finally` found nothing to clear. Now the follower takes its source: the build moves only a `build` activity, the server nothing while a `build` stands. After: rebuild at 21.1 s, `build`/`emitting` stays until 24.5 s, cleared by the build's "Done processing". (2) "Rebuild failed:" is written with `console.error` (`build.ts:174`), i.e. into the `.err.log` whose tail did not call the follower; with both lines appended by hand to the running server's logs the `rebuild` activity stayed before and was cleared after. Both tails go through the follower now. (3) Quartz has a second rebuild: the CLI watcher on the config, `*.scss`, `*.ts` and `quartz/static` says "Detected a source code change, doing a hard rebuild..." and then prints the lines of a first build, ending on "Done processing" — and every save in this app is that kind. With the config saved unchanged: no activity for 4.8 s before; now `preparing` 10.8 s, `parsing` 11.0 s, `emitting` 11.6 s, cleared 15.9 s. The soft rebuild never prints "Emitting files" (read in the real `dev-server-28737.out.log`: "Filtered out" goes straight to "Emitted"), so "Filtered out N files" moves the phase too; a changed note now shows `parsing` → `emitting` → cleared in 0.2 s. (4) The handler returned the running build *before* comparing output directories, and the Übersicht builds into `public/` while Vorschau & Build uses the page's own choice: three simultaneous `build.run` (none, `public`, `dist`) all resolved `success: true`, and `dist` did not exist. `runningBuilds` now keeps the resolved directory, `joinRunningBuild()` joins only the same one (compared with `relative()`), and a different one is refused with a sentence naming both; checked in the handler and again in `runBuild`, because a disk read and possibly a dialog lie between them. After: the first two resolved, the third was refused.
 
-**Nachtrag (2026-09-16, sechzehntes Review): eine Wartezeit, die niemand sieht, ist eine Einladung zum zweiten Klick — und ein Map-Eintrag unter einer Projekt-ID trägt so wenig über die Zeit wie eine PID.** Der wartende Serverstart des Absatzes darüber war für die Oberfläche unsichtbar: Zwischen dem Klick und dem Spawn stand der Status auf `stopped` und damit der Knopf auf „Starten“, und zwar die ganze Dauer des Builds statt der 38 ms von `refreshAuthoredFrames`. Gemessen an der gebauten App mit Wegwerf-Profil gegen eine Kopie von `navigations-testprojekt`: Zwei Klicks kamen an der Sperre vorbei, beide spawnten, der zweite starb am Port — und sein `exit`-Handler löschte den Eintrag des ersten samt seinem Satz in `running-servers.json`; danach sagte die Seite „Fehler“ und bot „Starten“, während der erste Server lief. Seither trägt der wartende Start einen eigenen Eintrag (`pendingStarts`, Status `starting`, sofort per `emitStatus` gesagt), ein zweiter Klick bekommt denselben Eintrag zurück statt eines zweiten Spawns, und geräumt wird ein Eintrag nur, wenn `runningServers.get(id)?.process` noch dieses Kind ist (`forgetServer()`). Nachgemessen im siebzehnten Review, `build.run` bei 0, `server.start` bei 0,80 s, ein zweites bei 1,40 s: 803 ms `starting` ohne PID, 1406 ms antwortet der zweite Start mit demselben Eintrag, 7211 ms Build fertig, 7260 ms antwortet der erste Start mit PID 81742, 12287 ms `running` — ein Prozess, ein Eintrag. „Stoppen“ während des Wartens antwortet nach 1 ms mit `stopped` und bricht es ab; ein erneuter Start wartet und spawnt.
+**Nachtrag (2026-09-16, sechzehntes Review): eine Wartezeit, die niemand sieht, ist eine Einladung zum zweiten Klick — und ein Map-Eintrag unter einer Projekt-ID trägt so wenig über die Zeit wie eine PID.** Der wartende Serverstart des Absatzes darüber war für die Oberfläche unsichtbar: Zwischen dem Klick und dem Spawn stand der Status auf `stopped` und damit der Button auf „Starten“, und zwar die ganze Dauer des Builds statt der 38 ms von `refreshAuthoredFrames`. Gemessen an der gebauten App mit Wegwerf-Profil gegen eine Kopie von `navigations-testprojekt`: Zwei Klicks kamen an der Sperre vorbei, beide spawnten, der zweite starb am Port — und sein `exit`-Handler löschte den Eintrag des ersten samt seinem Satz in `running-servers.json`; danach sagte die Seite „Fehler“ und bot „Starten“, während der erste Server lief. Seither trägt der wartende Start einen eigenen Eintrag (`pendingStarts`, Status `starting`, sofort per `emitStatus` gesagt), ein zweiter Klick bekommt denselben Eintrag zurück statt eines zweiten Spawns, und geräumt wird ein Eintrag nur, wenn `runningServers.get(id)?.process` noch dieses Kind ist (`forgetServer()`). Nachgemessen im siebzehnten Review, `build.run` bei 0, `server.start` bei 0,80 s, ein zweites bei 1,40 s: 803 ms `starting` ohne PID, 1406 ms antwortet der zweite Start mit demselben Eintrag, 7211 ms Build fertig, 7260 ms antwortet der erste Start mit PID 81742, 12287 ms `running` — ein Prozess, ein Eintrag. „Stoppen“ während des Wartens antwortet nach 1 ms mit `stopped` und bricht es ab; ein erneuter Start wartet und spawnt.
 
-**Nachtrag (2026-09-16, siebzehntes Review): `startedAt` ist die Spawnzeit, und die Übersicht hat auch während des Wartens einen Ausgang.** Zwei Folgen des Eintrags oben, beide erst an der gebauten App sichtbar. (1) `startServer` setzte `startedAt` beim Klick, `spawnServer` setzte nur die PID — seit ein Start auf einen Build wartet, liegen die zwei eine ganze Builddauer auseinander, und beide Seiten lesen die Zeit im Zustand `running` als „Gestartet vor …“: gemessen „vor 10 Sekunden“ für einen Prozess, der 6,5 s alt war, und auf `Example` sind es 16 bis 19 s. Gesetzt wird sie jetzt dort, wo die PID entsteht; am Bündel von `buildService` mit einer npx-Attrappe (Build 4 s, Klick nach 0,8 s) ist der Abstand zur Klickzeit von 1 ms auf 3251 ms gewandert, also auf den Rest des Builds. Während des Wartens zeigt keine Seite eine Zeit, dort bleibt die Klickzeit das Einzige, was es zu sagen gibt. (2) Auf der Übersicht stand „Stoppen“ nur bei `running`; bei `starting` standen „Starten“ und „Neu starten“ da und beide deaktiviert. Auf *Vorschau & Build* lag der Abbruch immer richtig, auf der Übersicht lag er nie dort — nur dauerte `starting` vorher Sekunden und jetzt einen Build, auf der Seite, die den Start angeboten hatte. Gemessen mit Build bei 0 s, Start bei 0,8 s, DOM bei 2,3 s: vorher `[Starten disabled=true, Neu starten disabled=true]`, nachher `[Stoppen disabled=false, Neu starten disabled=true]` — und der Knopf taugt als Abbruch (Klick bei 2,0 s, `stopped` nach 1 ms, nach dem Buildende bei 7,5 s kein Spawn). Die drei Server-Aufrufe der Übersicht laufen dafür nicht mehr unter `withBusy`: Die Antwort kommt erst mit dem Spawn, also nach dem Build, und hätte alle drei Knöpfe genau so lange gesperrt. Welcher Knopf dasteht, sagt das Abonnement.
+**Nachtrag (2026-09-16, siebzehntes Review): `startedAt` ist die Spawnzeit, und die Übersicht hat auch während des Wartens einen Ausgang.** Zwei Folgen des Eintrags oben, beide erst an der gebauten App sichtbar. (1) `startServer` setzte `startedAt` beim Klick, `spawnServer` setzte nur die PID — seit ein Start auf einen Build wartet, liegen die zwei eine ganze Builddauer auseinander, und beide Seiten lesen die Zeit im Zustand `running` als „Gestartet vor …“: gemessen „vor 10 Sekunden“ für einen Prozess, der 6,5 s alt war, und auf `Example` sind es 16 bis 19 s. Gesetzt wird sie jetzt dort, wo die PID entsteht; am Bündel von `buildService` mit einer npx-Attrappe (Build 4 s, Klick nach 0,8 s) ist der Abstand zur Klickzeit von 1 ms auf 3251 ms gewandert, also auf den Rest des Builds. Während des Wartens zeigt keine Seite eine Zeit, dort bleibt die Klickzeit das Einzige, was es zu sagen gibt. (2) Auf der Übersicht stand „Stoppen“ nur bei `running`; bei `starting` standen „Starten“ und „Neu starten“ da und beide deaktiviert. Auf *Vorschau & Build* lag der Abbruch immer richtig, auf der Übersicht lag er nie dort — nur dauerte `starting` vorher Sekunden und jetzt einen Build, auf der Seite, die den Start angeboten hatte. Gemessen mit Build bei 0 s, Start bei 0,8 s, DOM bei 2,3 s: vorher `[Starten disabled=true, Neu starten disabled=true]`, nachher `[Stoppen disabled=false, Neu starten disabled=true]` — und der Button taugt als Abbruch (Klick bei 2,0 s, `stopped` nach 1 ms, nach dem Buildende bei 7,5 s kein Spawn). Die drei Server-Aufrufe der Übersicht laufen dafür nicht mehr unter `withBusy`: Die Antwort kommt erst mit dem Spawn, also nach dem Build, und hätte alle drei Buttons genau so lange gesperrt. Welcher Button dasteht, sagt das Abonnement.
 
 **Nachtrag (2026-09-17, einundzwanzigstes Review): ein Rat gehört zu dem Zustand, den er meint — und eine Seite, die nicht lädt, sagt warum.** Zwei Ränder derselben Sorte, beide an der gebauten App mit Wegwerf-Profil und einer Projektkopie gemessen.
 
@@ -717,7 +717,7 @@ beantwortet hatte, die eine andere beantwortet. Gemessen an der gebauten App geg
   Enter fragte nach der nächsten). Ein Fokus aus einem `requestAnimationFrame` reichte nicht: Ein
   Entfernen nach einer abgewarteten Rückfrage war in diesem Frame noch nicht gerendert, und der
   Fokus landete auf dem Namen der entfernten Sprache, der dann mit ihr verschwand — bei den Boxen
-  sah es nur richtig aus, weil derselbe Knopf an derselben Stelle blieb. `focusRowAt` fokussiert
+  sah es nur richtig aus, weil derselbe Button an derselben Stelle blieb. `focusRowAt` fokussiert
   synchron nach einem `flushSync` des Entfernens (`94a5d0e`).
 - **Die Sidebar fragte nicht**, während jeder Weg innerhalb von Veröffentlichen und Zugängen
   fragte; „Zurück“ der Einstellungen ebenso wenig (`8512daf`).
@@ -792,7 +792,7 @@ Klasse vergeben“ unter der Vorschau), nicht beim Anwählen. Eine Kopie behält
 Originals, damit sie gleich aussieht, und bekommt ihre eigene dahinter — „die eigene“ ist deshalb
 die letzte, und der Selektor des Originals schließt die eigenen seiner Kopien aus
 (`.layout-box-mark:not(.layout-box-mark-2)`). Gemessen an der gebauten App mit einem zusätzlichen
-Pager ohne Klasse: vorher `.quartz-nav`, 2 Treffer, Knopf da; danach `nav-zurueck-weiter`, 1
+Pager ohne Klasse: vorher `.quartz-nav`, 2 Treffer, Button da; danach `nav-zurueck-weiter`, 1
 Treffer. Akkordeon dupliziert: `nav-menue nav-menue-2`, Original und Kopie je 1 Treffer. Kasten
 „mark“ dupliziert: `layout-box-mark layout-box-mark-2`, Listenname „mark-2“.
 Seit dem Nachzug am selben Tag gilt das für jedes Duplikat: Die Klasse entsteht in

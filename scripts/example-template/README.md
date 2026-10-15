@@ -562,7 +562,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | Plugin-CSS überschreiben | Quartz legt Komponenten-CSS in `@layer`, `custom.scss` kommt ungelayert dahinter: **jede** Regel hier gewinnt, auch unbeabsichtigt. Wer eine Eigenschaft anfasst, die ein Plugin selbst setzt, muss dessen Regel mitschreiben |
 | Klappmechanismen nachbauen | Quartz klappt Explorer und Ordner selbst. Eine eigene `grid-template-rows`-Animation gewinnt und hinterlässt Lücken |
 | `.math-display`, `.tag-index`, `<input>` im Farbschalter | Existiert alles nicht. Vor dem Schreiben einer Regel im gebauten HTML nachsehen |
-| `display` aus einem Layer überschreiben | Wer ungeschichtet `display: grid` setzt, gewinnt auch dort, wo das Plugin `display: none` meinte. Beim Schubladen-Knopf des Explorers klappte das den ganzen Baum auf jedem Desktop zu (BEFUNDE 22). Beide Zustände selbst aussprechen |
+| `display` aus einem Layer überschreiben | Wer ungeschichtet `display: grid` setzt, gewinnt auch dort, wo das Plugin `display: none` meinte. Beim Schubladen-Button des Explorers klappte das den ganzen Baum auf jedem Desktop zu (BEFUNDE 22). Beide Zustände selbst aussprechen |
 | Nach einer Frame-Änderung von Hand bauen | `quartz build` räumt `public/` nicht auf, und das Frame-CSS steht in jeder Seite. `rm -rf public` davor, sonst mischen sich alt und neu (BEFUNDE 23) |
 | `folderDefaultState: 'open'` | Wirkungslos in Explorer 0.1.0 — das Skript liest nur `localStorage` (BEFUNDE 21) |
 | Plugin-CSS überschreiben, zweiter Teil | Für *Ressourcen*-Stylesheets (`static/resource-style-….css`) gilt die Layer-Regel nicht: ungeschichtet und **nach** `index.css` verlinkt. Bei gleicher Spezifität gewinnt das Plugin (BEFUNDE 32) |
@@ -576,7 +576,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | Ein `<summary>` als Bedienelement | Rechnet ohne `box-sizing` als `content-box`, und ein Plugin-`padding` überlebt, wenn man nur die eine Hälfte überschreibt. Der Sprachumschalter wurde so 51 px hoch neben 44-px-Nachbarn (BEFUNDE 27) |
 | Ein zweiter Ausklapp-Pfeil | `base.scss` gibt jedem `<summary>` eine Chevron, das Plugin setzt zusätzlich ein „▾“. Wer eine eigene hinzufügt, hat drei (BEFUNDE 27) |
 | Ein Alias in zwei Sprachen | `alias-redirects` slugifiziert sprachübergreifend: „Frontmatter-Demo“ und „Frontmatter demo“ ergeben denselben Pfad, und die zweite Seite kapert die erste (BEFUNDE 25) |
-| Ein vierter Knopf in der Werkzeugleiste | Kostet bei 390 px den Seitennamen in der App-Leiste. Erst schrumpft der Titel, dann läuft die Leiste über (BEFUNDE 28) |
+| Ein vierter Button in der Werkzeugleiste | Kostet bei 390 px den Seitennamen in der App-Leiste. Erst schrumpft der Titel, dann läuft die Leiste über (BEFUNDE 28) |
 | Der Frame, den ein Seitentyp-Plugin mitbringt | Ist nicht unbedingt benutzbar. Canvas fällt auf Quartz' `full-width` zurück und hat dort keine Höhe; Excalidraw bringt einen eigenen Rahmen ganz ohne Kopfleiste mit. Beide bekommen jetzt `drawing` (BEFUNDE 48) |
 | `.overflow-end` im Explorer | Steht am **Anfang** der Liste, nicht am Ende. Mit Höhe sind das 16 px Luft zwischen Überschrift und erstem Ordner (BEFUNDE 50) |
 | Zwei Regeln, die dasselbe Element verstecken | Die unbedingte gewinnt weiter, auch wenn die spätere nur die *anderen* versteckt. Auf `/en/` war der ganze Explorer-Baum weg (BEFUNDE 51) |

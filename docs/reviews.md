@@ -2386,3 +2386,13 @@ empfiehlt, statt einer sechsundvierzigsten Runde dieser Art.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
 
+Die **Nebenbei-Liste** des fünfundvierzigsten auf Wunsch des Nutzers, ein Punkt je Commit (2026-10-16):
+`5de31a3` („3 werden ersetzt“), `6dbfb7c` („bei der Variante „Seitliche Panels““), `2f38830`
+(gleichnamige Zeilen der Plugin-Liste tragen `#n` wie auf der Bühne), `09ccab8` („ohne die Kopie
+von jetzt“ — ein Selektor, der auch spätere Kopien ausschließt, bräuchte eine Grammatik, die Schema
+und Vorschau nicht sprechen), `ca64190` (die Kopfzeile vor `a06f654` zählt als zusammengelegt),
+`f66105b` (der Rumpf von `custom.scss` der Vorlage nennt „Stile → Eigenes CSS“; nur im Repo, die
+Pakete bekommen es mit P8) und `1b8cd65` (zwei Release-Schritte in P8 des Plans). Offen bleibt
+die Frage, ob Messprotokolle in `docs/decisions/` von Wortersetzungen ausgenommen sind, und die
+sechs Alpha-Szenen.
+

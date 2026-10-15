@@ -93,7 +93,9 @@ export function ObjectBlock({
   // by its own words hands its children an empty search, so they are all there under it.
   const searching = ctx.query !== ''
   const match = (f: OptionField): 'self' | 'child' | 'none' => fieldMatch(f, ctx.query, ctx.lang)
-  const shown = ordered.filter((f) => values[f.key] !== undefined || !root?.hideUnlessSet?.(f.key) || !inactiveReason(f))
+  // An option of another variant stands only while set - or while it is searched for: hidden then,
+  // a search for "flyout" under Accordion found it, said nothing and showed an empty form.
+  const shown = ordered.filter((f) => searching || values[f.key] !== undefined || !root?.hideUnlessSet?.(f.key) || !inactiveReason(f))
   const found = shown.filter((f) => match(f) !== 'none')
   const described = found.filter((f) => f.origin !== 'config')
   const unknown = found.filter((f) => f.origin === 'config')

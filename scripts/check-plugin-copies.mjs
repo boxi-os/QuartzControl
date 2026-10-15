@@ -18,7 +18,7 @@
 //                         `publishedOf` — welche Sprachen, welche Standardsprache, welche
 //                         veröffentlicht werden
 //   quartz-navigations    `resolveOptions` gegen `variantOf`; und für jede Option, über die
-//                         `hasNoEffect` urteilt, wird die echte Komponente je Art und
+//                         `hasNoEffect` urteilt, wird die echte Komponente je Variante und
 //                         Mobil-Darstellung mit jedem Wert der Option gerendert. „Ohne Wirkung“
 //                         heißt hier: dasselbe Markup auf drei Seiten einer kleinen Website. Eine
 //                         Wirkung allein im Client-Skript oder im CSS, die an keinem Attribut
@@ -212,7 +212,7 @@ function tally(label, cases, diffs) {
       const got = copy.variantOf(options)
       if (theirs !== got) variantDiffs.push(`variant ${show(v)}: App ${show(got)}, Plugin ${show(theirs)}`)
     }
-    tally('Art (variantOf)', inputs.length, variantDiffs)
+    tally('Variante (variantOf)', inputs.length, variantDiffs)
 
     // A small site: two folders, one of them nested, and pages on and off the trail.
     const page = (slug, relativePath, title) => ({ slug, filePath: `content/${relativePath}`, relativePath, frontmatter: { title } })
@@ -277,6 +277,10 @@ function tally(label, cases, diffs) {
         )
       })
 
+    // An icon on every node, so a neighbour the pager picks has one whichever it is.
+    const ICON_EVERYWHERE = Object.fromEntries(
+      ['docs', 'docs/intro', 'docs/guides', 'docs/guides/alpha', 'docs/guides/beta', 'blog', 'blog/first', 'blog/second', 'about'].map((p) => [p, '★'])
+    )
     // Every option hasNoEffect has a case for, with the values the plugin accepts.
     const MOBILE = ['same', 'accordion', 'offcanvas', 'select', 'hidden']
     const values = {
@@ -287,12 +291,32 @@ function tally(label, cases, diffs) {
       folderDefaultState: ['collapsed', 'open'],
       expandActive: [true, false],
       persistState: [false, true],
-      select: [{ button: false }, { button: true }]
+      select: [{ button: false }, { button: true }],
+      // The options the editor keeps among the ones every variant shares, and greys out where the
+      // rendering code never reaches them (renderSelect, renderPager, renderTabs).
+      icons: ['none', 'type', 'custom', 'both'],
+      nodeIcons: [{}, ICON_EVERYWHERE],
+      showHome: [false, true],
+      showScopeRoot: [false, true],
+      indexEntry: ['none', 'first'],
+      align: ['left', 'center', 'right', 'full'],
+      trigger: ['click', 'hover'],
+      tabs: [{ secondary: true }, { secondary: false }],
+      flyout: [{ side: 'auto' }, { side: 'left' }],
+      columns: [{ max: 4 }, { max: 2 }],
+      pager: [{ labels: true }, { labels: false }, { order: 'siblings' }]
     }
     // Other options an answer depends on, beyond variant and mobile: "ohne Wirkung" has to hold for
     // every one of these, "wirkt" for one. expandActive reaches the client script only through a
     // remembered state, so only under persistState.
-    const contexts = { expandActive: [{}, { persistState: true }] }
+    // icons needs an icon to draw beyond the type glyphs, nodeIcons a mode that draws it, and the
+    // scope root a root with a name.
+    const contexts = {
+      expandActive: [{}, { persistState: true }],
+      icons: [{ nodeIcons: ICON_EVERYWHERE }],
+      nodeIcons: [{ icons: 'custom' }],
+      showScopeRoot: [{}, { rootPath: 'docs' }]
+    }
     const effectDiffs = []
     let cases = 0
     for (const variant of ours)

@@ -51,6 +51,8 @@ export function variantOf(options: Record<string, unknown> | undefined): NavVari
 // quartz-navigations 0.4.1) and which of those it treats as popups (POPUP_VARIANTS there).
 const COLLAPSIBLE = new Set<NavVariant>(['accordion', 'flyout', 'dropdown', 'mega'])
 const POPUP = new Set<NavVariant>(['dropdown', 'mega', 'flyout'])
+// The top-row variants whose root carries `quartz-nav--align-*` (ROW_VARIANTS there).
+const ROW = new Set<NavVariant>(['bar', 'dropdown', 'mega', 'tabs'])
 // These two are rendered by their own functions (renderSelect, renderPager) that never look at
 // folder rows - Navigation.tsx returns before renderNavigation. `mobile` still reaches them as the
 // root class `quartz-nav--mobile-<value>`, and `hidden` hides them below the breakpoint.
@@ -62,8 +64,9 @@ const OWN_RENDERER = new Set<NavVariant>(['select', 'pager'])
  * Everything not listed here counts as having an effect. The schema's own `x-quartz-when` covers
  * align, trigger and the per-variant objects already; this is the part it does not say.
  *
- * Such an option is not hidden - the editor moves it into a folded section, so a value set there
- * stays in sight and can be reset.
+ * Such an option is not hidden: it stays in its group, greyed, with the variants it works with
+ * under it - and an option of the variant section (VARIANT_KEYS) that does nothing is shown only
+ * while set.
  */
 export function hasNoEffect(key: string, variant: NavVariant, mobile: unknown): boolean {
   const own = OWN_RENDERER.has(variant)
@@ -94,7 +97,66 @@ export function hasNoEffect(key: string, variant: NavVariant, mobile: unknown): 
     // renderSelect and the `mobile: select` jump menu are the only readers.
     case 'select':
       return variant !== 'select' && (own || mobile !== 'select')
+    // rootClass and rootData read these for their own variants only.
+    case 'align':
+      return !ROW.has(variant)
+    case 'trigger':
+      return !POPUP.has(variant)
+    case 'tabs':
+    case 'flyout':
+    case 'pager':
+      return variant !== key
+    // Resolved, then read by nothing: the README calls it reserved, the layout is an auto-fit grid.
+    case 'columns':
+      return true
+    // The jump menu's options are text, without the icons of a row.
+    case 'icons':
+    case 'nodeIcons':
+      return variant === 'select'
+    // homeEntry is left out of the tabs, and the two own renderers never call it.
+    case 'showHome':
+      return variant === 'tabs' || own
+    // Only renderNavigation draws the scope root and a folder's index entry.
+    case 'showScopeRoot':
+    case 'indexEntry':
+      return own
     default:
       return false
+  }
+}
+
+/**
+ * The options that belong to a variant rather than to every navigation - the section under the
+ * tiles. Which of them a variant reads is hasNoEffect's answer; this is only the list.
+ */
+export const VARIANT_KEYS = new Set([
+  'align',
+  'trigger',
+  'chevrons',
+  'folderClick',
+  'folderDefaultState',
+  'expandActive',
+  'exclusive',
+  'persistState',
+  'tabs',
+  'flyout',
+  'select',
+  'columns',
+  'pager'
+])
+
+/** The plugin's values of `mobile`, in the order of its schema. */
+export const MOBILE_VALUES = ['same', 'accordion', 'offcanvas', 'select', 'hidden'] as const
+
+/**
+ * Why an option does nothing with this variant and mobile setting, as the two things a sentence
+ * needs: the variants it does work with (on the desktop), and the mobile settings with which it
+ * would work for this variant. null: it works. Both empty: the plugin reads it nowhere.
+ */
+export function noEffectReason(key: string, variant: NavVariant, mobile: unknown): { variants: NavVariant[]; mobile: string[] } | null {
+  if (!hasNoEffect(key, variant, mobile)) return null
+  return {
+    variants: NAV_VARIANTS.map((v) => v.value).filter((v) => !hasNoEffect(key, v, 'same')),
+    mobile: MOBILE_VALUES.filter((m) => m !== 'same' && !hasNoEffect(key, variant, m))
   }
 }

@@ -3,7 +3,7 @@ import type { OptionField, PluginEntry, PluginOptionSchemaResult } from '@shared
 import { quartzPluginName } from '@shared/quartzPluginName'
 import type { RootExtras } from '../../components/PluginOptionsForm/editors'
 import { enumLabel, type FormLanguage } from '../../components/PluginOptionsForm/text'
-import { NAVIGATIONS_PLUGIN, NAV_VARIANTS, VARIANT_KEYS, noEffectReason, variantOf, type NavVariant } from './navigationVariants'
+import { NAVIGATIONS_PLUGIN, NAV_VARIANTS, VARIANT_KEYS, hasNoEffect, noEffectReason, variantOf, type NavVariant } from './navigationVariants'
 import { LAYOUT_BOX_PLUGIN, boxContentKind, nullBreaks, withoutNulls } from './layoutBoxes'
 
 // What the form adds for the two plugins whose editors know more than the schema says, in one
@@ -26,6 +26,11 @@ export function navigationRoot(
   const variant = variantOf(options)
   const mobileField = fields.find((f) => f.key === 'mobile')
   const name = (v: NavVariant): string => t(`navigationsEditor.variants.${v}.label`)
+  const quote = (s: string): string => (lang === 'en' ? `“${s}”` : `„${s}“`)
+  // The section is the variant's - and what the smartphone setting adds to it: Tree with mobile
+  // Accordion folds on smartphones, so exclusive and its kin work there and stand in the section.
+  // Said once at its head, or the section changed under a tile nobody touched.
+  const byMobile = [...VARIANT_KEYS].some((k) => hasNoEffect(k, variant, 'same') && !hasNoEffect(k, variant, options.mobile))
   return {
     inactiveReason: (key) => {
       const why = noEffectReason(key, variant, options.mobile)
@@ -41,14 +46,15 @@ export function navigationRoot(
             : t('navigationsEditor.onlyWith', { variants: why.variants.map(name).join(', ') })
         )
       if (why.mobile.length > 0)
-        parts.push(t('navigationsEditor.withMobile', { variant: name(variant), mobile: why.mobile.map((m) => (lang === 'en' ? `“${enumLabel(mobileField, m, lang)}”` : `„${enumLabel(mobileField, m, lang)}“`)).join(', ') }))
+        parts.push(t('navigationsEditor.withMobile', { variant: name(variant), mobile: why.mobile.map((m) => quote(enumLabel(mobileField, m, lang))).join(', ') }))
       return parts.length > 0 ? parts.join(' ') : t('navigationsEditor.readNowhere')
     },
     hideUnlessSet: (key) => VARIANT_KEYS.has(key),
     lead: {
       has: (key) => VARIANT_KEYS.has(key) || (withVariant && key === 'variant'),
       title: t('navigationsEditor.leadTitle', { variant: name(variant) }),
-      empty: t('navigationsEditor.leadEmpty')
+      empty: t('navigationsEditor.leadEmpty'),
+      note: byMobile ? t('navigationsEditor.leadByMobile', { mobile: quote(enumLabel(mobileField, String(options.mobile), lang)) }) : undefined
     }
   }
 }

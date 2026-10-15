@@ -56,7 +56,7 @@ export interface RootExtras {
   /** These fields first, open and not foldable, under the given title - the section the tiles
    *  above it switch. Chosen by the app's table, not by a group name, so an older schema of the
    *  plugin fills it too. */
-  lead?: { has: (key: string) => boolean; title: string; empty: string }
+  lead?: { has: (key: string) => boolean; title: string; empty: string; note?: string }
   /** The same as inactiveReason for a field of a record entry (layout-box's byLang): the entry's
    *  own values and the options it is laid over. Without it `file` stood active in an entry whose
    *  text silences it. */
@@ -158,6 +158,7 @@ export function ObjectBlock({
     <div className="flex flex-col gap-3">
       {lead && (leading.length > 0 || !searching) && (
         <FoldBox title={lead.title} aside={searching ? t('pluginOptions.matches', { count: leading.length }) : undefined} open bodyClassName={`gap-3.5 ${DIVIDED_ROWS}`}>
+          {lead.note && <p className="text-micro text-text-muted">{lead.note}</p>}
           {leading.length > 0 ? rows(leading) : <p className="text-micro text-text-muted">{lead.empty}</p>}
         </FoldBox>
       )}

@@ -1232,6 +1232,7 @@ export default {
     optionsHeading: 'Optionen',
     leadTitle: 'Einstellungen der Variante „{{variant}}“',
     leadEmpty: 'Diese Variante hat keine eigenen Einstellungen.',
+    leadByMobile: 'Dazu kommen Einstellungen, die wirken, weil auf dem Smartphone {{mobile}} gewählt ist.',
     notWith: 'Wirkt nicht bei {{variants}}.',
     onlyWith: 'Wirkt nur bei {{variants}}.',
     withMobile: 'Bei „{{variant}}“ nur, wenn auf dem Smartphone {{mobile}} gewählt ist.',

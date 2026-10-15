@@ -33,6 +33,7 @@ import type {
   StyleFileSet
 } from '@shared/ipc-contract'
 import { useProject } from './ProjectLayout'
+import { markReturn } from '../state/returnLink'
 import { Badge, Button, Card, PageHeader } from '../components/ui'
 import { TAB_ICONS } from './navConfig'
 import { formatBytes, formatRelativeTime } from '../utils/format'
@@ -68,6 +69,7 @@ function Tile({
   className?: string
   children: ReactNode
 }): JSX.Element {
+  const projectId = useProject().id
   return (
     <Card className={`flex flex-col gap-3 ${className}`}>
       <div className="flex min-w-0 items-center gap-2">
@@ -82,6 +84,7 @@ function Tile({
       {children}
       <Link
         to={to}
+        onClick={() => markReturn(projectId, '', to)}
         className="mt-auto inline-flex items-center gap-1 pt-0.5 text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
       >
         {linkLabel}
@@ -131,6 +134,7 @@ interface Issue {
 
 function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
   const { t } = useTranslation()
+  const projectId = useProject().id
   return (
     <Card className="!p-0">
       <div className="flex items-center gap-2 border-b border-ink/[0.06] px-4 py-2.5 dark:border-ink/10">
@@ -160,6 +164,7 @@ function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
           </div>
           <Link
             to={issue.to}
+            onClick={() => markReturn(projectId, '', issue.to)}
             className="ml-auto inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
           >
             {issue.linkLabel}

@@ -8,6 +8,7 @@ import type { CoreUpdateState, CoreUpdateStatus, GitStatus, PluginUpdateStatus, 
 import { Badge, Button, Card, CardHeading, PageHeader } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
 import { primeStickyState } from '../state/uiState'
+import { markReturn } from '../state/returnLink'
 import { announce } from '../state/announcer'
 import { TAB_ICONS } from './navConfig'
 import HandbookLink from '../components/HandbookLink'
@@ -111,6 +112,7 @@ export default function Updates(): JSX.Element {
   function openSnapshot(snapshotId: string): void {
     const target = `/project/${project.id}/backups`
     primeStickyState(target, 'backups.open', snapshotId)
+    markReturn(project.id, 'updates', 'backups')
     navigate(target)
   }
 

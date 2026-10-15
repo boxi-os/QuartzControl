@@ -6,6 +6,7 @@ import type { FrameBreakpoint, GridFrameDefinition, QuartzConfig } from '@shared
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { peekStickyState, primeStickyState, useStickyState } from '../../state/uiState'
+import { markReturn, noteTabChange } from '../../state/returnLink'
 import { announce } from '../../state/announcer'
 import { useSaveCommand } from '../../state/saveCommand'
 import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
@@ -82,6 +83,7 @@ export default function LayoutEditor(): JSX.Element {
     (next: Tab) => {
       setSearchParams(next === 'global' ? {} : { tab: next }, { replace: true })
       setLastTab(next)
+      noteTabChange(next)
     },
     [setSearchParams, setLastTab]
   )
@@ -163,6 +165,7 @@ export default function LayoutEditor(): JSX.Element {
   // From the overview: a frame by name - an own one, or "default" for Quartz's, which the frame
   // builder shows read-only. The same rule as editFrame about a draft with unsaved changes.
   function openFrameByName(name: string): void {
+    markReturn(project.id, 'layout?tab=overview', 'layout?tab=frames')
     if (name !== 'default') {
       const frame = customFrames.find((f) => f.frameName === name)
       if (frame) editFrame(frame, 'desktop')
@@ -178,6 +181,7 @@ export default function LayoutEditor(): JSX.Element {
   // the click was on one. The board is not mounted while the overview is, so it reads these once.
   function openPageType(pageType: string | null, componentIndex?: number): void {
     if (!config) return
+    markReturn(project.id, 'layout?tab=overview', 'layout?tab=global')
     primeStickyState(pathname, 'layout.pageType', pageType)
     primeStickyState(pathname, 'layout.selected', componentIndex === undefined ? null : componentRef(config.plugins, componentIndex))
     goToTab('global')
@@ -304,7 +308,10 @@ export default function LayoutEditor(): JSX.Element {
           projectPath={project.path}
           config={config}
           onChange={setConfig}
-          onEditFrame={editFrame}
+          onEditFrame={(frame, breakpoint) => {
+            markReturn(project.id, 'layout?tab=global', 'layout?tab=frames')
+            editFrame(frame, breakpoint)
+          }}
           builtinPageTypeFrames={builtinPageTypeFrames ?? {}}
           pageTypeFramesLoaded={builtinPageTypeFrames !== null}
         />

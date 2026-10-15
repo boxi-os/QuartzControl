@@ -12,6 +12,7 @@ import SitePreview from '../../components/SitePreview'
 import { entrySelector } from '../../data/componentSelectors'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
+import { markReturn } from '../../state/returnLink'
 import { useIpcQuery } from '../../state/useIpcQuery'
 import { confirmDialog } from '../../utils/confirm'
 import { componentRef, getLayout } from '../LayoutEditor/utils'
@@ -266,6 +267,7 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
     primeStickyState(target, 'layout.pageType', null)
     primeStickyState(target, 'layout.selected', componentRef(config.plugins, entry.index))
     primeStickyState(target, 'layout.tab', 'global')
+    markReturn(project.id, 'plugins?tab=languages', 'layout?tab=global')
     navigate(target)
   }
 

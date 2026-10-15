@@ -212,6 +212,7 @@ export default {
       'Auf dieser Seite gibt es Änderungen, die noch nicht gespeichert sind. Was soll damit geschehen?',
     unsavedBadge: 'Nicht gespeichert',
     allProjects: 'Alle Projekte',
+    returnTo: 'Zurück zu „{{place}}“',
     notFound: 'Dieses Projekt steht nicht mehr in der Liste.',
     navLabel: 'Projektbereiche',
     loading: 'Lade Projekt…',

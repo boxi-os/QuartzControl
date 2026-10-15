@@ -209,6 +209,7 @@ export default {
     unsavedWarningWithSave: 'This page has changes that are not saved yet. What should happen to them?',
     unsavedBadge: 'Unsaved',
     allProjects: 'All projects',
+    returnTo: 'Back to “{{place}}”',
     notFound: 'This project is no longer in the list.',
     navLabel: 'Project areas',
     loading: 'Loading project…',

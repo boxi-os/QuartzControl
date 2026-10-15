@@ -13,6 +13,7 @@ import { entrySelector } from '../../data/componentSelectors'
 import { NAV_CLASS_PREFIX, classSource, suggestClass, withClass } from './instanceClass'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
+import { markReturn } from '../../state/returnLink'
 import { useIpcQuery } from '../../state/useIpcQuery'
 import { confirmDialog } from '../../utils/confirm'
 import { componentRef, duplicateAfter, getLayout } from '../LayoutEditor/utils'
@@ -190,6 +191,7 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
     primeStickyState(target, 'layout.pageType', null)
     primeStickyState(target, 'layout.selected', componentRef(config.plugins, item.index))
     primeStickyState(target, 'layout.tab', 'global')
+    markReturn(project.id, 'plugins?tab=navigations', 'layout?tab=global')
     navigate(target)
   }
 

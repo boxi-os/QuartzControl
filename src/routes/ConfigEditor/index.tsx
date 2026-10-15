@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
+import { markReturn } from '../../state/returnLink'
 import type { PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 import { LAYOUT_BOX_SOURCE } from '@shared/projectImageBox'
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
@@ -217,7 +218,7 @@ export default function ConfigEditor(): JSX.Element {
                     the other three layers on the Styles page. */}
                 <p className="max-w-xl text-xs text-text-muted">
                   {t('configEditor.stylesHint')}{' '}
-                  <Link to="../styles" className="underline">
+                  <Link to="../styles" onClick={() => markReturn(project.id, 'config?tab=site', 'styles')} className="underline">
                     {t('configEditor.stylesHintLink')}
                   </Link>
                 </p>

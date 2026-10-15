@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import type { PluginEntry, ProjectIconInfo } from '@shared/ipc-contract'
 import { useProject, useRefreshProjectIcon } from '../ProjectLayout'
+import { markReturn } from '../../state/returnLink'
 import { ImageIcon } from 'lucide-react'
 import { Button, Card, CardHeading, Toggle } from '../../components/ui'
 import { confirmDialog } from '../../utils/confirm'
@@ -165,7 +166,7 @@ export default function ProjectImage({
             ) : (
               <>
                 {t(faviconState === 'off' ? 'projectImage.faviconOff' : 'projectImage.faviconMissing')}{' '}
-                <Link to="../plugins" className="underline">
+                <Link to="../plugins" onClick={() => markReturn(project.id, 'config?tab=site', 'plugins')} className="underline">
                   {t('projectImage.faviconLink')}
                 </Link>
               </>

@@ -19,6 +19,7 @@ import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, Select, Tex
 import { formatIpcError } from '../../components/ErrorSurface'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
+import { markReturn } from '../../state/returnLink'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { useIpcQuery } from '../../state/useIpcQuery'
 import { componentRef } from '../LayoutEditor/utils'
@@ -491,6 +492,7 @@ export default function PluginsInstalled(): JSX.Element {
     primeStickyState(target, 'frames.isNewDraft', false)
     primeStickyState(target, 'frames.standardChosen', false)
     primeStickyState(target, 'frames.selectedArea', null)
+    markReturn(project.id, 'plugins?tab=installed', 'layout?tab=frames')
     navigate(`${target}?tab=frames`)
   }
 
@@ -503,6 +505,7 @@ export default function PluginsInstalled(): JSX.Element {
     // The components tab is the default and so has no `?tab=`; without this the layout page would
     // open on whichever tab it was left on.
     primeStickyState(target, 'layout.tab', 'global')
+    markReturn(project.id, 'plugins?tab=installed', 'layout?tab=global')
     navigate(target)
   }
 

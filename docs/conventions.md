@@ -367,6 +367,11 @@ Projektwurzel.
   anderen Bereich, der mehr als einen Pfad übergeben will („diesen Frame im Layout-Editor öffnen“),
   schreibt vor der Navigation mit `primeStickyState(pathname, key, value)` in den Store der Zielroute;
   die liest es genau einmal beim Mount, danach ist der Aufruf wirkungslos.
+  **Und ein solcher Link sagt, woher er kommt**: `markReturn(projectId, von, nach)`
+  (`state/returnLink.ts`) direkt vor der Navigation, dann steht über der Zielseite „Zurück zu
+  „…““ (`ProjectLayout`), solange der Nutzer dort bleibt — bei einem Sprung innerhalb einer Seite
+  nur auf dem Reiter, zu dem er führte (`noteTabChange` in `goToTab`). Der Ausgangsort nennt
+  seinen Reiter ausdrücklich, weil die URL ihn nicht immer trägt (Nutzerbefund 2026-10-14).
 - **Ein Menüpunkt, der die Seite meint, geht über `app:command`.** `app:navigate` bewegt den Router,
   `app:command` bittet die gemountete Seite (heute nur `'save'`, Cmd+S). Beide hören einmal in
   `App.tsx`; die Antwort auf ein Kommando steht in einem Modul-Register (`state/saveCommand.ts`),

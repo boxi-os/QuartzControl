@@ -10,6 +10,7 @@ import { confirmLeave, hasUnsavedChanges } from '../state/unsavedGuard'
 import { useLogStore } from '../state/store'
 import { useIpcQuery } from '../state/useIpcQuery'
 import ProjectAvatar from '../components/ProjectAvatar'
+import { areaPath, clearReturn, placeHref, placeLabel, useReturnLink } from '../state/returnLink'
 
 // Guards every way out of a page that the sidebar offers - the nav items and the way back to the
 // project list. In-page links are deliberately not wrapped: they lead out of pages that do not
@@ -102,6 +103,47 @@ function useRestoreScroll(
       el.removeEventListener('scroll', onScroll)
     }
   }, [location.pathname, mainRef, contentRef, ready])
+}
+
+// The way back to where a link in the app came from (state/returnLink.ts). Drawn here, above the
+// page, so every page that can be a target has it without knowing. It is cleared when the pathname
+// leaves the target - by a link, the sidebar, or this link itself.
+function ReturnLinkBar({ projectId }: { projectId: string }): JSX.Element | null {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const link = useReturnLink()
+  const onTarget = link !== null && link.projectId === projectId && pathname === areaPath(projectId, link.to.area)
+
+  // On a pathname change only: the link is recorded right before the navigation that leads to its
+  // target, and a render in between still has the old pathname.
+  useEffect(() => {
+    if (!onTarget) clearReturn()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
+
+  if (!link || !onTarget) return null
+  const href = placeHref(projectId, link.from)
+  const inPage = link.from.area === link.to.area
+  return (
+    <a
+      href={`#${href}`}
+      onClick={(event) => {
+        event.preventDefault()
+        // Within a page it is a tab switch, which asks nothing; out of it, the sidebar's question.
+        const go = (): void => {
+          clearReturn()
+          navigate(href)
+        }
+        if (inPage || !hasUnsavedChanges()) go()
+        else void confirmLeave(t).then((leave) => leave && go())
+      }}
+      className="mb-2 inline-flex items-center gap-1 text-ui text-accent-text hover:underline"
+    >
+      <ArrowLeft size={14} aria-hidden />
+      {t('projectLayout.returnTo', { place: placeLabel(t, link.from) })}
+    </a>
+  )
 }
 
 type NavItem = { to: string; key: TabKey; label: string; end?: boolean }
@@ -305,6 +347,7 @@ export default function ProjectLayout(): JSX.Element {
             window beside the one of this element (measured 2026-09-24, Example project). */}
         <main ref={mainRef} className="relative flex-1 overflow-y-auto px-8 pb-8">
           <div ref={contentRef} className="mx-auto w-full max-w-[1800px]">
+            {id && <ReturnLinkBar projectId={id} />}
             <Outlet context={{ project, refreshIcon } satisfies ProjectContext} />
           </div>
         </main>

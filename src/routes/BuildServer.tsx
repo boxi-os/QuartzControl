@@ -4,6 +4,7 @@ import { isInsideDirectory } from '../utils/platform'
 import { Check, ChevronDown, ChevronRight, Copy, ExternalLink, FolderOpen, Hammer, MonitorPlay, RefreshCw, SlidersHorizontal } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useProject } from './ProjectLayout'
+import { markReturn } from '../state/returnLink'
 import type {
   BuildOutputInfo,
   FrameBreakpoint,
@@ -231,7 +232,7 @@ export default function BuildServer(): JSX.Element {
         {missingIndex && (
           <p className="mb-3 text-sm text-amber-700 dark:text-amber-400">
             {t('buildServer.noIndex')}{' '}
-            <Link to="../config?tab=site" className="whitespace-nowrap text-indigo-600 hover:underline dark:text-indigo-400">
+            <Link to="../config?tab=site" onClick={() => markReturn(project.id, 'server', 'config?tab=site')} className="whitespace-nowrap text-indigo-600 hover:underline dark:text-indigo-400">
               {t('buildServer.noIndexLink')}
             </Link>
           </p>

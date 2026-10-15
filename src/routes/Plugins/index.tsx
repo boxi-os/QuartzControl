@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { PageHeader, SegmentedControl } from '../../components/ui'
 import { primeStickyState, useStickyState } from '../../state/uiState'
+import { markReturn, noteTabChange } from '../../state/returnLink'
+import { useProject } from '../ProjectLayout'
 import { TAB_ICONS } from '../navConfig'
 import Installed from './Installed'
 import Marketplace from './Marketplace'
@@ -30,6 +32,7 @@ export default function Plugins(): JSX.Element {
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const { pathname } = useLocation()
+  const project = useProject()
   const rawTab = searchParams.get('tab')
   // URL first, remembered tab second - see the same split on the Styles and Konfiguration pages.
   const [lastTab, setLastTab] = useStickyState<PluginsTab>('plugins.tab', 'installed')
@@ -43,6 +46,7 @@ export default function Plugins(): JSX.Element {
     (next: PluginsTab) => {
       setSearchParams(next === 'installed' ? {} : { tab: next }, { replace: true })
       setLastTab(next)
+      noteTabChange(next)
     },
     [setSearchParams, setLastTab]
   )
@@ -51,6 +55,7 @@ export default function Plugins(): JSX.Element {
   // which is when it reads its selection.
   const showInList = (key: string): void => {
     primeStickyState(pathname, 'plugins.selected', key)
+    markReturn(project.id, `plugins?tab=${tab}`, 'plugins?tab=installed')
     goToTab('installed')
   }
 

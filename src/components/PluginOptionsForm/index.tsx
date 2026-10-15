@@ -47,8 +47,8 @@ export default function PluginOptionsForm({
   languages?: string[]
   /** Turns on the editors that read and write files - the snippet picker and the image button. */
   projectPath?: string
-  /** Only the options this accepts, for a caller that shows the rest elsewhere (the navigations
-   *  editor's variant tiles and its "no effect" section). Applied after the entry's own keys have
+  /** Only the options this accepts, for a caller that shows the rest elsewhere (the variant tiles
+   *  of the navigations editor, the text tile of the box editor). Applied after the entry's own keys have
    *  joined the schema, so a set key that is picked away does not come back as "more keys". */
   pick?: (key: string) => boolean
   /** The free key/value row; off in the editors that know every option. Shown anyway only where

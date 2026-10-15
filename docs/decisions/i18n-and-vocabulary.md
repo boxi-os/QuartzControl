@@ -168,17 +168,31 @@ Seitenauswahl, Ausblenden, Reihenfolge, Beschriftung und Symbole, Auf dem Smartp
 Technisches; quartz-layout-box: Inhalt, Box, Je Sprache und Seite, Technisches). Ein selten
 gebrauchtes Feld bleibt in seiner Gruppe unter „Selten gebraucht“. Die App legt nur einen
 Abschnitt darüber: die Optionen der gewählten Variante bzw. des Inhalts (`optionFormExtras.ts`,
-auch im Inspektor der Layout-Bühne). Was gerade nicht wirkt, bleibt an seinem Platz, mit gedämpftem
+auch im Inspektor der Layout-Bühne und seit dem Review vom selben Tag in der Plugin-Liste). Was gerade nicht wirkt, bleibt an seinem Platz, mit gedämpftem
 Label und dem Grund darunter; eine Option einer anderen Variante steht nur da, solange sie gesetzt
-ist. Gemessen an der gebauten App mit gui-test: bei allen zehn Varianten dieselben sechs Gruppen
-mit denselben Feldzahlen; bei der Suche „folder“ behalten sie ihre Titel und zählen Treffer.
+ist, oder solange nach ihr gesucht wird. Gemessen an der gebauten App mit gui-test, **dessen
+`.quartz/plugins/*/package.json` für die Messung gegen die Fassungen 0.4.2 getauscht und danach
+zurückgelegt waren** (0.4.2 ändert nur das Schema darin; installiert ist dort weiter 0.4.1, das
+die alten Gruppen zeigt): bei allen zehn Varianten dieselben sechs Gruppen mit denselben
+Feldzahlen; bei der Suche „folder“ behalten sie ihre Titel und zählen Treffer.
+
+Ein Review mit frischem Kontext fand am selben Tag, was die Messung nicht gefragt hatte: die
+Suche nach einer ausgeblendeten Option („flyout“ unter Akkordeon) zeigte ein leeres Formular ohne
+„Keine Option passt“, weil der Satz die Felder des Schemas zählte und das Formular weniger
+zeigte; ein boolesches `when` las sich „collapsible = true“; der Variantenabschnitt war ein
+deaktivierter Knopf; in den Einträgen von `byLang` graute nichts; und die Plugin-Liste zeigte
+dieselbe Navigation ohne all das.
 
 `hasNoEffect` kennt dafür fünf weitere gemeinsame Optionen, aus `render.tsx` von 0.4.1 gelesen
 und von `check:plugin-copies` gegen die echte Komponente bestätigt (vorher 45 abweichende Fälle,
 danach 0 von 910): `icons` und `nodeIcons` wirken nicht bei der Auswahlliste (ihre Einträge sind
 Text), `showHome` nicht bei Reiter, Auswahlliste und Zurück/Weiter (`homeEntry` wird dort nie
 gerufen), `showScopeRoot` und `indexEntry` nicht bei den zwei eigenen Renderern. `columns.max`
-liest das Plugin nirgends (README: „reserviert“).
+liest das Plugin nirgends (README: „reserviert“). Eine ältere Zeile war falsch und wurde erst
+sichtbar, als das Feld grau mit Grund dastand: `chevrons` wirkt auch bei einem Ordner, der nur
+auf dem Smartphone aufklappt, sobald er kein Linkziel hat (`folderLink: none`). Die Probe des
+Prüfskripts hatte nur Ordner mit Ziel; mit dem Kontext dazu wichen 4 von 910 Fällen ab (Baum,
+Leiste, Reiter, Spalten unter `mobile: accordion`), nach dem Fix 0.
 
 Die freie Zeile für Schlüssel ohne Beschreibung steht nur noch, wo ein Schema unvollständig ist;
 gesetzte, aber unbeschriebene Schlüssel heißen „Unbekannte Schlüssel“ und erscheinen nur, wenn es

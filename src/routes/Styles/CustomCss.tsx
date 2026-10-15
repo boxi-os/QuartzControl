@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import CodeMirror, { Transaction } from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
+import { sass } from '@codemirror/lang-sass'
 import type { EditorView } from '@codemirror/view'
 import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, FileCode, FileWarning, Palette, Pencil, Plus, Trash2, X } from 'lucide-react'
 import type { FontFaceInfo, ScssCheckResult, StyleFile, StyleReferenceFile } from '@shared/ipc-contract'
@@ -29,6 +30,16 @@ import { announce } from '../../state/announcer'
 // custom.scss is not one of the additional files (it has no relativePath and is never part of the
 // order), but it is one of the editor's tabs - this is the key it goes under.
 const MAIN_TAB = ':main'
+
+// Sass reads every .scss here, so `//` is a comment there and the editor shows it as one; the CSS
+// grammar coloured it as selector text (Nutzerbefund 2026-10-14). A plain .css stays CSS - Sass
+// does not take `//` as a comment in one either. Module constants, because a new array on every
+// render makes the editor reconfigure itself.
+const SCSS_EXTENSIONS = [sass()]
+const CSS_EXTENSIONS = [css()]
+function languageFor(file: string) {
+  return file.toLowerCase().endsWith('.css') ? CSS_EXTENSIONS : SCSS_EXTENSIONS
+}
 
 const SUMMARY_COLORS = ['light', 'lightgray', 'gray', 'darkgray', 'dark', 'secondary', 'tertiary', 'highlight', 'textHighlight']
 const SUMMARY_FONTS = ['titleFont', 'headerFont', 'bodyFont', 'codeFont']
@@ -435,7 +446,7 @@ export default function CustomCss(): JSX.Element {
               value={contentOf(activeTab)}
               height="65vh"
               theme={scheme}
-              extensions={[css()]}
+              extensions={languageFor(activeTab)}
               onChange={setContent}
               onCreateEditor={(view) => {
                 viewRef.current = view
@@ -481,7 +492,7 @@ export default function CustomCss(): JSX.Element {
                       {t('styleEditor.openExternally')}
                     </button>
                   </div>
-                  <CodeMirror value={ref.content} height="200px" theme={scheme} extensions={[css()]} editable={false} />
+                  <CodeMirror value={ref.content} height="200px" theme={scheme} extensions={languageFor(ref.path)} editable={false} />
                 </Card>
               ))}
             </div>

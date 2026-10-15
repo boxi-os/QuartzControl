@@ -3,10 +3,7 @@ import type { PluginEntry } from '@shared/ipc-contract'
 import { FieldGroup } from '../../components/ui'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import type { PluginOptionSchemaResult } from '@shared/ipc-contract'
-import { quartzPluginName } from '@shared/quartzPluginName'
-import { NAVIGATIONS_PLUGIN } from '../Plugins/navigationVariants'
-import { LAYOUT_BOX_PLUGIN } from '../Plugins/layoutBoxes'
-import { layoutBoxRoot, navigationRoot } from '../Plugins/optionFormExtras'
+import { rootWithoutTiles } from '../Plugins/optionFormExtras'
 
 /**
  * The selected component's own options in the side panel - the same form the plugins page shows,
@@ -36,13 +33,7 @@ export default function ComponentOptions({
   // A navigation and a box look here as they do on their pages: the variant's or the content's
   // section first, the shared groups below (optionFormExtras.ts). Here the variant is a field of
   // the section - there are no tiles above it.
-  const name = quartzPluginName(plugin.source)
-  const root =
-    name === NAVIGATIONS_PLUGIN
-      ? navigationRoot(options, data?.schema?.fields ?? [], t, lang, true)
-      : name === LAYOUT_BOX_PLUGIN
-        ? layoutBoxRoot(options, data?.packageVersion, t)
-        : undefined
+  const root = rootWithoutTiles(plugin, data, t, lang)
 
   return (
     <FieldGroup label={t('layoutEditor.inspector.options')} className="gap-2">

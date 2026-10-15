@@ -1,9 +1,10 @@
 import type { TFunction } from 'i18next'
-import type { OptionField } from '@shared/ipc-contract'
+import type { OptionField, PluginEntry, PluginOptionSchemaResult } from '@shared/ipc-contract'
+import { quartzPluginName } from '@shared/quartzPluginName'
 import type { RootExtras } from '../../components/PluginOptionsForm/editors'
 import { enumLabel, type FormLanguage } from '../../components/PluginOptionsForm/text'
-import { NAV_VARIANTS, VARIANT_KEYS, noEffectReason, variantOf, type NavVariant } from './navigationVariants'
-import { boxContentKind, nullBreaks, withoutNulls } from './layoutBoxes'
+import { NAVIGATIONS_PLUGIN, NAV_VARIANTS, VARIANT_KEYS, noEffectReason, variantOf, type NavVariant } from './navigationVariants'
+import { LAYOUT_BOX_PLUGIN, boxContentKind, nullBreaks, withoutNulls } from './layoutBoxes'
 
 // What the form adds for the two plugins whose editors know more than the schema says, in one
 // place: the plugins page (Navigations.tsx, ExtraContent.tsx) and the layout board's inspector
@@ -66,8 +67,12 @@ export function boxSilenced(options: Record<string, unknown>, installed: string 
   return (key) => (kind === 'html' ? key === 'file' || key === 'dir' : key === 'html' && options.html === null && !emptyHtmlBreaks)
 }
 
-/** quartz-layout-box: the content first, under the kind it is, then the groups both kinds share. */
-export function layoutBoxRoot(options: Record<string, unknown>, installed: string | undefined, t: TFunction): RootExtras {
+/**
+ * quartz-layout-box: the content first, under the kind it is, then the groups both kinds share.
+ * `withTiles: false` (inspector, plugin list): no "Text | File" above, so the text field stands in
+ * the section too, and a title naming one kind would sit over the field of the other.
+ */
+export function layoutBoxRoot(options: Record<string, unknown>, installed: string | undefined, t: TFunction, withTiles = true): RootExtras {
   const kind = boxContentKind(options)
   const silenced = boxSilenced(options, installed)
   return {
@@ -75,7 +80,7 @@ export function layoutBoxRoot(options: Record<string, unknown>, installed: strin
     hideUnlessSet: (key) => key === 'file' || key === 'dir' || key === 'html',
     lead: {
       has: (key) => CONTENT_KEYS.has(key),
-      title: kind === 'html' ? t('extraContent.leadText') : t('extraContent.leadFile'),
+      title: !withTiles ? t('extraContent.leadContent') : kind === 'html' ? t('extraContent.leadText') : t('extraContent.leadFile'),
       empty: ''
     },
     // In a language entry: the entry laid over the box, nulls leaving the value above (since
@@ -83,4 +88,18 @@ export function layoutBoxRoot(options: Record<string, unknown>, installed: strin
     entryReason: (key, entry, above) =>
       (key === 'file' || key === 'dir') && boxContentKind({ ...withoutNulls(above), ...withoutNulls(entry) }) === 'html' ? t('extraContent.silencedByText') : null
   }
+}
+
+/**
+ * The extras for a form without tiles above it - the layout board's inspector and the plugin
+ * list. Both show every option of the entry, the variant (or the text) included, and grey what
+ * does nothing the way the two pages do: an option said one thing about itself here and another
+ * there (review of 2026-10-15).
+ */
+export function rootWithoutTiles(plugin: PluginEntry, data: PluginOptionSchemaResult | null, t: TFunction, lang: FormLanguage): RootExtras | undefined {
+  const options = plugin.options ?? {}
+  const name = quartzPluginName(plugin.source)
+  if (name === NAVIGATIONS_PLUGIN) return navigationRoot(options, data?.schema?.fields ?? [], t, lang, true)
+  if (name === LAYOUT_BOX_PLUGIN) return layoutBoxRoot(options, data?.packageVersion, t, false)
+  return undefined
 }

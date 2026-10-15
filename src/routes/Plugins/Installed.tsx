@@ -28,6 +28,7 @@ import { SavesImmediately } from './SavesImmediately'
 import { quartzPluginName } from '@shared/quartzPluginName'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
+import { rootWithoutTiles } from './optionFormExtras'
 
 // One column since 1.1: a plugin's options moved out of its row into the side panel (DetailLayout),
 // so a row is one line of text and a few controls and no longer grows when it is configured. The
@@ -1136,7 +1137,7 @@ function PluginPanel({
   openFrameInLayoutEditor: (frame: GridFrameDefinition) => void
   openComponentOnStage: (index: number) => void
 }): JSX.Element {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const project = useProject()
   const { plugin, index, frame } = item
   const layout = getLayout(plugin)
@@ -1273,6 +1274,7 @@ function PluginPanel({
                   explicitEmpty
                   languages={languages}
                   projectPath={project.path}
+                  root={rootWithoutTiles(plugin, schemaQuery.data, t, i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'de')}
                 />
               </>
             )}

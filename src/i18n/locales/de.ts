@@ -1084,6 +1084,7 @@ export default {
     optionsHeading: 'Optionen',
     leadText: 'Inhalt: Text',
     leadFile: 'Inhalt: Datei',
+    leadContent: 'Inhalt',
     silencedByText: 'Wirkt nicht, solange die Box eigenen Text hat. Die Angabe bleibt stehen, damit du zurückwechseln kannst.',
     silencedEmpty: 'Steht ohne Wert in der Konfiguration und gilt deshalb als nicht gesetzt. Setze es zurück, um die Angabe zu entfernen.',
     notInstalledTitle: 'quartz-layout-box ist nicht installiert',

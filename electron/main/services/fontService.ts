@@ -246,6 +246,24 @@ async function fontFilesStillNamed(projectPath: string, except: string[] = []): 
  * the "unused fonts" card, which lists families from the block (thirty-fifth review, finding 7).
  * Same question as every other removal here, under the same lock.
  */
+/**
+ * The files deleteFontFilesOfReplacedRules would delete if the rules in `previousCss` were replaced
+ * by `incomingCss` - asked before, for a template's plan: the same rule (a file still named by any
+ * other stylesheet, or by the incoming rules, stays), with the rules about to go taken out of the
+ * count. Only reads.
+ */
+export async function fontFilesReplacedRulesWouldRemove(projectPath: string, previousCss: string, incomingCss: string): Promise<string[]> {
+  const going = splitRules(previousCss)
+  const stillNamed = await fontFilesStillNamed(projectPath, going)
+  for (const file of fontFilesNamedBy(projectPath, incomingCss, true)) stillNamed.add(file)
+  const out: string[] = []
+  for (const file of fontFilesNamedBy(projectPath, previousCss, false)) {
+    if (stillNamed.has(file) || out.includes(basename(file)) || !existsSync(file)) continue
+    out.push(basename(file))
+  }
+  return out
+}
+
 export function deleteFontFilesOfReplacedRules(projectPath: string, previousCss: string): Promise<string[]> {
   return whileHoldingStyles(projectPath, () => deleteUnreferencedFontFiles(projectPath, previousCss))
 }

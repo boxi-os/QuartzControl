@@ -505,16 +505,26 @@ const fonts: TemplatePart<FontsPayload> = {
       if (incoming && sha(incoming) === sha(await readFile(target))) plan.notes.push(`identical:${name}`)
       else plan.conflicts.push(name)
     }
+    // The files a replaced block takes with it under 'packageWins', said before rather than only
+    // as a warning afterwards (forty-fifth review, Mittel 2: four of the user's font files went,
+    // and the plan said "@font-face wird ersetzt").
+    const incoming = [faceCss ?? '', payload.googleFontsCss ?? ''].join('\n')
+    const removed = new Set<string>()
     if (faceCss) {
       const current = currentFontFaceCss(await styleService.readStyleSources(projectPath))
-      if (current && current !== faceCss) plan.conflicts.push('@font-face')
-      else if (!current) plan.additions.push('@font-face')
+      if (current && current !== faceCss) {
+        plan.conflicts.push('@font-face')
+        for (const name of await fontService.fontFilesReplacedRulesWouldRemove(projectPath, current, incoming)) removed.add(name)
+      } else if (!current) plan.additions.push('@font-face')
     }
     if (payload.googleFontsCss) {
       const current = styleService.managedBody(await styleService.readStyleSources(projectPath), GOOGLE_FONTS_MARKER)
-      if (current && current !== payload.googleFontsCss) plan.conflicts.push('@font-face (Google)')
-      else if (!current) plan.additions.push('@font-face (Google)')
+      if (current && current !== payload.googleFontsCss) {
+        plan.conflicts.push('@font-face (Google)')
+        for (const name of await fontService.fontFilesReplacedRulesWouldRemove(projectPath, current, incoming)) removed.add(name)
+      } else if (!current) plan.additions.push('@font-face (Google)')
     }
+    if (removed.size > 0) plan.notes.push(`fontsRemoved:${[...removed].join(',')}`)
     return plan
   },
   async apply(payload, { projectPath, strategy, files, warn }) {
@@ -864,10 +874,19 @@ const plugins: TemplatePart<PluginsPayload> = {
     const existing = new Set(instanceKeys(config.plugins))
     const keys = instanceKeys(payload.entries)
     const plan = emptyPlan()
+    // What replacing an entry decides besides its options, said in the plan (forty-fifth review,
+    // Mittel 2): whether the plugin is on afterwards, and - where the project has several instances
+    // of it - that the n-th of the package takes the place of the n-th here, by position only.
+    const existingKeys = instanceKeys(config.plugins)
+    const countOf = (name: string): number => config.plugins.filter((p) => (p.name ?? configService.deriveName(p.source)) === name).length
     for (const [index, entry] of payload.entries.entries()) {
       const name = configService.deriveName(entry.source)
-      if (existing.has(keys[index])) plan.conflicts.push(name)
-      else plan.additions.push(name)
+      if (existing.has(keys[index])) {
+        plan.conflicts.push(name)
+        const own = config.plugins[existingKeys.indexOf(keys[index])]
+        if (own.enabled !== entry.enabled) plan.notes.push(`${entry.enabled ? 'pluginOn' : 'pluginOff'}:${name}`)
+        if (countOf(name) > 1 && !plan.notes.includes(`byPosition:${name}`)) plan.notes.push(`byPosition:${name}`)
+      } else plan.additions.push(name)
       const npmName = npmPackageName(entry.source)
       if (npmName && !hasNodeModule(projectPath, npmName)) plan.missingPackages.push({ name: npmName })
       else if (!npmName && typeof entry.source === 'string' && !existsSync(join(projectPath, '.quartz', 'plugins', name))) {

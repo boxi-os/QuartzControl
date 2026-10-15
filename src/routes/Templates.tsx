@@ -349,10 +349,13 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
       const result = await window.quartzGui.templatePackage.plan(project.path, path)
       setPlan(result)
       setUnreadable(result === null)
-      // The built-in package carries sample pages. In a new project they are the point; in this one
-      // they would land between the user's own notes, so that part starts unticked.
+      // The built-in package is a whole site: sample pages, its plugins and their switches, its
+      // layout. In a new project that is the point; on this one it starts with the look only
+      // (DESIGN_PARTS) - ticked as it was, one click and a confirmation replaced the user's first
+      // navigation, switched plugins on and off and deleted their font files (forty-fifth review,
+      // Mittel 2). The rest is one tick away and says what it does.
       const parts = result?.parts.map((p) => p.id) ?? []
-      setSelected(source ? parts.filter((id) => id !== 'content') : parts)
+      setSelected(source ? parts.filter((id) => DESIGN_PARTS.includes(id)) : parts)
     } catch (err) {
       setFailure(formatIpcError(err))
       setUnreadable(false)
@@ -517,6 +520,10 @@ function statsSummary(t: Translate, id: TemplatePartId, stats: Record<string, nu
   return parts.join(', ')
 }
 
+// What the built-in package brings for the look of a site, as opposed to what it brings for its
+// workings (plugins, layout, translations, presets) and its sample pages.
+const DESIGN_PARTS: TemplatePartId[] = ['appearance', 'cssVariables', 'theme', 'styles', 'fonts', 'static', 'frames']
+
 // `notes` are the third thing a part's plan can report, next to additions and conflicts, and until
 // now nothing rendered them - so the content part could appear with nothing to add and no reason
 // given, get ticked, and be skipped with the explanation arriving only afterwards as a warning.
@@ -572,6 +579,21 @@ function planNotes(t: Translate, plan: TemplatePartPlan, strategy: TemplateConfl
   if (legacy) {
     const count = Number(legacy.slice('legacyStyles:'.length))
     notes.push(t(strategy === 'packageWins' ? 'templates.planLegacyStylesReplaced' : 'templates.planLegacyStylesKept', { count }))
+  }
+  // What replacing does besides the options and files it counts - only under 'packageWins', where
+  // it happens.
+  const listed = (kind: string): string[] =>
+    plan.notes.filter((note) => note.startsWith(`${kind}:`)).flatMap((note) => note.slice(kind.length + 1).split(','))
+  const quoted = (names: string[]): string => names.map((name) => t('templates.quotedName', { value: name })).join(', ')
+  if (strategy === 'packageWins') {
+    const on = listed('pluginOn')
+    const off = listed('pluginOff')
+    if (on.length > 0) notes.push(t('templates.planPluginsOn', { count: on.length, names: quoted(on) }))
+    if (off.length > 0) notes.push(t('templates.planPluginsOff', { count: off.length, names: quoted(off) }))
+    const byPosition = listed('byPosition')
+    if (byPosition.length > 0) notes.push(t('templates.planByPosition', { count: byPosition.length, names: quoted(byPosition) }))
+    const fonts = listed('fontsRemoved')
+    if (fonts.length > 0) notes.push(t('templates.planFontsRemoved', { count: fonts.length, names: quoted(fonts) }))
   }
   const missing = plan.notes.find((note) => note.startsWith('missingVariables:'))
   if (missing) {

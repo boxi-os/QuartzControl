@@ -65,7 +65,8 @@ export default function LayoutEditor(): JSX.Element {
   // these, so without this lookup the "Frame/Template" dropdown and Global's preview both silently
   // assumed "no override" meant the literal 3-column default frame, which is wrong for e.g. canvas
   // pages (canvas-page's PageType instance defaults to its own fullscreen "canvas" frame).
-  const [builtinPageTypeFrames, setBuiltinPageTypeFrames] = useState<Record<string, string>>({})
+  // null until the first answer: the board must not call a plugin's frame unknown before it asked.
+  const [builtinPageTypeFrames, setBuiltinPageTypeFrames] = useState<Record<string, string> | null>(null)
 
   // A tab reached through the URL has to be remembered as well, or coming back via the sidebar -
   // which carries no search string - would drop the user somewhere they never chose.
@@ -292,7 +293,7 @@ export default function LayoutEditor(): JSX.Element {
         <LayoutOverview
           config={config}
           frames={customFrames}
-          builtinPageTypeFrames={builtinPageTypeFrames}
+          builtinPageTypeFrames={builtinPageTypeFrames ?? {}}
           onOpenPageType={openPageType}
           onOpenFrame={openFrameByName}
         />
@@ -304,7 +305,8 @@ export default function LayoutEditor(): JSX.Element {
           config={config}
           onChange={setConfig}
           onEditFrame={editFrame}
-          builtinPageTypeFrames={builtinPageTypeFrames}
+          builtinPageTypeFrames={builtinPageTypeFrames ?? {}}
+          pageTypeFramesLoaded={builtinPageTypeFrames !== null}
         />
       )}
 

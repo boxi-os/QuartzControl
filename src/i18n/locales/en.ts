@@ -1728,7 +1728,7 @@ export default {
       areaCleared: 'Empty on {{type}}',
       unknownOption: '“{{frame}}” (unknown)',
       unknownFrame:
-        'QuartzControl does not know a frame “{{frame}}”. Unless a plugin brings one by that name, Quartz builds these pages with the default frame — which is how the stage is drawn.'
+        'This project has no frame “{{frame}}”. Quartz builds these pages with the default frame, and that is what the stage shows.'
     },
     context: {
       customized: 'customized',

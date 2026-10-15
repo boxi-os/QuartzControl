@@ -124,7 +124,8 @@ export default function GlobalBoard({
   config,
   onChange,
   onEditFrame,
-  builtinPageTypeFrames = {}
+  builtinPageTypeFrames = {},
+  pageTypeFramesLoaded = true
 }: {
   projectPath: string
   config: QuartzConfig
@@ -135,6 +136,8 @@ export default function GlobalBoard({
   // name - see LayoutEditor/index.tsx. Needed so the mockup below doesn't claim the literal
   // 3-column default frame for a page type whose plugin actually renders something else.
   builtinPageTypeFrames?: Record<string, string>
+  // False until builtinPageTypeFrames has its first answer - until then a plugin's frame looks unknown.
+  pageTypeFramesLoaded?: boolean
 }): JSX.Element {
   const { t } = useTranslation()
   const styled = useStyledClasses(projectPath)
@@ -144,6 +147,7 @@ export default function GlobalBoard({
   // Sticky like any other "where was I": a trip to Stile and back keeps the panel on it.
   const [selected, setSelected] = useStickyState<ComponentRef | null>('layout.selected', null)
   const [frames, setFrames] = useState<GridFrameDefinition[]>([])
+  const [framesLoaded, setFramesLoaded] = useState(false)
   // Which page the stage shows: null is "Alle Seiten", the layout every page type starts from; a
   // page type shows that type's frame and what its `layout.byPageType` entry hides or clears, and
   // offers to change exactly that (pageTypeOverride.ts). Until 1.1 this was a tab of its own with
@@ -192,7 +196,10 @@ export default function GlobalBoard({
   }, [projectPath])
 
   useEffect(() => {
-    window.quartzGui.layoutFrames.list(projectPath).then(setFrames)
+    window.quartzGui.layoutFrames.list(projectPath).then((list) => {
+      setFrames(list)
+      setFramesLoaded(true)
+    })
   }, [projectPath])
 
   // The frame the stage is drawn in, by quartz's rule (resolvedFrame). "Alle Seiten" has no frame
@@ -253,7 +260,9 @@ export default function GlobalBoard({
   // the stage draws that one and says why.
   const otherFrame = !activeFrame && !builtinFrame && activeFrameName !== 'default'
   const unknownPluginFrame = otherFrame && Object.values(builtinPageTypeFrames).includes(activeFrameName)
-  const unknownFrame = otherFrame && !unknownPluginFrame
+  // Asked only once both lists are in: before that every authored frame is "unknown", and the
+  // sentence flashed on each visit to the tab (Nutzerbefund 2026-10-14, frame "editorial").
+  const unknownFrame = otherFrame && !unknownPluginFrame && framesLoaded && pageTypeFramesLoaded
   const builtinDefaultFrame = pageType ? builtinPageTypeFrames[`${pageType}-page`] : undefined
   const frameLabel = (name: string): string =>
     name === 'default'

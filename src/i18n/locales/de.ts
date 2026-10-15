@@ -1733,7 +1733,7 @@ export default {
       areaCleared: 'Auf {{type}} leer',
       unknownOption: '„{{frame}}“ (unbekannt)',
       unknownFrame:
-        'Einen Frame „{{frame}}“ kennt QuartzControl nicht. Bringt kein Plugin einen mit diesem Namen mit, baut Quartz diese Seiten mit dem Standard-Frame — so ist die Bühne gezeichnet.'
+        'Den Frame „{{frame}}“ gibt es in diesem Projekt nicht. Quartz baut diese Seiten mit dem Standard-Frame, und den zeigt die Bühne.'
     },
     context: {
       customized: 'angepasst',

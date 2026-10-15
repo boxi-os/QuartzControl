@@ -596,7 +596,7 @@ Projektwurzel.
 - **Ein deaktiviertes Control muss noch lesbar sein.** Explizite disabled-Farben, keine Opazität:
   Text wird `text-text-muted`, ein Feld sinkt auf `bg-ground`, ein Icon-Button geht von
   `text-text-secondary` auf `text-text-muted`. Gedimmt werden darf nur, was keine eigene Information
-  trägt (der Toggle-Button, die native Checkbox). Ein Feld, dessen Wert gerade nicht gilt, ist nicht
+  trägt (der Knauf des Schalters, die native Checkbox). Ein Feld, dessen Wert gerade nicht gilt, ist nicht
   deaktiviert: `Field muted` setzt nur das Label auf Muted, Control und Hinweis bleiben.
 - **`darkMode: 'media'`, und das ist der App-Schalter.** `nativeTheme.themeSource` flippt
   `prefers-color-scheme` im Renderer mit; `color-scheme: light dark` auf `:root`, explizite Farben

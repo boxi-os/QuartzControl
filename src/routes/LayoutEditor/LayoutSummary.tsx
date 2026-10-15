@@ -86,7 +86,7 @@ export default function LayoutSummary({
   }
 
   return (
-    <Card className="flex flex-col gap-3">
+    <Card className="flex flex-col gap-4">
       <CardHeading icon={LayoutDashboard}>{t('layoutEditor.summary.title')}</CardHeading>
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-ui">
         <dt className="text-text-secondary">{t('layoutEditor.pageType.label')}</dt>
@@ -100,13 +100,13 @@ export default function LayoutSummary({
         </dd>
       </dl>
 
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col divide-y divide-ink/[0.06] dark:divide-ink/10">
         {POSITIONS.map((position) => {
           const indices = positions[position] ?? []
           const shared = indices.length > 1 ? sharedReason(indices) : undefined
           const pillOf = (i: number): JSX.Element => pill(i, shared !== undefined)
           return (
-            <section key={position} className="flex flex-col gap-1">
+            <section key={position} className="flex flex-col gap-1.5 py-3.5 first:pt-0 last:pb-0">
               <h3 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{positionName(position)}</h3>
               {missing.has(position) && indices.length > 0 && (
                 <p className="text-micro text-amber-600 dark:text-amber-400">{t('layoutEditor.summary.notInFrame')}</p>

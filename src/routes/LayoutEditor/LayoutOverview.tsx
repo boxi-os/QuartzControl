@@ -2,9 +2,12 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Ban,
+  Blocks,
+  ChevronDown,
   CircleDashed,
   CircleOff,
   EyeOff,
+  Files,
   Filter,
   HelpCircle,
   LayoutGrid,
@@ -21,7 +24,8 @@ import {
 import type { FrameBreakpoint, GridFrameDefinition, LayoutPosition, QuartzConfig } from '@shared/ipc-contract'
 import { FRAME_BREAKPOINTS } from '@shared/gridFrameCss'
 import { Badge, Card, CardHeading, InfoNote } from '../../components/ui'
-import { ComponentPill, groupColor } from './ComponentChip'
+import { ComponentPill, conditionLabel, groupColor } from './ComponentChip'
+import { useStickyState } from '../../state/uiState'
 import {
   BUILTIN_FRAME_LAYOUT,
   POSITIONS,
@@ -47,13 +51,20 @@ import { hasPageTypeOverride, isExcluded, isPositionCleared, overrideOf, resolve
  *
  * A cell is a symbol, not a word: a matrix of "wie alle" said nothing a dot does not. What a
  * component does beyond its place - desktop or mobile only, a condition - is a mark on its pill,
- * because it holds on every page type alike. Under the matrix: the switched-off components, which
- * the matrix leaves out, and the frames with the page types that use them, so a frame no page
- * type is assigned to shows as such.
+ * because it holds on every page type alike.
+ *
+ * The figures above the matrix are switches: a click opens what each one counts in a panel right
+ * under them - one at a time, a second click closes it. Two of those panels are what stood as cards
+ * under the matrix until 2026-10-15 (the switched-off components, which the matrix leaves out, and
+ * the frames with the page types that use them); there they were a long table away from the figure
+ * that names them, and the figures said a number without a way to what it counts (Nutzerbefund
+ * 2026-10-14).
  *
  * Every name is the way to where it is changed: a page type and a component open the stage, a
  * frame the frame editor.
  */
+
+type Tile = 'placed' | 'conditioned' | 'disabled' | 'pageTypes' | 'frames'
 
 type CellState = 'shown' | 'someWidths' | 'excluded' | 'cleared' | 'noArea' | 'hiddenArea' | 'noWidth' | 'unknown'
 
@@ -158,6 +169,7 @@ export default function LayoutOverview({
   onOpenFrame: (frameName: string) => void
 }): JSX.Element {
   const { t } = useTranslation()
+  const [openTile, setOpenTile] = useStickyState<Tile | null>('layoutOverview.openTile', null)
   const parked = parkedIndices(config.plugins)
   const positions = buildBoardPositionMap(config.plugins, parked)
   const pageTypes = derivePageTypes(config)
@@ -214,10 +226,12 @@ export default function LayoutOverview({
 
   // ── figures for the strip on top ──
   const placed = POSITIONS.flatMap((p) => positions[p] ?? [])
+  const positionOf = (i: number): LayoutPosition => getLayout(config.plugins[i])!.position
   const displayOf = (i: number): string => getLayout(config.plugins[i])?.display ?? 'all'
   const desktopOnly = placed.filter((i) => displayOf(i) === 'desktop-only').length
   const mobileOnly = placed.filter((i) => displayOf(i) === 'mobile-only').length
-  const conditioned = placed.filter((i) => !!getLayout(config.plugins[i])?.condition).length
+  const conditionedList = placed.filter((i) => !!getLayout(config.plugins[i])?.condition)
+  const conditioned = conditionedList.length
   const customizedTypes = pageTypes.filter((pt) => hasPageTypeOverride(config.layout?.byPageType?.[pt]))
   const usedFrames = new Set([...chosen.values()].map((c) => c.name))
   const unusedOwn = frames.filter((f) => !usedFrames.has(f.frameName))
@@ -377,20 +391,203 @@ export default function LayoutOverview({
       .map((n) => ({ name: n, kind: pluginFrames.has(n) ? ('plugin' as const) : ('builtin' as const) }))
   ]
 
-  const stat = (value: ReactNode, label: ReactNode, extra?: ReactNode): JSX.Element => (
-    <div className="flex min-w-[9rem] flex-col gap-0.5 rounded-md border border-ink/10 bg-surface px-3 py-2 dark:border-ink/10">
-      <span className="text-heading font-semibold text-text">{value}</span>
-      <span className="text-micro text-text-secondary">{label}</span>
-      {extra && <span className="text-micro text-text-muted">{extra}</span>}
-    </div>
+  const stat = (tile: Tile, value: ReactNode, label: ReactNode, extra?: ReactNode): JSX.Element => {
+    const open = openTile === tile
+    return (
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="layout-overview-panel"
+        onClick={() => setOpenTile(open ? null : tile)}
+        className={`flex min-w-[9rem] flex-col gap-0.5 rounded-md border px-3 py-2 text-left ${
+          open ? 'border-accent bg-accent/10' : 'border-ink/10 bg-surface hover:border-ink/30 dark:border-ink/10 dark:hover:border-ink/25'
+        }`}
+      >
+        <span className="flex items-center justify-between gap-2">
+          <span className="text-heading font-semibold text-text">{value}</span>
+          <ChevronDown size={14} aria-hidden className={`shrink-0 text-text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+        </span>
+        <span className="text-micro text-text-secondary">{label}</span>
+        {extra && <span className="text-micro text-text-muted">{extra}</span>}
+      </button>
+    )
+  }
+
+  // A component with the position it stands in - the panels list components across positions.
+  const placedItem = (i: number, detail?: string): JSX.Element => (
+    <li key={i} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      {componentPill(i)}
+      <span className="text-micro text-text-muted">
+        {positionName(positionOf(i))}
+        {detail && ` · ${detail}`}
+      </span>
+    </li>
   )
+
+  const framesList = (
+    <ul className="flex flex-col">
+      {frameList.map(({ name, kind }) => {
+        const users = pageTypes.filter((pt) => chosen.get(pt)!.name === name)
+        const own = kind === 'own' ? frames.find((f) => f.frameName === name) : undefined
+        const customAreas = own ? own.areas.filter((a) => a.group && a.slot && a.slot !== 'pageBody') : []
+        return (
+          <li key={name} className="flex flex-col gap-1.5 border-t border-ink/[0.06] py-2.5 first:border-t-0 first:pt-0 dark:border-ink/10">
+            <div className="flex flex-wrap items-center gap-2">
+              {framePill(name)}
+              <span className="text-micro text-text-muted">{t(`layoutEditor.overview.frameKind.${kind}`)}</span>
+              {users.length === 0 && <Badge>{t('layoutEditor.overview.unassigned')}</Badge>}
+            </div>
+            {users.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pl-1">
+                {users.map((pt) => (
+                  <button
+                    key={pt}
+                    type="button"
+                    onClick={() => onOpenPageType(pt)}
+                    className="rounded-full border border-ink/10 px-2 py-0.5 text-micro text-text hover:border-ink/30 dark:border-ink/15"
+                  >
+                    {pageTypeName(pt)}
+                  </button>
+                ))}
+              </div>
+            )}
+            {customAreas.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pl-1 text-micro text-text-secondary">
+                <span>{t('layoutEditor.overview.customAreas')}</span>
+                {customAreas.map((a) => {
+                  const color = groupColor(a.group, groupNames)
+                  return (
+                    <span key={a.id} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${color ? `${color.ring} ${color.bg} ${color.text}` : 'border-ink/10'}`}>
+                      {a.name}
+                      <span className="text-text-muted">· {positionName(a.slot as LayoutPosition)}</span>
+                    </span>
+                  )
+                })}
+              </div>
+            )}
+          </li>
+        )
+      })}
+    </ul>
+  )
+
+  function panel(tile: Tile): ReactNode {
+    switch (tile) {
+      case 'placed': {
+        const groups: { title: string; items: number[] }[] = [
+          { title: t('layoutEditor.overview.panelAlways'), items: placed.filter((i) => displayOf(i) === 'all') },
+          { title: t('layoutEditor.displayDesktopOnly'), items: placed.filter((i) => displayOf(i) === 'desktop-only') },
+          { title: t('layoutEditor.displayMobileOnly'), items: placed.filter((i) => displayOf(i) === 'mobile-only') }
+        ].filter((g) => g.items.length > 0)
+        return (
+          <>
+            <CardHeading icon={Blocks}>{t('layoutEditor.overview.panelPlacedTitle')}</CardHeading>
+            {placed.length === 0 ? (
+              <p className="text-ui text-text-muted">{t('layoutEditor.overview.panelPlacedNone')}</p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {groups.map((g) => (
+                  <section key={g.title} className="flex flex-col gap-1.5">
+                    <h3 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">
+                      {g.title} <span className="font-normal text-text-muted">{g.items.length}</span>
+                    </h3>
+                    <ul className="flex flex-wrap gap-x-5 gap-y-1.5">{g.items.map((i) => placedItem(i))}</ul>
+                  </section>
+                ))}
+              </div>
+            )}
+          </>
+        )
+      }
+      case 'conditioned':
+        return (
+          <>
+            <CardHeading icon={Filter}>{t('layoutEditor.overview.panelConditionedTitle')}</CardHeading>
+            {conditionedList.length === 0 ? (
+              <p className="text-ui text-text-muted">{t('layoutEditor.overview.panelConditionedNone')}</p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {conditionedList.map((i) => placedItem(i, conditionLabel(t, getLayout(config.plugins[i])!.condition!)))}
+              </ul>
+            )}
+          </>
+        )
+      case 'disabled':
+        return (
+          <>
+            <CardHeading icon={PowerOff}>{t('layoutEditor.overview.disabledTitle')}</CardHeading>
+            {parked.size === 0 ? (
+              <p className="text-ui text-text-muted">{t('layoutEditor.overview.disabledNone')}</p>
+            ) : (
+              <>
+                <p className="text-micro text-text-secondary">{t('layoutEditor.overview.disabledText')}</p>
+                <div className="flex flex-wrap gap-1.5">{[...parked].map((i) => componentPill(i, true))}</div>
+              </>
+            )}
+          </>
+        )
+      case 'pageTypes':
+        return (
+          <>
+            <CardHeading icon={Files}>{t('layoutEditor.overview.panelPageTypesTitle')}</CardHeading>
+            <ul className="flex flex-col">
+              {pageTypes.map((pt) => {
+                const override = overrideOf(config, pt)
+                const frame = chosen.get(pt)!
+                const hidden = placed.filter((i) => isExcluded(override, config.plugins[i]))
+                const cleared = POSITIONS.filter((p) => isPositionCleared(override, p))
+                const differs = customizedTypes.includes(pt)
+                return (
+                  <li key={pt} className="flex flex-col gap-1.5 border-t border-ink/[0.06] py-2.5 first:border-t-0 first:pt-0 dark:border-ink/10">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onOpenPageType(pt)}
+                        className="text-ui font-medium text-text underline-offset-2 hover:underline"
+                      >
+                        {pageTypeName(pt)}
+                      </button>
+                      {framePill(frame.name, frame.from)}
+                      {!differs && <span className="text-micro text-text-muted">{t('layoutEditor.overview.panelSameAsAll')}</span>}
+                    </div>
+                    {hidden.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pl-1 text-micro text-text-secondary">
+                        <span>{t('layoutEditor.overview.panelHidden')}</span>
+                        {hidden.map((i) => componentPill(i, true))}
+                      </div>
+                    )}
+                    {cleared.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pl-1 text-micro text-text-secondary">
+                        <span>{t('layoutEditor.overview.panelCleared')}</span>
+                        {cleared.map((p) => (
+                          <span key={p} className="rounded-full border border-ink/10 px-2 py-0.5 text-text dark:border-ink/15">
+                            {positionName(p)}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          </>
+        )
+      case 'frames':
+        return (
+          <>
+            <CardHeading icon={LayoutGrid}>{t('layoutEditor.overview.framesTitle')}</CardHeading>
+            {framesList}
+          </>
+        )
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <InfoNote>{t('layoutEditor.overview.intro')}</InfoNote>
 
       <div className="flex flex-wrap gap-2">
-        {stat(placed.length, t('layoutEditor.overview.statPlaced', { count: placed.length }), (
+        {stat('placed', placed.length, t('layoutEditor.overview.statPlaced', { count: placed.length }), (
           <span className="flex flex-wrap items-center gap-x-2">
             <span>{t('layoutEditor.overview.statAlways', { count: placed.length - desktopOnly - mobileOnly })}</span>
             <span className="inline-flex items-center gap-0.5">
@@ -405,14 +602,20 @@ export default function LayoutOverview({
             </span>
           </span>
         ))}
-        {stat(conditioned, t('layoutEditor.overview.statConditioned', { count: conditioned }))}
-        {stat(parked.size, t('layoutEditor.overview.statDisabled', { count: parked.size }))}
-        {stat(pageTypes.length, t('layoutEditor.overview.statPageTypes', { count: pageTypes.length }), t('layoutEditor.overview.statCustomized', { count: customizedTypes.length }))}
+        {stat('conditioned', conditioned, t('layoutEditor.overview.statConditioned', { count: conditioned }))}
+        {stat('disabled', parked.size, t('layoutEditor.overview.statDisabled', { count: parked.size }))}
+        {stat('pageTypes', pageTypes.length, t('layoutEditor.overview.statPageTypes', { count: pageTypes.length }), t('layoutEditor.overview.statCustomized', { count: customizedTypes.length }))}
         {stat(
+          'frames',
           frames.length,
           t('layoutEditor.overview.statFrames', { count: frames.length }),
           unusedOwn.length > 0 ? t('layoutEditor.overview.statUnused', { count: unusedOwn.length }) : undefined
         )}
+      </div>
+
+      {/* Rendered empty while closed, so the buttons' aria-controls always names an element. */}
+      <div id="layout-overview-panel">
+        {openTile && <Card className="flex flex-col gap-3">{panel(openTile)}</Card>}
       </div>
 
       <Card className="flex flex-col gap-3">
@@ -473,69 +676,6 @@ export default function LayoutOverview({
         </ul>
       </Card>
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <Card className="flex flex-col gap-3">
-          <CardHeading icon={PowerOff}>{t('layoutEditor.overview.disabledTitle')}</CardHeading>
-          {parked.size === 0 ? (
-            <p className="text-ui text-text-muted">{t('layoutEditor.overview.disabledNone')}</p>
-          ) : (
-            <>
-              <p className="text-micro text-text-secondary">{t('layoutEditor.overview.disabledText')}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {[...parked].map((i) => componentPill(i, true))}
-              </div>
-            </>
-          )}
-        </Card>
-
-        <Card className="flex flex-col gap-3">
-          <CardHeading icon={LayoutGrid}>{t('layoutEditor.overview.framesTitle')}</CardHeading>
-          <ul className="flex flex-col">
-            {frameList.map(({ name, kind }) => {
-              const users = pageTypes.filter((pt) => chosen.get(pt)!.name === name)
-              const own = kind === 'own' ? frames.find((f) => f.frameName === name) : undefined
-              const customAreas = own ? own.areas.filter((a) => a.group && a.slot && a.slot !== 'pageBody') : []
-              return (
-                <li key={name} className="flex flex-col gap-1.5 border-t border-ink/[0.06] py-2.5 first:border-t-0 first:pt-0 dark:border-ink/10">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {framePill(name)}
-                    <span className="text-micro text-text-muted">{t(`layoutEditor.overview.frameKind.${kind}`)}</span>
-                    {users.length === 0 && <Badge>{t('layoutEditor.overview.unassigned')}</Badge>}
-                  </div>
-                  {users.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 pl-1">
-                      {users.map((pt) => (
-                        <button
-                          key={pt}
-                          type="button"
-                          onClick={() => onOpenPageType(pt)}
-                          className="rounded-full border border-ink/10 px-2 py-0.5 text-micro text-text hover:border-ink/30 dark:border-ink/15"
-                        >
-                          {pageTypeName(pt)}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {customAreas.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5 pl-1 text-micro text-text-secondary">
-                      <span>{t('layoutEditor.overview.customAreas')}</span>
-                      {customAreas.map((a) => {
-                        const color = groupColor(a.group, groupNames)
-                        return (
-                          <span key={a.id} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${color ? `${color.ring} ${color.bg} ${color.text}` : 'border-ink/10'}`}>
-                            {a.name}
-                            <span className="text-text-muted">· {positionName(a.slot as LayoutPosition)}</span>
-                          </span>
-                        )
-                      })}
-                    </div>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-        </Card>
-      </div>
     </div>
   )
 }

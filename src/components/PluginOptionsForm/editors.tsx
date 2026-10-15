@@ -183,15 +183,18 @@ export function ObjectBlock({
   )
 }
 
-/** "Only applies with variant = Bar, Tabs." - a field's `when`, in the words of the form. */
+/** "Only applies when "Sort" is set to Date." - a field's `when`, in the words of the form. A
+ *  switch is "is on", not "= true": layout-box's `collapsed` said "collapsible = true" on every box
+ *  that does not fold. A field without a title, or a path to a nested one, is named by its key. */
 function conditionText(field: OptionField, siblings: readonly OptionField[], lang: FormLanguage, t: TFunction): string {
   const parts = Object.entries(field.when ?? {}).map(([path, allowed]) => {
     const head = siblings.find((f) => f.key === path)
     const name = (head && fieldText(head, lang).title) ?? path
-    const list = (Array.isArray(allowed) ? allowed : [allowed]).map((v) => enumLabel(head, v, lang))
-    return t('pluginOptions.conditionPart', { name, values: list.join(', ') })
+    const list = Array.isArray(allowed) ? allowed : [allowed]
+    if (list.length === 1 && typeof list[0] === 'boolean') return t(list[0] ? 'pluginOptions.conditionOn' : 'pluginOptions.conditionOff', { name })
+    return t('pluginOptions.conditionPart', { name, values: list.map((v) => enumLabel(head, v, lang)).join(t('pluginOptions.conditionOr')) })
   })
-  return t('pluginOptions.onlyWhen', { conditions: parts.join('; ') })
+  return t('pluginOptions.onlyWhen', { conditions: parts.join(t('pluginOptions.conditionAnd')) })
 }
 
 /** A group of options that folds - FoldBox, with the count on the right. While searching it is

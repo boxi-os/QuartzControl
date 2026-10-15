@@ -23,6 +23,7 @@ import * as styleService from '../styleService'
 import * as themePresetsService from '../themePresetsService'
 import { runCommand } from '../runCommand'
 import { mainT } from '../../i18n'
+import { isConsolidatedOrder, isLegacyOnlyStylesheet } from '@shared/stylesheetConsolidation'
 import type { ZipEntry } from '../zipArchive'
 import { emptyPlan, hasNodeModule, installedVersion, listFilesFlat, writableTarget, type ApplyContext, type TemplatePart } from './shared'
 type Strategy = ApplyContext['strategy']
@@ -276,6 +277,53 @@ function splitUseStatements(content: string): { useLines: string[]; rest: string
   return { useLines, rest: restLines.join('\n') }
 }
 
+/**
+ * The stylesheets only the 31 of the template before 1.1 have, as far as this project loads them -
+ * when the package brings the twelve. Loaded together, every rule stood twice, the 31 after the
+ * twelve, so a change in the new `layout.scss` showed nothing, and the stylesheets page took the
+ * project for put together and offered nothing (forty-fifth review, Mittel 1: 31 → 41 loaded).
+ * Under 'packageWins' they leave the load order and stay in the folder; under 'projectWins' the
+ * twelve stay out of it. Empty for a package of the 31, or a project that is in the form of the
+ * twelve already.
+ */
+async function oldStylesheetsOf(payload: StylesPayload, projectPath: string): Promise<string[]> {
+  if (!isConsolidatedOrder(payload.order)) return []
+  const loaded = (await styleService.listStyleFiles(projectPath)).files.filter((f) => f.imported).map((f) => f.relativePath)
+  return loaded.filter(isLegacyOnlyStylesheet)
+}
+
+// `--tpl-` is the template's own prefix; Quartz's variables (--light, --dark, …) come from the
+// config and are defined in no stylesheet, so without it every one of them would be "missing".
+const TEMPLATE_VARIABLE = /var\(\s*(--tpl-[\w-]+)/g
+const DEFINED_VARIABLE = /(--tpl-[\w-]+)\s*:/g
+
+async function scssUnder(dir: string, depth = 0): Promise<string[]> {
+  if (depth > 6 || !existsSync(dir)) return []
+  const out: string[] = []
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name)
+    if (entry.isDirectory()) out.push(...(await scssUnder(path, depth + 1)))
+    else if (entry.name.endsWith('.scss')) out.push(path)
+  }
+  return out
+}
+
+/** The template variables the package's stylesheets read that neither they nor this project define. */
+async function missingTemplateVariables(payload: StylesPayload, projectPath: string, files: Map<string, Buffer>): Promise<string[]> {
+  const used = new Set<string>()
+  const defined = new Set<string>()
+  for (const relativePath of payload.files) {
+    const text = files.get(`files/styles/${relativePath}`)?.toString('utf8') ?? ''
+    for (const m of text.matchAll(TEMPLATE_VARIABLE)) used.add(m[1])
+    for (const m of text.matchAll(DEFINED_VARIABLE)) defined.add(m[1])
+  }
+  if (used.size === 0) return []
+  for (const path of await scssUnder(stylesDir(projectPath))) {
+    for (const m of (await readFile(path, 'utf8')).matchAll(DEFINED_VARIABLE)) defined.add(m[1])
+  }
+  return [...used].filter((v) => !defined.has(v)).sort()
+}
+
 const styles: TemplatePart<StylesPayload> = {
   id: 'styles',
   async collect({ projectPath }) {
@@ -294,7 +342,7 @@ const styles: TemplatePart<StylesPayload> = {
       stats: { files: files.length }
     }
   },
-  async plan(payload, { projectPath }) {
+  async plan(payload, { projectPath, files }) {
     const plan = emptyPlan()
     for (const relativePath of payload.files) {
       // A name that would leave quartz/styles is dropped from the plan too, not only from apply -
@@ -313,6 +361,14 @@ const styles: TemplatePart<StylesPayload> = {
     }
     const current = stripAllManaged((await styleService.readCustomScss(projectPath)).content)
     if (current !== payload.customScss) plan.conflicts.push('custom.scss')
+    // A package in the form of the twelve on a project that still loads the 31: what apply does
+    // with the old ones depends on the strategy (oldStylesheetsOf), and the renderer says which.
+    const old = await oldStylesheetsOf(payload, projectPath)
+    if (old.length > 0) plan.notes.push(`legacyStyles:${old.length}`)
+    // The variables the package's stylesheets read and this project defines nowhere. They come with
+    // the part cssVariables; a plan cannot know whether that is ticked, so the sentence says both.
+    const missing = await missingTemplateVariables(payload, projectPath, files)
+    if (missing.length > 0) plan.notes.push(`missingVariables:${missing.join(',')}`)
     return plan
   },
   /**
@@ -339,8 +395,12 @@ const styles: TemplatePart<StylesPayload> = {
       await writeFile(target, data)
     }
 
+    const old = await oldStylesheetsOf(payload, projectPath)
     const before = await styleService.readCustomScss(projectPath)
-    const existingOrder = (await styleService.listStyleFiles(projectPath)).files.filter((f) => f.imported).map((f) => f.relativePath)
+    const existingOrder = (await styleService.listStyleFiles(projectPath)).files
+      .filter((f) => f.imported)
+      .map((f) => f.relativePath)
+      .filter((p) => !(strategy === 'packageWins' && old.includes(p)))
 
     let body: string
     if (strategy === 'packageWins') {
@@ -362,7 +422,11 @@ const styles: TemplatePart<StylesPayload> = {
 
     // The order the package brings, restricted to files that exist here, with anything the target
     // already imported and the package does not know appended after it.
-    const packageOrder = payload.order.filter((p) => existsSync(styleFilePath(projectPath, p)))
+    const packageOrder = payload.order
+      .filter((p) => existsSync(styleFilePath(projectPath, p)))
+      // The project keeps its 31 under 'projectWins', so the package's twelve are written but not
+      // loaded: both at once set every rule twice, and the later one wins.
+      .filter((p) => !(strategy === 'projectWins' && old.length > 0 && !existingOrder.includes(p)))
     const merged = strategy === 'packageWins' ? packageOrder : existingOrder
     for (const relativePath of strategy === 'packageWins' ? existingOrder : packageOrder) {
       if (!merged.includes(relativePath)) merged.push(relativePath)

@@ -79,6 +79,19 @@ const isLegacy = (relativePath: string): boolean => relativePath.startsWith(DIR)
 const CONSOLIDATED_NAMES: ReadonlySet<string> = new Set(CONSOLIDATED_ORDER)
 const isLegacyOnly = (relativePath: string): boolean => isLegacy(relativePath) && !CONSOLIDATED_NAMES.has(stem(relativePath))
 
+/** Whether a stylesheet in the load order is one only the 31 have (not a11y or plugin-layout-box). */
+export const isLegacyOnlyStylesheet = isLegacyOnly
+
+/**
+ * Whether a load order is that of the twelve: it names one of the ten new names and none that only
+ * the 31 have. Asked of a template package, whose stylesheets are its own - not of a project, where
+ * a file named like one of the twelve may be the user's (wasConsolidated asks the content).
+ */
+export function isConsolidatedOrder(order: string[]): boolean {
+  const newOnly = order.some((p) => p.startsWith(DIR) && CONSOLIDATED_NAMES.has(stem(p)) && !LEGACY_STYLESHEETS.has(stem(p)))
+  return newOnly && !order.some(isLegacyOnly)
+}
+
 const header = (target: string): string => `// ${target} - put together by QuartzControl; each section is named after its former stylesheet.`
 
 /**

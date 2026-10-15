@@ -566,6 +566,24 @@ function planNotes(t: Translate, plan: TemplatePartPlan, strategy: TemplateConfl
       })
     )
   }
+  // A package of the twelve on a project that loads the 31: which of the two the project loads
+  // afterwards depends on the strategy (oldStylesheetsOf in templatePackage/parts.ts).
+  const legacy = plan.notes.find((note) => note.startsWith('legacyStyles:'))
+  if (legacy) {
+    const count = Number(legacy.slice('legacyStyles:'.length))
+    notes.push(t(strategy === 'packageWins' ? 'templates.planLegacyStylesReplaced' : 'templates.planLegacyStylesKept', { count }))
+  }
+  const missing = plan.notes.find((note) => note.startsWith('missingVariables:'))
+  if (missing) {
+    const names = missing.slice('missingVariables:'.length).split(',')
+    const shown = names.slice(0, OUTSIDE_NAMES_SHOWN).join(', ')
+    notes.push(
+      t('templates.planMissingVariables', {
+        count: names.length,
+        names: names.length > OUTSIDE_NAMES_SHOWN ? t('templates.planOutsideMore', { names: shown, count: names.length - OUTSIDE_NAMES_SHOWN }) : shown
+      })
+    )
+  }
   const outside = plan.notes.filter((note) => note.startsWith('outside:')).map((note) => note.slice('outside:'.length))
   if (outside.length > 0) {
     // All of them would be a paragraph in a row that is one line; the count in the summary already

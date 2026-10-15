@@ -2427,6 +2427,10 @@ export default {
     planOutside_other: '{{count}} refused',
     planContentIsSymlink:
         'Will be skipped: this project’s content folder is a link into another folder. A template never writes there.',
+    planLegacyStylesReplaced: 'The project no longer loads {{count}} stylesheets of the split up to 1.0 afterwards — the template’s twelve replace them. The files stay in the folder.',
+    planLegacyStylesKept: 'This project still loads {{count}} stylesheets of the split up to 1.0, and it stays that way: the template’s twelve go into the folder but are not loaded. “Merge” under Styles → Custom CSS puts the project’s own together.',
+    planMissingVariables: 'The template’s stylesheets read {{count}} CSS variable this project does not have ({{names}}). It comes with the part “CSS variables”; without it the rule does not apply.',
+    planMissingVariables_other: 'The template’s stylesheets read {{count}} CSS variables this project does not have ({{names}}). They come with the part “CSS variables”; without it these rules do not apply.',
     planOutsideDetail: 'Refused: {{names}} would be written outside the project.',
     planOutsideDetail_other: 'Refused: {{names}} would be written outside the project.',
     planOutsideMore: '{{names}} and {{count}} more',

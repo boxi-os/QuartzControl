@@ -2442,6 +2442,10 @@ export default {
     planOutside_other: '{{count}} werden abgelehnt',
     planContentIsSymlink:
         'Wird übersprungen: Der Content-Ordner dieses Projekts ist ein Link in einen anderen Ordner. Dorthin schreibt eine Vorlage nichts.',
+    planLegacyStylesReplaced: '{{count}} Stylesheets aus der Aufteilung bis 1.0 lädt das Projekt danach nicht mehr — die zwölf der Vorlage ersetzen sie. Die Dateien bleiben im Ordner.',
+    planLegacyStylesKept: 'Dieses Projekt lädt noch {{count}} Stylesheets aus der Aufteilung bis 1.0, und dabei bleibt es: Die zwölf der Vorlage kommen in den Ordner, geladen werden sie nicht. Die eigenen führt „Zusammenlegen“ unter Stile → Eigenes CSS zusammen.',
+    planMissingVariables: 'Die Stylesheets der Vorlage lesen {{count}} CSS-Variable, die dieses Projekt nicht hat ({{names}}). Sie kommt mit dem Teil „CSS-Variablen“; ohne ihn gilt die Regel nicht.',
+    planMissingVariables_other: 'Die Stylesheets der Vorlage lesen {{count}} CSS-Variablen, die dieses Projekt nicht hat ({{names}}). Sie kommen mit dem Teil „CSS-Variablen“; ohne ihn gelten diese Regeln nicht.',
     planOutsideDetail: 'Wird abgelehnt: {{names}} würde außerhalb des Projekts geschrieben werden.',
     planOutsideDetail_other: 'Wird abgelehnt: {{names}} würden außerhalb des Projekts geschrieben werden.',
     planOutsideMore: '{{names}} und {{count}} weitere',

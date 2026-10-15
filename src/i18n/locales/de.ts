@@ -2411,6 +2411,10 @@ export default {
     importHint:
       'Vorher wird automatisch ein Snapshot angelegt, der Import lässt sich also unter „Snapshots“ komplett zurücknehmen.',
     planning: 'Paket wird geprüft…',
+    pickBuiltin: 'Basis-Template',
+    builtinDownloaded: 'Basis-Template, von GitHub geladen',
+    builtinBundled: 'Basis-Template, die Fassung aus der App (GitHub nicht erreichbar)',
+    builtinMissing: 'Das Basis-Template ließ sich weder laden noch in der App finden.',
     pickPackage: 'Vorlage wählen…',
     previewError: 'Das ist keine lesbare Vorlage (keine manifest.json gefunden).',
     legacyBadge: 'Altes Format',

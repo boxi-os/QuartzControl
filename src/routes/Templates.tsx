@@ -293,6 +293,9 @@ function TranslationScope({
 function ImportSection({ project }: { project: Project }): JSX.Element {
   const { t } = useTranslation()
   const [packagePath, setPackagePath] = useState<string | null>(null)
+  // Where the package came from when it is the built-in one: its path is the app's cache or its
+  // resources folder, which says nothing to anyone, so the line next to the buttons names it instead.
+  const [builtinSource, setBuiltinSource] = useState<'downloaded' | 'bundled' | null>(null)
   const [plan, setPlan] = useState<TemplatePackagePlan | null>(null)
   const [unreadable, setUnreadable] = useState(false)
   const [selected, setSelected] = useState<TemplatePartId[]>([])
@@ -311,18 +314,45 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
   async function pick(): Promise<void> {
     const picked = await window.quartzGui.templatePackage.pick()
     if (!picked) return
-    setPackagePath(picked)
+    await load(picked, null)
+  }
+
+  // The package every new project is offered (builtinTemplateService: the published copy, else the
+  // one inside the app), so an existing project can take it whole or in parts without hunting for
+  // a file first (Nutzerbefund 2026-10-14). Everything after this is the ordinary import.
+  async function pickBuiltin(): Promise<void> {
+    reset(null, null)
+    setPlanning(true)
+    try {
+      const builtin = await window.quartzGui.templatePackage.builtin()
+      if (builtin) await load(builtin.path, builtin.source)
+      else setFailure(t('templates.builtinMissing'))
+    } finally {
+      setPlanning(false)
+    }
+  }
+
+  function reset(path: string | null, source: 'downloaded' | 'bundled' | null): void {
+    setPackagePath(path)
+    setBuiltinSource(source)
     setWarnings(null)
     setFailure(null)
     setProgress(null)
     setPlan(null)
     setUnreadable(false)
+  }
+
+  async function load(path: string, source: 'downloaded' | 'bundled' | null): Promise<void> {
+    reset(path, source)
     setPlanning(true)
     try {
-      const result = await window.quartzGui.templatePackage.plan(project.path, picked)
+      const result = await window.quartzGui.templatePackage.plan(project.path, path)
       setPlan(result)
       setUnreadable(result === null)
-      setSelected(result?.parts.map((p) => p.id) ?? [])
+      // The built-in package carries sample pages. In a new project they are the point; in this one
+      // they would land between the user's own notes, so that part starts unticked.
+      const parts = result?.parts.map((p) => p.id) ?? []
+      setSelected(source ? parts.filter((id) => id !== 'content') : parts)
     } catch (err) {
       setFailure(formatIpcError(err))
       setUnreadable(false)
@@ -364,10 +394,23 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
       <p className="mb-4 text-xs text-text-muted">{t('templates.importHint')}</p>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="ghost" onClick={pick} disabled={running || planning}>
-          {planning ? t('templates.planning') : t('templates.pickPackage')}
+        <Button variant="ghost" onClick={pickBuiltin} disabled={running || planning}>
+          {t('templates.pickBuiltin')}
         </Button>
-        {packagePath && <span className="min-w-0 flex-1 truncate text-xs text-text-muted">{packagePath}</span>}
+        <Button variant="ghost" onClick={pick} disabled={running || planning}>
+          {t('templates.pickPackage')}
+        </Button>
+        {planning ? (
+          <span className="text-xs text-text-muted">{t('templates.planning')}</span>
+        ) : (
+          packagePath && (
+            <span className="min-w-0 flex-1 truncate text-xs text-text-muted">
+              {builtinSource
+                ? t(builtinSource === 'downloaded' ? 'templates.builtinDownloaded' : 'templates.builtinBundled')
+                : packagePath}
+            </span>
+          )
+        )}
       </div>
 
       {unreadable && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{t('templates.previewError')}</p>}

@@ -1188,6 +1188,7 @@ export default {
     publishOnlyHint: 'The only published language stays on.',
     order: 'Order',
     orderHint: 'The language switcher lists the languages in this order.',
+    noSchema: 'Without the plugin’s description there are no groups. What the configuration sets is under “More options”; everything else under “All options”.',
     otherGroup: 'More options',
     sectionsTitle: 'Settings',
     switcherAt: 'Stands in {{position}}.',

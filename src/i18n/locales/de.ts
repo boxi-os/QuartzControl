@@ -1193,6 +1193,7 @@ export default {
     publishOnlyHint: 'Die einzige veröffentlichte Sprache bleibt an.',
     order: 'Reihenfolge',
     orderHint: 'In dieser Reihenfolge stehen die Sprachen im Sprachwechsler.',
+    noSchema: 'Ohne die Beschreibung des Plugins gibt es keine Gliederung. Was die Konfiguration setzt, steht unter „Weitere Optionen“; alles andere unter „Alle Optionen“.',
     otherGroup: 'Weitere Optionen',
     sectionsTitle: 'Einstellungen',
     switcherAt: 'Steht im Bereich {{position}}.',

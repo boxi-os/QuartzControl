@@ -202,6 +202,13 @@ export interface SettingsGroup {
 export const UNKNOWN_GROUP = 'unknown'
 
 export function settingsGroups(schema: NormalizedOptionSchema | null, options: Options, lang: FormLanguage): SettingsGroup[] {
+  // Without a schema there are no groups - the plugin not installed yet, or its package.json
+  // unreadable - but what the config sets is still there to see and edit, in one row (forty-fifth
+  // review, Niedrig 3: the card stood empty).
+  if (!schema) {
+    const set = Object.keys(options).filter((k) => !LANGUAGE_KEYS.includes(k))
+    return set.length ? [{ id: '', title: '', keys: set }] : []
+  }
   const fields = (schema?.fields ?? []).filter((f) => !LANGUAGE_KEYS.includes(f.key))
   const ordered = fields.some((f) => f.order !== undefined)
     ? [...fields].sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER))

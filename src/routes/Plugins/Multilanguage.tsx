@@ -431,22 +431,28 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
         ) : schemaQuery.error ? (
           <p className="text-micro text-red-600 dark:text-red-400">{t('layoutEditor.inspector.optionsError', { reason: schemaQuery.error })}</p>
         ) : (
-          <ul className="flex flex-col gap-1.5">
-            {groups.map((g) => {
-              const key = `section:${g.id}`
-              const line = summary(g)
-              return (
-                <SelectableRow
-                  key={g.id}
-                  selected={selected === key}
-                  onSelect={() => setSelected(key)}
-                  title={groupTitle(g)}
-                  subtitle={line || undefined}
-                  trailing={<ChevronRight size={14} aria-hidden className="shrink-0 text-text-muted" />}
-                />
-              )
-            })}
-          </ul>
+          <>
+            {schemaQuery.data?.unreadable && (
+              <p className="text-micro text-amber-700 dark:text-amber-300">{t('pluginOptions.unreadable', { reason: schemaQuery.data.unreadable })}</p>
+            )}
+            {!schema && <p className="text-micro text-text-muted">{t('multilanguageEditor.noSchema')}</p>}
+            <ul className="flex flex-col gap-1.5">
+              {groups.map((g) => {
+                const key = `section:${g.id}`
+                const line = summary(g)
+                return (
+                  <SelectableRow
+                    key={g.id}
+                    selected={selected === key}
+                    onSelect={() => setSelected(key)}
+                    title={groupTitle(g)}
+                    subtitle={line || undefined}
+                    trailing={<ChevronRight size={14} aria-hidden className="shrink-0 text-text-muted" />}
+                  />
+                )
+              })}
+            </ul>
+          </>
         )}
       </Card>
 

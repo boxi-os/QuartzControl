@@ -2337,3 +2337,52 @@ Offen aus dieser Runde: der Vorschlag einer Zehn-Zeilen-Notiz vor Änderungen an
 Vertrauensgrenze oder einer gemeinsamen Funktion — er wartet auf den Nutzer.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+
+**Das fünfundvierzigste Review** ([`REVIEW-2026-10-19.md`](REVIEW-2026-10-19.md), Auftrag
+[`REVIEW-2026-10-19-auftrag.md`](REVIEW-2026-10-19-auftrag.md),
+`review-2026-10-19..review-2026-10-20`: Block A die Fixes des vierundvierzigsten, Block B die zwölf
+Nutzerbefunde vom 2026-10-14, Block C die neu gegliederten Plugin-Optionen, der
+Mehrsprachigkeits-Editor und „Button“): **vom selben Modell wie die gelesenen Commits und wie der
+Auftrag** (Claude Opus 5.5, in einem eigenen Agenten). 0 Hoch, 2 Mittel, 8 Niedrig. Beide Mittel
+lagen in Block B, an „Vorlage anwenden“ mit dem mitgelieferten Basis-Template auf ein bestehendes
+Projekt, und beide hat erst ein gewachsenes Projekt gezeigt (navigations-testprojekt), nicht
+gui-test. Abgearbeitet am 2026-10-16 auf `feat/1.1`, ein Befund je Commit, je mit Typcheck, Build,
+Smoke und einer Messung an der gebauten App mit Wegwerf-Profil an Kopien:
+
+- **Mittel 1** `7732fdf` — ein Paket in der Form der zwölf auf einem Projekt mit den 31: unter
+  „Vorlage gewinnt“ verlassen die alten die Ladereihenfolge (bleiben im Ordner), unter „Projekt
+  gewinnt“ werden die zwölf geschrieben, aber nicht geladen; der Plan sagt beides und nennt
+  Template-Variablen, die dem Projekt fehlen. doku-gegenprobe: 31 → 12 statt 41.
+- **Mittel 2** `af784a3` — „Basis-Template“ wählt auf einem bestehenden Projekt nur die Teile der
+  Gestaltung vor; der Plan nennt unter „Vorlage gewinnt“, welche Plugins ein- und ausgeschaltet
+  werden, dass mehrere Instanzen nach der Reihenfolge ersetzt werden, und welche Schriftdateien
+  gehen (`fontFilesReplacedRulesWouldRemove`, dieselbe Regel wie das Löschen).
+- **Niedrig 1** `f935c0d` — der Fokus geht vor dem Zurücksetzen einer nur gesetzt sichtbaren
+  Option auf das nächste Bedienelement.
+- **Niedrig 2** `56f93c0` — „Alle Optionen“ (und der Inspektor der Bühne) graut aus, blendet
+  nicht aus.
+- **Niedrig 3** `8d74c33` — Mehrsprachigkeit ohne Schema: Grund, Satz und eine Zeile „Weitere
+  Optionen“ mit den gesetzten Schlüsseln.
+- **Niedrig 4** `a0b71eb` — `url(//…)` im SCSS-Editor hingenommen, Absatz in
+  `decisions/styles-and-fonts.md`.
+- **Niedrig 5** `66006c5` — die Platzhalterliste auch neben dem einzeiligen `html` von
+  layout-box 0.3.1.
+- **Niedrig 6** `fa9e747` — Speicher-Dialoge beginnen nicht im `content/` eines eingetragenen
+  Projekts; der Fall mit Symlink in einen Vault ist gelesen, nicht gemessen.
+- **Niedrig 7** `3eb0855` — „der Knauf des Schalters“ statt „der Toggle-Button“ in
+  `conventions.md`.
+- **Niedrig 8** `8d933d3` — kein Versionshinweis bei Fassungen mit demselben `src/`
+  (`*_SAME_CODE`).
+
+Offen aus dieser Runde, beim Nutzer: die **Nebenbei-Liste** des Dokuments (alte Kopfzeile des
+Zusammenlegens in Zwischenständen von 1.1, der Rumpf von `custom.scss` nennt
+`_quartzcontrol.scss` auch in Projekten der Form 1.0, das Basis-Template hängt bis zum Release am
+Netz, „Wirkt nur bei Seitliche Panels“, der Selektor „ohne die Kopien“ als Momentaufnahme, die
+zweite Navigation heißt in der Plugin-Liste ohne `#2`), dazu „3 wird ersetzt“ im Plan einer
+Vorlage (Singular für jede Zahl), die Frage, ob Messprotokolle in `docs/decisions/` von
+Wortersetzungen ausgenommen sind, und die **sechs Alpha-Szenen**, die das Review vor dem Release
+empfiehlt, statt einer sechsundvierzigsten Runde dieser Art.
+
+**Keinen dieser Fixes hat ein Review gelesen.**
+

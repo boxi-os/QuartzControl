@@ -1260,6 +1260,7 @@ export default {
     matches_one: 'One match',
     matches_other: '{{count}} matches',
     moreKeys: 'Unknown keys',
+    freeKey: 'Add another option',
     moreKeysHint: 'These keys are in the configuration, but the plugin does not describe them.',
     resetNamed: 'Reset {{name}} to the default',
     removeNamed: 'Remove {{name}}',

@@ -183,7 +183,8 @@ export function ObjectBlock({
       )}
       {(unknown.length > 0 || (extra && !searching)) && (
         <section className="flex flex-col gap-2.5 border-t border-dashed border-ink/10 pt-2.5 dark:border-ink/10">
-          <h4 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{t('pluginOptions.moreKeys')}</h4>
+          {/* Over the free row alone it is not "unknown keys" - there are none yet. */}
+          <h4 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{unknown.length > 0 ? t('pluginOptions.moreKeys') : t('pluginOptions.freeKey')}</h4>
           {unknown.length > 0 && <p className="text-micro text-text-muted">{t('pluginOptions.moreKeysHint')}</p>}
           {unknown.map(row)}
           {!searching && extra}

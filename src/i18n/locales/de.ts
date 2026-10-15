@@ -1265,6 +1265,7 @@ export default {
     matches_one: 'Ein Treffer',
     matches_other: '{{count}} Treffer',
     moreKeys: 'Unbekannte Schlüssel',
+    freeKey: 'Weitere Option eintragen',
     moreKeysHint: 'Diese Schlüssel stehen in der Konfiguration, das Plugin beschreibt sie aber nicht.',
     resetNamed: '{{name}} auf die Vorgabe zurücksetzen',
     removeNamed: '{{name}} entfernen',

@@ -554,6 +554,7 @@ function StringEditor({
           defaultValue={defaultValue}
           hasDefault={hasDefault}
           placeholdersOff={placeholdersOff}
+          silenced={ctx.muted === true}
           onValue={onValue}
         />
       )

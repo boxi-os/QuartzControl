@@ -202,6 +202,7 @@ export function SnippetFileField({
   defaultValue,
   hasDefault,
   placeholdersOff,
+  silenced = false,
   onValue
 }: {
   id?: string
@@ -211,6 +212,9 @@ export function SnippetFileField({
   defaultValue: unknown
   hasDefault: boolean
   placeholdersOff: boolean
+  /** The field does nothing right now (text wins): a missing file then empties nothing, and
+   *  "the box stays empty" stood under the grey reason that said the opposite. */
+  silenced?: boolean
   onValue: (v: unknown) => void
 }): JSX.Element {
   const { t } = useTranslation()
@@ -389,7 +393,7 @@ export function SnippetFileField({
       </div>
       {info?.state === 'link' && <span className="text-micro text-text-muted">{t('snippets.dir.link', { dir })}</span>}
       {info?.state === 'missing' && <span className="text-micro text-text-muted">{t('snippets.dir.missing', { dir })}</span>}
-      {info && effective !== undefined && !effectiveExists && info.state !== 'missing' && (
+      {info && !silenced && effective !== undefined && !effectiveExists && info.state !== 'missing' && (
         <span className="text-micro text-amber-700 dark:text-amber-300">{t('snippets.missingFile', { name: effective, dir })}</span>
       )}
       {newName !== null && (

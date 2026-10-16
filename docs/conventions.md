@@ -742,8 +742,9 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   „Art“; das Plugin sagt es ebenso), „Box“ für einen Eintrag von quartz-layout-box (nicht
   „Kasten“), „Smartphone“ in neuen Texten über das kleine Gerät (nicht „Telefon“; der
   Breakpoint heißt weiter „Mobil“) und „Button“ für ein Bedienelement, auf das man klickt (nicht
-  „Knopf“; in App, Handbüchern, Plugin-Schemas und Kommentaren ersetzt, die Review-Protokolle
-  bleiben, wie sie geschrieben wurden) — alle vier am 2026-10-15. Deutsch „…“,
+  „Knopf“; in App, Handbüchern, Plugin-Schemas und Kommentaren ersetzt, ebenso im Fließtext von `docs/decisions/`; die Review-Protokolle
+  bleiben, wie sie geschrieben wurden, und ein Zitat dessen, was die App damals sagte, bleibt
+  überall im alten Wortlaut) — alle vier am 2026-10-15. Deutsch „…“,
   Englisch “…”, Gedankenstrich als Em-Dash. Jeder Nutzertext steht in `de.ts`/`en.ts`
   (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
   bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben.

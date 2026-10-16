@@ -272,7 +272,7 @@ Zusätzlich `@{upstream}` zu verlangen wäre teurer als der Rand: Ein Projekt oh
 keines, und dort fiele der Amend aus, obwohl nichts die Maschine verlassen kann.
 
 **Nachtrag (2026-09-17, zwanzigstes Review): ein Stash auf diesem HEAD gehört nicht zu einem
-Stand, den es nicht mehr gibt.** Der Leftover-Satz meinte „der Button trägt ihn nicht zurück“ und
+Stand, den es nicht mehr gibt.** Der Leftover-Satz meinte „der Knopf trägt ihn nicht zurück“ und
 sagte etwas Stärkeres — samt Rat zu `git stash drop`. Ohne offenen Merge gibt es keinen Button, der
 Eintrag passt aber weiter, denn seine Basis *ist* HEAD. Szene s2 gestaget (erster Lauf lässt
 hängenden Merge und Stash, `git merge --abort` im Terminal, gestagete Änderung an `package.json`,

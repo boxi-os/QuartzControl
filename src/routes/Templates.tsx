@@ -537,8 +537,11 @@ function noteCount(plan: TemplatePartPlan, kind: string): number {
 function planSummary(t: Translate, plan: TemplatePartPlan, strategy: TemplateConflictStrategy): string {
   const bits: string[] = []
   if (plan.additions.length > 0) bits.push(t('templates.planAdditions', { count: plan.additions.length }))
-  if (plan.conflicts.length > 0) {
-    bits.push(t(strategy === 'packageWins' ? 'templates.planReplaced' : 'templates.planKept', { count: plan.conflicts.length }))
+  // Under 'projectWins' a custom.scss that gains the package's lines is not kept; planNotes says
+  // what happens to it instead.
+  const merged = strategy === 'projectWins' && plan.notes.includes('customScssMerged') ? 1 : 0
+  if (plan.conflicts.length - merged > 0) {
+    bits.push(t(strategy === 'packageWins' ? 'templates.planReplaced' : 'templates.planKept', { count: plan.conflicts.length - merged }))
   }
   const identical = noteCount(plan, 'identical')
   if (identical > 0) bits.push(t('templates.planIdentical', { count: identical }))
@@ -580,6 +583,7 @@ function planNotes(t: Translate, plan: TemplatePartPlan, strategy: TemplateConfl
     const count = Number(legacy.slice('legacyStyles:'.length))
     notes.push(t(strategy === 'packageWins' ? 'templates.planLegacyStylesReplaced' : 'templates.planLegacyStylesKept', { count }))
   }
+  if (strategy === 'projectWins' && plan.notes.includes('customScssMerged')) notes.push(t('templates.planCustomScssMerged'))
   // What replacing does besides the options and files it counts - only under 'packageWins', where
   // it happens.
   const listed = (kind: string): string[] =>

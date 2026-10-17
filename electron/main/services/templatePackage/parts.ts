@@ -286,6 +286,23 @@ function onlyComments(scss: string): boolean {
 }
 
 /**
+ * custom.scss's free body under 'projectWins', for apply and for the plan alike. Nothing is thrown
+ * away: the project's own file stays the file, and the package's rules are appended in their own
+ * managed section, which is also what makes them removable again later - with their @use lines
+ * hoisted, which Sass wants first. A body without a rule brings no @use either.
+ */
+function projectWinsCustomScss(own: string, packageScss: string): string {
+  const { useLines, rest } = splitUseStatements(packageScss)
+  const incoming = rest.trim()
+  if (onlyComments(incoming)) return own
+  const missing = useLines.filter((line) => !own.includes(line))
+  const withUses = missing.length > 0 ? `${missing.join('\n')}\n${own}` : own
+  // Two projects that both still carry Quartz's own "// put your custom CSS here!" line and
+  // nothing else would otherwise get that comment appended to itself in a managed block.
+  return own.includes(incoming) ? withUses : styleService.upsertManagedBlock(withUses, 'imported-styles', incoming)
+}
+
+/**
  * The stylesheets only the 31 of the template before 1.1 have, as far as this project loads them -
  * when the package brings the twelve. Loaded together, every rule stood twice, the 31 after the
  * twelve, so a change in the new `layout.scss` showed nothing, and the stylesheets page took the
@@ -369,6 +386,10 @@ const styles: TemplatePart<StylesPayload> = {
     }
     const current = stripAllManaged((await styleService.readCustomScss(projectPath)).content)
     if (current !== payload.customScss) plan.conflicts.push('custom.scss')
+    // Counted as kept under 'projectWins', and then written to anyway: the package's rules in their
+    // own section, its @use lines on top (alpha scenes 2026-10-17, finding 1.1, nebenbei). The
+    // renderer takes custom.scss out of "bleiben unverändert" and says this instead.
+    if (current !== payload.customScss && projectWinsCustomScss(current, payload.customScss) !== current) plan.notes.push('customScssMerged')
     // A package in the form of the twelve on a project that still loads the 31: what apply does
     // with the old ones depends on the strategy (oldStylesheetsOf), and the renderer says which.
     const old = await oldStylesheetsOf(payload, projectPath)
@@ -414,17 +435,7 @@ const styles: TemplatePart<StylesPayload> = {
     if (strategy === 'packageWins') {
       body = payload.customScss
     } else {
-      // Nothing is thrown away under 'projectWins': the project's own file stays the file, and the
-      // package's rules are appended in their own managed section, which is also what makes them
-      // removable again later.
-      const own = stripAllManaged(before.content)
-      const { useLines, rest } = splitUseStatements(payload.customScss)
-      const missing = useLines.filter((line) => !own.includes(line))
-      const withUses = missing.length > 0 ? `${missing.join('\n')}\n${own}` : own
-      // Two projects that both still carry Quartz's own "// put your custom CSS here!" line and
-      // nothing else would otherwise get that comment appended to itself in a managed block.
-      const incoming = rest.trim()
-      body = onlyComments(incoming) || own.includes(incoming) ? withUses : styleService.upsertManagedBlock(withUses, 'imported-styles', incoming)
+      body = projectWinsCustomScss(stripAllManaged(before.content), payload.customScss)
     }
     await styleService.replaceCustomBody(projectPath, body)
 

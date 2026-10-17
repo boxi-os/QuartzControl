@@ -2058,7 +2058,7 @@ export default {
         core: 'Quartz-Kern',
         theme: 'Community-Theme',
         build: 'Letzter Build',
-        user: 'angepasst',
+        user: 'geändert',
         own: 'eigene Variable'
       }
     }

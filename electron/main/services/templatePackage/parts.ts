@@ -277,6 +277,14 @@ function splitUseStatements(content: string): { useLines: string[]; rest: string
   return { useLines, rest: restLines.join('\n') }
 }
 
+// A body with no rule in it. The bundled package's custom.scss is only a comment saying its
+// stylesheets are "loaded in the order kept in quartz/styles/_quartzcontrol.scss"; appended under
+// 'projectWins', where they are not loaded and a project from 1.0 has no such file, it put that
+// claim into custom.scss, which the plan counted as unchanged (alpha scenes 2026-10-17, finding 1.1).
+function onlyComments(scss: string): boolean {
+  return scss.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').every((line) => line.trim() === '' || line.trim().startsWith('//'))
+}
+
 /**
  * The stylesheets only the 31 of the template before 1.1 have, as far as this project loads them -
  * when the package brings the twelve. Loaded together, every rule stood twice, the 31 after the
@@ -416,7 +424,7 @@ const styles: TemplatePart<StylesPayload> = {
       // Two projects that both still carry Quartz's own "// put your custom CSS here!" line and
       // nothing else would otherwise get that comment appended to itself in a managed block.
       const incoming = rest.trim()
-      body = incoming === '' || own.includes(incoming) ? withUses : styleService.upsertManagedBlock(withUses, 'imported-styles', incoming)
+      body = onlyComments(incoming) || own.includes(incoming) ? withUses : styleService.upsertManagedBlock(withUses, 'imported-styles', incoming)
     }
     await styleService.replaceCustomBody(projectPath, body)
 

@@ -5,6 +5,7 @@ import { join } from 'path'
 import type { PluginActionResult } from '@shared/ipc-contract'
 import { createSnapshot } from './snapshotService'
 import { missingDependencies } from './projectDependencies'
+import { forgetDependencyErrors } from './buildService'
 
 function runQuartzCli(projectPath: string, args: string[]): Promise<PluginActionResult> {
   return runCommand('npx', ['quartz', ...args], projectPath)
@@ -44,6 +45,7 @@ export async function installFromLock(projectPath: string): Promise<PluginAction
     const npm = await runCommand('npm', ['install'], projectPath)
     if (!npm.success) return npm
     npmOutput = npm.output
+    if ((await missingDependencies(projectPath))?.length === 0) forgetDependencyErrors(projectPath)
   }
   const plugins = await runQuartzCli(projectPath, ['plugin', 'install'])
   return { success: plugins.success, output: `${npmOutput}\n${plugins.output}`.trim(), failed: failedPlugins(plugins.output) }

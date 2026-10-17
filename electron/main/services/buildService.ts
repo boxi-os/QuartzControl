@@ -37,6 +37,22 @@ const runningServers = new Map<string, RunningServer>()
 // the UI and its exit code was never shown. Terminal states therefore outlive the entry here.
 const lastTerminalStatus = new Map<string, ServerStatus>()
 
+// The terminal states that only said "packages missing", with the project they were about. Once
+// npm has installed them the sentence is no longer true, but it stayed on the overview ("Der
+// Dev-Server ist mit einem Fehler beendet worden") and the server card until the next start
+// (alpha scenes 2026-10-17, finding 4.1, nebenbei). forgetDependencyErrors() takes them back.
+const dependencyErrors = new Map<string, string>()
+
+/** After a successful npm install: a start that failed only for missing packages failed for nothing still true. */
+export function forgetDependencyErrors(projectPath: string): void {
+  for (const [projectId, path] of dependencyErrors) {
+    if (path !== projectPath) continue
+    dependencyErrors.delete(projectId)
+    lastTerminalStatus.delete(projectId)
+    emitStatus(projectId)
+  }
+}
+
 /** A start that has been asked for but has no process yet - see pendingStarts. */
 interface PendingStart {
   status: ServerStatus
@@ -512,6 +528,7 @@ export async function startServer(
   if (waiting) return waiting.status
   // a fresh attempt supersedes whatever the previous run ended as
   lastTerminalStatus.delete(projectId)
+  dependencyErrors.delete(projectId)
 
   const outputDir = resolveBuildDir(projectPath)
   // `starting` from here on, and said out loud right away: everything after this point is
@@ -561,6 +578,7 @@ export async function startServer(
       if (missing) {
         emitLog(projectId, 'warn', `${missing}\n`)
         lastTerminalStatus.set(projectId, { state: 'error', error: missing })
+        dependencyErrors.set(projectId, projectPath)
         pendingStarts.delete(projectId)
         emitStatus(projectId)
         return getServerStatus(projectId)

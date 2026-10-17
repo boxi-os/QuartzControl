@@ -661,8 +661,9 @@ function spawnServer(
   // Übersicht's link led nowhere, and the live-preview iframe mounted into a connection refusal and
   // stayed blank (reproduced in the running app). Probing the port answers the question directly
   // and, unlike matching the "Started a Quartz server" line, does not depend on its wording.
-  waitForPort(options.port, () => {
-    if (runningServers.get(projectId)?.status !== status || status.state !== 'starting') return
+  const stillStarting = (): boolean => runningServers.get(projectId)?.status === status && status.state === 'starting'
+  waitForPort(options.port, stillStarting, () => {
+    if (!stillStarting()) return
     status.state = 'running'
     emitStatus(projectId)
   })
@@ -810,23 +811,25 @@ async function sameProjectServer(projectPath: string): Promise<{ port: number; p
   return null
 }
 
-// Retries a TCP connect to 127.0.0.1:<port> until it succeeds or the deadline passes, then calls
-// back once. 127.0.0.1 regardless of --remoteDevHost: that flag only rewrites the live-reload
-// websocket URL handed to the browser, the server itself always binds locally. Giving up silently
-// is deliberate - a server that never listens ends in the 'exit' handler, which reports the real
-// failure; guessing one here would only replace it with a worse message.
-const PORT_PROBE_TIMEOUT_MS = 120_000
-
-function waitForPort(port: number, onOpen: () => void): void {
-  const deadline = Date.now() + PORT_PROBE_TIMEOUT_MS
+// Retries a TCP connect to 127.0.0.1:<port> for as long as `waiting()` holds, then calls back
+// once. 127.0.0.1 regardless of --remoteDevHost: that flag only rewrites the live-reload websocket
+// URL handed to the browser, the server itself always binds locally. There is no deadline: a
+// server listens only after its first build, and that build has no upper bound. A fixed two
+// minutes left a server that took longer on "starting" for good - no preview, no link, while its
+// port answered 200 (alpha scenes 2026-10-17, finding 6.1: first build 195 to 210 s on an emulated x86_64
+// VM, still "starting" after 945 s). A server that never listens ends in the 'exit' handler, which
+// stops the probe through `waiting()` and reports the real failure; one that hangs stays
+// "starting", which is what it is, and "Stoppen" ends it.
+function waitForPort(port: number, waiting: () => boolean, onOpen: () => void): void {
   const attempt = (): void => {
+    if (!waiting()) return
     let settled = false
     const socket = createConnection({ port, host: '127.0.0.1' })
     const retry = (): void => {
       if (settled) return
       settled = true
       socket.destroy()
-      if (Date.now() < deadline) setTimeout(attempt, 250)
+      setTimeout(attempt, 250)
     }
     socket.setTimeout(1000)
     socket.once('connect', () => {

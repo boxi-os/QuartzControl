@@ -200,9 +200,10 @@ export function registerIpcHandlers(): void {
     return result
   })
 
-  handle(IPC.projectMissingDependencies, t([s.projectDependenciesInput]), ({ projectPath }) =>
-    projectDependencies.missingDependencies(projectPath)
-  )
+  handle(IPC.projectMissingDependencies, t([s.projectDependenciesInput]), async ({ projectPath }) => ({
+    packages: await projectDependencies.missingDependencies(projectPath),
+    frames: await projectDependencies.missingAuthoredFrames(projectPath)
+  }))
 
   handle(IPC.configGet, t([s.absolutePath]), (projectPath) => configService.readConfig(projectPath))
   // No frame refresh here, deliberately: the frames carry a copy of this config's group ordering,

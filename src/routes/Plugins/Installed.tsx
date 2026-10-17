@@ -431,8 +431,12 @@ export default function PluginsInstalled(): JSX.Element {
         kind === 'install'
           ? await window.quartzGui.plugins.installFromLock(project.path)
           : await window.quartzGui.plugins.prune(project.path)
-      if (result.success) setMaintenanceNotice(t(`pluginsInstalled.${kind}Done`))
-      else setMessage(result.output)
+      // Quartz ends with 0 when single plugins fail, and a clone's authored frames fail every time
+      // (alpha scenes 2026-10-17, finding 2.1): "wiederhergestellt" would be the wrong sentence.
+      if (!result.success) setMessage(result.output)
+      else if (result.failed?.length)
+        setMessage(t('pluginsInstalled.installPartial', { count: result.failed.length, names: result.failed.join(', ') }))
+      else setMaintenanceNotice(t(`pluginsInstalled.${kind}Done`))
     } catch (err) {
       setMessage(formatIpcError(err))
     } finally {

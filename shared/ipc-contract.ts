@@ -1801,6 +1801,8 @@ export interface Settings {
 export interface PluginActionResult {
   success: boolean
   output: string
+  /** `installFromLock` only: the plugins Quartz reported as failed although it ended with 0. */
+  failed?: string[]
 }
 
 export interface CreateProjectOptions {
@@ -1885,10 +1887,12 @@ export interface QuartzGuiApi {
      *  outside world belongs to stays behind - see duplicateService for the list and the reasons. */
     duplicate(options: DuplicateProjectOptions): Promise<DuplicateProjectResult>
     /**
-     * The packages package.json names that node_modules does not hold - all of them in a fresh
-     * clone. Null when package.json cannot be read. A local read, no npm call.
+     * What a fresh clone lacks. `packages`: what package.json names and node_modules does not
+     * hold, null when package.json cannot be read. `frames`: the config's authored frames whose
+     * directory is not there (they stay on the machine that made them), null when the config
+     * cannot be read. A local read, no npm call.
      */
-    missingDependencies(args: { projectPath: string }): Promise<string[] | null>
+    missingDependencies(args: { projectPath: string }): Promise<{ packages: string[] | null; frames: string[] | null }>
   }
   /** Is there a newer build of QuartzControl? An answer, not an updater - nothing is downloaded. */
   appUpdate: {

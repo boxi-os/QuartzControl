@@ -212,6 +212,7 @@ export default function ProjectDashboard(): JSX.Element {
   // else. A failed check is 'unknown', never 'upToDate' - same distinction updateService makes.
   const [core, setCore] = useState<CoreUpdateStatus | null>(null)
   const [missingDeps, setMissingDeps] = useState<string[] | null>(null)
+  const [missingFrames, setMissingFrames] = useState<string[] | null>(null)
   const [pluginUpdates, setPluginUpdates] = useState<PluginUpdateStatus[] | null>(null)
   const [updatesPending, setUpdatesPending] = useState(true)
 
@@ -252,8 +253,14 @@ export default function ProjectDashboard(): JSX.Element {
   const loadDependencies = useCallback(() => {
     api.projects
       .missingDependencies({ projectPath: project.path })
-      .then(setMissingDeps)
-      .catch(() => setMissingDeps(null))
+      .then(({ packages, frames }) => {
+        setMissingDeps(packages)
+        setMissingFrames(frames)
+      })
+      .catch(() => {
+        setMissingDeps(null)
+        setMissingFrames(null)
+      })
   }, [api, project.path])
 
   useEffect(() => {
@@ -324,12 +331,15 @@ export default function ProjectDashboard(): JSX.Element {
     })
 
   // npm install, then the plugins from quartz.lock.json - what a fresh clone lacks (plugins.installFromLock
-  // runs npm first when packages are missing). A failure goes to the global toast like the others.
+  // runs npm first when packages are missing). A failure goes to the global toast like the others,
+  // and so do single plugins Quartz could not install although it ended with 0 (finding 2.1).
   const installDependencies = (): Promise<void> =>
     withBusy('install', async () => {
       try {
         const result = await api.plugins.installFromLock(project.path)
         if (!result.success) throw new Error(result.output.trim().slice(-600))
+        if (result.failed?.length)
+          throw new Error(t('pluginsInstalled.installPartial', { count: result.failed.length, names: result.failed.join(', ') }))
       } finally {
         loadDependencies()
       }
@@ -390,6 +400,20 @@ export default function ProjectDashboard(): JSX.Element {
         busy: isBusy('install'),
         run: () => void installDependencies()
       }
+    })
+  }
+  // A clone has no authored frames - they stay in .quartz-gui/ on the machine that made them - and
+  // the build was green with the site's layout gone, while this band said "Alles ok" and only the
+  // layout page named the frame (alpha scenes 2026-10-17, finding 2.1).
+  if (missingFrames && missingFrames.length > 0) {
+    issues.push({
+      id: 'frames',
+      tone: 'amber',
+      icon: TAB_ICONS.layout,
+      title: t('dashboard.attention.framesMissing', { count: missingFrames.length }),
+      detail: t('dashboard.attention.framesMissingDetail'),
+      to: 'layout',
+      linkLabel: t('projectLayout.tabs.layout')
     })
   }
   if (server.state === 'error') {

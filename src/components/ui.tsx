@@ -1079,13 +1079,13 @@ export function PageHeader({
 }): JSX.Element {
   return (
     <div className="mb-6 flex items-start justify-between gap-4">
-      <div className="flex items-start gap-3">
+      <div className="flex min-w-0 items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-accent-text/10 text-accent-text">
           <Icon size={18} strokeWidth={2} aria-hidden />
         </div>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-lg font-semibold text-text">{title}</h1>
-          {description && <p className="mt-0.5 max-w-xl text-ui text-text-muted">{description}</p>}
+          {description && <p className="mt-0.5 text-ui text-text-muted">{description}</p>}
           {handbook}
         </div>
       </div>

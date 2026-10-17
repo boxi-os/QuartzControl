@@ -252,6 +252,11 @@ export default {
     attention: {
       title: 'Handlungsbedarf',
       allGood: 'Alles ok: Content, Git, CSS und Konfiguration sind in Ordnung.',
+      dependenciesMissing: '{{count}} npm-Paket fehlt',
+      dependenciesMissing_other: '{{count}} npm-Pakete fehlen',
+      dependenciesMissingDetail: 'Ohne sie baut Quartz nicht. „Installieren“ führt npm install aus und holt die Plugins aus quartz.lock.json.',
+      dependenciesInstall: 'Installieren',
+      dependenciesInstalling: 'Installiere…',
       serverError: 'Der Dev-Server ist mit einem Fehler beendet worden',
       contentTargetMissing: 'Der Content-Ordner zeigt ins Leere',
       contentMissing: 'Es gibt keinen Content-Ordner',
@@ -1414,7 +1419,7 @@ export default {
     savedFlash: 'Gespeichert',
     maintenanceHeading: 'Wartung',
     maintenanceDescription:
-      'Betrifft nur die heruntergeladenen Plugin-Dateien im Ordner .quartz/plugins. An der Konfiguration und an deiner Website ändern sie nichts. Der Ordner kommt nicht mit ins Repository, nach dem Klonen auf einem anderen Rechner stellst du ihn hier aus quartz.lock.json wieder her.',
+      'Betrifft nur die heruntergeladenen Plugin-Dateien im Ordner .quartz/plugins. An der Konfiguration und an deiner Website ändern sie nichts. Der Ordner kommt nicht mit ins Repository, nach dem Klonen auf einem anderen Rechner stellst du ihn hier aus quartz.lock.json wieder her. Fehlende npm-Pakete werden dabei zuerst installiert.',
     installFromLock: 'Aus quartz.lock.json wiederherstellen',
     installFromLockRunning: 'Stelle wieder her…',
     installDone: 'Plugins aus der Lockdatei wiederhergestellt.',

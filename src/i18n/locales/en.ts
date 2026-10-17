@@ -249,6 +249,11 @@ export default {
     attention: {
       title: 'Needs attention',
       allGood: 'All good: content, git, CSS and configuration are fine.',
+      dependenciesMissing: '{{count}} npm package is missing',
+      dependenciesMissing_other: '{{count}} npm packages are missing',
+      dependenciesMissingDetail: 'Quartz does not build without them. “Install” runs npm install and fetches the plugins from quartz.lock.json.',
+      dependenciesInstall: 'Install',
+      dependenciesInstalling: 'Installing…',
       serverError: 'The dev server exited with an error',
       contentTargetMissing: 'The content folder points nowhere',
       contentMissing: 'There is no content folder',
@@ -1409,7 +1414,7 @@ export default {
     savedFlash: 'Saved',
     maintenanceHeading: 'Maintenance',
     maintenanceDescription:
-      'Only acts on the downloaded plugin files in the .quartz/plugins folder. They change nothing about the configuration or your site. The folder does not go into the repository; after cloning on another machine, restore it here from quartz.lock.json.',
+      'Only acts on the downloaded plugin files in the .quartz/plugins folder. They change nothing about the configuration or your site. The folder does not go into the repository; after cloning on another machine, restore it here from quartz.lock.json. Missing npm packages are installed first.',
     installFromLock: 'Restore from quartz.lock.json',
     installFromLockRunning: 'Restoring…',
     installDone: 'Plugins restored from the lockfile.',

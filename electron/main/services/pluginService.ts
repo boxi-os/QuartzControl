@@ -4,6 +4,7 @@ import { readFile } from 'fs/promises'
 import { join } from 'path'
 import type { PluginActionResult } from '@shared/ipc-contract'
 import { createSnapshot } from './snapshotService'
+import { missingDependencies } from './projectDependencies'
 
 function runQuartzCli(projectPath: string, args: string[]): Promise<PluginActionResult> {
   return runCommand('npx', ['quartz', ...args], projectPath)
@@ -29,8 +30,16 @@ export async function removePlugin(projectPath: string, name: string): Promise<P
   return runQuartzCli(projectPath, ['plugin', 'remove', name])
 }
 
-export function installFromLock(projectPath: string): Promise<PluginActionResult> {
-  return runQuartzCli(projectPath, ['plugin', 'install'])
+// What a fresh clone needs, and the button the app names for it: in a clone node_modules is as
+// absent as .quartz/plugins, and `quartz plugin install` then died on its own first import with a
+// stack trace (alpha scenes 2026-10-17, finding 4.1). So npm goes first when packages are missing.
+export async function installFromLock(projectPath: string): Promise<PluginActionResult> {
+  const missing = await missingDependencies(projectPath)
+  if (!missing?.length) return runQuartzCli(projectPath, ['plugin', 'install'])
+  const npm = await runCommand('npm', ['install'], projectPath)
+  if (!npm.success) return npm
+  const plugins = await runQuartzCli(projectPath, ['plugin', 'install'])
+  return { success: plugins.success, output: `${npm.output}\n${plugins.output}`.trim() }
 }
 
 export function prunePlugins(projectPath: string): Promise<PluginActionResult> {

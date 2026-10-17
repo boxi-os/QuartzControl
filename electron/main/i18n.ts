@@ -77,6 +77,8 @@ const STRINGS = {
     buildDirServerRunning:
       'Der Dev-Server schreibt gerade in „{{dir}}“. Beende ihn unter „Vorschau & Build“ oder wähle einen anderen Ausgabeordner.',
     serverWaitsForBuild: 'Es läuft ein Build nach „{{dir}}“. Der Server startet, sobald er fertig ist.',
+    dependenciesMissing:
+      'Die npm-Pakete dieses Projekts sind nicht installiert (es fehlt {{names}}), etwa weil es frisch geklont ist. „Installieren“ in der Übersicht holt sie nach.',
     serverPortTaken: 'Port {{from}} ist belegt, der Server nimmt {{to}}.',
     serverWsPortIsHttpPort: 'Port {{from}} nimmt jetzt der Server selbst für die Seite; die automatische Aktualisierung nimmt {{to}}.',
     serverPortTakenBehindTunnel:
@@ -543,6 +545,8 @@ const STRINGS = {
     buildDirServerRunning:
       'The dev server is writing into “{{dir}}” right now. Stop it under “Preview & build” or pick a different output folder.',
     serverWaitsForBuild: 'A build into “{{dir}}” is running. The server starts as soon as it has finished.',
+    dependenciesMissing:
+      'This project’s npm packages are not installed ({{names}} missing), perhaps because it was just cloned. “Install” on the Overview fetches them.',
     serverPortTaken: 'Port {{from}} is in use, the server takes {{to}} instead.',
     serverWsPortIsHttpPort: 'Port {{from}} is now the server’s own page port; live reload takes {{to}} instead.',
     serverPortTakenBehindTunnel:

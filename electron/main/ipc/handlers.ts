@@ -25,6 +25,7 @@ import * as projectIconService from '../services/projectIconService'
 import * as snippetService from '../services/snippetService'
 import * as configService from '../services/configService'
 import * as pluginService from '../services/pluginService'
+import * as projectDependencies from '../services/projectDependencies'
 import * as pluginSchemaService from '../services/pluginSchemaService'
 import * as themeMarketplaceService from '../services/themeMarketplaceService'
 import * as styleSettingsSchemaService from '../services/styleSettingsSchemaService'
@@ -198,6 +199,10 @@ export function registerIpcHandlers(): void {
     if (result.success) await projectStore.addProject(options.targetDirectory)
     return result
   })
+
+  handle(IPC.projectMissingDependencies, t([s.projectDependenciesInput]), ({ projectPath }) =>
+    projectDependencies.missingDependencies(projectPath)
+  )
 
   handle(IPC.configGet, t([s.absolutePath]), (projectPath) => configService.readConfig(projectPath))
   // No frame refresh here, deliberately: the frames carry a copy of this config's group ordering,

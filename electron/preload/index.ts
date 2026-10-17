@@ -66,7 +66,8 @@ const api: QuartzGuiApi = {
     open: (id: string) => ipcRenderer.invoke(IPC.projectOpen, id),
     remove: (id: string) => ipcRenderer.invoke(IPC.projectRemove, id),
     create: (options: CreateProjectOptions) => ipcRenderer.invoke(IPC.projectCreate, options),
-    duplicate: (options: DuplicateProjectOptions) => ipcRenderer.invoke(IPC.projectDuplicate, options)
+    duplicate: (options: DuplicateProjectOptions) => ipcRenderer.invoke(IPC.projectDuplicate, options),
+    missingDependencies: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.projectMissingDependencies, args)
   },
   appUpdate: {
     check: () => ipcRenderer.invoke(IPC.appUpdateCheck)

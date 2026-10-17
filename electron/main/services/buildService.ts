@@ -17,6 +17,7 @@ import { quartzGuiDir, resolveBuildDir } from './projectDirs'
 import * as runningServersStore from './runningServersStore'
 import { discoverServers } from './serverDiscovery'
 import { mainT } from '../i18n'
+import { missingDependencies } from './projectDependencies'
 
 interface RunningServer {
   process: ChildProcess
@@ -553,6 +554,17 @@ export async function startServer(
       // Before the port fix the start died on EADDRINUSE and the card below said who held it.
       const holder = await sameProjectServer(projectPath)
       if (pending.aborted) return getServerStatus(projectId)
+      // Missing packages are "not installed yet", not a failed start: the sentence names the way
+      // out where Node would print a stack trace (alpha scenes 2026-10-17, finding 4.1).
+      const missing = await dependenciesSentence(projectPath)
+      if (pending.aborted) return getServerStatus(projectId)
+      if (missing) {
+        emitLog(projectId, 'warn', `${missing}\n`)
+        lastTerminalStatus.set(projectId, { state: 'error', error: missing })
+        pendingStarts.delete(projectId)
+        emitStatus(projectId)
+        return getServerStatus(projectId)
+      }
       if (holder) {
         const error = mainT('serverAlreadyRunningOutside', { port: holder.port, pid: holder.pid })
         emitLog(projectId, 'warn', `${error}\n`)
@@ -888,7 +900,20 @@ export function runBuild(projectId: string, projectPath: string, outputDir?: str
   return promise
 }
 
+// The sentence for a project whose package.json names packages node_modules does not hold - a
+// fresh clone, before npm ever ran in it. Null when everything is there or nothing can be said.
+async function dependenciesSentence(projectPath: string): Promise<string | null> {
+  const missing = await missingDependencies(projectPath)
+  if (!missing?.length) return null
+  return mainT('dependenciesMissing', { names: `${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ' …' : ''}` })
+}
+
 async function spawnBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> {
+  const missing = await dependenciesSentence(projectPath)
+  if (missing) {
+    serverEvents.emit('buildLog', { projectId, stream: 'warn', text: `${missing}\n`, timestamp: new Date().toISOString() } satisfies LogLine)
+    return { success: false, durationMs: 0, exitCode: null }
+  }
   await refreshAuthoredFrames(projectPath, (text) =>
     serverEvents.emit('buildLog', { projectId, stream: 'warn', text, timestamp: new Date().toISOString() } satisfies LogLine)
   )

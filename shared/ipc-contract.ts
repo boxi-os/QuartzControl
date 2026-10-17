@@ -1527,6 +1527,7 @@ export const IPC = {
   projectRemove: 'project:remove',
   projectCreate: 'project:create',
   projectDuplicate: 'project:duplicate',
+  projectMissingDependencies: 'project:missingDependencies',
   appUpdateCheck: 'appUpdate:check',
   templatePackageBuiltin: 'templatePackage:builtin',
 
@@ -1883,6 +1884,11 @@ export interface QuartzGuiApi {
     /** Copies a project into a new folder and registers it. Everything the original's own past or
      *  outside world belongs to stays behind - see duplicateService for the list and the reasons. */
     duplicate(options: DuplicateProjectOptions): Promise<DuplicateProjectResult>
+    /**
+     * The packages package.json names that node_modules does not hold - all of them in a fresh
+     * clone. Null when package.json cannot be read. A local read, no npm call.
+     */
+    missingDependencies(args: { projectPath: string }): Promise<string[] | null>
   }
   /** Is there a newer build of QuartzControl? An answer, not an updater - nothing is downloaded. */
   appUpdate: {

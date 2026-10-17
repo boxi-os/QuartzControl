@@ -120,7 +120,7 @@ function Skeleton({ className = '' }: { className?: string }): JSX.Element {
 
 // ------------------------------------------------------------------------------------------
 
-type BusyKind = 'build' | 'snapshot'
+type BusyKind = 'build' | 'snapshot' | 'install'
 
 interface Issue {
   id: string
@@ -130,6 +130,8 @@ interface Issue {
   detail?: string
   to: string
   linkLabel: string
+  /** In place of the link, for a state the overview can fix itself. */
+  action?: { label: string; busyLabel: string; busy: boolean; run: () => void }
 }
 
 function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
@@ -162,14 +164,20 @@ function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
             <p className="text-ui font-medium">{issue.title}</p>
             {issue.detail && <p className="truncate text-xs text-text-muted">{issue.detail}</p>}
           </div>
-          <Link
-            to={issue.to}
-            onClick={() => markReturn(projectId, '', issue.to)}
-            className="ml-auto inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
-          >
-            {issue.linkLabel}
-            <ChevronRight size={13} aria-hidden />
-          </Link>
+          {issue.action ? (
+            <Button variant="ghost" className="ml-auto shrink-0" onClick={issue.action.run} disabled={issue.action.busy}>
+              {issue.action.busy ? issue.action.busyLabel : issue.action.label}
+            </Button>
+          ) : (
+            <Link
+              to={issue.to}
+              onClick={() => markReturn(projectId, '', issue.to)}
+              className="ml-auto inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+            >
+              {issue.linkLabel}
+              <ChevronRight size={13} aria-hidden />
+            </Link>
+          )}
         </div>
       ))}
     </Card>
@@ -203,6 +211,7 @@ export default function ProjectDashboard(): JSX.Element {
   // anything above, so a slow or unreachable remote costs the Updates tile a spinner and nothing
   // else. A failed check is 'unknown', never 'upToDate' - same distinction updateService makes.
   const [core, setCore] = useState<CoreUpdateStatus | null>(null)
+  const [missingDeps, setMissingDeps] = useState<string[] | null>(null)
   const [pluginUpdates, setPluginUpdates] = useState<PluginUpdateStatus[] | null>(null)
   const [updatesPending, setUpdatesPending] = useState(true)
 
@@ -240,6 +249,13 @@ export default function ProjectDashboard(): JSX.Element {
       .catch(() => setSnapshots(null))
   }, [api, project.path])
 
+  const loadDependencies = useCallback(() => {
+    api.projects
+      .missingDependencies({ projectPath: project.path })
+      .then(setMissingDeps)
+      .catch(() => setMissingDeps(null))
+  }, [api, project.path])
+
   useEffect(() => {
     api.server.status(project.id).then(setServer)
     api.config.get(project.path).then(setConfig).catch(() => setConfig(null))
@@ -251,12 +267,13 @@ export default function ProjectDashboard(): JSX.Element {
     api.publishTargets.list(project.path).then(setTargets).catch(() => setTargets(null))
     loadBuild()
     loadSnapshots()
+    loadDependencies()
 
     const offStatus = api.server.onStatus((projectId, status) => {
       if (projectId === project.id) setServer(status)
     })
     return () => offStatus()
-  }, [api, project.id, project.path, loadBuild, loadSnapshots])
+  }, [api, project.id, project.path, loadBuild, loadSnapshots, loadDependencies])
 
   useEffect(() => {
     let cancelled = false
@@ -306,6 +323,18 @@ export default function ProjectDashboard(): JSX.Element {
       loadBuild()
     })
 
+  // npm install, then the plugins from quartz.lock.json - what a fresh clone lacks (plugins.installFromLock
+  // runs npm first when packages are missing). A failure goes to the global toast like the others.
+  const installDependencies = (): Promise<void> =>
+    withBusy('install', async () => {
+      try {
+        const result = await api.plugins.installFromLock(project.path)
+        if (!result.success) throw new Error(result.output.trim().slice(-600))
+      } finally {
+        loadDependencies()
+      }
+    })
+
   const takeSnapshot = (): Promise<void> =>
     withBusy('snapshot', async () => {
       await api.snapshots.create(project.path, 'manual')
@@ -343,6 +372,26 @@ export default function ProjectDashboard(): JSX.Element {
   const pluginsUnknown = pluginUpdates?.filter((p) => p.state === 'unknown').length ?? 0
 
   const issues: Issue[] = []
+  // First, because nothing else on this page works until it is fixed: a clone has no node_modules,
+  // and every Quartz call died on its first import while this band said "Alles ok" (alpha scenes
+  // 2026-10-17, finding 4.1).
+  if (missingDeps && missingDeps.length > 0) {
+    issues.push({
+      id: 'dependencies',
+      tone: 'red',
+      icon: TAB_ICONS.plugins,
+      title: t('dashboard.attention.dependenciesMissing', { count: missingDeps.length }),
+      detail: t('dashboard.attention.dependenciesMissingDetail'),
+      to: 'plugins',
+      linkLabel: t('projectLayout.tabs.plugins'),
+      action: {
+        label: t('dashboard.attention.dependenciesInstall'),
+        busyLabel: t('dashboard.attention.dependenciesInstalling'),
+        busy: isBusy('install'),
+        run: () => void installDependencies()
+      }
+    })
+  }
   if (server.state === 'error') {
     issues.push({
       id: 'server',

@@ -291,6 +291,7 @@ export const fetchGoogleFontsInput = z.looseObject({
 export const dropGoogleFontsInput = z.looseObject({ projectPath: absolutePath })
 // A read that needs nothing but the project - styles.variableCollisions and whatever follows it.
 export const projectPathArgs = z.looseObject({ projectPath: absolutePath })
+export const projectDependenciesInput = z.looseObject({ projectPath: absolutePath })
 export const stylesMigrateInput = z.looseObject({ projectPath: absolutePath, snapshot: z.boolean() })
 // A class prefix such as `nav-` or `layout-box-`: it goes into a regular expression, escaped, but
 // there is no reason to let anything else through.

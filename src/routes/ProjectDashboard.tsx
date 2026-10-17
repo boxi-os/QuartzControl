@@ -162,7 +162,9 @@ function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
           </span>
           <div className="min-w-0">
             <p className="text-ui font-medium">{issue.title}</p>
-            {issue.detail && <p className="truncate text-xs text-text-muted">{issue.detail}</p>}
+            {/* Wraps: `truncate` never cut it - the nowrap line widened the page grid instead, and at
+                1024 px the whole overview scrolled sideways (alpha scenes 2026-10-17, finding 2.1, nebenbei). */}
+            {issue.detail && <p className="break-words text-xs text-text-muted">{issue.detail}</p>}
           </div>
           {issue.action ? (
             <Button variant="ghost" className="ml-auto shrink-0" onClick={issue.action.run} disabled={issue.action.busy}>

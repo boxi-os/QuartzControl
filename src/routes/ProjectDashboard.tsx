@@ -342,6 +342,9 @@ export default function ProjectDashboard(): JSX.Element {
           throw new Error(t('pluginsInstalled.installPartial', { count: result.failed.length, names: result.failed.join(', ') }))
       } finally {
         loadDependencies()
+        // Without node_modules there is no sass and the check said 'unavailable', which keeps
+        // "Alles ok" away; read again, or the band stayed empty after a clean install.
+        api.styles.check(project.path).then(setScss).catch(() => setScss(null))
       }
     })
 

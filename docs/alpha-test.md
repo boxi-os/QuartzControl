@@ -253,3 +253,9 @@ was gemessen wurde, `decisions/`.
   [`GRUPPE-D-2026-09-20.md`](GRUPPE-D-2026-09-20.md). Zwei Befunde — die Version des
   mitgelieferten git trug auf Linux einen Punkt zu viel (`19ecf30`), und `release.md` Punkt 4
   nannte offen, was derselbe Commit getan hatte (`469059a`). Die Pakete selbst halten.
+- **2026-10-17, Szenen vor 1.1 (1, 4, 5):** die Szenen aus dem letzten Abschnitt von
+  [`REVIEW-2026-10-19.md`](REVIEW-2026-10-19.md), Ergebnisse in
+  [`ALPHA-2026-10-17.md`](ALPHA-2026-10-17.md). Zwei Befunde — ein frisch geklontes Projekt kommt
+  aus der App heraus nicht zum Laufen, und „Wiederherstellen“ endet dort im Stacktrace (Mittel);
+  „Projekt gewinnt“ hängt einen Kommentar an `custom.scss`, der nicht stimmt (Niedrig). Offen: 2,
+  3 und 6.

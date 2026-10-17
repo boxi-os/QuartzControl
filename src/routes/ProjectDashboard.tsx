@@ -543,7 +543,15 @@ export default function ProjectDashboard(): JSX.Element {
       {issues.length > 0 ? (
         <AttentionBand issues={issues} />
       ) : (
-        config && (
+        // The sentence names four things, so it waits for all four to answer. It asked for the
+        // config alone and stood over a Git-Sync tile reading "–" or "Stand nicht lesbar" (alpha
+        // scenes 2026-10-17, scene 6; measured with a broken .git/index).
+        config &&
+        content &&
+        git &&
+        !git.readError &&
+        scss &&
+        scss.status !== 'unavailable' && (
           <p className="flex items-center gap-2 text-[12.5px] font-medium text-green-700 dark:text-green-400">
             <CircleCheck size={15} aria-hidden />
             {t('dashboard.attention.allGood')}

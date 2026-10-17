@@ -424,7 +424,6 @@ function AllVariables({
                       key={group}
                       label={group === SINGLES_GROUP ? t('styles.variables.singlesGroup') : groupLabel(t, group)}
                       count={groupKeys.length}
-                      changed={groupKeys.filter((key) => key in overrides).length}
                       open={openGroups.includes(group)}
                       onToggle={() => toggleGroup(group)}
                     >

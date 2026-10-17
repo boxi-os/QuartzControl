@@ -10,7 +10,9 @@ import { useTranslation } from 'react-i18next'
 // meant to answer. The fill is `ink` at 4.5%, so it is the same weight in both schemes.
 //
 // The count and the "n changed" badge exist because a collapsed category must still say whether
-// anything is hiding in it - otherwise finding one's own override means opening all ten.
+// anything is hiding in it - otherwise finding one's own override means opening all ten. The table
+// of theme and build variables leaves it out: there a group like TPL is mostly the user's own
+// variables, which are not "changed" from anything, and "Nur geänderte" finds the overrides.
 export default function VariableGroup({
   label,
   count,

@@ -57,7 +57,7 @@ export default {
     openExisting: 'Open existing project',
     createNew: 'Create new project',
     searchPlaceholder: 'Search projects…',
-    noSearchResults: 'No project matches your search.',
+    noSearchResults: 'No matching project found.',
     lastOpened: 'Last opened {{when}}',
     neverOpened: 'Never opened',
     serverRunning: 'Dev server running',
@@ -69,19 +69,19 @@ export default {
       action: 'Duplicate',
       title: 'Duplicate “{{name}}”',
       intro:
-        'Copies the design, the configuration, the plugins and the authored frames into a new folder. The content does not come along — choose below where the copy gets its notes from.',
-      nameHint: 'The copy\'s folder name. It also becomes the project name in this list.',
+        'Copies the design, the configuration, the plugins and the authored frames into a new folder. The content does not come along; choose below where the copy gets its content from.',
+      nameHint: 'Folder and project name of the copy.',
       contentLabel: 'Content of the copy',
       contentHint:
-        'The original\'s content folder is never copied along — two projects writing through the same link would know nothing of each other.',
-      contentBlank: 'Start empty (one home page)',
+        'The original’s content folder is not copied along.',
+      contentBlank: 'Start empty (just a home page)',
       contentSymlink: 'Link to a folder (an Obsidian vault, for instance)',
       contentCopy: 'Copy a folder in',
       contentFolder: 'Source folder',
       contentFolderHint:
         'When linking, that folder stays the place you write in; when copying, it is taken over once.',
       whatStaysBehind:
-        'Not copied along: snapshots, set-aside content folders and the publishing destinations. Otherwise the copy could overwrite the original\'s website with the first click. The base URL is taken over — change it under “Setup” if the copy belongs somewhere else.',
+        'Not copied along: snapshots, set-aside content folders and the publishing destinations. The base URL is taken over; change it under “Setup” if the copy belongs somewhere else.',
       confirm: 'Duplicate',
       running: 'Copying…',
       failed: 'Duplicating failed.'
@@ -98,9 +98,9 @@ export default {
       brokenTool: 'found, but does not run',
       incompatibleTool: 'included, but does not fit this system',
       embeddedBroken:
-        'These tools are part of the app. If they cannot run, this installation is incomplete — reinstalling the app is the quickest fix.',
+        'These tools are part of QuartzControl. If they cannot run, this installation is incomplete. Reinstalling QuartzControl is the quickest fix.',
       embeddedIncompatible:
-        'The bundled git will not start on this system — its system libraries are older than the ones it was built for. Install git through your package manager; the app will then use your system\'s own.',
+        'The bundled git will not start on this system. Install git on your system.',
       bundled: 'in the app',
       fromSystem: 'from the system',
       recheck: 'Check again',
@@ -109,11 +109,11 @@ export default {
       secretsTitle: 'Credentials are stored unencrypted',
       secretsTitleUnavailable: 'Credentials cannot be saved',
       secretsBody:
-        'No keyring is running on this system, so Electron stores passwords and tokens with a hardcoded key ({{backend}}) — effectively plaintext. Running gnome-keyring or KWallet protects them properly.',
+        'No keyring is running on this system ({{backend}}), so no encryption is available. With gnome-keyring or KWallet, passwords and tokens are stored encrypted.',
       secretsUnavailable:
         'No encryption is available on this system, so connections with a password or token cannot be saved.',
       secretsUnavailableKeyring:
-        'No keyring is running on this system ({{backend}}), so no encryption is available and connections with a password or token cannot be saved. Running gnome-keyring or KWallet stores them encrypted.'
+        'No keyring is running on this system ({{backend}}), so no encryption is available. With gnome-keyring or KWallet, passwords and tokens are stored encrypted.'
     },
     gettingStarted: {
       title: 'Getting started',
@@ -150,24 +150,24 @@ export default {
     wizard: {
       title: 'New Quartz project',
       intro:
-        'QuartzControl creates a new folder and downloads Quartz from GitHub into it. The folder must not exist yet — it is created for you. This takes a minute or two, because the dependencies are installed along the way.',
+        'QuartzControl creates a new folder and downloads Quartz from GitHub into it. The folder must not exist yet, it is created for you. This takes a minute or two.',
       parentDirectory: 'Where should the project live?',
       parentDirectoryHint:
-        'An existing parent folder — “Documents”, for example. A new folder with the name below is created inside it.',
+        'The parent folder (e.g. “Documents”).',
       parentDirectoryPlaceholder: '/Users/you/Documents',
       projectName: 'Name of the project folder',
       projectNameHint:
-        'The folder name only, not the title of the site — you set that later under Configuration. Lowercase letters and hyphens are the easiest choice.',
+        'The folder name only. The title of the site is set later under Configuration.',
       projectNamePlaceholder: 'my-notes',
       targetPreview: 'Will be created:',
       nameInvalid: 'The name must not contain “/” and cannot be “.” or “..”.',
       template: 'Quartz starter',
       templateHint:
-        'Which example pages and starting settings Quartz itself brings. “default” is the normal starting point; everything about it can be changed later.',
+        'Which example pages and starting settings Quartz itself brings. “default” is the standard.',
       contentStrategy: 'Where do the notes come from?',
       contentStrategyHint:
-        'Linking leaves the notes where they are — in your Obsidian vault, for example — and copies nothing. Copying creates a second, independent collection. This can be changed later too.',
-      strategyNew: 'Start fresh (empty content folder)',
+        'Linking leaves the notes where they are (e.g. in your Obsidian vault) and copies nothing. Copying creates a new, independent collection in the project folder.',
+      strategyNew: 'Start with an empty content folder',
       strategyCopy: 'Copy existing notes',
       strategySymlink: 'Point at existing notes (symbolic link)',
       sourceFolder: 'Source folder (e.g. an Obsidian vault)',
@@ -180,23 +180,23 @@ export default {
       linkRelative: 'Relative (from the current note)',
       baseUrl: 'Base URL',
       baseUrlHint:
-        'The address the site will be reachable at later — without https://. If you do not know it yet, leave “localhost” and fill it in later under Configuration.',
+        'The address the site will be reachable at later (without https://). If you do not know it yet, leave “localhost” and fill it in later.',
       useTemplate: 'Install the basic template',
       useTemplateHint:
-        'A finished design: measured colours for light and dark, authored page grids, locally served typefaces and every component styled individually — including the ones that start switched off. All of it editable afterwards.',
-      templateContent: 'With the example pages',
+        'A finished design to start from: colours for light and dark mode, authored page grids, locally served typefaces and every component styled individually.',
+      templateContent: 'With example pages',
       templateContentHint:
-        '{{count}} short pages that show what the site looks like before you have notes of your own. They are meant to be deleted; leave them out if you bring your own notes.',
+        '{{count}} pages that show what the site looks like before you have notes of your own. Leave them out if you bring your own notes.',
       templateContentHintCopy:
-        'Not available: the notes come from the folder you chose. The example pages would overwrite files of the same name in it — the template brings an index.md of its own.',
+        'Not available: the notes come from the folder you chose. The example pages would overwrite files of the same name in it.',
       templateContentHintSymlink:
-        'Not available: the content folder becomes a link into the folder you chose. A template never writes there, so its notes cannot end up in your vault.',
-      templateUnreadable: 'The package could not be read.',
+        'Not available: the content folder becomes a link into the folder you chose. A template never writes there.',
+      templateUnreadable: 'The package could not be read',
       doneTitle: 'Project created',
       doneWithWarnings: 'The project is there. Applying the template had something to report, though:',
       doneWithFailure: 'The project is there and usable. The template could not be applied, though:',
       toProject: 'Go to the project',
-      creating: 'Creating… (cloning and npm install take a minute or two)',
+      creating: 'Creating… (takes about a minute or two)',
       create: 'Create project',
       createFailed: 'The project could not be created.'
     }
@@ -233,22 +233,22 @@ export default {
       maintenance: 'Maintenance'
     },
     descriptions: {
-      overview: 'The overview for this project: server status, key settings, and quick links to every area.',
+      overview: 'Overview of this project: server status, key settings and quick access to every area.',
       layout: 'Decides which components (e.g. search, table of contents, navigation) appear where on the page.',
       styles:
-        'Everything about the look in one place: base colors and fonts, community themes, CSS variables, and your own CSS — in the exact order they override each other.',
+        'Everything about the look of the site: base colors and fonts, community themes, CSS variables and your own CSS (in the order they override each other).',
       updates:
-        'Brings Quartz’s core and the installed plugins up to date. A snapshot is taken automatically before every update, so you can go back to that state under Snapshots.',
+        'Brings Quartz’s core and the installed plugins up to date. A snapshot is taken automatically before every update.',
       server: 'Previews your site locally, and can produce a one-off build for export.',
       sync: 'Syncs your local changes with the Git repository: uploading (push) and downloading (pull).',
       backups:
-        'Snapshots of your whole project — taken automatically before every major change, triggerable yourself at any time, comparable and restorable file by file.'
+        'Snapshots of your whole project: taken automatically before every major change, triggerable yourself at any time, comparable and restorable file by file.'
     }
   },
   dashboard: {
     attention: {
       title: 'Needs attention',
-      allGood: 'Nothing to do — content, git, CSS and configuration are all fine.',
+      allGood: 'All good: content, git, CSS and configuration are fine.',
       serverError: 'The dev server exited with an error',
       contentTargetMissing: 'The content folder points nowhere',
       contentMissing: 'There is no content folder',
@@ -262,12 +262,12 @@ export default {
       noIndexDetail: 'The content folder has no index.md, so the site’s own address shows a 404 page.',
       noBaseUrl: 'No base URL set',
       noBaseUrlDetail:
-        'Links, the RSS feed and preview images are built from it. With the “Fonts” plugin serving the fonts itself, the build fails outright without it.',
-      coreUpdatePending: 'A core update did not run to the end',
+        'Links, the RSS feed and preview images are built from it. With the “Fonts” plugin serving the fonts, the build fails without a base URL.',
+      coreUpdatePending: 'A Quartz core update did not run to the end',
       coreUpdatePendingDetail:
-        'These packages of yours are missing from package.json, or stand there at a different version: {{packages}}. Under Updates, “Run update” finishes the job.',
+        'These packages are missing from package.json, or stand there at a different version: {{packages}}. Running “Run update” once resolves it.',
       coreUpdatePendingInstallDetail:
-        'The core has been merged, but “npm install” failed while doing it. Under Updates, “Run update” finishes the job.'
+        'The core has been merged, but “npm install” failed while doing it. Running “Run update” once resolves it.'
     },
     contentTab: 'Content',
     devServer: 'Dev server',
@@ -292,8 +292,8 @@ export default {
       inProgress: '{{operation}} in progress',
       noRepo: 'Not a git repository',
       unreadable: 'Status unreadable',
-      unreadableHint: 'git could not read the state of this project — what git says about it is under Git sync.',
-      noRepoHint: 'This project is not under version control.',
+      unreadableHint: 'git could not read the state of this project (more under Git sync).',
+      noRepoHint: 'This project has no version control.',
       noUpstream: 'no remote branch',
       conflicts: '{{count}} file in conflict',
       conflicts_other: '{{count}} files in conflict',
@@ -323,7 +323,7 @@ export default {
       run: 'Run build',
       running: 'Building…',
       done: 'Build finished.',
-      failed: 'Build failed — the output is on Preview & build.'
+      failed: 'Build failed. The output is on Preview & build.'
     },
     publish: {
       targets: 'target',
@@ -333,13 +333,13 @@ export default {
     },
     updates: {
       checking: 'Checking for updates…',
-      coreBehind: 'Core out of date',
-      pluginsOnly: 'Plugins outdated',
+      coreBehind: 'Core update available',
+      pluginsOnly: 'Plugin updates available',
       allCurrent: 'All up to date',
       unknown: 'Cannot check',
       corePending: 'Update unfinished',
-      pluginsBehind: '{{count}} plugin outdated',
-      pluginsBehind_other: '{{count}} plugins outdated',
+      pluginsBehind: '{{count}} plugin update available',
+      pluginsBehind_other: '{{count}} plugin updates available',
       pluginsCurrent: '{{count}} plugin checked',
       pluginsCurrent_other: '{{count}} plugins checked',
       checkFailed: '{{count}} check failed',
@@ -357,7 +357,7 @@ export default {
   },
   content: {
     label: 'Content folder',
-    cardHint: 'The folder with your Markdown notes — as a real copy, or linked to an existing folder, e.g. your Obsidian vault.',
+    cardHint: 'The folder with your Markdown notes. As a real folder, or linked to an existing folder, e.g. your Obsidian vault.',
     loading: 'Loading…',
     noFolder: 'No content/ folder found.',
     symlinkBadge: 'Symbolic link',
@@ -367,7 +367,7 @@ export default {
     changeSource: 'Change source…',
     dialogTitle: 'Change content source',
     dialogWarning:
-      'The previous content folder is set aside rather than deleted before the change — you can bring it back under Snapshots.',
+      'The previous content folder is set aside rather than deleted before the change. You can bring it back under Snapshots.',
     newSourceFolder: 'New source folder',
     strategy: 'Strategy',
     strategySymlink: 'Link (symbolic link, e.g. to an Obsidian vault)',
@@ -402,11 +402,11 @@ export default {
     }
   },
   buildServer: {
-    noIndex: 'The content folder has no index.md — so the preview shows a 404 page at its address.',
+    noIndex: 'The content folder has no index.md. The preview therefore shows a 404 page at its address.',
     noIndexLink: 'Create start page →',
     devServer: 'Dev server',
-    devServerHint: 'Shows your site live in the browser, reloading automatically on changes — great for trying things out.',
-    oneOffBuildHint: 'Produces the finished HTML files once, e.g. to upload manually or check before you publish.',
+    devServerHint: 'Shows your site live in the browser, reloading automatically on changes.',
+    oneOffBuildHint: 'Produces the finished HTML files once, e.g. to upload manually or to check them.',
     port: 'Port',
     wsPort: 'WS port',
     remoteDevHost: 'Remote dev host (optional)',
@@ -443,7 +443,7 @@ export default {
     openFolder: 'Open folder',
     exportDir: 'Output folder (optional)',
     exportDirPlaceholder: 'Default: public/ in the project',
-    exportDirShared: 'Also used by Publish — the upload comes from the same folder.',
+    exportDirShared: 'Also used by Publish: the upload comes from the same folder.',
     exportDirWipes: 'Every build empties this folder first.',
     exportDirForeign:
       'Careful: this folder holds {{count}} files that do not look like a build. The next build deletes them for good.',
@@ -455,13 +455,13 @@ export default {
       title: 'Servers running on this machine',
       refresh: 'Refresh',
       scanning: 'Looking for running servers…',
-      unavailable: 'The process list cannot be read on this system. Whether servers are running is unknown — not “none”.',
+      unavailable: 'The process list cannot be read on this system. Whether servers are running is unknown.',
       partial_zero:
         'For at least one process it could not be established which port it holds. A server may be running that is missing here.',
       partial_one:
-        'One Quartz server is running on this machine. For at least one other process the port could not be established — this list may be incomplete.',
+        'One Quartz server is running on this machine. For at least one other process the port could not be established. This list may be incomplete.',
       partial_other:
-        '{{count}} Quartz servers are running on this machine. For at least one other process the port could not be established — this list may be incomplete.',
+        '{{count}} Quartz servers are running on this machine. For at least one other process the port could not be established. This list may be incomplete.',
       none: 'No Quartz server is running on this machine.',
       found_one: 'One Quartz server is running on this machine.',
       found_other: '{{count}} Quartz servers are running on this machine.',
@@ -471,21 +471,21 @@ export default {
       notAnswering: 'not answering',
       stopServer: 'Stop server',
       confirmOwn:
-        'Stop the server on port {{port}}?\n\nIt belongs to {{name}} and was started by this app. The preview in the browser will stop working.',
+        'Stop the server on port {{port}}?\n\nIt belongs to {{name}} and was started by QuartzControl. The preview in the browser will stop working.',
       confirmForeign:
-        'Stop the server on port {{port}}?\n\nThis server was not started by this app ({{name}}). Whoever started it — a terminal, another window, an earlier session — may be working with it right now.',
+        'Stop the server on port {{port}}?\n\nThis server was not started by QuartzControl ({{name}}). Whoever started it (a terminal, another window, an earlier session) may be working with it right now.',
       stopped: 'The server on port {{port}} was stopped.',
       stopFailed:
         'The server on port {{port}} could not be stopped. It may already be gone, or the process may now belong to someone else.',
       portTaken: 'Port {{ports}} is taken, but not by anything recognisable as a Quartz server. A start moves on to the next free port.',
       warning:
-        'Servers started outside this app belong to someone else — a terminal, a second window, a session that was force-quit. The app never stops them on its own; stopping one is a decision made here, every time.'
+        'Servers started outside QuartzControl belong to someone else (a terminal, a second window, a session that was force-quit). QuartzControl never stops them on its own; stopping one is your decision, every time.'
     }
   },
   gitSync: {
     title: 'Git sync',
     explainer:
-      'Every sync first commits your changes (when enabled below), then fetches the branch “{{branch}}” from origin and pushes your current branch — as a force push, which is what the Quartz CLI does.',
+      'Every sync first commits your changes (when enabled below), then fetches the branch “{{branch}}” from origin and pushes your current branch as a force push.',
     commitChanges: 'Commit changes first',
     commitMessage: 'Commit message (optional)',
     commitMessagePlaceholder: 'Default: “Quartz sync: <date>”',
@@ -511,20 +511,20 @@ export default {
       name: 'Repository name',
       private: 'Private',
       privateHint:
-        'GitHub Pages is only available for private repositories on the paid plans. To publish the site through GitHub Pages on a free account the repository has to be public — visibility can be changed on GitHub later.',
+        'GitHub Pages is only available for private repositories on the paid plans. To publish the site through GitHub Pages on a free account, the repository has to be public.',
       action: 'Create'
     },
     statusTitle: 'Repository state',
-    notARepo: 'This project is not a git repository — syncing is not possible here.',
+    notARepo: 'This project is not a git repository. Syncing is not possible here.',
     readError: 'git could not read the state of this project, so whether it is a repository cannot be told. This is what git says:',
     needsOrigin: 'Pull and push need an “origin” remote. Without one, the project stays a local repository.',
     needsRepo: 'Pull and push need a git repository with an “origin” remote.',
     noRemote: 'No “origin” remote configured. Push and pull have no target.',
     detached: 'No branch checked out',
     detachedHint:
-      'This project currently sits on a single commit rather than on a branch (“detached HEAD”). Push and pull have no target that way — check out a branch with git checkout before syncing.',
+      'This project currently sits on a single commit rather than on a branch (“detached HEAD”). Push and pull have no target that way. Check out a branch with git checkout before syncing.',
     noUpstream: 'No upstream',
-    noUpstreamHint: 'This branch has no counterpart on the server, so there is no way to say how many commits are missing. The first push creates it.',
+    noUpstreamHint: 'This branch has no counterpart on the server. So there is no way to say how many commits are missing. The first push creates it.',
     upToDate: 'Up to date with the remote',
     ahead: '{{count}} commit not pushed yet',
     ahead_other: '{{count}} commits not pushed yet',
@@ -558,19 +558,19 @@ export default {
   },
   backups: {
     vsGitSync:
-      'A snapshot is a copy of this project that only this app knows about: it stays inside the project, is never uploaded, and does not touch your own git history. Git sync is for sharing — your work ends up on GitHub and from there on other machines. A snapshot is for going back — it restores an earlier state on this machine, even if the project is not a git repository at all.',
+      'A snapshot is a copy of this project that exists only in QuartzControl: it stays inside the project, is never uploaded and does not touch your git history.',
     newHeading: 'New snapshot',
     newHint:
-      'A snapshot captures everything that is yours in this project: the configuration, the plugin lockfile, layout frames, your own stylesheets, translations and publish targets. Not included are node_modules, the build folder and installed plugin files — the next build produces those anyway.',
+      'A snapshot captures: the configuration, the plugin lockfile, layout frames, your own stylesheets, translations and publish targets. Not included are node_modules, the build folder and installed plugin files. The next build produces those anyway.',
     labelPlaceholder: 'Name (optional), e.g. “before switching themes”',
     create: 'Take snapshot',
     created: 'Snapshot taken.',
     includeContent: 'Include the content folder',
-    contentFolderHint: 'A real folder of markdown files — small enough to always come along.',
+    contentFolderHint: 'A real folder of Markdown files: small enough to always come along.',
     contentSymlinkHint:
-      'Your content folder is linked to a vault outside the project. It cannot be included — a snapshot would hold the link, not a single note. Your vault is your own source of truth with its own backup, and a snapshot would never overwrite it anyway.',
+      'Your content folder is linked to a vault outside the project. It cannot be included.',
     vaultNotCompared:
-      'Notes from the linked vault are not part of this — everything except the content folder is compared.',
+      'Notes from the linked vault are not part of this. Everything except the content folder is compared.',
     contentMissing: 'There is no content folder to include.',
     none: 'No snapshots yet. One is taken automatically before every core update, plugin change, content switch and template import.',
     listTitle: 'Snapshots ({{count}})',
@@ -607,7 +607,7 @@ export default {
       'Reset {{count}} selected file(s) to this snapshot?\n\nA snapshot of the current state is taken first.',
     resetProjectHead: 'Also reset the project commit to {{commit}}',
     resetProjectHeadHint:
-      'Also rewinds the project’s git history — needed when undoing a core update, or the Updates page will keep reporting the new state. If you have already pushed that commit, your local state will diverge from the remote afterwards.',
+      'Also rewinds the project’s git history. That is needed when undoing a core update, or the Updates page will keep reporting the new state. If you have already pushed that commit, your local state will diverge from the remote afterwards.',
     status: {
       modified: 'changed',
       addedSince: 'new since',
@@ -626,7 +626,7 @@ export default {
     },
     movedFoldersHeading: 'Set-aside content folders',
     movedFoldersHint:
-      'When the content source is switched, the previous folder is moved here rather than deleted. This is not a backup of your notes: a linked vault was never copied, only the link itself recorded.',
+      'When the content source is switched, the previous folder is moved here rather than deleted. This is not a backup of your notes: a linked vault is never copied, only the link itself recorded.',
     confirmRestoreFolderAction: 'Put folder back',
     confirmRestoreFolder: 'Put this content folder back? The current one is set aside as well.',
     confirmDeleteFolderAction: 'Delete folder',
@@ -634,11 +634,11 @@ export default {
       'Delete this set-aside content folder for good ({{size}})?\n\nIt is the only copy: snapshots do not contain it, and this cannot be undone.',
     folderSize: '{{count}} file · {{size}}',
     folderSize_other: '{{count}} files · {{size}}',
-    folderLink: 'Only the link to {{target}} — the notes live there and were never copied.'
+    folderLink: 'Only the link to {{target}} (the notes live there and were never copied).'
   },
   settings: {
     title: 'Settings',
-    subtitle: 'These apply to the whole app — per-project settings live inside each project.',
+    subtitle: 'Settings for QuartzControl. Per-project settings live inside each project.',
     githubTokenStored: 'stored — type a new one to replace it',
     defaultProjectDirectory: 'Default project directory',
     language: 'Language',
@@ -647,7 +647,7 @@ export default {
     languageEn: 'English',
     appearance: {
       title: 'Appearance',
-      description: 'How the app looks, and which language it speaks to you in.',
+      description: 'Appearance and language',
       theme: 'Theme',
       themeLight: 'Light',
       themeDark: 'Dark',
@@ -662,7 +662,7 @@ export default {
     github: {
       title: 'GitHub',
       description:
-        'Raises the rate limit in the plugin and theme marketplaces, and is required to create repositories and configure GitHub Pages.',
+        'Required to create repositories and configure GitHub Pages (and raises the rate limit in the plugin and theme marketplaces).',
       token: 'Personal access token',
       saveAndCheck: 'Save & check',
       valid: 'Valid',
@@ -679,7 +679,7 @@ export default {
     connections: {
       title: 'Connections',
       description:
-        'Server logins and build hooks used for publishing. They belong to the app, not to a project — one web space commonly carries several sites, and rotating a password is then one edit instead of one per project.',
+        'Server logins and build hooks used for publishing. They are set up globally in QuartzControl. Publish targets that use them are defined in the project.',
       empty: 'No connections yet.',
       addSsh: 'SFTP / SSH',
       addFtp: 'FTP',
@@ -701,7 +701,7 @@ export default {
       confirmDeleteInUse_other:
         'This connection is used by {{count}} projects.\n\nAfter deleting it, those projects’ publish targets point nowhere. Delete anyway?',
       targetHint:
-        'Where exactly a project publishes to — remote path, branch, exclusions — is set inside that project under “Publish”.'
+        'Where exactly a project publishes to (remote path, branch, exclusions) is set inside that project under “Publish”.'
     },
     quit: {
       title: 'On quit',
@@ -711,8 +711,8 @@ export default {
       keep: 'Keep running',
       stop: 'Stop',
       hint: {
-        ask: 'When a server is running at quit, the app asks what should happen to it.',
-        keep: 'Servers keep running and stay reachable in the browser. The next start asks whether to stop them — and the Vorschau & Build page lists them.',
+        ask: 'When a server is running at quit, QuartzControl asks what should happen to it.',
+        keep: 'Servers keep running and stay reachable in the browser. The next start of QuartzControl asks whether to stop them.',
         stop: 'Servers are stopped on quit without asking.'
       }
     },
@@ -722,12 +722,12 @@ export default {
       label: 'Node runtime',
       embedded: 'In the app',
       system: 'From the system',
-      inUseEmbedded: 'In use: Node {{node}} and npm {{npm}} from the app — nothing has to be installed for it.',
+      inUseEmbedded: 'In use: Node {{node}} and npm {{npm}} from QuartzControl.',
       inUseSystem: 'In use: Node {{node}} from this machine.',
       noSystemNode: 'not found',
-      hintSwitchable: 'This machine has Node {{node}}. Switching only pays off when a package has to be compiled during install — the error message then mentions node-gyp, and the embedded runtime does not carry everything needed for that.',
+      hintSwitchable: 'This machine has Node {{node}}. Switching only pays off when a package has to be compiled during install.',
       hintNoHostNode: 'No Node was found on this machine, so “From the system” would make builds, plugins and new projects fail.',
-      hintSystem: 'Quartz requires Node 22 or newer. A project also ships a .node-version, and nvm, fnm, asdf and mise resolve that per folder — so the runtime here can differ from project to project.',
+      hintSystem: 'Quartz requires Node 22 or newer. A project also ships a .node-version. nvm, fnm, asdf and mise resolve that per folder, so the runtime here can differ from project to project.',
       gitBundled: 'git {{version}} from the app — this machine has none, so QuartzControl brings one.',
       gitHost: 'git {{version}} from this machine. The app carries one too but only uses it when there is none — so your own setup (~/.gitconfig, credential helpers) keeps applying.',
       gitLicense: 'git is licensed under the GPL v2; the full licence text ships with the app.',
@@ -749,7 +749,7 @@ export default {
       reveal: 'Show in Finder',
       unreadableTitle: 'A saved file could not be read',
       unreadableHint:
-        'QuartzControl found one of its own files unreadable — most likely because the app was killed while saving it. It was moved aside instead of overwritten; whatever it held (connections, say, or the project list) is missing from the app and has to be set up again.'
+        'At startup, QuartzControl could not read one of its own files, most likely because the program was killed while saving it. The file was moved aside instead of overwritten; whatever it held (connections, say, or the project list) is missing from QuartzControl and has to be set up again.'
     }
   },
   configEditor: {
@@ -758,9 +758,9 @@ export default {
       localization: 'Localization'
     },
     descriptions: {
-      site: 'Basic settings for your site — the folder with your notes, title, address, and language.',
+      site: 'Basic settings for your site: the folder with your notes, title, address and language.',
       localization:
-        'The site’s built-in text labels (e.g. “Search”, “Last modified”) in the available languages. Core texts only — plugin texts are not covered here.'
+        'The site’s built-in text labels (e.g. “Search”, “Last modified”) in the available languages. Core texts only, plugin texts are not covered here.'
     },
     loadError: 'quartz.config.yaml could not be read.',
     loading: 'Loading configuration…',
@@ -775,33 +775,33 @@ export default {
     remove: 'Remove image',
     fileFilter: 'Images (PNG, JPEG)',
     defaultHint:
-      'Without an image of its own the app shows the initial, and the site gets the default Quartz icon. PNG or JPEG, square works best.',
+      'PNG or JPEG, ideally square.',
     unrecordedHint:
-      'The site shows an image that was not chosen in the app — usually the template’s mark. One of your own replaces it in the header and as the favicon. PNG or JPEG, square works best.',
+      'The site shows an image that was not chosen in QuartzControl. One of your own replaces it in the header and as the favicon. PNG or JPEG, ideally square.',
     customHint: 'Stored as quartz/static/icon.png in the project, {{width}} × {{height}} pixels.',
     faviconOn: "The site's favicon is generated from this image on the next build.",
-    faviconOff: 'The favicon plugin is switched off — no favicon is generated from this image.',
-    faviconMissing: 'The favicon plugin is not installed — no favicon is generated from this image.',
+    faviconOff: 'The favicon plugin is switched off.',
+    faviconMissing: 'The favicon plugin is not installed.',
     faviconLink: 'Go to Plugins',
     announceSet: 'Project image set.',
-    announceCleared: 'Project image removed, the original icon is back.',
+    announceCleared: 'Project image removed.',
     dark: {
       choose: 'Image for dark mode…',
       replace: 'Replace dark image…',
       remove: 'Remove dark image',
       hint: 'Optional, only for the image in the header. Stored as quartz/static/icon-dark.png in the project; the favicon stays with the light image.',
-      hintHeaderOn: 'Only for the image in the header; the favicon stays with the light image. “Remove dark image” deletes the file at once — until you “Save”, the header then has no image in dark mode.',
-      notChosen: 'The dark image was not chosen in the app — usually it is the template’s. If the header shows the project image, it shows this one in dark mode until you choose your own.',
-      hintMark: 'For dark mode in the header; the favicon stays with the light image. A layout box names quartz/static/icon-dark.png — without the file it has no image in dark mode. Replace rather than remove.',
+      hintHeaderOn: 'Only for the image in the header; the favicon stays with the light image. “Remove dark image” deletes the file at once.',
+      notChosen: 'The dark image was not chosen in QuartzControl. If the header shows the project image, this one is shown in dark mode until you choose your own.',
+      hintMark: 'For dark mode in the header; the favicon stays with the light image. A layout box uses this file; without it, that box has no image in dark mode.',
       announceSet: 'Image for dark mode set.',
       announceCleared: 'Image for dark mode removed.'
     },
     header: {
       label: 'Show in the site header',
-      hint: 'As a link to the home page, with the dark image in dark mode. Applied with “Save”; place and order like any plugin under Layout.',
-      hintInstall: 'Needs the quartz-layout-box plugin; switching it on offers to install it.',
+      hint: 'As a link to the home page, with the dark image in dark mode.',
+      hintInstall: 'Needs the quartz-layout-box plugin; QuartzControl offers to install it when you switch this on.',
       needsImage: 'Choose a project image of your own first.',
-      shownByMark: 'Already in the site header: a layout box shows this image, and the dark one in dark mode — from a template, that is usually its mark.',
+      shownByMark: 'Shown in the header: a layout box shows this image, and the dark one in dark mode.',
       installing: 'Installing quartz-layout-box…',
       installConfirm:
         'Install the quartz-layout-box plugin?\n\nThe header image is built with it. The app takes a snapshot first and saves this page’s unsaved changes.',
@@ -815,20 +815,20 @@ export default {
     pageTitle: 'Site title',
     pageTitleHint: 'The name of your site. It appears in the browser tab, in the RSS feed and usually at the top of the sidebar.',
     pageTitleSuffix: 'Title suffix',
-    pageTitleSuffixHint: 'Appended after each page’s own title in the browser tab, e.g. “ · My wiki”. It does not appear on the page itself.',
+    pageTitleSuffixHint: 'Appended after each page’s own title in the browser tab. It does not appear on the page itself.',
     baseUrl: 'Base URL',
     baseUrlHint:
-      'The address the site will be reachable at — without https://, e.g. notes.example.com. Links, the RSS feed and preview images are built from it; with the “Fonts” plugin serving the fonts itself, the build fails outright without it.',
+      'The address the site will be reachable at later (without https://). Links, the RSS feed and preview images are built from it. With the “Fonts” plugin serving the fonts, the build fails without a base URL.',
     locale: 'Site language',
     spa: 'Switch pages without reloading',
     spaHint:
       'Clicking an internal link swaps the content instead of reloading the whole page. It feels faster; the site still works without JavaScript.',
-    popovers: 'Preview on hovering a link',
+    popovers: 'Link previews',
     popoversHint: 'Hovering an internal link shows a small window with the beginning of the target page.',
     ignoreHeading: 'Exclude notes and folders',
     ignorePatterns: 'Patterns (one per line)',
     ignorePatternsHint:
-      'Files and folders in the content folder that never make it into the site — e.g. private/** or *.excalidraw.md. Affects this build only, not publishing.',
+      'Files and folders in the content folder that never make it into the site (e.g. private/** or *.excalidraw.md).',
     localeHint: 'Sets the site’s built-in text labels (Search, Last modified, …). The choices are the language files this project ships.',
     localeHintFree: 'Sets the site’s built-in text labels (Search, Last modified, …). Format: language-country, e.g. en-US.',
     localeUnknownSuffix: '(not in this project)',
@@ -854,17 +854,17 @@ export default {
     goToVariablesTab: 'Go to the “Variables” tab',
     overrideChecking: 'Checking which of these values the active theme overrides…',
     overrideCounted:
-        'The theme “{{themeId}}” overrides {{colors}} of {{totalColors}} colors and {{fonts}} of {{totalFonts}} fonts — those are dimmed below.',
+        'The theme “{{themeId}}” overrides {{colors}} of {{totalColors}} colors and {{fonts}} of {{totalFonts}} fonts. Those are dimmed below.',
     overrideStillEditable:
-        'You can still edit them: they apply again the moment the theme is off, and can be overridden individually in the Variables tab.',
+        'The values apply again once the theme is turned off. While the theme is active, they can be overridden individually in the Variables tab.',
     overriddenByTheme: 'Overridden by the active theme',
     overriddenByVariable:
-      'The project’s variable --{{variable}} overrides this font — this field changes nothing on the site.',
+      'The project’s variable --{{variable}} overrides this font. This field changes nothing on the site.',
     overriddenShort: 'theme',
     fontSource: 'Font source',
     googleFonts: 'Google Fonts',
     googleFontsHint:
-      'The chosen fonts come from Google; the font fields offer all {{count}} Google Fonts, typing filters. How they are delivered is the switch below.',
+      'The chosen fonts come from Google. The input fields offer all {{count}} Google Fonts (type to filter).',
     fontCategory: {
       sansSerif: 'Sans serif',
       serif: 'Serif',
@@ -878,8 +878,8 @@ export default {
     fontSpelledDifferently: 'Google is case-sensitive — you probably mean “{{name}}”.',
     fontUnknownToGoogle:
       'Google does not list this name (list from {{date}}). If Google really does not know it, the site will be missing the font.',
-    localHint: 'Quartz then fetches nothing at all — the font has to be present already, e.g. via “Import your own font” below.',
-    local: 'Bring your own',
+    localHint: 'Nothing is loaded; the font has to be present locally already, e.g. via “Import your own font” below.',
+    local: 'Your own local font',
     fontFor: 'Font ({{slot}})',
     fontListFor: 'Fonts to choose from ({{slot}})',
     fontMatches: '{{count}} font matches',
@@ -887,9 +887,9 @@ export default {
     delivery: {
       heading: 'Font delivery',
       description:
-        'Serving locally means QuartzControl fetches the font files into the project when you save, and the site makes no request to Google at all — the GDPR-friendly option.',
+        'Serving locally: QuartzControl fetches the font files from Google once and stores them in the project. The site then makes no request to Google at all (the GDPR-friendly option).',
       quartzStillDownloads:
-        'Quartz still downloads these fonts only at build time and points at the published site for them — which is why the preview does not show them. Saving fetches them into the project.',
+        'Quartz downloads these fonts only at build time and points at the published site for them. That is why the preview does not show them. Saving fetches them into the project.',
       fetchNow: 'Fetch into the project now',
       fetching: 'Fetching fonts…',
       selfHost: 'Serve fonts locally (no Google request on visit)',
@@ -910,35 +910,35 @@ export default {
       },
       themeFonts: 'Load the theme’s own fonts',
       themeFontsHint:
-        'The theme ships its own fonts and loads them from unpkg.com — another third-party request. There is no option to serve those locally; turning them off means dropping them, and the fonts chosen above apply instead.',
+        'The theme ships its own fonts and loads them from unpkg.com. They cannot be served locally. Turning them off means dropping the theme’s fonts, and the fonts chosen above apply instead.',
       themeFontsOff:
-        'The theme’s fonts are off — nothing is loaded from unpkg.com, but the theme looks different from how it was designed.'
+        'The theme’s fonts are off. Nothing is loaded from unpkg.com, but the theme looks different from how it was designed.'
     },
     unusedFonts: {
       heading: 'Unused fonts',
       description:
-        'custom.scss declares these fonts, but no font setting, no variable and no stylesheet under quartz/styles, quartz/components/styles or quartz/static names them. Their files are still published with every build.',
+        'custom.scss declares these fonts, but no font setting, no variable and no stylesheet under quartz/styles, quartz/components/styles or quartz/static names them. The font files are still published with every build.',
       noFile: 'no file in the project',
       removing: 'Removing…',
       confirm_one:
-        'Remove “{{family}}”?\n\nIts @font-face rules leave custom.scss and one file leaves quartz/static/fonts. The only way back is a snapshot or git.',
+        'Remove “{{family}}”?\n\nIts @font-face rules leave the CSS and one file is deleted from quartz/static/fonts. The only way back is a snapshot or git.',
       confirm_other:
-        'Remove “{{family}}”?\n\nIts @font-face rules leave custom.scss and {{count}} files leave quartz/static/fonts. The only way back is a snapshot or git.',
+        'Remove “{{family}}”?\n\nIts @font-face rules leave the CSS and {{count}} files are deleted from quartz/static/fonts. The only way back is a snapshot or git.',
       confirmNoFiles:
-        'Remove “{{family}}”?\n\nIts @font-face rules leave custom.scss; no file is deleted, because other rules still name it or it is not in the project. The only way back is a snapshot or git.',
+        'Remove “{{family}}”?\n\nIts @font-face rules leave the CSS. No file is deleted, because other rules still name it or it is not in the project. The only way back is a snapshot or git.',
       confirmButton: 'Remove font'
     },
     localFontHeading: 'Import a custom font',
-    localFontDescription: 'Copies a .ttf/.otf/.woff/.woff2 file into the project and generates the matching @font-face rule in custom.scss.',
+    localFontDescription: 'Copies a .ttf/.otf/.woff/.woff2 file into the project and generates the matching @font-face rule in the CSS.',
     localFontPick: 'Choose file…',
     localFontFamily: 'Font family name',
     localFontSlot: 'Use directly for',
     localFontNoSlot: '— none —',
     localFontConfirm: 'Import',
-    fontImportDetected: '“{{family}}” imported — weight {{weight}}, read from the file.',
-    fontImportDetectedItalic: '“{{family}}” imported — weight {{weight}}, italic, read from the file.',
+    fontImportDetected: '“{{family}}” imported: weight {{weight}}, read from the file.',
+    fontImportDetectedItalic: '“{{family}}” imported: weight {{weight}}, italic, read from the file.',
     fontImportUndetected:
-      '“{{family}}” imported. The file names no weight, so the rule is written without one — add it in custom.scss if you need it.',
+      '“{{family}}” imported. The file names no “weight”, so the rule is written without one. Add it in the CSS if you need it.',
     colors: 'Colors'
   },
   themes: {
@@ -947,7 +947,7 @@ export default {
     allDisabled: 'Community themes disabled',
     active: {
       title: 'Current theme',
-      none: 'No community theme active — your colors and fonts from “Styles → Basics” apply. Install one from the catalog below to get started.',
+      none: 'No community theme active: your colors and fonts from “Styles → Basics” apply.',
       heading: 'Current theme: {{themeId}}',
       saveAsPreset: 'Save as preset',
       presetNamePlaceholder: 'Name for the preset',
@@ -955,20 +955,20 @@ export default {
         'This plugin ({{source}}) overrides the colors from the Basics layer. Changes below take effect immediately in the preview.',
       disabledHeading: 'Community theme disabled ({{themeId}})',
       disabledNote:
-        'Your colors and fonts from “Styles → Basics” apply again now. This community theme’s settings are kept and can be turned back on any time.',
+        'The colors and fonts from “Styles → Basics” apply. This community theme’s settings are kept and can be turned back on any time.',
       reactivate: 'Turn back on',
       checkingStyleSettings: 'Checking the theme’s style settings…',
       noStyleSettingsNote:
-        'The theme {{themeId}} doesn’t offer its own color settings — there’s nothing to customize here for this theme. That’s down to the theme itself, not this app: changes would simply be ignored by Quartz.',
+        'The theme {{themeId}} doesn’t offer its own color settings.',
       styleSettingsHeading: 'Style settings ({{ids}})',
       ownValuesHint:
-        'This card only carries the options the theme itself declares. Your own values for individual CSS variables belong in the Variables tab or in your own CSS.',
+        'This card only carries the options the theme itself declares. Your own values for individual CSS variables can be set in the Variables tab or in your own CSS.',
       goToVariables: 'Go to variables →'
     },
     presets: {
       title: 'My presets',
       description:
-        'Your own saved customizations of a base theme. To create a new theme: install & activate a base theme in the catalog below, customize it above, then save it as a preset.',
+        'Your own saved customizations of a community theme.',
       none: 'No presets saved yet.',
       basisLabel: '(base: {{base}})',
       active: 'Active',
@@ -984,7 +984,7 @@ export default {
       refresh: 'Reload',
       refreshing: 'Loading…',
       unavailable:
-        'The theme list could not be loaded from npm. What is listed below is a handful of well-known themes as a placeholder — try “Reload”.',
+        'The theme list could not be loaded. What is listed below is a handful of well-known themes as a placeholder. Try “Reload”.',
       installing: 'Installing…',
       install: 'Install & activate',
       active: 'Active',
@@ -1004,8 +1004,8 @@ export default {
     }
   },
   plugins: {
-    savesImmediately: 'Saves without a button — a switch right away, a text field when you leave it.',
-    readAgainst: 'This editor knows {{plugin}} {{read}}, {{installed}} is installed. What it calls “no effect” or assumes as a default may therefore differ; “All options” shows every option the plugin describes itself.',
+    savesImmediately: 'Saves without a button: switches right away, text fields when you leave them.',
+    readAgainst: 'This editor knows {{plugin}} {{read}}, {{installed}} is installed. Details may therefore differ.',
     tabs: {
       installed: 'Installed',
       navigations: 'Navigations',
@@ -1014,16 +1014,16 @@ export default {
       marketplace: 'Marketplace'
     },
     descriptions: {
-      installed: 'Extends Quartz with extra functionality — this is what is active, and where you configure it.',
-      navigations: 'Menus, sidebars and “previous / next” from quartz-navigations: each navigation is an entry of the plugin, with the site beside it.',
-      extras: 'Boxes with your own text from quartz-layout-box, and the files they show: snippets and pictures under quartz/static.',
-      languages: 'The site’s languages from quartz-multilanguage, and how they are detected, switched and published.',
-      marketplace: 'The plugin catalog of the quartz-community organisation, built-in ones included. Add plugins from anywhere else via “owner/repo”.'
+      installed: 'Installed Quartz plugins and their settings',
+      navigations: 'Settings for the “quartz-navigations” plugin: create, manage and configure navigations.',
+      extras: 'Settings for the “quartz-layout-box” plugin: create, manage and configure additional content boxes.',
+      languages: 'Settings for the “quartz-multilanguage” plugin: the site’s languages and how they are detected, switched and published.',
+      marketplace: 'The plugin catalog of quartz-community, built-in ones included. Add plugins from anywhere else via “owner/repo”.'
     }
   },
   sitePreview: {
     title: 'Preview',
-    notRunning: 'The preview shows the real site through the dev server, which is not running.',
+    notRunning: 'The preview shows the site through the dev server, which is not running.',
     starting: 'The dev server is starting…',
     start: 'Start preview',
     stop: 'Stop preview',
@@ -1053,7 +1053,7 @@ export default {
     addedAnnounce: 'Box created, in the {{position}} area.',
     duplicatedAnnounce: '“{{name}}” duplicated.',
     duplicateNamed: 'Duplicate “{{name}}”',
-    removeConfirm: 'Remove the box “{{name}}”?\n\nIts entry leaves the configuration; a file it shows stays where it is. It only comes back through a snapshot you made beforehand.',
+    removeConfirm: 'Remove the box “{{name}}”?\n\nIts entry leaves the configuration. A file this box shows stays where it is.',
     removedAnnounce: '“{{name}}” removed.',
     unnamed: 'Box',
     notPlaced: 'not placed',
@@ -1087,12 +1087,12 @@ export default {
     previewHint: 'The site with every box. A box shown only on desktop or only on mobile needs the matching view.',
     files: {
       title: 'Files',
-      intro: 'What the boxes show: snippets in their folders and pictures in quartz/static/images. Renaming updates the boxes that name a file; what the pages themselves say, it does not.',
+      intro: 'Manage and upload HTML/Markdown files and pictures the boxes can use.',
       snippetsIn: 'Snippets in {{dir}}',
       images: 'Pictures in {{dir}}',
       empty: 'No file yet.',
       dirMissing: 'The folder does not exist yet; the first file creates it.',
-      dirLink: 'The folder lies behind a link. Reading works; QuartzControl changes nothing here.',
+      dirLink: 'The folder lies behind a link. Reading works, QuartzControl changes nothing here.',
       dirUnusable: 'QuartzControl does not read or write in this folder.',
       usedBy: 'used by {{names}}',
       unused: 'used by no box',
@@ -1113,19 +1113,19 @@ export default {
       renameStuck: '“{{from}}” is now called “{{to}}”, but the boxes that name the file still name “{{from}}” — the configuration could not be written, and renaming the file back failed too. Rename the file back or enter the new name in the boxes.',
       projectIcon: 'Project image in {{dir}}',
       projectIconNote: 'Comes from the project image under Configuration → Site. A snippet includes it with the path below.',
-      projectIconLocked: 'Belongs to the project image and cannot be renamed or deleted here — Quartz builds the favicon from it.',
+      projectIconLocked: 'Belongs to the project image and cannot be renamed or deleted here. Quartz builds the favicon from it.',
       imagesSearched: '“used by” looks in the boxes and their snippets, not in the pages, the stylesheets or other plugins.',
-      imageRenameConfirm: 'Rename “{{name}}”?\n\nUsed by {{names}}. Those references are part of the text and QuartzControl does not change them; the picture is missing there until you update them.',
+      imageRenameConfirm: 'Rename “{{name}}”?\n\nUsed by {{names}}. Those references are part of the text, QuartzControl does not change them. The picture is missing there until you update them.',
       trashNamed: 'Move “{{name}}” to the trash',
-      trashConfirm: 'Move “{{name}}” to the trash?\n\nYou can get it back from the trash.',
-      trashConfirmUsed: 'Move “{{name}}” to the trash?\n\nUsed by {{names}} — it will be missing there. You can get it back from the trash.',
+      trashConfirm: 'Move “{{name}}” to the trash?',
+      trashConfirmUsed: 'Move “{{name}}” to the trash?\n\nUsed by {{names}}. It will be missing there.',
       trashLabel: 'Move to trash',
       trashedAnnounce: '“{{name}}” is in the trash.',
       addedAnnounce: '“{{name}}” added.'
     }
   },
   multilanguageEditor: {
-    intro: 'quartz-multilanguage is one entry for the whole site. On the left are its languages and below them the other settings; pick a row to edit it on the right. Every change is saved right away.',
+    intro: 'quartz-multilanguage applies to the whole site. Every change is saved right away.',
     notInstalledTitle: 'quartz-multilanguage is not installed',
     notInstalledText: 'This tab edits the languages of a site with quartz-multilanguage. Install the plugin from the marketplace and they appear here.',
     severalEntries: 'The configuration names quartz-multilanguage {{count}} times. This is the first entry; edit the others under “Installed”.',
@@ -1185,7 +1185,7 @@ export default {
     isDefaultHintOn: 'To hand this over, make another language the default.',
     publish: 'Publish',
     publishHint: 'When off, the site is built without the pages of this language. QUARTZ_LANGS at build time takes precedence.',
-    publishOnlyHint: 'The only published language stays on.',
+    publishOnlyHint: 'The only published language stays active.',
     order: 'Order',
     orderHint: 'The language switcher lists the languages in this order.',
     noSchema: 'Without the plugin’s description there are no groups. What the configuration sets is under “More options”; everything else under “All options”.',
@@ -1193,14 +1193,14 @@ export default {
     sectionsTitle: 'Settings',
     switcherAt: 'Stands in {{position}}.',
     switcherNotPlaced: 'Is not placed on the page yet.',
-    previewHint: 'The language switcher sits where the layout stage puts it.'
+    previewHint: 'The language switcher sits at the position set on the layout stage.'
   },
   navigationsEditor: {
     intro: 'Each navigation is an entry of its own of quartz-navigations. Pick one to set its variant and options; where it stands is set on the layout stage. Every change is saved at once, and the preview reloads by itself after the rebuild.',
-    listTitle_one: 'One navigation',
+    listTitle_one: 'Navigation',
     listTitle_other: '{{count}} navigations',
     add: 'New navigation',
-    addQuestion: 'Which variant? The navigation goes where that variant usually stands and can be moved on the stage.',
+    addQuestion: 'Which variant? The navigation is placed where that variant usually stands. Its position can be changed on the layout stage.',
     addedAnnounce: 'Navigation “{{variant}}” added, in the {{position}} area.',
     duplicatedAnnounce: '“{{name}}” duplicated.',
     duplicateNamed: 'Duplicate “{{name}}”',
@@ -1226,7 +1226,7 @@ export default {
     readNowhere: 'The plugin does not read this option at the moment.',
     notInstalledTitle: 'quartz-navigations is not installed',
     notInstalledText: 'This tab sets up the navigations of the quartz-navigations plugin. Install it in the marketplace via “boxi-os/quartz-navigations”.',
-    previewHint: 'The site as the dev server is building it. For “previous / next”, pick a content page – the home page has nothing before it.',
+    previewHint: 'The site as the dev server is building it.',
     variants: {
       tree: { label: 'Tree', text: 'Nested list, all open. For sidebars.' },
       accordion: { label: 'Accordion', text: 'Folders fold, the path to the page is open.' },
@@ -1241,8 +1241,8 @@ export default {
     }
   },
   pluginOptions: {
-    notes_one: 'One statement in this plugin’s schema is not understood by the app (for the plugin’s authors)',
-    notes_other: '{{count}} statements in this plugin’s schema are not understood by the app (for the plugin’s authors)',
+    notes_one: 'One statement in this plugin’s schema is not understood by QuartzControl',
+    notes_other: '{{count}} statements in this plugin’s schema are not understood by QuartzControl',
     rarelyUsed: 'Rarely needed',
     onlyWhen: 'Only applies when {{conditions}}.',
     conditionPart: '“{{name}}” is set to {{values}}',
@@ -1310,20 +1310,20 @@ export default {
       baseUrl: 'Address of the site (baseUrl)',
       locale: 'Language of the page, such as “en-US” — from its frontmatter, else the site’s',
       lang: 'Just the language code, such as “en”',
-      frontmatter: 'Any entry of the page’s frontmatter — the entry’s name in place of “author”'
+      frontmatter: 'Any entry of the page’s frontmatter (the entry’s name in place of “author”)'
     },
     imageFilter: 'Images',
     snippetFilter: 'Snippets',
     insertImage: 'Insert image…',
     svgHow:
-      'Insert the SVG file as code?\n\nAs code the graphic becomes part of the page, and your CSS can style it, for example with fill: currentColor. As an image it is copied to quartz/static/images and linked; CSS then reaches only its frame.',
+      'Insert the SVG file as code?\n\nInserted as SVG code, the graphic can be styled with CSS. Embedded as an image, it is merely copied to quartz/static/images and linked.',
     svgInline: 'Insert as code',
     svgAsImage: 'Insert as image',
     svgInvalid: '“{{name}}” cannot be read as SVG.',
-    svgCleaned_one: 'Removed {{count}} part that, inlined, could run script on every page, style it or load something from elsewhere (such as <script>, onload, <style>).',
-    svgCleaned_other: 'Removed {{count}} parts that, inlined, could run script on every page, style it or load something from elsewhere (such as <script>, onload, <style>).',
+    svgCleaned_one: 'Removed {{count}} part from the SVG code that, inlined, could run script on every page, style it or load something from elsewhere (such as <script>, onload, <style>).',
+    svgCleaned_other: 'Removed {{count}} parts from the SVG code that, inlined, could run script on every page, style it or load something from elsewhere (such as <script>, onload, <style>).',
     svgStyleRemoved:
-      'This file kept its colours in a <style> block that would style every page of the site; they are gone now. Export with “presentation attributes” or set the colours in the site’s CSS.',
+      'This file kept its colours in a <style> block that would style every page of the site; it was removed for that reason. Export with “presentation attributes” or set the colours in the site’s CSS.',
     imageExists:
       '“{{name}}” already exists under quartz/static. Replace it?\n\nReplacing overwrites the file, and every snippet that shows it shows the new image afterwards. “Use existing” inserts a reference to the file that is already there.',
     fileExists:
@@ -1345,7 +1345,7 @@ export default {
     create: 'Create',
     saved: '“{{name}}” is saved.',
     unsaved: 'Unsaved',
-    saveHint: 'The snippet is a file of its own. It is saved with “Save snippet”, not with “Save” at the top.',
+    saveHint: 'The snippet is a file of its own. It is saved with “Save snippet”, not with the “Save” button at the top.',
     save: 'Save snippet',
     close: 'Close',
     discard: 'Discard',
@@ -1368,12 +1368,12 @@ export default {
     countActive: '{{active}} of {{total}} active',
     countFiltered: '{{visible}} of {{total}} shown',
     reorderDisabledByFilter:
-      'Reordering is off while a filter is active — the new order would move the hidden entries as well.',
+      'Reordering is off while a filter is active.',
     noMatches: 'No plugin matches the filter and search.',
     none: 'No plugins installed.',
     framesHeading: 'Your frames',
     framesDescription:
-      'Page frames built in the Layout editor. Quartz registers each one as a plugin — which is why they appear here — but they are configured in the Layout editor.',
+      'Your own frames built in the Layout editor. Quartz registers each one as a plugin. They are configured in the Layout editor.',
     frameBadge: 'Frame',
     enabledSwitch: '“{{name}}” enabled',
     frameSource: 'Your own frame from the Layout editor',
@@ -1391,10 +1391,10 @@ export default {
     placementGroup: 'group {{group}}',
     optionsHeading: 'Options',
     componentsHeading: 'Visible components',
-    componentsDescription: 'These plugins are visible on the page — e.g. in the header, sidebar, or footer.',
+    componentsDescription: 'These plugins are visible on the page, e.g. in the header, sidebar or footer.',
     processingHeading: 'Processing',
     processingDescription:
-      'These plugins change your content behind the scenes (e.g. formatting, links, images) and aren’t visible on the page themselves. Page types — plugins that create their own kind of page, e.g. tag pages — are listed separately below.',
+      'These plugins change your content behind the scenes (e.g. formatting, links, images) and aren’t visible on the page themselves.',
     pageTypesGroup: 'Page types',
     otherProcessingGroup: 'Transformers, filters & emitters',
     dragHint: 'Drag to reorder',
@@ -1408,7 +1408,7 @@ export default {
     savedFlash: 'Saved',
     maintenanceHeading: 'Maintenance',
     maintenanceDescription:
-      'Acts on the built files of plugins you installed from a source — not on what the site does. They do not belong in the repository, so a second machine has to restore them first.',
+      'Only acts on the downloaded plugin files in the .quartz/plugins folder. They change nothing about the configuration or your site. The folder does not go into the repository; after cloning on another machine, restore it here from quartz.lock.json.',
     installFromLock: 'Restore from quartz.lock.json',
     installFromLockRunning: 'Restoring…',
     installDone: 'Plugins restored from the lockfile.',
@@ -1419,7 +1419,7 @@ export default {
     pruneConfirm:
       'Removes every built plugin folder no config entry points at any more. The configuration itself is left untouched. Continue?',
     openRepo: 'Open repository on GitHub',
-    removeConfirm: 'Really remove plugin “{{name}}”? A snapshot is taken first, so you can bring it back.',
+    removeConfirm: 'Really remove plugin “{{name}}”? A snapshot is taken automatically first.',
     removeFrameConfirm:
       'Really delete frame “{{name}}”? This removes it from the configuration and from disk. A snapshot is taken first.',
     optionKeyPlaceholder: 'Option',
@@ -1429,7 +1429,7 @@ export default {
     optionValueHint: 'true/false and numbers are stored as such, [..] and {..} as JSON, anything else as text.',
     explicitlyEmpty: 'set to empty',
     setEmpty: 'Set empty',
-    setEmptyHint: 'Writes an empty text into the configuration instead of leaving the option out — for a plugin that reads “empty” differently from “not set”.',
+    setEmptyHint: 'Writes an empty text into the configuration instead of leaving the option out.',
     unsetEmpty: 'Reset',
     unsetEmptyHint: 'Removes the option again; the plugin then uses its default.',
     notSet: 'not set',
@@ -1487,13 +1487,13 @@ export default {
     graph: 'Interactive graph visualization of linked notes.',
     search: 'Full-text search across all content.',
     backlinks: 'Shows pages that link to the current page.',
-    'article-title': 'Shows the page title as a heading above the content.',
-    'content-meta': 'Shows metadata like creation date and reading time below the title.',
+    'article-title': 'Shows the page title as a heading.',
+    'content-meta': 'Shows metadata like creation date and reading time.',
     'tag-list': 'Shows a page’s tags as a clickable list.',
-    'page-title': 'Shows the site’s title as a link to the homepage, usually in the sidebar.',
+    'page-title': 'Shows the site’s title as a link to the homepage.',
     darkmode: 'Toggle for light/dark mode.',
     'reader-mode': 'Distraction-free reading mode.',
-    breadcrumbs: 'Shows the navigation path (breadcrumbs) above the content.',
+    breadcrumbs: 'Shows the navigation path (breadcrumbs).',
     comments: 'Embeds a comment system (e.g. giscus, utterances).',
     footer: 'Shows a footer with configurable links.',
     'recent-notes': 'Shows recently modified notes.',
@@ -1516,7 +1516,7 @@ export default {
       mobile: 'Mobile up to (px)',
       saved: 'Saved',
       invalid: 'Mobile must be smaller than tablet (240–3840 px).',
-      hint: 'The window widths at which your own frames switch to the tablet and mobile layout. Quartz’ built-in frames (default, full-width, minimal) and community themes carry their own values and do not follow these. The default is 1200 / 800 — the same values Quartz uses.'
+      hint: 'The window widths at which your own frames switch to the tablet and mobile layout. Quartz’ built-in frames (default, full-width, minimal) and community themes carry their own values. The default is 1200 / 800 (the values Quartz uses).'
     },
     groupLabel: 'Group',
     displayLabel: 'Visibility',
@@ -1565,7 +1565,7 @@ export default {
       'This page type automatically uses the “{{frame}}” frame from its plugin. Only the plugin knows how that frame is built, so there is no preview here.',
     frameBuilder: {
       whatIsAFrame:
-        'A frame is a page’s grid: which areas exist — header, sidebars, content, footer —, where they sit and how wide they are. What appears in those areas is set on the “Components” tab, and that is also where each page type picks its frame.',
+        'A frame is a page’s grid: which areas exist (header, sidebars, content, footer), where they sit and how wide they are. What appears in those areas is set on the “Components” tab, and that is also where you pick the frame for each page type.',
       newFrame: 'New frame',
       newEmptyFrame: 'Create an empty frame',
       frameLabel: 'Frame',
@@ -1608,14 +1608,14 @@ export default {
       boxHint:
         'Applies to this breakpoint only. The frame never gets wider than the maximum width; the alignment distributes what is left. Padding sits between the frame edge and its content.',
       boxHintNoMaxWidth:
-        'Applies to this breakpoint only. Without a maximum width the frame uses the full window width. Alignment needs a maximum width to do anything — before that there is nothing left to distribute.',
+        'Applies to this breakpoint only. Without a maximum width the frame uses the full window width. Alignment only takes effect once a maximum width is set.',
       saved: 'Saved',
       resetTracks: 'Reset track sizes',
       columnSizesLabel: 'Column widths (blank = 1fr)',
       rowSizesLabel: 'Row heights (blank = auto)',
       lineNamesLabel: 'Named grid lines (optional)',
       lineNamesHint:
-        'The editor does not need this — you place areas by dragging. Names like “sidebar-start” are only useful if you want to address these lines from your own CSS later.',
+        'Names like “sidebar-start” are useful if you want to address these lines from your own CSS later.',
       columnLinesLabel: 'Column lines',
       rowLinesLabel: 'Row lines',
       copyLayoutTo: 'Copy to {{target}}',
@@ -1667,7 +1667,7 @@ export default {
       showRefusedOutside:
         '{{name}} stays hidden — its cells are no longer in the grid. Drag it onto a free cell to show it; if there is none, give the grid another row first.',
       overlapWarning:
-        'These areas lie on top of each other: {{pairs}}. On the built page one displaces the other, and where that leaves no rectangle, this breakpoint’s whole arrangement does not apply — drag one of them onto free cells.',
+        'These areas lie on top of each other: {{pairs}}. On the built page one displaces the other. Drag one of them onto free cells.',
       outsideWarning:
         'These areas reach beyond the grid: {{areas}}. The built page cuts off what lies outside; an area entirely outside gets a column and a row of its own behind the grid there, and the other columns get narrower for it.',
       dropNarrowed: '{{name}} dropped on {{target}}. The grid ends there: {{changes}}.',
@@ -1684,7 +1684,7 @@ export default {
       neverVisibleWarning: 'Not visible on any breakpoint: {{areas}}. These areas will not render anywhere.',
       nameRequired: 'Please give the frame a name.',
       areaNameCollision:
-        'Two areas are called “{{names}}”. An area name may only appear once — otherwise the frame loses its whole grid, not just one area.',
+        'Two areas are called “{{names}}”. An area name may only appear once.',
       areaGroupCollision:
         'Two areas on the same slot hold the group “{{names}}”. Both would show the same components, so they would appear twice on every page.',
       nameCollision: 'This name is already taken (a built-in frame, or another custom one).',
@@ -1700,7 +1700,7 @@ export default {
       paletteDragName: 'component tray',
       paletteDropToDisable: 'Drop here to switch off',
       paletteHint:
-        'Drag a component onto a slot to insert another instance. Anything marked “off” is switched off and is switched back on when you drag it in.',
+        'Drag a component onto a slot to insert another instance. Switched-off components are switched back on when you drag them in.',
       dragHandle: 'Move {{name}}',
       duplicate: 'Duplicate',
       removeDuplicate: 'Remove duplicate',
@@ -1730,7 +1730,7 @@ export default {
       areaCleared: 'Empty on {{type}}',
       unknownOption: '“{{frame}}” (unknown)',
       unknownFrame:
-        'This project has no frame “{{frame}}”. Quartz builds these pages with the default frame, and that is what the stage shows.'
+        'This project has no frame “{{frame}}”. Quartz builds these pages with the default frame.'
     },
     context: {
       customized: 'customized',
@@ -1749,7 +1749,7 @@ export default {
     summary: {
       title: 'Summary',
       frame: 'Frame',
-      frameAllPages: 'Each page type picks its own; the one drawn is that of content pages.',
+      frameAllPages: 'Each page type has its own frame assigned. The one drawn is that of content pages.',
       frameFrom: {
         override: 'Chosen for this page type.',
         plugin: 'Brought by the page type’s plugin.',
@@ -1763,7 +1763,7 @@ export default {
     overview: {
       title: 'Where each component appears',
       intro:
-        'You place components once, for all pages. Each page type is built in its assigned frame and can hide single components or whole areas; the frame decides which areas it has room for at all. The table shows what reaches each page type.',
+        'Components are placed once for all pages. Each page type is built in its assigned frame and can hide single components or whole areas. The frame decides which areas it has room for at all. The table shows what reaches each page type.',
       componentColumn: 'Component',
       assignedFrame: 'Assigned frame',
       customized: 'Differs from “All pages”',
@@ -1810,7 +1810,7 @@ export default {
       statUnused_other: '{{count}} without a page type',
       panelPlacedTitle: 'Placed components',
       panelPlacedNone: 'No component placed yet.',
-      panelAlways: 'On every width',
+      panelAlways: 'At all widths',
       panelConditionedTitle: 'Components with a condition',
       panelConditionedNone: 'No component has a condition — each appears on every page of its page type.',
       panelPageTypesTitle: 'Page types and what differs',
@@ -1879,17 +1879,17 @@ export default {
   styles: {
     loadFailed: 'The styles could not be loaded.',
     googleFontsMissing_one:
-      'Google does not know this font and left it out silently: {{families}}. That slot falls back to a substitute on the site — check the spelling.',
+      'Google does not know this font and left it out silently: {{families}}. That slot falls back to a substitute on the site.',
     googleFontsMissing_other:
-      'Google does not know these fonts and left them out silently: {{families}}. Those slots fall back to a substitute on the site — check the spelling.',
+      'Google does not know these fonts and left them out silently: {{families}}. Those slots fall back to a substitute on the site.',
     googleFontsOwn_one: 'Not fetched from Google, because the project already includes this font itself: {{families}}.',
     googleFontsOwn_other: 'Not fetched from Google, because the project already includes these fonts itself: {{families}}.',
     googleFontsCovered_one:
-      'The project includes part of {{families}} itself; only what its own rules do not cover was fetched from Google.',
+      'The project includes part of {{families}} itself; only what the own rules do not cover was fetched from Google.',
     googleFontsCovered_other:
-      'The project includes part of {{families}} itself; only what its own rules do not cover was fetched from Google.',
-    googleFontsFilesRemoved_one: 'One font file no rule names any more was removed from the project.',
-    googleFontsFilesRemoved_other: '{{count}} font files no rule names any more were removed from the project.',
+      'The project includes part of {{families}} itself; only what the own rules do not cover was fetched from Google.',
+    googleFontsFilesRemoved_one: 'One unused font file was removed from the project.',
+    googleFontsFilesRemoved_other: '{{count}} unused font files were removed from the project.',
     googleFontsRemoved_one: 'No longer selected and removed from the project: {{families}} (1 file).',
     googleFontsRemoved_other: 'No longer selected and removed from the project: {{families}} ({{count}} files).',
     googleFontsDropped_one: 'The local copy of the Google fonts was removed (1 file); the website now loads them from Google.',
@@ -1970,10 +1970,10 @@ export default {
     variables: {
       mainHeading: 'Main variables',
       mainDescription:
-        'The variables Quartz itself derives from the base colors. Pick a row to see on the right where its value comes from and what depends on it.',
+        'The variables Quartz itself derives from the base colors.',
       allHeading: 'All theme and build variables',
       allDescription:
-        'Everything the active theme, plugins, or the last build bring along — kept separate from the main variables, because there can be a great many.',
+        'Everything the active theme, plugins or the last build bring along (kept separate from the main variables, because there can be a great many).',
       allDescriptionTheme:
         'Everything the theme “{{themeId}}”, plugins, or the last build bring along: {{count}} variables, grouped by name prefix. Open a group or search.',
       counter: '{{overridden}} of {{total}} overridden',
@@ -2045,7 +2045,7 @@ export default {
         core: 'Quartz core',
         theme: 'Community theme',
         build: 'Last build',
-        user: 'Yours'
+        user: 'customized'
       }
     }
   },
@@ -2075,7 +2075,7 @@ export default {
       moveUp: 'Move up',
       moveDown: 'Move down',
       rename: 'Rename',
-      confirmDelete: 'Delete file “{{name}}”?\n\nIt is taken out of the load order and deleted from the project. Only a snapshot from before brings it back.',
+      confirmDelete: 'Delete file “{{name}}”?\n\nIt is taken out of the load order and deleted from the project.',
       confirmDeleteAction: 'Delete file',
       create: 'New file',
       createConfirm: 'Create',
@@ -2145,7 +2145,7 @@ export default {
       description: 'These variables are usable at this point (e.g. var(--text-normal)). Values reflect the current base layer, light/dark.',
       goToVariables: 'Override variables →',
       searchPlaceholder: 'Search variable…',
-      insertHint: 'Click inserts the variable at the cursor position — ⌥ + click copies it.',
+      insertHint: 'Click inserts the variable at the cursor position, ⌥ + click copies it to the clipboard.',
       insertValueHint: 'Click inserts {{value}} — ⌥ + click copies.',
       insertValueLabel: '--{{key}}: insert the {{mode}} value',
       insertValue: 'Insert value',
@@ -2188,7 +2188,7 @@ export default {
       missing_other: '{{count}} commits missing',
       runUpdate: 'Run update',
       confirm:
-        'Update Quartz’s core?\n\nThis fetches changes from jackyzha0/quartz and reinstalls the dependencies; conflicts may require manual work.\n\nA snapshot is taken first — under Snapshots you can go back to the current state any time.',
+        'Update Quartz’s core?\n\nThis fetches changes from jackyzha0/quartz and reinstalls the dependencies; conflicts may require manual work.\n\nA snapshot is taken automatically first.',
       abortMerge: 'Abort merge',
       openSnapshot: 'Open the snapshot from before the update →',
       conflictHeading: 'Conflicts in these files (aside from the locale files .gitattributes protects):',
@@ -2200,7 +2200,7 @@ export default {
     },
     plugins: {
       heading: 'Plugins',
-      hint: 'Only shows plugins you added via the marketplace or command line. Built-in plugins (most of them in a new project) update automatically with the Quartz core above.',
+      hint: 'Only shows plugins you added via the marketplace or command line. Built-in plugins (most of them in a new project) update automatically together with the Quartz core.',
       updateAll: 'Update all',
       update: 'Update',
       local: 'Local',
@@ -2215,14 +2215,14 @@ export default {
   },
   publish: {
     title: 'Publish',
-    description: 'Builds the project and takes the result to its targets — over SFTP/rsync, FTP, into a folder, onto a git branch, or via a webhook.',
+    description: 'Builds the project and publishes the result to the configured targets (over SFTP/rsync, FTP, into a folder, onto a git branch or via a webhook).',
     baseUrlWarning: 'configuration.baseUrl is still set to “{{baseUrl}}” — set it to the real domain before publishing.',
     connectionVsTarget:
-      'A credential is the login at a provider and belongs to the app; a target belongs to this project and says where the result goes.',
+      'A credential is an account at a provider and is set up globally in QuartzControl. A target belongs to this project and says where the result goes.',
     targetHeading: 'Targets',
     newConnectionOfKind: '+ New {{kind}} credential',
     connectionKindFixed:
-      'The kind of credential follows from the kind of target: this one needs a {{kind}} credential. Other kinds are created in the settings.',
+      'The kind of credential follows from the kind of target: this one needs a {{kind}} credential. Other credentials are created in the QuartzControl settings.',
     manageConnections: 'Manage connections',
     manageConnectionsHere: 'Manage credentials in the settings →',
     newTarget: 'New target',
@@ -2375,10 +2375,10 @@ export default {
   templates: {
     title: 'Templates',
     description:
-      'Bundles this project’s design into a single file: colours, theme, CSS, fonts, layout, frames, plugins and translations — in whole or in part. After importing into another project everything is set up the way it is here.',
+      'Bundles this project’s design into a single file: colours, theme, CSS, fonts, layout, frames, plugins and translations, in whole or in part. After importing into another project, everything there is set up the way it is here.',
     exportHeading: 'Create a template',
     exportHint:
-      'Writes a single .qtpl file you can pass on. Everything this project has is preselected; what it does not have is not offered.',
+      'Writes a single .qtpl file you can pass on. Everything this project contains is preselected.',
     nameLabel: 'Template name',
     descriptionLabel: 'Description (optional)',
     descriptionPlaceholder: 'What is this template for?',
@@ -2497,7 +2497,7 @@ export default {
       },
       frames: {
         label: 'Custom frames',
-        description: 'Page grids you built yourself. Registered afresh in the target project, not just copied.'
+        description: 'Frames you built yourself. Registered afresh in the target project, not just copied.'
       },
       plugins: {
         label: 'Plugins',

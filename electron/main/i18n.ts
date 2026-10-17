@@ -45,7 +45,7 @@ const STRINGS = {
     // Dieselben zwei Antworten wie beim Start, dieselben Worte - und `orphanEntry` beschreibt
     // dieselbe Zeile, deshalb wird sie hier wiederverwendet statt zweimal geschrieben.
     quitTitle: 'Laufende Server',
-    quitMessage: 'Beim Beenden laufen noch Dev-Server.',
+    quitMessage: 'Es laufen noch Dev-Server.',
     quitDetail: 'Weiterlaufende Server bleiben im Browser erreichbar und werden beim nächsten Start wieder gefunden.',
     quitStopServers: 'Server beenden',
     quitDontAskAgain: 'Nicht mehr fragen',
@@ -340,7 +340,7 @@ const STRINGS = {
     // Template packages
     zipEntryTooLarge: 'Die Datei „{{name}}“ ist zu groß für ein Paket (über 4 GB).',
     zipBadDirectory: 'Das Paket ist beschädigt (Verzeichniseintrag ungültig).',
-    zipBadHeader: 'Das Paket ist beschädigt (Dateikopf ungültig).',
+    zipBadHeader: 'Das Paket ist beschädigt (Dateiheader ungültig).',
     zipUnsupportedMethod: 'Das Paket verwendet ein nicht unterstütztes Kompressionsverfahren ({{method}}).',
     zipEntryCorrupt: 'Die Datei „{{name}}“ im Paket ist beschädigt.',
     zipEntryUnsafeName: 'Die Datei „{{name}}“ im Paket würde außerhalb des Projekts geschrieben werden.',
@@ -479,7 +479,7 @@ const STRINGS = {
     googleFontsRefreshed: 'Die gewählten Google-Schriften wurden ins Projekt geholt ({{count}} Dateien).',
     googleFontsRefreshOwn:
       'Das Projekt bindet {{families}} selbst ein; was seine eigenen Regeln abdecken, holt die App nicht bei Google.',
-    googleFontsRefreshRemoved: 'Schriftdateien, die keine Regel mehr nennt, sind aus dem Projekt entfernt ({{count}} Dateien).',
+    googleFontsRefreshRemoved: 'Ungenutzte Schriftdateien sind aus dem Projekt entfernt ({{count}} Dateien).',
     fontUrlsMigrated:
       'Die Schriftdateien in custom.scss werden jetzt relativ zum Stylesheet adressiert — so findet sie die Website auch unter einem Unterpfad.'
   },
@@ -825,7 +825,7 @@ const STRINGS = {
     googleFontsRefreshed: 'The selected Google fonts were fetched into the project ({{count}} files).',
     googleFontsRefreshOwn:
       'The project includes {{families}} itself; what its own rules cover is not fetched from Google.',
-    googleFontsRefreshRemoved: 'Font files no rule names any more were removed from the project ({{count}} files).',
+    googleFontsRefreshRemoved: 'Unused font files were removed from the project ({{count}} files).',
     fontUrlsMigrated:
       'The font files in custom.scss are now addressed relative to the stylesheet — the site finds them under a sub-path too.'
   }

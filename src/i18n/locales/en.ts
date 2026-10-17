@@ -939,6 +939,7 @@ export default {
     fontImportDetectedItalic: '“{{family}}” imported: weight {{weight}}, italic, read from the file.',
     fontImportUndetected:
       '“{{family}}” imported. The file names no “weight”, so the rule is written without one. Add it in the CSS if you need it.',
+    fonts: 'Fonts',
     colors: 'Colors'
   },
   themes: {

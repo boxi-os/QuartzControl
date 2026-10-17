@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FontFaceInfo, QuartzConfig, UnusedImportedFont } from '@shared/ipc-contract'
-import { Button, Combobox, Field, IconButton, Select, TextInput, Toggle, type ComboboxOption } from '../../components/ui'
-import { Trash2 } from 'lucide-react'
+import { Button, Card, CardHeading, Combobox, Field, IconButton, Select, TextInput, Toggle, type ComboboxOption } from '../../components/ui'
+import { Palette, Trash2, Type } from 'lucide-react'
 import { GOOGLE_FONTS, GOOGLE_FONTS_FETCHED, type GoogleFontCategory } from '../../data/googleFonts'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { confirmDialog } from '../../utils/confirm'
@@ -138,108 +138,112 @@ export default function Basics(): JSX.Element {
           </button>
         </p>
       )}
-      {/* Same rule as the site settings form: width buys columns, not longer input boxes. */}
-      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-        <Field label={t('themeEditor.fontSource')}>
-          <Select value={fontOrigin} onChange={(e) => set('fontOrigin', e.target.value)}>
-            <option value="googleFonts">{t('themeEditor.googleFonts')}</option>
-            <option value="local">{t('themeEditor.local')}</option>
-          </Select>
-          {/* The single most misread setting on this page: "local" does not mean "download and
-              serve locally", it means Quartz fetches nothing at all. Whether the fetched fonts are
-              self-hosted is the separate switch below. */}
-          <span className="text-micro text-text-muted">
-            {fontOrigin === 'local' ? t('themeEditor.localHint') : t('themeEditor.googleFontsHint', { count: GOOGLE_FONTS.length })}
-          </span>
-        </Field>
+      {/* Two cards, like the other tabs: everything about fonts, then the colors. */}
+      <Card className="grid gap-4">
+        <CardHeading icon={Type}>{t('themeEditor.fonts')}</CardHeading>
+        {/* Same rule as the site settings form: width buys columns, not longer input boxes. */}
+        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+          <Field label={t('themeEditor.fontSource')}>
+            <Select value={fontOrigin} onChange={(e) => set('fontOrigin', e.target.value)}>
+              <option value="googleFonts">{t('themeEditor.googleFonts')}</option>
+              <option value="local">{t('themeEditor.local')}</option>
+            </Select>
+            {/* The single most misread setting on this page: "local" does not mean "download and
+                serve locally", it means Quartz fetches nothing at all. Whether the fetched fonts are
+                self-hosted is the separate switch below. */}
+            <span className="text-micro text-text-muted">
+              {fontOrigin === 'local' ? t('themeEditor.localHint') : t('themeEditor.googleFontsHint', { count: GOOGLE_FONTS.length })}
+            </span>
+          </Field>
 
-        {TYPOGRAPHY_KEYS.map((key) => {
-          const overridden = overriddenByTheme(FONT_VARIABLE[key])
-          const ownVariable = overriddenByVariable(key)
-          const family = familyOf(theme.typography?.[key])
-          // Google's CSS2 API is case-sensitive: "open sans" fails where "Open Sans" works. It
-          // answers with an error page only when *no* family of the request matches - among others
-          // that do, an unknown one is left out silently (measured against the real API). The list
-          // here is from a fixed date, so a name missing from it is worth a sentence, not a refusal
-          // - and not even that when the project declares the family itself, which is the normal
-          // state right after importing a font into a slot (thirty-third review, finding 5).
-          const declaredHere = faces.some((f) => f.family.toLowerCase() === family.trim().toLowerCase())
-          const unknownToGoogle =
-            fontOrigin !== 'local' && family.trim() !== '' && !GOOGLE_FAMILIES.has(family.trim()) && !declaredHere
-          const spelledDifferently = unknownToGoogle
-            ? GOOGLE_FONTS.find(([name]) => name.toLowerCase() === family.trim().toLowerCase())?.[0]
-            : undefined
-          return (
-            <Field key={key} label={t('themeEditor.fontFor', { slot: key })} muted={overridden || ownVariable}>
-              <Combobox
-                value={family}
-                onChange={(next) => setTypography(key, next)}
-                options={fontOptions}
-                label={t('themeEditor.fontFor', { slot: key })}
-                listLabel={t('themeEditor.fontListFor', { slot: key })}
-                countText={(count) => t('themeEditor.fontMatches', { count })}
-                emptyText={fontOrigin === 'local' ? t('themeEditor.fontNoLocalMatch') : t('themeEditor.fontNoGoogleMatch')}
-              />
-              {spelledDifferently ? (
-                <span className="text-micro text-amber-700 dark:text-amber-400">
-                  {t('themeEditor.fontSpelledDifferently', { name: spelledDifferently })}
-                </span>
-              ) : (
-                unknownToGoogle && (
+          {TYPOGRAPHY_KEYS.map((key) => {
+            const overridden = overriddenByTheme(FONT_VARIABLE[key])
+            const ownVariable = overriddenByVariable(key)
+            const family = familyOf(theme.typography?.[key])
+            // Google's CSS2 API is case-sensitive: "open sans" fails where "Open Sans" works. It
+            // answers with an error page only when *no* family of the request matches - among others
+            // that do, an unknown one is left out silently (measured against the real API). The list
+            // here is from a fixed date, so a name missing from it is worth a sentence, not a refusal
+            // - and not even that when the project declares the family itself, which is the normal
+            // state right after importing a font into a slot (thirty-third review, finding 5).
+            const declaredHere = faces.some((f) => f.family.toLowerCase() === family.trim().toLowerCase())
+            const unknownToGoogle =
+              fontOrigin !== 'local' && family.trim() !== '' && !GOOGLE_FAMILIES.has(family.trim()) && !declaredHere
+            const spelledDifferently = unknownToGoogle
+              ? GOOGLE_FONTS.find(([name]) => name.toLowerCase() === family.trim().toLowerCase())?.[0]
+              : undefined
+            return (
+              <Field key={key} label={t('themeEditor.fontFor', { slot: key })} muted={overridden || ownVariable}>
+                <Combobox
+                  value={family}
+                  onChange={(next) => setTypography(key, next)}
+                  options={fontOptions}
+                  label={t('themeEditor.fontFor', { slot: key })}
+                  listLabel={t('themeEditor.fontListFor', { slot: key })}
+                  countText={(count) => t('themeEditor.fontMatches', { count })}
+                  emptyText={fontOrigin === 'local' ? t('themeEditor.fontNoLocalMatch') : t('themeEditor.fontNoGoogleMatch')}
+                />
+                {spelledDifferently ? (
                   <span className="text-micro text-amber-700 dark:text-amber-400">
-                    {t('themeEditor.fontUnknownToGoogle', { date: GOOGLE_FONTS_FETCHED })}
+                    {t('themeEditor.fontSpelledDifferently', { name: spelledDifferently })}
                   </span>
-                )
-              )}
-              {overridden && (
-                <span className="text-micro text-amber-700 dark:text-amber-400">{t('themeEditor.overriddenByTheme')}</span>
-              )}
-              {ownVariable && (
-                <span className="text-micro text-amber-700 dark:text-amber-400">
-                  {t('themeEditor.overriddenByVariable', { variable: FONT_VARIABLE[key] })}{' '}
-                  <button type="button" className="underline" onClick={() => goToTab('variables')}>
-                    {t('themeEditor.goToVariablesTab')}
-                  </button>
-                </span>
-              )}
-            </Field>
-          )
-        })}
-      </div>
+                ) : (
+                  unknownToGoogle && (
+                    <span className="text-micro text-amber-700 dark:text-amber-400">
+                      {t('themeEditor.fontUnknownToGoogle', { date: GOOGLE_FONTS_FETCHED })}
+                    </span>
+                  )
+                )}
+                {overridden && (
+                  <span className="text-micro text-amber-700 dark:text-amber-400">{t('themeEditor.overriddenByTheme')}</span>
+                )}
+                {ownVariable && (
+                  <span className="text-micro text-amber-700 dark:text-amber-400">
+                    {t('themeEditor.overriddenByVariable', { variable: FONT_VARIABLE[key] })}{' '}
+                    <button type="button" className="underline" onClick={() => goToTab('variables')}>
+                      {t('themeEditor.goToVariablesTab')}
+                    </button>
+                  </span>
+                )}
+              </Field>
+            )
+          })}
+        </div>
 
-      <FontDelivery config={config} onChange={setConfig} buildState={fontBuildState(config, faces, built)} />
+        <FontDelivery config={config} onChange={setConfig} buildState={fontBuildState(config, faces, built)} />
 
-      <CssFixes />
+        <CssFixes />
 
-      <LocalFontImport
-        projectPath={project.path}
-        onImported={(family, slot) => {
-          if (slot) setTypography(slot, family)
-          reloadFaces()
-          // The import wrote an @font-face block into custom.scss - pull that change into the
-          // draft the "Eigenes CSS" tab edits, or its next save would undo it.
-          void reloadScss('fontImport')
-        }}
-      />
+        <LocalFontImport
+          projectPath={project.path}
+          onImported={(family, slot) => {
+            if (slot) setTypography(slot, family)
+            reloadFaces()
+            // The import wrote an @font-face block into custom.scss - pull that change into the
+            // draft the "Eigenes CSS" tab edits, or its next save would undo it.
+            void reloadScss('fontImport')
+          }}
+        />
 
-      <UnusedImportedFonts
-        projectPath={project.path}
-        draftFamilies={TYPOGRAPHY_KEYS.map((key) => familyOf(theme.typography?.[key])).filter(Boolean)}
-        faces={faces}
-        onRemoved={() => {
-          reloadFaces()
-          void reloadScss('fontRemoval')
-        }}
-      />
+        <UnusedImportedFonts
+          projectPath={project.path}
+          draftFamilies={TYPOGRAPHY_KEYS.map((key) => familyOf(theme.typography?.[key])).filter(Boolean)}
+          faces={faces}
+          onRemoved={() => {
+            reloadFaces()
+            void reloadScss('fontRemoval')
+          }}
+        />
+      </Card>
 
-      <div>
-        <h3 className="mb-2 text-sm font-semibold text-text">{t('themeEditor.colors')}</h3>
+      <Card className="grid gap-4">
+        <CardHeading icon={Palette}>{t('themeEditor.colors')}</CardHeading>
         <ColorGroup
           value={(theme.colors as Record<string, unknown>) ?? {}}
           onChange={(colors) => set('colors', colors)}
           isOverridden={overriddenByTheme}
         />
-      </div>
+      </Card>
     </div>
   )
 }

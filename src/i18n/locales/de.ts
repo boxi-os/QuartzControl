@@ -944,6 +944,7 @@ export default {
     fontImportDetectedItalic: '„{{family}}“ importiert: weight {{weight}}, kursiv, aus der Datei gelesen.',
     fontImportUndetected:
       '„{{family}}“ importiert. Die Datei nennt kein „weight“, die Regel bleibt deshalb ohne. Bei Bedarf im CSS ergänzen.',
+    fonts: 'Schriften',
     colors: 'Farben'
   },
   themes: {

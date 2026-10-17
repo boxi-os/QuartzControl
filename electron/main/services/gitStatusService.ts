@@ -60,9 +60,9 @@ function pathAfter(record: string, fieldCount: number): string {
 // ASCII ("w\303\251ird \"q\".txt"), which would reach the UI as mojibake. With it, paths are raw
 // UTF-8 and a rename's original path is simply the next NUL-terminated record.
 //
-// runCommand merges stdout and stderr into one string, so a git warning could interleave with the
-// records. Every record is therefore matched against its leading token and anything unrecognised
-// is skipped, instead of being parsed positionally and turning into a bogus file entry.
+// Parsed from stdout alone: in runCommand's merged output a git warning glued itself to the front of
+// a record, which then no longer matched its leading token (alpha scenes 2026-10-17, scene 6).
+// Anything unrecognised is still skipped rather than parsed positionally into a bogus file entry.
 function parseStatus(raw: string, status: GitStatus): void {
   const records = raw.split('\0')
 
@@ -127,7 +127,7 @@ async function detectInProgress(projectPath: string): Promise<GitOperationInProg
     for (const name of names) {
       const result = await run('git', ['rev-parse', '--git-path', name], projectPath)
       if (!result.success) continue
-      const relativeOrAbsolute = result.output.trim()
+      const relativeOrAbsolute = result.stdout.trim()
       if (!relativeOrAbsolute) continue
       const full = isAbsolute(relativeOrAbsolute) ? relativeOrAbsolute : resolve(projectPath, relativeOrAbsolute)
       if (existsSync(full)) return operation
@@ -141,7 +141,7 @@ async function detectInProgress(projectPath: string): Promise<GitOperationInProg
 async function readLastCommit(projectPath: string): Promise<GitStatus['lastCommit']> {
   const result = await run('git', ['log', '-1', '--format=%H%x00%h%x00%an%x00%aI%x00%s'], projectPath)
   if (!result.success) return null
-  const [sha, shortSha, author, date, subject] = result.output.split('\0')
+  const [sha, shortSha, author, date, subject] = result.stdout.split('\0')
   if (!sha) return null
   return { sha: sha.trim(), shortSha, author, date, subject: (subject ?? '').replace(/\n$/, '') }
 }
@@ -159,7 +159,7 @@ export async function getGitStatus(projectPath: string): Promise<GitStatus> {
   }
 
   const status: GitStatus = { ...EMPTY, isRepo: true, changes: [] }
-  parseStatus(statusResult.output, status)
+  parseStatus(statusResult.stdout, status)
 
   status.conflictCount = status.changes.filter((c) => c.status === 'conflicted').length
   status.changeCount = status.changes.length
@@ -172,7 +172,7 @@ export async function getGitStatus(projectPath: string): Promise<GitStatus> {
   status.changes = status.changes.slice(0, MAX_LISTED_CHANGES)
 
   const remote = await run('git', ['remote', 'get-url', 'origin'], projectPath)
-  status.remoteUrl = remote.success ? remote.output.trim() || null : null
+  status.remoteUrl = remote.success ? remote.stdout.trim() || null : null
   status.inProgress = await detectInProgress(projectPath)
   status.lastCommit = await readLastCommit(projectPath)
 

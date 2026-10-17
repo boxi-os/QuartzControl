@@ -4,6 +4,14 @@ import { mainT } from '../i18n'
 export interface CommandResult {
   success: boolean
   output: string
+  /**
+   * stdout alone, for a caller that parses a machine format. In `output` a warning on stderr lands
+   * between the records: with AppleDouble files in .git/objects/pack, git status and git log
+   * succeed and print "index file … is too small", which stood in front of the last commit's SHA
+   * (measured on macOS); on the Debian VM the Git-Sync card showed "–" instead of the branch, not
+   * reproduced (alpha scenes 2026-10-17, scene 6).
+   */
+  stdout: string
 }
 
 // Why this isn't a blanket `shell: process.platform === 'win32'` (which is what every caller used
@@ -43,6 +51,7 @@ export function runCommand(
       ...(env ? { env: { ...process.env, ...env } } : {})
     })
     let output = ''
+    let stdout = ''
     let settled = false
     let timer: NodeJS.Timeout | null = null
     const settle = (result: CommandResult): void => {
@@ -56,20 +65,24 @@ export function runCommand(
         // Answered right here rather than from the kill's 'close': a child that left a grandchild
         // holding stdout keeps the pipe open even after it dies, and waiting for that would put
         // the caller back where the missing timeout left it.
-        settle({ success: false, output: `${output}\n${mainT('commandTimeout', { ms: timeoutMs, command: `${command} ${args[0] ?? ''}` })}` })
+        settle({ success: false, stdout, output: `${output}\n${mainT('commandTimeout', { ms: timeoutMs, command: `${command} ${args[0] ?? ''}` })}` })
         child.kill('SIGTERM')
         setTimeout(() => child.kill('SIGKILL'), 2000).unref()
       }, timeoutMs)
       timer.unref()
     }
-    child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()))
+    child.stdout?.on('data', (chunk: Buffer) => {
+      const text = chunk.toString()
+      output += text
+      stdout += text
+    })
     child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()))
     // 'close', not 'exit': 'exit' fires when the process ends, while the pipes may still hold
     // output - measured with a child that leaves a grandchild holding stdout, where 'exit' saw
     // "HEAD" and 'close' saw "HEAD\nTAIL". A plain fast-exiting child drains first (30 runs at
     // 4 MB, not a byte missing), so this is the correct event rather than an observed bug here.
-    child.on('close', (code) => settle({ success: code === 0, output }))
-    child.on('error', (err) => settle({ success: false, output: String(err) }))
+    child.on('close', (code) => settle({ success: code === 0, output, stdout }))
+    child.on('error', (err) => settle({ success: false, output: String(err), stdout }))
   })
 }
 

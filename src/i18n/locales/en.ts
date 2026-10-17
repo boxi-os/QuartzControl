@@ -1993,6 +1993,11 @@ export default {
       reload: 'Reload',
       resetNamed: 'Reset {{name}} to original value',
       resetToOriginal: 'Reset to original value',
+      removeOwn: 'Remove variable',
+      confirmRemoveOwn:
+        'Remove {{name}}?\n\nNo theme and not Quartz set this variable, so there is no original value. Once saved, every place that uses var({{name}}) has no value anymore.',
+      confirmRemoveOwnAction: 'Remove',
+      ownHint: 'Set only here, neither by the theme nor by Quartz. So there is no original value.',
       light: 'Light',
       dark: 'Dark',
       bothModes: 'Light and dark',
@@ -2045,7 +2050,8 @@ export default {
         core: 'Quartz core',
         theme: 'Community theme',
         build: 'Last build',
-        user: 'customized'
+        user: 'customized',
+        own: 'own variable'
       }
     }
   },

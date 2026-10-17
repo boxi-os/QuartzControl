@@ -7,7 +7,7 @@ import { CSS_VARIABLES, defaultValueFor, type CssVariableDef } from '../../data/
 export type OverrideValue = { light: string; dark: string; lightOnly?: boolean }
 
 export type Mode = 'light' | 'dark'
-export type VariableOrigin = 'core' | 'theme' | 'build' | 'user'
+export type VariableOrigin = 'core' | 'theme' | 'build' | 'user' | 'own'
 
 export interface ResolveContext {
   graph: CssVariableGraph | null
@@ -323,8 +323,15 @@ export function referencedVariables(value: string): string[] {
 // theme redeclares most of Quartz's own variables, so labelling `--light` "Quartz-Kern" while
 // displaying the theme's value for it would name the wrong source; the catalog is only the answer
 // when nothing else declares the variable.
+//
+// 'own' is a value of the user's with nothing underneath: no theme, no build and no catalog entry
+// declares the variable (the `--tpl-*` tokens of a template). Called "angepasst" with a
+// "Zurücksetzen" next to it, it promised an original that does not exist - and resetting took the
+// variable away, row and all.
 export function originOf(key: string, ctx: ResolveContext): VariableOrigin {
-  if (key in ctx.overrides) return 'user'
+  if (key in ctx.overrides) {
+    return baseValue(key, 'light', ctx) === undefined && baseValue(key, 'dark', ctx) === undefined ? 'own' : 'user'
+  }
   const graphOrigin = ctx.graph?.vars[key]?.origin
   if (graphOrigin) return graphOrigin
   return catalogDef(key) ? 'core' : 'build'

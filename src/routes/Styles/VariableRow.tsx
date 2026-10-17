@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RotateCcw } from 'lucide-react'
+import { RotateCcw, Trash2 } from 'lucide-react'
 import { Badge, IconButton, TextInput } from '../../components/ui'
 import {
   baseValue,
@@ -21,12 +21,14 @@ import {
 } from './variableGraph'
 import ColorPicker from './ColorPicker'
 import { pageGround, swatchStyle, swatchTitle } from './swatch'
+import { confirmDialog } from '../../utils/confirm'
 
 const ORIGIN_TONE: Record<VariableOrigin, 'slate' | 'green' | 'amber'> = {
   core: 'slate',
   theme: 'slate',
   build: 'slate',
-  user: 'green'
+  user: 'green',
+  own: 'green'
 }
 
 export type { OverrideValue } from './variableGraph'
@@ -174,6 +176,10 @@ function VariableRow({
   // dark value of the day, frozen into an explicit override - the form 1.0.1 wrote, and one a
   // template carried to projects with another theme (thirty-eighth review, finding 7). A dark half
   // that only repeats the base is that frozen form and counts as unset, so it heals on the next edit.
+  //
+  // A variable of the user's own has no base to fall back to, so no edit takes its override away:
+  // emptying the field would have dropped the row under the cursor. Only removeOwn() does that.
+  const isOwn = origin === 'own'
   function setMode(mode: Mode, value: string): void {
     const lightValue = mode === 'light' ? value : override?.light || base.light
     // Compared as CSS text, not byte for byte: the graph hands the base over as `#a1a1a1`, the file
@@ -187,7 +193,7 @@ function VariableRow({
     const darkValue = mode === 'dark' ? value : override?.dark || (baseDiffers ? base.dark : lightValue)
     const next: OverrideValue = { light: lightValue, dark: darkValue === lightValue ? '' : darkValue }
     // Back where it started in both modes: no override at all.
-    const unchanged = next.light === base.light && (next.dark || next.light) === base.dark
+    const unchanged = !isOwn && next.light === base.light && (next.dark || next.light) === base.dark
     onChange(unchanged ? null : next)
   }
 
@@ -197,7 +203,15 @@ function VariableRow({
   // split and the link stayed there, doing the same again (thirty-eighth review, finding 2).
   function followLight(): void {
     const light = override?.light || base.light
-    onChange(light === base.light ? null : { light, dark: '' })
+    onChange(light === base.light && !isOwn ? null : { light, dark: '' })
+  }
+
+  // Taking an own variable away is deleting it, not going back to something - asked like any other
+  // entry taken out of a list (conventions.md).
+  async function removeOwn(): Promise<void> {
+    const name = `--${varKey}`
+    if (!(await confirmDialog({ text: t('styles.variables.confirmRemoveOwn', { name }), confirmLabel: t('styles.variables.confirmRemoveOwnAction'), danger: true }))) return
+    onChange(null)
   }
 
   // Which variables this one is built out of - the counterpart to `dependents`, and the half that
@@ -226,7 +240,7 @@ function VariableRow({
   // Only the deviation. "Letzter Build" was on 60 of 64 rows, identical every time, sitting at the
   // far right of a 1380px row with nothing between it and the name - which is what made the list
   // read as wide and empty. The origin is named in the panel for every variable.
-  const originBadge = (origin === 'user' || origin === 'theme') && <Badge tone={ORIGIN_TONE[origin]}>{t(`styles.variables.origin.${origin}`)}</Badge>
+  const originBadge = (origin === 'user' || origin === 'own' || origin === 'theme') && <Badge tone={ORIGIN_TONE[origin]}>{t(`styles.variables.origin.${origin}`)}</Badge>
 
   // data-var-key is what the page's "jump to this variable" scroll looks for - the row has to be
   // findable from outside, since the chip that navigates here lives in the panel.
@@ -256,9 +270,10 @@ function VariableRow({
           {originBadge}
           {/* The same action as "Auf Originalwert zurücksetzen" in the panel, and named the same: in
               a row it is the icon the plugin options use, in the panel the word (conventions.md). */}
-          {override && (
+          {override && !isOwn && (
             <IconButton icon={RotateCcw} tone="neutral" title={t('styles.variables.resetNamed', { name: `--${varKey}` })} onClick={() => onChange(null)} />
           )}
+          {isOwn && <IconButton icon={Trash2} title={t('common.removeNamed', { name: `--${varKey}` })} onClick={() => void removeOwn()} />}
         </div>
       </div>
     )
@@ -276,7 +291,7 @@ function VariableRow({
       <section>
         <SectionLabel>{t('styles.variables.section.origin')}</SectionLabel>
         <p className="mb-1 text-micro text-text-muted">
-          {t(`styles.variables.origin.${origin}`)}
+          {isOwn ? t('styles.variables.ownHint') : t(`styles.variables.origin.${origin}`)}
         </p>
         <Chain varKey={varKey} mode="light" ctx={ctx} label={t('styles.variables.light')} />
         {(dark !== light || darkResolved !== lightResolved) && (
@@ -350,9 +365,14 @@ function VariableRow({
               {t('styles.variables.unsplitDark')}
             </button>
           )}
-          {override && (
+          {override && !isOwn && (
             <button type="button" onClick={() => onChange(null)} className="text-micro text-text-muted underline">
               {t('styles.variables.resetToOriginal')}
+            </button>
+          )}
+          {isOwn && (
+            <button type="button" onClick={() => void removeOwn()} className="text-micro text-text-muted underline">
+              {t('styles.variables.removeOwn')}
             </button>
           )}
         </div>

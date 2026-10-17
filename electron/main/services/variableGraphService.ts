@@ -3,6 +3,7 @@ import { readFile, readdir } from 'fs/promises'
 import { join } from 'path'
 import type { CssVariableGraph, CssVariableInfo } from '@shared/ipc-contract'
 import { resolveBuildDir } from './projectDirs'
+import { getVariableOverrides } from './styleService'
 
 // Where a variable's value came from. Precedence when the same name appears in more than one
 // source is theme > build: an installed theme.json is authoritative and cleanly split per mode,
@@ -92,13 +93,25 @@ async function findCssFiles(dir: string, depth = 0): Promise<string[]> {
 // Splits compiled CSS into (selector, body) pairs at the top level. Nested at-rules (@media,
 // @layer - Quartz wraps its own theme CSS in `@layer quartz-base`) would break a naive split on
 // `}`, so this tracks brace depth and recurses into any block whose "selector" starts with `@`.
-function eachRule(css: string, visit: (selector: string, body: string) => void): void {
+//
+// Braces inside a string or a comment are not counted. A selector `[data-section^="{{"]` in a
+// plugin's CSS left the count two levels deep, and every `:root` rule after it was never read -
+// in Example 65 of the 66 variables the page declares itself, and with them the rows of the table.
+//
+// `layered` says whether the rule sits inside an `@layer`: the variables the page writes itself are
+// unlayered, Quartz's own are not (see getVariableGraph).
+function eachRule(css: string, visit: (selector: string, body: string, layered: boolean) => void, layered = false): void {
   let depth = 0
   let start = 0
   let selectorStart = 0
   for (let i = 0; i < css.length; i++) {
     const ch = css[i]
-    if (ch === '{') {
+    if (ch === '"' || ch === "'") {
+      for (i++; i < css.length && css[i] !== ch && css[i] !== '\n'; i++) if (css[i] === '\\') i++
+    } else if (ch === '/' && css[i + 1] === '*') {
+      const end = css.indexOf('*/', i + 2)
+      i = end === -1 ? css.length : end + 1
+    } else if (ch === '{') {
       if (depth === 0) {
         selectorStart = start
         start = i + 1
@@ -109,8 +122,8 @@ function eachRule(css: string, visit: (selector: string, body: string) => void):
       if (depth === 0) {
         const selector = css.slice(selectorStart, start - 1).trim()
         const body = css.slice(start, i)
-        if (selector.startsWith('@')) eachRule(body, visit)
-        else visit(selector, body)
+        if (selector.startsWith('@')) eachRule(body, visit, layered || /^@layer\b/.test(selector))
+        else visit(selector, body, layered)
         start = i + 1
       }
       if (depth < 0) return // malformed input - stop rather than mis-attribute the rest
@@ -192,13 +205,23 @@ export async function getVariableGraph(
   const buildDir = resolveBuildDir(projectPath, outputDir)
   const hasBuild = existsSync(buildDir)
   if (hasBuild) {
+    // The build carries the page's own variables too, compiled out of _quartzcontrol.scss. Read as
+    // a base value, they were their own original: in QuartzControl-Handbuch all 48 `--tpl-*`
+    // variables, which exist nowhere else, showed "Letzter Build" with the user's value, and
+    // "Zurücksetzen" deleted the declaration while the row went on showing it. So for a name the
+    // page sets, an unlayered declaration is skipped - that is where the page's rule lands. Quartz's
+    // own variables stay, they are inside `@layer quartz-base`.
+    const own = new Set((await getVariableOverrides(projectPath)).map((o) => o.key))
     const files = (await findCssFiles(buildDir)).slice(0, 50)
     for (const file of files) {
       const content = await readFile(file, 'utf-8')
-      eachRule(content, (selector, body) => {
+      eachRule(content, (selector, body, layered) => {
         const mode = rootSelectorMode(selector)
         if (!mode) return
-        for (const [name, value] of collectDeclarations(body)) note(name, mode, value, 'build')
+        for (const [name, value] of collectDeclarations(body)) {
+          if (!layered && own.has(name)) continue
+          note(name, mode, value, 'build')
+        }
       })
     }
   }

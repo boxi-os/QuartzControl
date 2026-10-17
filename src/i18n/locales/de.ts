@@ -2001,6 +2001,11 @@ export default {
       reload: 'Neu einlesen',
       resetNamed: '{{name}} auf Originalwert zurücksetzen',
       resetToOriginal: 'Auf Originalwert zurücksetzen',
+      removeOwn: 'Variable entfernen',
+      confirmRemoveOwn:
+        '{{name}} entfernen?\n\nKein Theme und nicht Quartz setzen diese Variable, darum gibt es keinen Originalwert. Nach dem Speichern hat jede Stelle, die var({{name}}) verwendet, keinen Wert mehr.',
+      confirmRemoveOwnAction: 'Entfernen',
+      ownHint: 'Nur hier gesetzt, weder vom Theme noch von Quartz. Darum gibt es keinen Originalwert.',
       light: 'Hell',
       dark: 'Dunkel',
       bothModes: 'Hell und dunkel',
@@ -2053,7 +2058,8 @@ export default {
         core: 'Quartz-Kern',
         theme: 'Community-Theme',
         build: 'Letzter Build',
-        user: 'angepasst'
+        user: 'angepasst',
+        own: 'eigene Variable'
       }
     }
   },

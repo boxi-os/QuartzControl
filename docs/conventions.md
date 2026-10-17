@@ -208,7 +208,10 @@ Begründung.
   `positions`. Festgelegt: „Variante“, „Box“, „Smartphone“, „Button“; „Übersicht“ ist die einzige
   eingetragene Doppelbedeutung. Anführungszeichen: Deutsch „…“, Englisch “…”. Jeder Nutzertext
   steht in `de.ts`/`en.ts` oder `electron/main/i18n.ts`; zod- und `console.error`-Texte bleiben
-  Englisch. Zitate alter App-Sätze bleiben im alten Wortlaut.
+  Englisch. Zitate alter App-Sätze bleiben im alten Wortlaut. Ein Nutzertext sagt „QuartzControl“,
+  nicht „die App“; „der Frame“; ein Fachwort wie „Header“ bleibt, wie es ist („Kopfbereich“ ist
+  die Position); Gedankenstriche sparsam; „konnte nicht … werden“ statt „ließ sich nicht …“; wer
+  per Klick kopiert, kopiert „in die Zwischenablage“.
 - **Ein Fachbegriff bekommt eine Zeile darunter** (`hint`), ein tragender Begriff eine `InfoNote`
   über die volle Spaltenbreite.
 - **Ein Rat gehört zu dem Zustand, den er meint, und wird dort gesagt, wo der Zustand bekannt
@@ -216,8 +219,10 @@ Begründung.
 - **Ein Hinweis sagt, was passiert — nicht, warum es technisch so ist.** Höchstens zwei Sätze. Das
   Kapitel nennt die Seite über `PageHeader` `handbook` und `<HandbookLink page="…">` (Kennung aus
   `handbookPages.ts`, kein Pfad). Einzige Ausnahme mit zweitem Verweis: der Content-Ordner im
-  Reiter „Website“. Ein Bestätigungsdialog besteht aus Frage, einem Satz Folgen und einem Satz
-  Rückweg. Sätze, die eine datenkostende Verwechslung verhindern, bleiben lang.
+  Reiter „Website“. Ein Bestätigungsdialog besteht aus Frage und einem Satz Folgen; den Rückweg
+  nennt er nur, wenn er nicht offensichtlich ist (nur über git, Papierkorb, gar nicht, ein
+  Schalter). Den automatischen Snapshot sagt er höchstens an, ohne ihn als Rückweg zu erklären.
+  Sätze, die eine datenkostende Verwechslung verhindern, bleiben lang.
 - **Sidebar nach Tätigkeit, eine Seite ist eine Aufgabe.** Die Übersicht ist eine Statusseite:
   nur lokale Reads, genau einer ins Netz, nie awaited.
 

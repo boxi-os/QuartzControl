@@ -751,7 +751,17 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   überall im alten Wortlaut) — alle vier am 2026-10-15. Deutsch „…“,
   Englisch “…”, Gedankenstrich als Em-Dash. Jeder Nutzertext steht in `de.ts`/`en.ts`
   (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
-  bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben.
+  bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben. **Nachgetragen am 2026-10-17, nach
+  der Durchsicht aller Nutzertexte durch den Nutzer** (Export als Tabelle mit Schlüssel und
+  Fundstellen, zwei Runden, `4d6afd6` und `d445733`): Ein Nutzertext nennt die App „QuartzControl“,
+  nicht „die App“ oder „diese App“ — 56 Stellen hatten das, und neben Quartz, Electron und git
+  blieb offen, welches Programm gemeint war. „Der Frame“, maskulin. Ein Fachwort, das im Englischen
+  geläufig ist, bleibt („Dateiheader“, nicht „Dateikopf“); „Kopfbereich“ ist davon nicht betroffen,
+  es ist der Name einer Position. Gedankenstriche sparsam: 268 Texte hatten einen, und der Nutzer
+  las die meisten als zwei Sätze, die ein Punkt, ein Doppelpunkt oder eine Klammer besser trennt;
+  als Trennzeichen in Listen und Auswahlfeldern („Name — Selektor“, „Name — Port“) bleibt er.
+  „Konnte nicht … werden“ statt „ließ sich nicht …“. Wer per Klick kopiert, kopiert „in die
+  Zwischenablage“; wer Dateien kopiert, nicht.
 - **Ein Fachbegriff bekommt eine Zeile darunter** (`Field`/`Toggle` `hint`); ein Begriff, auf dem
   eine Seite ruht, eine `InfoNote` oben, über die ganze Breite ihrer Spalte (bis 2026-10-09 auf 95ch gedeckelt; sie stand damit kürzer als die Karte darunter).
 - **Ein Rat gehört zu dem Zustand, den er meint, und wird dort gesagt, wo der Zustand bekannt
@@ -777,7 +787,13 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   eingetragen, nicht mit dieser begründet (siebenundzwanzigstes Review, Befund 5). Ein Begriff aus der Maschinenwelt
   steht nur da, wo der Nutzer ihn zum Entscheiden braucht: „Host-Key“ auf der Veröffentlichen-Seite
   ja, „ungelayert“ im Variablen-Tab nein. Ein Bestätigungsdialog hat drei Teile — die Frage, ein
-  Satz Folgen, ein Satz Rückweg. Ausgenommen sind die Sätze, die eine Verwechslung verhindern, die
+  Satz Folgen, ein Satz Rückweg. **Geändert am 2026-10-17 vom Nutzer:** Der Rückweg-Satz steht
+  nur noch, wenn der Rückweg nicht offensichtlich ist — nur über git, aus dem Papierkorb, gar
+  nicht, oder nur mit einem Schalter („Auch den Projekt-Commit zurücksetzen“). Dass vor einer
+  größeren Änderung automatisch ein Snapshot entsteht, ist bekannt; der Dialog darf es ansagen
+  („Vorher wird automatisch ein Snapshot angelegt.“), erklärt aber nicht jedes Mal, wie man ihn
+  zurückholt. Wo der Snapshot der einzige Weg zu verlorenem Inhalt ist (eine fehlende
+  `_quartzcontrol.scss`), bleibt der Satz. Ausgenommen sind die Sätze, die eine Verwechslung verhindern, die
   Daten kostet (Snapshot ≠ Git-Sync, verknüpfter Vault wird nicht gesichert, ein Duplikat erbt keine
   Ziele); die bleiben lang. Gemessen am 2026-09-07: 1475 Nutzersätze, 192 über 120 Zeichen — und die
   Länge war nicht das Problem, sondern die 75, die Mechanik erklären statt der Entscheidung.

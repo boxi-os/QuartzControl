@@ -2396,3 +2396,6 @@ Pakete bekommen es mit P8) und `1b8cd65` (zwei Release-Schritte in P8 des Plans)
 die Frage, ob Messprotokolle in `docs/decisions/` von Wortersetzungen ausgenommen sind, und die
 sechs Alpha-Szenen.
 
+Die Frage zu den Messprotokollen hat der Nutzer am 2026-10-17 beantwortet: Messprotokolle in
+`docs/decisions/` sind von Wortersetzungen ausgenommen (Regel in `conventions.md`). Offen bleiben
+die sechs Alpha-Szenen.

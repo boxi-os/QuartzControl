@@ -748,7 +748,9 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   Breakpoint heißt weiter „Mobil“) und „Button“ für ein Bedienelement, auf das man klickt (nicht
   „Knopf“; in App, Handbüchern, Plugin-Schemas und Kommentaren ersetzt, ebenso im Fließtext von `docs/decisions/`; die Review-Protokolle
   bleiben, wie sie geschrieben wurden, und ein Zitat dessen, was die App damals sagte, bleibt
-  überall im alten Wortlaut) — alle vier am 2026-10-15. Deutsch „…“,
+  überall im alten Wortlaut) — alle vier am 2026-10-15. **Entschieden vom Nutzer am 2026-10-17:**
+  Messprotokolle in `docs/decisions/` sind von Wortersetzungen ausgenommen wie die
+  Review-Protokolle; sie halten fest, was damals gemessen und gesagt wurde. Deutsch „…“,
   Englisch “…”, Gedankenstrich als Em-Dash. Jeder Nutzertext steht in `de.ts`/`en.ts`
   (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
   bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben. **Nachgetragen am 2026-10-17, nach

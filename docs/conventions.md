@@ -208,7 +208,8 @@ Begründung.
   `positions`. Festgelegt: „Variante“, „Box“, „Smartphone“, „Button“; „Übersicht“ ist die einzige
   eingetragene Doppelbedeutung. Anführungszeichen: Deutsch „…“, Englisch “…”. Jeder Nutzertext
   steht in `de.ts`/`en.ts` oder `electron/main/i18n.ts`; zod- und `console.error`-Texte bleiben
-  Englisch. Zitate alter App-Sätze bleiben im alten Wortlaut. Ein Nutzertext sagt „QuartzControl“,
+  Englisch. Zitate alter App-Sätze bleiben im alten Wortlaut, Messprotokolle in `decisions/` und
+  Review-Protokolle ebenso (keine Wortersetzung). Ein Nutzertext sagt „QuartzControl“,
   nicht „die App“; „der Frame“; ein Fachwort wie „Header“ bleibt, wie es ist („Kopfbereich“ ist
   die Position); Gedankenstriche sparsam; „konnte nicht … werden“ statt „ließ sich nicht …“; wer
   per Klick kopiert, kopiert „in die Zwischenablage“.

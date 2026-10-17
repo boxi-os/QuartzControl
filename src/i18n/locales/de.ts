@@ -20,7 +20,7 @@ export default {
     // Name der Sub-Tab-Leiste für Screenreader. Nicht „Bereich“ - das heißt im Layout-Editor ein
     // Frame-Bereich, und ein Wort hat einen Namen.
     viewSwitcher: 'Ansicht',
-    copied: 'Kopiert — {{value}}',
+    copied: 'In die Zwischenablage kopiert: {{value}}',
     serverState: {
       stopped: 'Gestoppt',
       starting: 'Startet…',
@@ -52,9 +52,9 @@ export default {
     restarted: 'Dev-Server neu gestartet'
   },
   home: {
-    subtitle: 'Deine Quartz-Websites an einem Ort — einrichten, gestalten, veröffentlichen.',
+    subtitle: 'Deine Quartz-Websites an einem Ort: einrichten, gestalten, veröffentlichen.',
     update: {
-      available: 'Es gibt eine neuere Fassung: {{latest}} — du hast {{current}}.',
+      available: 'Es gibt eine neuere Fassung: {{latest}} (installiert: {{current}}).',
       get: 'Herunterladen'
     },
     settings: 'Einstellungen',
@@ -66,8 +66,8 @@ export default {
     neverOpened: 'Noch nie geöffnet',
     serverRunning: 'Dev-Server läuft',
     serverRunningOnPort: 'Dev-Server auf Port {{port}}',
-    folderMissing: 'Ordner nicht gefunden — verschoben, umbenannt oder auf einem nicht eingebundenen Laufwerk.',
-    notAQuartzProject: 'Kein Quartz-Projekt — in diesem Ordner liegt keine quartz.config.yaml.',
+    folderMissing: 'Ordner nicht gefunden. Er wurde verschoben, umbenannt oder liegt auf einem nicht eingebundenen Laufwerk.',
+    notAQuartzProject: 'Kein Quartz-Projekt: In diesem Ordner liegt keine quartz.config.yaml.',
     locateFolder: 'Ordner suchen…',
     duplicate: {
       action: 'Duplizieren',
@@ -103,7 +103,7 @@ export default {
         'Diese Werkzeuge gehören zu QuartzControl. Dass sie sich nicht ausführen lassen, heißt, dass diese Installation unvollständig ist. Am schnellsten hilft, QuartzControl neu zu installieren.',
       embeddedIncompatible:
         'Das mitgelieferte git lässt sich auf diesem System nicht starten. Installiere git auf deinem System.',
-      bundled: 'in der App',
+      bundled: 'in QuartzControl',
       fromSystem: 'vom System',
       recheck: 'Erneut prüfen',
       ready: 'Werkzeuge bereit',
@@ -120,7 +120,7 @@ export default {
     gettingStarted: {
       title: 'Erste Schritte',
       step1: 'Lege ein neues Projekt an oder öffne einen Ordner, in dem Quartz schon eingerichtet ist.',
-      step2: 'Verknüpfe den Content-Ordner mit deinen Notizen — auch direkt mit einem Obsidian-Vault.',
+      step2: 'Verknüpfe den Content-Ordner mit deinen Notizen, auch direkt mit einem Obsidian-Vault.',
       step3: 'Starte die Vorschau, gestalte die Seite nach deinem Geschmack und veröffentliche sie.'
     },
     capabilities: {
@@ -144,7 +144,7 @@ export default {
     },
     aboutQuartz: {
       title: 'Was ist Quartz?',
-      body: 'Quartz 5 ist ein statischer Website-Generator für vernetzte Notizen: Markdown rein, fertige Website raus — mit Backlinks, Graph-Ansicht und Volltextsuche. Es versteht Obsidian-Wikilinks, du kannst deinen Vault also direkt veröffentlichen.',
+      body: 'Quartz 5 ist ein statischer Website-Generator für vernetzte Notizen: Markdown rein, fertige Website raus, mit Backlinks, Graph-Ansicht und Volltextsuche. Es versteht Obsidian-Wikilinks, du kannst deinen Vault also direkt veröffentlichen.',
       handbook: 'Handbuch zu QuartzControl',
       docs: 'Quartz-Dokumentation',
       catalog: 'Plugin-Katalog auf GitHub'
@@ -512,7 +512,7 @@ export default {
     createRepo: {
       title: 'Repository auf GitHub anlegen',
       asAccount: 'Wird unter dem Konto „{{login}}“ angelegt und als „origin“ eingetragen.',
-      noToken: 'Dafür wird ein GitHub-Token mit „repo“-Berechtigung gebraucht — in den Einstellungen eintragen.',
+      noToken: 'Dafür wird ein GitHub-Token mit „repo“-Berechtigung gebraucht. Trage ihn in den Einstellungen ein.',
       name: 'Repository-Name',
       private: 'Privat',
       privateHint:
@@ -644,7 +644,7 @@ export default {
   settings: {
     title: 'Einstellungen',
     subtitle: 'Einstellungen für QuartzControl. Projektbezogene Einstellungen stehen im jeweiligen Projekt.',
-    githubTokenStored: 'gespeichert — zum Ersetzen neu eingeben',
+    githubTokenStored: 'gespeichert (zum Ersetzen neu eingeben)',
     defaultProjectDirectory: 'Standard-Projektverzeichnis',
     language: 'Sprache',
     languageSystem: 'Systemsprache folgen',
@@ -662,7 +662,7 @@ export default {
     projects: {
       title: 'Projekte',
       description: 'Wo die Ordner-Dialoge starten, wenn du ein Projekt öffnest oder anlegst.',
-      mustBeAbsolute: 'Das ist kein vollständiger Pfad. Er muss mit „/“ oder „~/“ beginnen — oder wähle den Ordner aus.'
+      mustBeAbsolute: 'Das ist kein vollständiger Pfad. Er muss mit „/“ oder „~/“ beginnen, oder du wählst den Ordner aus.'
     },
     github: {
       title: 'GitHub',
@@ -672,10 +672,10 @@ export default {
       saveAndCheck: 'Speichern & prüfen',
       valid: 'Gültig',
       rejected: 'Abgelehnt',
-      rejectedHint: 'GitHub akzeptiert diesen Token nicht — abgelaufen oder zurückgezogen.',
+      rejectedHint: 'GitHub akzeptiert diesen Token nicht. Er ist abgelaufen oder wurde zurückgezogen.',
       checking: 'Prüfe…',
       unknown: 'Nicht prüfbar',
-      unknownHint: 'GitHub war nicht erreichbar — ob der Token gilt, ist damit offen.',
+      unknownHint: 'GitHub war nicht erreichbar. Ob der Token gilt, ist damit offen.',
       recheck: 'Erneut prüfen',
       remove: 'Token entfernen',
       scopeHint:
@@ -710,7 +710,7 @@ export default {
     },
     quit: {
       title: 'Beim Beenden',
-      description: 'Was mit einem laufenden Dev-Server passiert, wenn du die App schließt.',
+      description: 'Was mit einem laufenden Dev-Server passiert, wenn du QuartzControl schließt.',
       label: 'Laufende Dev-Server',
       ask: 'Fragen',
       keep: 'Weiterlaufen lassen',
@@ -723,9 +723,9 @@ export default {
     },
     runtime: {
       title: 'Laufzeit',
-      description: 'Womit die App Quartz und npm ausführt.',
+      description: 'Womit Quartz und npm ausgeführt werden.',
       label: 'Node-Laufzeit',
-      embedded: 'In der App',
+      embedded: 'In QuartzControl',
       system: 'Vom System',
       inUseEmbedded: 'Im Einsatz: Node {{node}} und npm {{npm}} aus QuartzControl.',
       inUseSystem: 'Im Einsatz: Node {{node}} von diesem Rechner.',
@@ -733,15 +733,15 @@ export default {
       hintSwitchable: 'Auf diesem Rechner liegt Node {{node}}. Umschalten lohnt sich nur, wenn ein Paket beim Installieren erst kompiliert werden muss.',
       hintNoHostNode: 'Auf diesem Rechner ist kein Node gefunden worden. „Vom System“ würde Builds, Plugins und neue Projekte deshalb scheitern lassen.',
       hintSystem: 'Quartz verlangt Node 22 oder neuer. Ein Projekt bringt außerdem eine .node-version mit. nvm, fnm, asdf und mise lösen die pro Ordner auf, die Laufzeit kann hier also je Projekt eine andere sein.',
-      gitBundled: 'git {{version}} aus der App — auf diesem Rechner läuft keines, deshalb bringt QuartzControl eines mit.',
-      gitHost: 'git {{version}} von diesem Rechner. Die App bringt zwar eines mit, benutzt es aber nur, wenn keines da ist — deine eigene Einrichtung (~/.gitconfig, Zugangshelfer) gilt so weiter.',
-      gitLicense: 'git steht unter der GPL v2; der vollständige Lizenztext liegt in der App.',
+      gitBundled: 'git {{version}} aus QuartzControl. Auf diesem Rechner ist keines installiert, deshalb wird das mitgelieferte benutzt.',
+      gitHost: 'git {{version}} von diesem Rechner. QuartzControl bringt zwar eines mit, benutzt es aber nur, wenn keines installiert ist. Deine eigene Einrichtung (~/.gitconfig, Zugangshelfer) gilt so weiter.',
+      gitLicense: 'git steht unter der GPL v2; der vollständige Lizenztext liegt in QuartzControl.',
       gitSource: 'Quelltext ansehen',
       appliesToNewProcesses: 'Gilt für Vorgänge, die danach starten. Ein laufender Dev-Server behält seine Umgebung, bis er neu gestartet wird.'
     },
     maintenance: {
       title: 'Daten & Wartung',
-      description: 'Was die App außerhalb deiner Projekte ablegt.',
+      description: 'Was QuartzControl außerhalb deiner Projekte ablegt.',
       cache: 'Theme-Dokumentation',
       cacheSize_one: '{{count}} Eintrag · {{size}}',
       cacheSize_other: '{{count}} Einträge · {{size}}',
@@ -809,10 +809,10 @@ export default {
       shownByMark: 'Angezeigt im Kopfbereich: Eine Layout-Box zeigt dieses Bild, im dunklen Modus das dunkle.',
       installing: 'Installiere quartz-layout-box…',
       installConfirm:
-        'Plugin quartz-layout-box installieren?\n\nDas Bild im Kopfbereich wird damit gebaut. Vorher legt die App einen Snapshot an und speichert ungespeicherte Änderungen dieser Seite.',
+        'Plugin quartz-layout-box installieren?\n\nDas Bild im Kopfbereich wird damit gebaut. Vorher speichert QuartzControl die ungespeicherten Änderungen dieser Seite.',
       installAction: 'Installieren',
       installed: 'quartz-layout-box ist installiert. Das Bild im Kopfbereich wird mit „Speichern“ übernommen.',
-      saveFirstFailed: 'Die ungespeicherten Änderungen ließen sich nicht speichern, deshalb wurde nichts installiert.'
+      saveFirstFailed: 'Die ungespeicherten Änderungen konnten nicht gespeichert werden, deshalb wurde nichts installiert.'
     }
   },
   siteSettings: {
@@ -844,7 +844,7 @@ export default {
     analyticsNone: 'Keine Statistik',
     analyticsMissing: 'Noch auszufüllen, sonst kann das Skript nichts senden: {{fields}}',
     analyticsFields: {
-      host: 'Nur bei selbst gehosteter Instanz — sonst leer lassen',
+      host: 'Nur bei selbst gehosteter Instanz, sonst leer lassen',
       hostRequired: 'Adresse deiner Installation, z. B. https://analytics.example.com',
       tagId: 'Mess-ID, z. B. G-XXXXXXX',
       websiteId: 'ID der Website im Konto des Anbieters',
@@ -880,7 +880,7 @@ export default {
     fontFromTheme: 'Theme',
     fontNoGoogleMatch: 'Keine Google-Schrift mit diesem Namen',
     fontNoLocalMatch: 'Keine im Projekt deklarierte Schrift mit diesem Namen',
-    fontSpelledDifferently: 'Google unterscheidet Groß- und Kleinschreibung — gemeint ist wohl „{{name}}“.',
+    fontSpelledDifferently: 'Google unterscheidet Groß- und Kleinschreibung. Gemeint ist vermutlich „{{name}}“.',
     fontUnknownToGoogle:
       'Diesen Namen führt Google nicht (Liste vom {{date}}). Kennt Google ihn wirklich nicht, fehlt die Schrift auf der Website.',
     localHint: 'Nichts wird geladen, die Schrift muss bereits lokal vorliegen, z. B. über „Eigene Schriftart importieren“ unten.',
@@ -899,7 +899,7 @@ export default {
       fetching: 'Hole Schriften…',
       selfHost: 'Schriften lokal ausliefern (kein Google-Aufruf beim Besuch)',
       baseUrlMissing:
-        'Dafür muss eine Basis-URL gesetzt sein (Konfiguration → Basis-URL) — die Schrift-URLs werden darauf umgeschrieben, sonst bricht der Build ab.',
+        'Dafür muss eine Basis-URL gesetzt sein (Konfiguration → Basis-URL). Die Schrift-URLs werden darauf umgeschrieben, sonst bricht der Build ab.',
       state: {
         core: {
           google: 'Quartz-Kern: verlinkt Google Fonts direkt.',
@@ -994,8 +994,8 @@ export default {
       install: 'Installieren & aktivieren',
       active: 'Aktiv',
       noResults: 'Keine Treffer.',
-      moreResults: '{{count}} weitere Treffer — weiter tippen zum Filtern.',
-      installSuccess: '„{{id}}“ installiert und aktiviert — nicht vergessen, oben auf „Speichern“ zu klicken.',
+      moreResults: '{{count}} weitere Treffer. Weiter tippen zum Filtern.',
+      installSuccess: '„{{id}}“ installiert und aktiviert. Zum Übernehmen oben auf „Speichern“ klicken.',
       installFailed: 'Installation von „{{id}}“ fehlgeschlagen: {{output}}',
       detailLoading: 'Lade Details…',
       detailNone: 'Keine Details verfügbar.',
@@ -1032,7 +1032,7 @@ export default {
     starting: 'Der Dev-Server startet…',
     start: 'Vorschau starten',
     stop: 'Vorschau beenden',
-    stopHint: 'Stoppt den Dev-Server dieses Projekts — auch für die Seite „Vorschau & Build“.',
+    stopHint: 'Stoppt den Dev-Server dieses Projekts, auch für die Seite „Vorschau & Build“.',
     remote: 'Der Dev-Server läuft über einen entfernten Host und lässt sich hier nicht einbetten. Öffne ihn auf der Seite „Vorschau & Build“.',
     page: 'Seite',
     pagePlaceholder: 'Startseite – oder z. B. ordner/seite',
@@ -1041,12 +1041,12 @@ export default {
     assignClass: 'Eigene Klasse vergeben',
     classAssigned: '„{{name}}“ hat jetzt die Klasse {{cls}}.',
     marked: 'Markiert: „{{name}}“.',
-    markShared_one: '„{{name}}“ teilt seine CSS-Klasse mit anderen Einträgen — markiert ist jeder davon, auf dieser Seite einer.',
-    markShared_other: '„{{name}}“ teilt seine CSS-Klasse mit anderen Einträgen — markiert ist jeder davon, auf dieser Seite {{count}}.',
-    markNoClass_one: '„{{name}}“ hat keine CSS-Klasse — markiert ist jeder Eintrag dieses Plugins, auf dieser Seite einer.',
-    markNoClass_other: '„{{name}}“ hat keine CSS-Klasse — markiert ist jeder Eintrag dieses Plugins, auf dieser Seite {{count}}.',
+    markShared_one: '„{{name}}“ teilt seine CSS-Klasse mit anderen Einträgen. Markiert ist jeder davon, auf dieser Seite einer.',
+    markShared_other: '„{{name}}“ teilt seine CSS-Klasse mit anderen Einträgen. Markiert ist jeder davon, auf dieser Seite {{count}}.',
+    markNoClass_one: '„{{name}}“ hat keine CSS-Klasse. Markiert ist jeder Eintrag dieses Plugins, auf dieser Seite einer.',
+    markNoClass_other: '„{{name}}“ hat keine CSS-Klasse. Markiert ist jeder Eintrag dieses Plugins, auf dieser Seite {{count}}.',
     markNotFound: '„{{name}}“ kommt auf dieser Seite nicht vor.',
-    markHidden: '„{{name}}“ steht auf dieser Seite, ist in dieser Ansicht aber nicht zu sehen — etwa ausgeblendet oder in einer Schublade.'
+    markHidden: '„{{name}}“ steht auf dieser Seite, ist in dieser Ansicht aber nicht zu sehen (etwa ausgeblendet oder in einer Schublade).'
   },
   extraContent: {
     intro: 'Jede Box ist ein eigener Eintrag von quartz-layout-box. Ihr Inhalt steht entweder als Text in der Konfiguration oder in einer Datei unter quartz/static. Wo sie steht, legst du auf der Layout-Bühne fest. Jede Änderung wird sofort gespeichert.',
@@ -1114,8 +1114,8 @@ export default {
       renamedAnnounce: '„{{from}}“ heißt jetzt „{{to}}“.',
       renamedWithBoxes_one: '„{{from}}“ heißt jetzt „{{to}}“; eine Box ist nachgezogen.',
       renamedWithBoxes_other: '„{{from}}“ heißt jetzt „{{to}}“; {{count}} Boxen sind nachgezogen.',
-      renameReverted: '„{{to}}“ heißt wieder „{{from}}“: Die Boxen, die die Datei nennen, ließen sich nicht nachziehen, weil die Konfiguration nicht geschrieben werden konnte (Meldung oben).',
-      renameStuck: '„{{from}}“ heißt jetzt „{{to}}“, aber die Boxen, die die Datei nennen, nennen weiter „{{from}}“ — die Konfiguration ließ sich nicht schreiben, und das Zurückbenennen ist auch gescheitert. Benenne die Datei zurück oder trage den neuen Namen in den Boxen ein.',
+      renameReverted: '„{{to}}“ heißt wieder „{{from}}“: Die Boxen, die die Datei nennen, konnten nicht nachgezogen werden, weil die Konfiguration nicht geschrieben werden konnte (Meldung oben).',
+      renameStuck: '„{{from}}“ heißt jetzt „{{to}}“, aber die Boxen, die die Datei nennen, nennen weiter „{{from}}“. Die Konfiguration konnte nicht geschrieben werden, und das Zurückbenennen ist auch gescheitert. Benenne die Datei zurück oder trage den neuen Namen in den Boxen ein.',
       projectIcon: 'Projektbild in {{dir}}',
       projectIconNote: 'Kommt aus dem Projektbild unter Konfiguration → Website. In einem Schnipsel bindest du es mit dem Pfad darunter ein.',
       projectIconLocked: 'Gehört zum Projektbild und lässt sich hier weder umbenennen noch löschen. Quartz baut daraus das Favicon.',
@@ -1147,7 +1147,7 @@ export default {
     addHint: 'Der Code, mit dem Ordner, Dateinamen und Frontmatter die Sprache nennen, z. B. „fr“.',
     addedAnnounce: 'Sprache „{{code}}“ hinzugefügt.',
     removeConfirm: 'Sprache „{{name}}“ entfernen?\n\nSie verschwindet aus der Konfiguration, auch als Standardsprache und aus der Liste der veröffentlichten. Ihre Seiten bleiben liegen und gelten danach als Seiten der Standardsprache.',
-    removeOnlyPublishedConfirm: 'Sprache „{{name}}“ entfernen und {{others}} veröffentlichen?\n\n„{{name}}“ ist die einzige veröffentlichte Sprache. Ohne sie gilt die Liste als leer, und eine leere Liste veröffentlicht alle Sprachen — der nächste Build und das nächste Veröffentlichen nehmen dann auch die mit, die du bisher zurückgehalten hast. Wer das nicht will, schaltet vorher eine andere Sprache auf „Veröffentlichen“.',
+    removeOnlyPublishedConfirm: 'Sprache „{{name}}“ entfernen und {{others}} veröffentlichen?\n\n„{{name}}“ ist die einzige veröffentlichte Sprache. Ohne sie gilt die Liste als leer, und eine leere Liste veröffentlicht alle Sprachen. Der nächste Build und das nächste Veröffentlichen nehmen dann auch die mit, die du bisher zurückgehalten hast. Wer das nicht will, schaltet vorher eine andere Sprache auf „Veröffentlichen“.',
     removeAndPublish: 'Entfernen und veröffentlichen',
     removedAnnounce: '„{{name}}“ entfernt.',
     renamedAnnounce: 'Sprachcode „{{from}}“ heißt jetzt „{{to}}“.',
@@ -1313,7 +1313,7 @@ export default {
       root: 'Relativer Weg zur Startseite, für Links und Bilder: {{example}}',
       siteTitle: 'Titel der Website (pageTitle)',
       baseUrl: 'Adresse der Website (baseUrl)',
-      locale: 'Sprache der Seite, etwa „de-DE“ — aus ihrem Frontmatter, sonst die der Website',
+      locale: 'Sprache der Seite, etwa „de-DE“ (aus ihrem Frontmatter, sonst die der Website)',
       lang: 'Nur der Sprachcode, etwa „de“',
       frontmatter: 'Jeder Eintrag im Frontmatter der Seite (statt „author“ den Namen des Eintrags)'
     },
@@ -1403,7 +1403,7 @@ export default {
     pageTypesGroup: 'Seitentypen',
     otherProcessingGroup: 'Transformer, Filter & Emitter',
     dragHint: 'Ziehen zum Umsortieren',
-    busyRemoving: 'Während ein Plugin entfernt wird, bleibt die Liste, wie sie ist — die Änderung ist nicht gespeichert. Versuche es danach noch einmal.',
+    busyRemoving: 'Während ein Plugin entfernt wird, bleibt die Liste, wie sie ist. Die Änderung ist nicht gespeichert; versuche es danach noch einmal.',
     dragHandle: 'Umsortieren: {{name}}',
     savedAnnounce: 'Einstellungen von {{name}} gespeichert.',
     reorderedAnnounce: '{{name}} ist jetzt an Position {{position}} von {{total}}.',
@@ -1442,7 +1442,7 @@ export default {
     summaryOrder: 'order: {{order}}',
     layoutFields: {
       position: 'header = Kopfbereich, left/right = Sidebar, beforeBody/afterBody = um den Inhalt herum, footer = Fußzeile',
-      priority: 'Reihenfolge innerhalb der Position — kleiner zuerst',
+      priority: 'Reihenfolge innerhalb der Position (kleiner zuerst)',
       display: 'all = alle Geräte, mobile-only = nur mobil, desktop-only = nur Desktop',
       condition:
         'Mitgeliefert: not-index, has-tags, has-backlinks, has-toc. Ein unbekannter Name wird beim Build ignoriert, das Element erscheint dann immer.',
@@ -1452,7 +1452,7 @@ export default {
       grow: 'Element wächst, um freien Platz in der Gruppe zu füllen',
       shrink: 'Element darf bei Platzmangel schrumpfen',
       basis: 'Flex-Basisgröße, z. B. „auto“ oder „100px“',
-      order: 'Reihenfolge innerhalb der Gruppe — kleiner zuerst',
+      order: 'Reihenfolge innerhalb der Gruppe (kleiner zuerst)',
       align: 'CSS align-items, z. B. „center“',
       justify: 'CSS justify-content, z. B. „space-between“'
     }
@@ -1475,7 +1475,7 @@ export default {
     'remove-draft': 'Blendet Seiten mit „draft: true“ im Frontmatter aus.',
     'explicit-publish': 'Veröffentlicht nur Seiten, die im Frontmatter explizit mit „publish: true“ markiert sind.',
     'unlisted-pages':
-      'Blendet Seiten mit „unlisted: true“ aus allen Listen (Suche, Graph, Explorer, …) aus — bleiben aber über die URL erreichbar.',
+      'Blendet Seiten mit „unlisted: true“ aus allen Listen (Suche, Graph, Explorer, …) aus. Über ihre URL bleiben sie erreichbar.',
     'encrypted-pages': 'Verschlüsselt einzelne Seiten passwortgeschützt (AES-256-GCM).',
     'stacked-pages': 'Öffnet interne Links als nebeneinander gestapelte Panes (Andy-Matuschak-Stil).',
     'alias-redirects': 'Erzeugt Weiterleitungsseiten für Alias-URLs.',
@@ -1514,7 +1514,7 @@ export default {
     tabGlobal: 'Komponenten',
     tabFrames: 'Frames',
     loading: 'Lade Layout…',
-    emptySlot: 'Leer — hierher ziehen',
+    emptySlot: 'Leer: hierher ziehen',
     breakpoints: {
       title: 'Breakpoints',
       tablet: 'Tablet bis (px)',
@@ -1558,7 +1558,7 @@ export default {
       bases: 'Bases-Seiten',
       excalidraw: 'Excalidraw-Seiten'
     },
-    excludeDuplicateHint: 'Betrifft alle {{count}} Instanzen von „{{name}}“ — Quartz kann einzelne Duplikate hier nicht getrennt ausschließen.',
+    excludeDuplicateHint: 'Betrifft alle {{count}} Instanzen von „{{name}}“. Quartz kann einzelne Duplikate hier nicht getrennt ausschließen.',
     excludeDeadHint_one: 'In der Datei steht noch der Ausschluss „{{names}}“ aus einer früheren Fassung. Er wirkt nicht und verschwindet, sobald du an diesem Seitentyp etwas umlegst und speicherst.',
     excludeDeadHint_other: 'In der Datei stehen noch {{count}} Ausschlüsse aus einer früheren Fassung ({{names}}). Sie wirken nicht und verschwinden, sobald du an diesem Seitentyp etwas umlegst und speicherst.',
     template: 'Frame',
@@ -1567,7 +1567,7 @@ export default {
     templateMinimal: 'Minimal',
     templatePluginDefault: '„{{frame}}“ (Plugin-Standard, aktiv)',
     pluginFrameUnknownLayout:
-      'Dieser Seitentyp benutzt automatisch den Frame „{{frame}}“ aus dem zugehörigen Plugin. Wie er aufgebaut ist, weiß nur das Plugin selbst — deshalb gibt es hier keine Vorschau.',
+      'Dieser Seitentyp benutzt automatisch den Frame „{{frame}}“ aus dem zugehörigen Plugin. Seinen Aufbau kennt nur das Plugin selbst, deshalb gibt es hier keine Vorschau.',
     frameBuilder: {
       whatIsAFrame:
         'Ein Frame ist das Raster einer Seite: welche Bereiche es gibt (Kopfbereich, Seitenleisten, Inhalt, Fußzeile), wo sie liegen und wie breit sie sind. Was in den Bereichen erscheint, legst du im Reiter „Komponenten“ fest, und dort wählst du auch den Frame je Seitentyp.',
@@ -1586,7 +1586,7 @@ export default {
       standardSource:
         'Die Maße stammen aus quartz/styles/variables.scss und base.scss dieses Projekts: Spalten {{columns}}, Abstände {{gap}}, Seite höchstens {{max}}, Umschalten bei {{desktop}} / {{mobile}} px.',
       standardSourceUnavailable:
-        'Die Maße dieses Projekts ließen sich nicht lesen: {{reason}} Gezeigt sind Quartz’ eigene: Spalten {{columns}}, Abstände {{gap}}, Seite höchstens {{max}}, Umschalten bei {{desktop}} / {{mobile}} px.',
+        'Die Maße dieses Projekts konnten nicht gelesen werden: {{reason}} Gezeigt sind Quartz’ eigene: Spalten {{columns}}, Abstände {{gap}}, Seite höchstens {{max}}, Umschalten bei {{desktop}} / {{mobile}} px.',
       standardCapUnread: '{{max}} (aus base.scss nicht gelesen, Quartz’ Wert)',
       standardShapeDiffers: 'Die Spaltenzahl in variables.scss weicht hier von Quartz’ Anordnung ab ({{breakpoints}}); Vorschau und Kopie zeigen dort Quartz’ Spalten.',
       standardCopyHint:
@@ -1634,10 +1634,10 @@ export default {
       newArea: '+ Bereich hinzufügen',
       allPlaced: 'Alle Bereiche sind platziert.',
       hintDragToPlace:
-        'Ziehe einen Bereich auf eine freie Zelle, um ihn zu platzieren — oder einen platzierten zurück in diese Liste, um ihn wieder zu lösen. An den Rändern eines platzierten Bereichs stellst du ein, über wie viele Zeilen und Spalten er reicht. Ein Klick zeigt seine Einstellungen in der Seitenleiste; ein hier ausgeblendeter Bereich behält seine Spannen, ein nie platzierter hat keine.',
+        'Ziehe einen Bereich auf eine freie Zelle, um ihn zu platzieren, oder einen platzierten zurück in diese Liste, um ihn wieder zu lösen. An den Rändern eines platzierten Bereichs stellst du ein, über wie viele Zeilen und Spalten er reicht. Ein Klick zeigt seine Einstellungen in der Seitenleiste; ein hier ausgeblendeter Bereich behält seine Spannen, ein nie platzierter hat keine.',
       selectArea: 'Bereich {{name}} auswählen',
       resizeHandle: 'Ziehen, um Zeilen- und Spalten-Spanne zu ändern',
-      resized: '{{name}} beginnt jetzt in Zeile {{row}}, Spalte {{col}} — Zeilen-Spanne {{rowSpan}}, Spalten-Spanne {{colSpan}}.',
+      resized: '{{name}} beginnt jetzt in Zeile {{row}}, Spalte {{col}}; Zeilen-Spanne {{rowSpan}}, Spalten-Spanne {{colSpan}}.',
       placementSummary: 'Beginnt in Zeile {{row}}, Spalte {{col}}. Die Spannen lassen sich auch an den Rändern des Bereichs ziehen.',
       areaPanelTitle: 'Bereich {{name}}',
       framePanelTitle: 'Frame',
@@ -1665,12 +1665,12 @@ export default {
       unplace: 'Aus Raster lösen',
       visibleOnBreakpoint: 'Sichtbar auf {{breakpoint}}',
       overlapError: 'Dieser Bereich überschneidet sich mit einem bestehenden Bereich.',
-      dropRefused: '{{name}} bleibt, wo es war — dort überschneidet es sich mit einem bestehenden Bereich.',
-      spanRefused: '{{name}} behält seine Spanne — mit der neuen würde es sich mit einem bestehenden Bereich überschneiden.',
+      dropRefused: '{{name}} bleibt, wo es war: Dort überschneidet es sich mit einem bestehenden Bereich.',
+      spanRefused: '{{name}} behält seine Spanne. Mit der neuen würde es sich mit einem bestehenden Bereich überschneiden.',
       showRefused:
-        '{{name}} bleibt ausgeblendet — auf seinen Zellen liegt ein anderer Bereich. Ziehe es auf eine freie Zelle, um es zu zeigen; gibt es keine, gib dem Raster erst eine Zeile mehr.',
+        '{{name}} bleibt ausgeblendet, weil auf seinen Zellen ein anderer Bereich liegt. Ziehe es auf eine freie Zelle, um es zu zeigen; gibt es keine, gib dem Raster erst eine Zeile mehr.',
       showRefusedOutside:
-        '{{name}} bleibt ausgeblendet — seine Zellen liegen nicht mehr im Raster. Ziehe es auf eine freie Zelle, um es zu zeigen; gibt es keine, gib dem Raster erst eine Zeile mehr.',
+        '{{name}} bleibt ausgeblendet, weil seine Zellen nicht mehr im Raster liegen. Ziehe es auf eine freie Zelle, um es zu zeigen; gibt es keine, gib dem Raster erst eine Zeile mehr.',
       overlapWarning:
         'Diese Bereiche liegen übereinander: {{pairs}}. Auf der gebauten Seite verdrängt einer den anderen. Ziehe einen davon auf freie Zellen.',
       outsideWarning:
@@ -1758,10 +1758,10 @@ export default {
       frameFrom: {
         override: 'Für diesen Seitentyp gewählt.',
         plugin: 'Bringt das Plugin des Seitentyps mit.',
-        default: 'Nichts gewählt — Quartz baut mit dem Standard-Frame.'
+        default: 'Nichts gewählt: Quartz baut mit dem Standard-Frame.'
       },
       empty: 'leer',
-      notInFrame: 'Dieser Frame hat dafür keinen Bereich — was hier steht, erscheint nicht.',
+      notInFrame: 'Dieser Frame hat dafür keinen Bereich. Was hier steht, erscheint nicht.',
       parked_one: '{{count}} Komponente ist ausgeschaltet und liegt im Vorrat.',
       parked_other: '{{count}} Komponenten sind ausgeschaltet und liegen im Vorrat.'
     },
@@ -1775,7 +1775,7 @@ export default {
       frameFrom: {
         override: 'Frame für den Seitentyp gewählt',
         plugin: 'Frame bringt das Plugin des Seitentyps mit',
-        default: 'Nichts gewählt — Quartz baut mit dem Standard-Frame'
+        default: 'Nichts gewählt: Quartz baut mit dem Standard-Frame'
       },
       state: {
         shown: 'Erscheint',
@@ -1784,8 +1784,8 @@ export default {
         cleared: 'Bereich auf diesem Seitentyp geleert',
         noArea: 'Bereich in diesem Frame nicht zugewiesen',
         hiddenArea: 'Bereich in diesem Frame auf keiner Breite gezeigt',
-        noWidth: 'Auf keiner Breite — Komponente und Bereich gelten für verschiedene Breiten',
-        unknown: 'Unbekannt — der Frame kommt vom Plugin'
+        noWidth: 'Auf keiner Breite (Komponente und Bereich gelten für verschiedene Breiten)',
+        unknown: 'Unbekannt (der Frame kommt vom Plugin)'
       },
       cellTitle: '{{component}} auf {{pageType}}: {{state}}',
       someWidthsOn: 'Erscheint nur auf {{breakpoints}}',
@@ -1817,14 +1817,14 @@ export default {
       panelPlacedNone: 'Noch keine Komponente platziert.',
       panelAlways: 'In allen Breiten',
       panelConditionedTitle: 'Komponenten mit Bedingung',
-      panelConditionedNone: 'Keine Komponente hat eine Bedingung — alle erscheinen auf jeder Seite ihres Seitentyps.',
+      panelConditionedNone: 'Keine Komponente hat eine Bedingung. Alle erscheinen auf jeder Seite ihres Seitentyps.',
       panelPageTypesTitle: 'Seitentypen und was abweicht',
       panelSameAsAll: 'wie „Alle Seiten“',
       panelHidden: 'Ausgeblendet:',
       panelCleared: 'Geleerte Bereiche:',
       disabledTitle: 'Ausgeschaltet',
       disabledText: 'Liegen im Komponentenvorrat und werden nicht gebaut. Ein Klick zeigt sie auf der Bühne.',
-      disabledNone: 'Keine — alle Komponenten sind eingeschaltet.',
+      disabledNone: 'Keine. Alle Komponenten sind eingeschaltet.',
       framesTitle: 'Frames und ihre Seitentypen',
       frameKind: {
         builtin: 'von Quartz',
@@ -1839,9 +1839,9 @@ export default {
       empty: 'Wähle eine Komponente aus. Ihre Einstellungen erscheinen dann hier.',
       options: 'Optionen',
       optionsLoading: 'Lese Optionen…',
-      optionsError: 'Die Optionen ließen sich nicht lesen: {{reason}}',
-      parked: 'Ausgeschaltet — liegt im Komponentenvorrat und wird nicht gebaut.',
-      disabled: 'Ausgeschaltet — wird nicht gebaut.',
+      optionsError: 'Die Optionen konnten nicht gelesen werden: {{reason}}',
+      parked: 'Ausgeschaltet: liegt im Komponentenvorrat und wird nicht gebaut.',
+      disabled: 'Ausgeschaltet: wird nicht gebaut.',
       enable: 'Einschalten',
       enabledAnnounce: '{{name}} eingeschaltet, steht in {{position}}.',
       position: 'Position',
@@ -1882,7 +1882,7 @@ export default {
     }
   },
   styles: {
-    loadFailed: 'Die Stile ließen sich nicht laden.',
+    loadFailed: 'Die Stile konnten nicht geladen werden.',
     googleFontsMissing_one:
       'Google kennt diese Schrift nicht und hat sie stillschweigend weggelassen: {{families}}. Auf der Website fällt dieser Platz auf eine Ersatzschrift zurück.',
     googleFontsMissing_other:
@@ -1902,7 +1902,7 @@ export default {
     fixes: {
       heading: 'Bekannte Konflikte',
       description:
-        'Konflikte zwischen Plugins, die sich nicht über eine Einstellung lösen lassen, sondern nur im CSS. Der Fix wird als ganz normale Datei unter „Eigenes CSS“ angelegt — dort bearbeitbar, verschiebbar und löschbar.',
+        'Konflikte zwischen Plugins, die sich nicht über eine Einstellung lösen lassen, sondern nur im CSS. Der Fix wird als ganz normale Datei unter „Eigenes CSS“ angelegt und ist dort bearbeitbar, verschiebbar und löschbar.',
       add: 'Fix anlegen',
       open: 'Datei öffnen',
       alreadyAdded: 'Angelegt als {{file}}',
@@ -1925,53 +1925,53 @@ export default {
       action: 'Zusammenlegen',
       running: 'Lege zusammen…',
       confirm:
-        '{{count}} Stylesheets zu den zwölf von 1.1 zusammenlegen?\n\nDie alten Dateien werden entfernt; ihr Inhalt steht danach abschnittsweise in den neuen. Der Snapshot „Vor Umstellung der Stile“ unter Wartung bringt den alten Stand zurück.',
-      done: '{{merged}} Stylesheets stehen jetzt in {{written}} Dateien. Der Snapshot „Vor Umstellung der Stile“ unter Wartung bringt den alten Stand zurück.',
+        '{{count}} Stylesheets zu den zwölf von 1.1 zusammenlegen?\n\nDie alten Dateien werden entfernt; ihr Inhalt steht danach abschnittsweise in den neuen.',
+      done: '{{merged}} Stylesheets stehen jetzt in {{written}} Dateien.',
       renamed: 'Deine Datei {{from}} heißt jetzt {{to}}, weil eine der neuen so heißt.'
     },
     migrate: {
-      note: 'Dieses Projekt hält Ladereihenfolge, Schriften und Variablen noch in custom.scss, wie QuartzControl 1.0. Umstellen legt sie in eine eigene Datei, quartz/styles/_quartzcontrol.scss, und vorher einen Snapshot an; ältere Fassungen der App lesen das Projekt danach ohne Variablen und Stylesheets – arbeitest du auf mehreren Rechnern, stelle erst alle auf 1.1 um.',
+      note: 'Dieses Projekt hält Ladereihenfolge, Schriften und Variablen noch in custom.scss, wie QuartzControl 1.0. Umstellen legt sie in eine eigene Datei, quartz/styles/_quartzcontrol.scss. Ältere Fassungen von QuartzControl lesen das Projekt danach ohne Variablen und Stylesheets; arbeitest du auf mehreren Rechnern, stelle erst alle auf 1.1 um.',
       action: 'Jetzt umstellen',
       running: 'Stelle um…',
       saveFirst: 'Erst speichern oder verwerfen.',
-      done: 'Umgestellt. Der Snapshot „Vor Umstellung der Stile“ unter Wartung bringt den alten Stand zurück.'
+      done: 'Umgestellt.'
     },
     cascade: {
       themeActive:
         'Reihenfolge: Basis → Community-Theme → Variablen → eigenes CSS. Das Theme „{{themeId}}“ ist aktiv und überschreibt die Basisfarben.',
       themeInactive:
-        'Reihenfolge: Basis → Community-Theme → Variablen → eigenes CSS. Kein Community-Theme aktiv — es gelten deine Basis-Farben und -Schriften.',
+        'Reihenfolge: Basis → Community-Theme → Variablen → eigenes CSS. Kein Community-Theme aktiv: Es gelten deine Basis-Farben und -Schriften.',
       overrides: '{{count}} Variable(n) überschrieben.'
     },
     // Einer je Schreiber: Der eine Satz „von einem anderen Tab (Variablen-Überschreibung oder
     // Font-Import)“ stand auch nach der Ladereihenfolge und dem Reparatur-Button dieses Reiters.
     scssStaleBy: {
       variables:
-        '{{file}} wurde inzwischen beim Speichern der Variablen geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+        '{{file}} wurde inzwischen beim Speichern der Variablen geändert. Dein Entwurf hier ist noch ungespeichert. Speichern würde diese Änderung überschreiben.',
       fontImport:
-        '{{file}} wurde inzwischen beim Import einer Schrift geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+        '{{file}} wurde inzwischen beim Import einer Schrift geändert. Dein Entwurf hier ist noch ungespeichert. Speichern würde diese Änderung überschreiben.',
       fontRemoval:
-        '{{file}} wurde inzwischen beim Entfernen einer ungenutzten Schrift geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+        '{{file}} wurde inzwischen beim Entfernen einer ungenutzten Schrift geändert. Dein Entwurf hier ist noch ungespeichert. Speichern würde diese Änderung überschreiben.',
       googleFonts:
-        '{{file}} wurde inzwischen geändert, weil die Google-Schriften ins Projekt geholt oder entfernt wurden. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+        '{{file}} wurde inzwischen geändert, weil die Google-Schriften ins Projekt geholt oder entfernt wurden. Dein Entwurf hier ist noch ungespeichert. Speichern würde diese Änderung überschreiben.',
       stylesheets:
-        '{{file}} wurde inzwischen geändert, weil sich die Stylesheets geändert haben (Ladereihenfolge, Import oder neue Datei). Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.'
+        '{{file}} wurde inzwischen geändert, weil sich die Stylesheets geändert haben (Ladereihenfolge, Import oder neue Datei). Dein Entwurf hier ist noch ungespeichert. Speichern würde diese Änderung überschreiben.'
     },
     scssStaleNotSaved:
-      'custom.scss hat sich geändert, seit du im Reiter „Eigenes CSS“ getippt hast — dein Entwurf dort wurde nicht gespeichert. Alles andere ist gespeichert; im Reiter „Eigenes CSS“ kannst du neu laden oder bewusst überschreiben.',
+      'custom.scss hat sich geändert, seit du im Reiter „Eigenes CSS“ getippt hast. Dein Entwurf dort wurde nicht gespeichert. Alles andere ist gespeichert; im Reiter „Eigenes CSS“ kannst du neu laden oder bewusst überschreiben.',
     scssStaleReload: 'Von Festplatte neu laden (Entwurf verwerfen)',
     managedStaleNotSaved:
-      '_quartzcontrol.scss hat sich geändert, seit du die Datei im Reiter „Eigenes CSS“ bearbeitet hast — dein Entwurf dort wurde nicht gespeichert. Alles andere ist gespeichert; im Reiter „Eigenes CSS“ kannst du neu laden oder bewusst überschreiben.',
+      '_quartzcontrol.scss hat sich geändert, seit du die Datei im Reiter „Eigenes CSS“ bearbeitet hast. Dein Entwurf dort wurde nicht gespeichert. Alles andere ist gespeichert; im Reiter „Eigenes CSS“ kannst du neu laden oder bewusst überschreiben.',
     managedUseRestored:
       'In custom.scss fehlte die Zeile @use "./quartzcontrol"; – sie ist wieder eingesetzt. Ohne sie fehlten der Website Ladereihenfolge, Schriften und Variablen dieser Seite.',
     styleSettings: {
       sourceNote:
-        'Beschreibungen aus dem Original-Theme „{{theme}}“ von {{author}} — {{count}} Optionen.',
+        'Beschreibungen aus dem Original-Theme „{{theme}}“ von {{author}}, {{count}} Optionen.',
       searchPlaceholder: 'Option suchen…',
       loading: 'Lade Beschreibungen zu den Optionen…',
       refresh: 'Doku neu laden',
       unavailable:
-        'Zu diesem Theme sind keine Beschreibungen auffindbar — es hat keinen Eintrag im Obsidian-Theme-Verzeichnis oder bringt keinen @settings-Block mit. Darum hier nur die rohen Schalter.',
+        'Zu diesem Theme sind keine Beschreibungen auffindbar: Es hat keinen Eintrag im Obsidian-Theme-Verzeichnis oder bringt keinen @settings-Block mit. Darum hier nur die rohen Schalter.',
       themeDefault: '— Theme-Standard —',
       reset: 'Zurücksetzen'
     },
@@ -1994,10 +1994,10 @@ export default {
         other: 'Andere Werte ({{count}})'
       },
       noResults: 'Keine Treffer.',
-      moreResults: '{{count}} weitere Treffer — weiter tippen zum Eingrenzen.',
+      moreResults: '{{count}} weitere Treffer. Weiter tippen zum Eingrenzen.',
       noSources: 'Keine zusätzlichen Variablen gefunden.',
       noTheme: 'Es ist kein Community-Theme installiert.',
-      noBuild: 'Es gibt noch keinen Build-Output — einmal bauen, dann hier neu einlesen.',
+      noBuild: 'Es gibt noch keinen Build-Output. Einmal bauen, dann hier neu einlesen.',
       reload: 'Neu einlesen',
       resetNamed: '{{name}} auf Originalwert zurücksetzen',
       resetToOriginal: 'Auf Originalwert zurücksetzen',
@@ -2019,11 +2019,11 @@ export default {
       dependents: '{{count}} abhängig',
       dependentsWarning: 'Ein eigener Wert hier wirkt sich auf {{count}} weitere Variablen aus.',
       dependentsNone: 'Keine andere Variable verweist hierauf.',
-      usesNone: 'Verweist auf keine andere Variable — der Wert steht direkt hier.',
+      usesNone: 'Verweist auf keine andere Variable, der Wert steht direkt hier.',
       moreKeys: '+{{count}} weitere',
       chipHint: 'Zu dieser Variable springen',
       themeNote:
-        'Deine Werte hier gewinnen gegen das Theme „{{themeId}}“, auch wo es dieselbe Variable setzt. Die Ausnahme sind Farben, die ein Theme nur für eine Art von Element setzt — Callouts etwa; die änderst du unter „Eigenes CSS“.',
+        'Deine Werte hier gewinnen gegen das Theme „{{themeId}}“, auch wo es dieselbe Variable setzt. Die Ausnahme sind Farben, die ein Theme nur für eine Art von Element setzt (etwa Callouts); die änderst du unter „Eigenes CSS“.',
       collisionNote_one:
         'custom.scss setzt {{names}} auch selbst. Seit 1.1 steht seine Regel nach denen dieser Seite und gewinnt, wo beide gleich spezifisch sind – die Website zeigt dann den Wert aus custom.scss, nicht den hier.',
       collisionNote_other:
@@ -2072,12 +2072,12 @@ export default {
     referenceHeading: 'Original-Styles (nur lesend)',
     managedFile: {
       warning:
-        'Diese Datei schreibt die App selbst. Was zwischen den QuartzControl-Markern steht, schreibt jede Änderung an Ladereihenfolge, Schriften oder Variablen auf dieser Seite neu; Text außerhalb der Marker bleibt.'
+        'Diese Datei schreibt QuartzControl selbst. Was zwischen den QuartzControl-Markern steht, schreibt jede Änderung an Ladereihenfolge, Schriften oder Variablen auf dieser Seite neu; Text außerhalb der Marker bleibt.'
     },
     files: {
       heading: 'Ladereihenfolge',
       description:
-        'Quartz bindet nur custom.scss ein — alles andere wird von dort aus geladen, und zwar in dieser Reihenfolge. Später geladene Dateien überschreiben frühere; custom.scss selbst kommt immer zuletzt.',
+        'Quartz bindet nur custom.scss ein. Alles andere wird von dort aus geladen, und zwar in dieser Reihenfolge. Später geladene Dateien überschreiben frühere; custom.scss selbst kommt immer zuletzt.',
       alwaysLast: 'immer zuletzt',
       managedRow: 'Schriften und Variablen dieser Seite',
       moveUp: 'Nach oben',
@@ -2095,13 +2095,13 @@ export default {
     },
     check: {
       ok: 'SCSS kompiliert fehlerfrei.',
-      failed: 'SCSS-Fehler — der Build würde fehlschlagen:',
+      failed: 'SCSS-Fehler, der Build würde fehlschlagen:',
       location: 'In {{file}}, Zeile {{line}} öffnen',
       locationExternal: 'In {{file}}, Zeile {{line}} (nicht hier bearbeitbar)',
       // Nur für den einen Fehler, dessen Ausweg die Seite kennt: den Import-Block einer älteren
       // Fassung (beta.2) innerhalb des eigenen (achtundzwanzigstes Review, nebenbei 5).
       nestedImports:
-        'Eine ältere Fassung von QuartzControl hat ihren Import-Block in den dieser App geschrieben. Die Ladereihenfolge einmal neu zu schreiben, macht daraus wieder einen Block; die Reihenfolge bleibt, wie sie ist.',
+        'Eine ältere Fassung von QuartzControl hat ihren Import-Block in den der aktuellen Fassung geschrieben. Die Ladereihenfolge einmal neu zu schreiben, macht daraus wieder einen Block; die Reihenfolge bleibt, wie sie ist.',
       nestedImportsRepair: 'Ladereihenfolge neu schreiben',
       managedFileMissing:
         'custom.scss lädt _quartzcontrol.scss, aber die Datei fehlt. Der nächste Bau legt sie leer an; ihren Inhalt bringt ein Snapshot unter Wartung zurück.',
@@ -2121,19 +2121,19 @@ export default {
       sample: 'Aa Bb Cc 123 — Beispieltext',
       notInstalled: 'Ersatzschrift',
       notInstalledExplainer:
-        '„Ersatzschrift“ heißt: Die Datei liegt weder im Projekt noch in dessen Build noch auf diesem Rechner, und die App lädt nichts aus dem Netz — die Probe zeigt eine andere Schrift als die Website.',
+        '„Ersatzschrift“ heißt: Die Datei liegt weder im Projekt noch in dessen Build noch auf diesem Rechner, und QuartzControl lädt nichts aus dem Netz. Die Probe zeigt deshalb eine andere Schrift als die Website.',
       italic: 'kursiv',
       noFace: 'keine @font-face-Regel gefunden',
       faceAtBuild: 'kommt beim nächsten Build von Google',
       faceOnSave: 'kommt beim Speichern von Google ins Projekt',
       faceFromGoogle: 'lädt beim Seitenaufruf von Google',
       fontsNotBuilt:
-        'Dieses Projekt wurde noch nicht gebaut. Quartz lädt die Google-Schriften erst beim Build herunter — „Jetzt bauen“ oder den Dev-Server starten.',
+        'Dieses Projekt wurde noch nicht gebaut. Quartz lädt die Google-Schriften erst beim Build herunter. „Jetzt bauen“ oder den Dev-Server starten.',
       fontsNotFetched: 'Noch nicht im Projekt: {{families}}. Speichern holt sie von Google.',
       fontsNoRule:
-        'Keine @font-face-Regel im Projekt nennt: {{families}}. Besucher sehen sie nur, wenn die Schrift auf ihrem Rechner installiert ist — sonst importiere die Datei unten oder wähle bei der Font-Quelle Google Fonts.',
+        'Keine @font-face-Regel im Projekt nennt: {{families}}. Besucher sehen sie nur, wenn die Schrift auf ihrem Rechner installiert ist. Sonst importiere die Datei unten oder wähle bei der Font-Quelle Google Fonts.',
       fontsMissingFromBuild:
-        'Der letzte Build enthält {{families}} noch nicht: Quartz lädt die Schrift erst beim nächsten Build herunter — nach dem Speichern „Jetzt bauen“ oder den Dev-Server starten.',
+        'Der letzte Build enthält {{families}} noch nicht: Quartz lädt die Schrift erst beim nächsten Build herunter. Nach dem Speichern „Jetzt bauen“ oder den Dev-Server starten.',
       familyDefault: '(Standardstärke)',
       noLoader:
         'Schriften werden nicht nachgeladen: verfügbar ist nur, was ein aktives Theme mitbringt oder was du per @font-face deklarierst.',
@@ -2158,22 +2158,22 @@ export default {
       goToVariables: 'Variablen überschreiben →',
       searchPlaceholder: 'Variable suchen…',
       insertHint: 'Klicken fügt die Variable an der Cursor-Position ein, ⌥ + Klick kopiert sie in die Zwischenablage.',
-      insertValueHint: 'Klicken fügt {{value}} ein — ⌥ + Klick kopiert.',
+      insertValueHint: 'Klicken fügt {{value}} ein, ⌥ + Klick kopiert in die Zwischenablage.',
       insertValueLabel: '--{{key}}: Wert für {{mode}} einfügen',
       insertValue: 'Wert einfügen',
-      rowHint: 'Jeder Klick fügt an der Cursor-Position ein: der Name als var(--name), ein Farbfeld als Wert. ⌥ + Klick kopiert stattdessen.',
+      rowHint: 'Jeder Klick fügt an der Cursor-Position ein: der Name als var(--name), ein Farbfeld als Wert. ⌥ + Klick kopiert stattdessen in die Zwischenablage.',
       calloutsGroup: 'Callout-Typen',
-      copyHint: 'Klicken, um {{value}} zu kopieren',
+      copyHint: 'Klicken, um {{value}} in die Zwischenablage zu kopieren',
       discoveredGroup: 'Im Build-Output gefunden',
       noResults: 'Keine Treffer.',
       calloutsHeading: 'Callout-Farben',
       calloutsDescription:
-        'Jeder Callout-Typ ([!note], [!warning], …) hat eigene --color/--border/--bg-Variablen — aber nur innerhalb von .callout[data-callout="…"] gültig, kein globales var(--color). Klick fügt das passende Grundgerüst mit den echten Werten ein.',
+        'Jeder Callout-Typ ([!note], [!warning], …) hat eigene --color/--border/--bg-Variablen, die aber nur innerhalb von .callout[data-callout="…"] gelten, kein globales var(--color). Klick fügt das passende Grundgerüst mit den echten Werten ein.',
       calloutsInsertHint: 'Klicken, um das Override-Grundgerüst für diesen Callout-Typ einzufügen.'
     }
   },
   localization: {
-    loadFailed: 'Die Übersetzungen ließen sich nicht laden.',
+    loadFailed: 'Die Übersetzungen konnten nicht geladen werden.',
     localeLoadFailed: 'Die Sprache „{{code}}“ ließ sich nicht laden.',
     none: 'Keine Locale-Dateien gefunden (quartz/i18n/locales fehlt).',
     searchPlaceholder: 'Nach Schlüssel oder Text suchen…',
@@ -2206,9 +2206,9 @@ export default {
       conflictHeading: 'Konflikte in folgenden Dateien (außer den durch .gitattributes geschützten Locale-Dateien):',
       pendingHeading: 'Ein früheres Update ist nicht zu Ende gelaufen',
       pendingDetail:
-        'Diese eigenen Pakete fehlen in package.json oder stehen dort mit einer anderen Version: {{packages}}. „Update durchführen“ trägt sie wieder ein; alternativ holst du unter Snapshots den Stand von vorher zurück — dort mit dem Schalter „Auch den Projekt-Commit zurücksetzen“.',
+        'Diese eigenen Pakete fehlen in package.json oder stehen dort mit einer anderen Version: {{packages}}. „Update durchführen“ trägt sie wieder ein. Alternativ holst du unter Snapshots den Stand von vorher zurück, dort mit dem Schalter „Auch den Projekt-Commit zurücksetzen“.',
       pendingInstallDetail:
-        'Der Kern ist zusammengeführt, aber „npm install“ ist dabei fehlgeschlagen — die Abhängigkeiten im Ordner node_modules passen nicht zu package.json. „Update durchführen“ holt das nach; alternativ holst du unter Snapshots den Stand von vorher zurück — dort mit dem Schalter „Auch den Projekt-Commit zurücksetzen“.'
+        'Der Kern ist zusammengeführt, aber „npm install“ ist dabei fehlgeschlagen: Die Abhängigkeiten in node_modules passen nicht zu package.json. „Update durchführen“ holt das nach. Alternativ holst du unter Snapshots den Stand von vorher zurück, dort mit dem Schalter „Auch den Projekt-Commit zurücksetzen“.'
     },
     plugins: {
       heading: 'Plugins',
@@ -2221,14 +2221,14 @@ export default {
     snapshots: {
       heading: 'Snapshots',
       movedHint:
-        'Vor jedem Kern- und Plugin-Update wird automatisch ein Snapshot angelegt. Verwaltet werden sie unter Snapshots — dort liegen auch die aller anderen Bereiche.',
+        'Vor jedem Kern- und Plugin-Update wird automatisch ein Snapshot angelegt. Verwaltet werden sie unter Snapshots, dort liegen auch die aller anderen Bereiche.',
       openBackups: 'Zu den Snapshots →'
     }
   },
   publish: {
     title: 'Veröffentlichen',
     description: 'Baut das Projekt und veröffentlicht das Ergebnis auf die eingestellten Ziele (per SFTP/rsync, FTP, in einen Ordner, auf einen Git-Branch oder über einen Webhook).',
-    baseUrlWarning: 'configuration.baseUrl steht noch auf „{{baseUrl}}“ — vor dem Veröffentlichen auf die echte Domain setzen.',
+    baseUrlWarning: 'configuration.baseUrl steht noch auf „{{baseUrl}}“. Vor dem Veröffentlichen auf die echte Domain setzen.',
     connectionVsTarget:
       'Ein Zugang ist ein Account bei einem Anbieter und wird global in QuartzControl eingerichtet. Ein Ziel gehört zu diesem Projekt und sagt, wohin das Ergebnis soll.',
     targetHeading: 'Ziele',
@@ -2246,7 +2246,7 @@ export default {
       'Am geöffneten Ziel gibt es ungespeicherte Änderungen. Wer jetzt wechselt, verliert sie.',
     confirmDeleteTargetAction: 'Ziel löschen',
     confirmDeleteTarget: 'Dieses Veröffentlichungsziel wirklich löschen? Der hinterlegte Zugang bleibt bestehen.',
-    noTargets: 'Noch kein Veröffentlichungsziel angelegt. Über „+ Neues Ziel“ eines anlegen — z. B. GitHub Pages, einen Webspace per SFTP oder einen lokalen Ordner.',
+    noTargets: 'Noch kein Veröffentlichungsziel angelegt. Über „+ Neues Ziel“ eines anlegen, z. B. GitHub Pages, einen Webspace per SFTP oder einen lokalen Ordner.',
     confirmDeployAction: 'Jetzt veröffentlichen',
     confirmDeployBranch:
       'Auf den Branch „{{branch}}“ veröffentlichen?\n\nDer Branch wird dabei vollständig durch den aktuellen Build ersetzt (force-push).',
@@ -2254,14 +2254,14 @@ export default {
       github:
         'Schiebt den Build als einzelnen Commit auf den Branch des „origin“-Remotes (dasselbe wie bei Git-Sync). In den Repository-Einstellungen muss GitHub Pages auf diesen Branch zeigen.',
       codeberg:
-        'Codeberg Pages liefert den Branch „pages“ direkt aus — nach dem ersten Push ist die Seite ohne weitere Einstellungen erreichbar.',
+        'Codeberg Pages liefert den Branch „pages“ direkt aus. Nach dem ersten Push ist die Seite ohne weitere Einstellungen erreichbar.',
       gitlab:
-        'Achtung: Bei GitLab veröffentlicht der Branch allein noch nichts — dort muss ein CI-Job die Dateien als „public“-Artefakt ausliefern. Der Push funktioniert trotzdem.'
+        'Achtung: Bei GitLab veröffentlicht der Branch allein noch nichts. Dort muss ein CI-Job die Dateien als „public“-Artefakt ausliefern. Der Push funktioniert trotzdem.'
     },
     pages: {
       title: 'GitHub Pages',
       reload: 'Status neu laden',
-      noGithubOrigin: 'Das „origin“-Remote dieses Projekts zeigt nicht auf github.com. Pages lässt sich von hier aus erst einrichten, wenn das Repository auf GitHub liegt — siehe Git-Sync.',
+      noGithubOrigin: 'Das „origin“-Remote dieses Projekts zeigt nicht auf github.com. Pages lässt sich von hier aus erst einrichten, wenn das Repository auf GitHub liegt (siehe Git-Sync).',
       notConfigured: 'Für dieses Repository sind noch keine Pages eingerichtet. Mit dem Button unten wird Pages angelegt und auf diesen Branch gestellt.',
       source: 'Quelle: {{branch}}',
       status: {
@@ -2278,19 +2278,19 @@ export default {
       apply: 'Auf „{{branch}}“ stellen',
       saveSettings: 'Einstellungen speichern',
       cnameHint:
-        'Die Domain wird bei GitHub gespeichert, nicht im Branch — anders als eine CNAME-Datei überlebt sie damit jedes Deploy, das den Branch vollständig ersetzt. HTTPS lässt sich erst erzwingen, wenn GitHub das Zertifikat ausgestellt hat; das dauert nach dem Setzen der Domain einige Minuten.'
+        'Die Domain wird bei GitHub gespeichert, nicht im Branch. Anders als eine CNAME-Datei überlebt sie damit jedes Deploy, das den Branch vollständig ersetzt. HTTPS lässt sich erst erzwingen, wenn GitHub das Zertifikat ausgestellt hat; das dauert nach dem Setzen der Domain einige Minuten.'
     },
     sftpHint:
       'SFTP vergleicht den Build mit einer lokalen Liste dessen, was zuletzt hochgeladen wurde. Dateien, die jemand direkt auf dem Server ändert oder löscht, bleiben dabei unbemerkt.',
     rsyncHint:
-      'rsync fragt den Server selbst, was dort liegt — der Diff stimmt also auch dann, wenn dort jemand von Hand etwas geändert hat. Setzt voraus, dass rsync auf dem Server installiert ist.',
+      'rsync fragt den Server selbst, was dort liegt. Der Diff stimmt also auch dann, wenn dort jemand von Hand etwas geändert hat. Setzt voraus, dass rsync auf dem Server installiert ist.',
     rsyncBlocked: {
       'no-connection': 'rsync steht zur Verfügung, sobald ein SSH-Zugang mit Schlüsseldatei oder SSH-Agent gewählt ist.',
-      'password-auth': 'rsync ist mit Passwort-Anmeldung nicht möglich — ssh kann das Passwort nicht entgegennehmen. Mit Schlüsseldatei oder SSH-Agent geht es.',
+      'password-auth': 'rsync ist mit Passwort-Anmeldung nicht möglich, weil ssh das Passwort nicht entgegennehmen kann. Mit Schlüsseldatei oder SSH-Agent geht es.',
       'key-not-a-file':
         'rsync braucht den privaten Schlüssel als Datei; ein hier eingefügter Schlüsseltext reicht nicht. Den Zugang auf eine Schlüsseldatei umstellen.',
       'no-pinned-host-key':
-        'rsync braucht einen bestätigten Host-Key. Einmal über SFTP veröffentlichen — dabei wird der Fingerprint abgefragt und gespeichert — danach lässt sich rsync wählen.',
+        'rsync braucht einen bestätigten Host-Key. Einmal über SFTP veröffentlichen (dabei wird der Fingerprint abgefragt und gespeichert), danach lässt sich rsync wählen.',
       'platform-unsupported':
         'rsync gibt es auf diesem Betriebssystem nicht. SFTP überträgt dieselben Dateien, nur ohne den Abgleich mit dem Server.',
       'not-installed':
@@ -2298,21 +2298,21 @@ export default {
     },
     webhookNoUrl: 'keine URL hinterlegt',
     webhookExplainer:
-      'Ein Webhook lädt keine Dateien hoch, sondern stößt einen Build beim Anbieter an (Netlify, Cloudflare Pages, Vercel, CI). Deshalb gibt es hier keine Dateiliste — der Build läuft dort, nicht hier.',
-    deleteDisabledHint: 'Löschen ist für dieses Ziel deaktiviert — entfernte Dateien bleiben dort liegen, werden aber weiter mitgezählt.',
+      'Ein Webhook lädt keine Dateien hoch, sondern stößt einen Build beim Anbieter an (Netlify, Cloudflare Pages, Vercel, CI). Deshalb gibt es hier keine Dateiliste: Der Build läuft dort, nicht hier.',
+    deleteDisabledHint: 'Löschen ist für dieses Ziel deaktiviert. Entfernte Dateien bleiben dort liegen, werden aber weiter mitgezählt.',
     targetForm: {
       heading: 'Veröffentlichungsziel',
       explainer:
-        'Ein Ziel beschreibt, wohin dieses Projekt veröffentlicht — Pfad, Löschverhalten und welcher Zugang dafür benutzt wird. Der Zugang selbst gilt appweit und kann von mehreren Projekten benutzt werden.',
+        'Ein Ziel beschreibt, wohin dieses Projekt veröffentlicht: Pfad, Löschverhalten und welcher Zugang dafür benutzt wird. Der Zugang selbst wird global in QuartzControl eingerichtet und kann von mehreren Projekten benutzt werden.',
       name: 'Name',
       type: 'Art',
       remotePath: 'Remote-Pfad',
       remotePathPlaceholder: 'z. B. httpdocs oder /var/www/example.com',
       remotePathHint:
-        'Der Ordner auf dem Server, in den die Website kommt. Ohne führenden Schrägstrich zählt er ab dem Anmeldeverzeichnis — bei einem Webspace ist das der Normalfall.',
+        'Der Ordner auf dem Server, in den die Website kommt. Ohne führenden Schrägstrich zählt er ab dem Anmeldeverzeichnis; bei einem Webspace ist das der Normalfall.',
       remotePathError: {
         empty: 'Ohne Zielordner kann nichts veröffentlicht werden.',
-        'whole-root': 'Das Anmeldeverzeichnis selbst geht nicht — mit aktiviertem Löschen würde es geleert. Gib den Unterordner an, in dem die Website liegt.',
+        'whole-root': 'Das Anmeldeverzeichnis selbst geht nicht, weil es mit aktiviertem Löschen geleert würde. Gib den Unterordner an, in dem die Website liegt.',
         traversal: 'Ein Pfad mit „..“ ist nicht erlaubt.'
       },
       transfer: 'Übertragung',
@@ -2332,20 +2332,20 @@ export default {
     },
     noSecretWarning: '(kein Passwort/Key hinterlegt)',
     hostKeyPinned: 'Host-Key bestätigt',
-    hostKeyUnknown: 'Host-Key noch nicht bestätigt — wird beim ersten Verbinden abgefragt',
+    hostKeyUnknown: 'Host-Key noch nicht bestätigt (wird beim ersten Verbinden abgefragt)',
     forgetHostKey: 'Host-Key vergessen',
     confirmForgetHostKeyAction: 'Host-Key vergessen',
     confirmForgetHostKey:
       'Gespeicherten Host-Key für {{host}} verwerfen?\n\nBeim nächsten Verbinden wird der Fingerprint erneut abgefragt. Nur ausführen, wenn der Server nachweislich neu aufgesetzt wurde.',
-    ftpPlaintextWarning: 'FTP überträgt Passwort und Dateien im Klartext. Ohne FTPS kann jeder im selben Netz mitlesen — falls dein Anbieter es unterstützt, unbedingt aktivieren (oder besser SFTP nutzen).',
+    ftpPlaintextWarning: 'FTP überträgt Passwort und Dateien im Klartext. Ohne FTPS kann jeder im selben Netz mitlesen. Falls dein Anbieter es unterstützt, unbedingt aktivieren (oder besser SFTP nutzen).',
     confirmDeployWebhook:
-      'Webhook „{{target}}“ auslösen?\n\nDabei werden keine Dateien übertragen — der Anbieter wird nur aufgefordert, selbst zu bauen.',
+      'Webhook „{{target}}“ auslösen?\n\nDabei werden keine Dateien übertragen. Der Anbieter wird nur aufgefordert, selbst zu bauen.',
     confirmDeployConnection:
       'Nach {{target}} veröffentlichen?\n\n{{uploads}} Datei(en) werden hochgeladen, {{deletions}} Datei(en) werden auf dem Server gelöscht.',
     connectionForm: {
       heading: 'Zugang',
       explainer:
-        'Zugangsdaten werden verschlüsselt im Schlüsselbund des Systems abgelegt und gelten appweit — nicht nur für dieses Projekt.',
+        'Zugangsdaten werden verschlüsselt im Schlüsselbund des Systems abgelegt und gelten global in QuartzControl, nicht nur für dieses Projekt.',
       name: 'Name',
       host: 'Host',
       port: 'Port',
@@ -2356,7 +2356,7 @@ export default {
       authAgent: 'SSH-Agent',
       keyPath: 'Schlüsseldatei',
       agentHint:
-        'Der Schlüssel bleibt im SSH-Agent des Systems; diese App speichert dafür nichts. Vorausgesetzt wird eine gesetzte SSH_AUTH_SOCK-Umgebungsvariable.',
+        'Der Schlüssel bleibt im SSH-Agent des Systems; QuartzControl speichert dafür nichts. Vorausgesetzt wird eine gesetzte SSH_AUTH_SOCK-Umgebungsvariable.',
       secure: 'FTPS (verschlüsselt)',
       password: 'Passwort',
       privateKey: 'Privater Schlüssel (Inhalt)',
@@ -2371,8 +2371,8 @@ export default {
     refreshDiff: 'Diff aktualisieren',
       uploadEverything: 'Alles neu hochladen',
       uploadEverythingHint:
-        'Verwirft, was diese App zuletzt an dieses Ziel geschickt hat — danach bietet die Vorschau wieder den ganzen Build an. Für alles, was die App nicht sehen kann: eine von Hand gelöschte Datei auf dem Server, eine abgebrochene Übertragung, eine Wiederherstellung durch den Anbieter.',
-    noDiffYet: 'Noch kein Diff berechnet — zuerst bauen oder Diff aktualisieren.',
+        'Verwirft, was QuartzControl zuletzt an dieses Ziel geschickt hat. Danach bietet die Vorschau wieder den ganzen Build an. Für alles, was QuartzControl nicht sehen kann: eine von Hand gelöschte Datei auf dem Server, eine abgebrochene Übertragung, eine Wiederherstellung durch den Anbieter.',
+    noDiffYet: 'Noch kein Diff berechnet. Zuerst bauen oder Diff aktualisieren.',
     noChanges: 'Keine Änderungen seit dem letzten Deploy.',
     status: {
       added: 'Neu',
@@ -2407,24 +2407,24 @@ export default {
     scopeNoChanges: 'keine Änderungen erkannt',
     scopeAll: 'Alle Texte ({{count}})',
     baselineHint:
-      'Für eine Sprache lässt sich nicht feststellen, was du geändert hast — die Vergleichsbasis entsteht erst, wenn du einen Text in dieser App bearbeitest. Nimm „Alle Texte“, wenn sie dabei sein soll.',
+      'Für eine Sprache lässt sich nicht feststellen, was du geändert hast. Die Vergleichsbasis entsteht erst, wenn du einen Text in QuartzControl bearbeitest. Nimm „Alle Texte“, wenn sie dabei sein soll.',
     baselineHint_other:
-      'Für {{count}} Sprachen lässt sich nicht feststellen, was du geändert hast — die Vergleichsbasis entsteht erst, wenn du einen Text in dieser App bearbeitest. Nimm „Alle Texte“, wenn eine davon dabei sein soll.',
+      'Für {{count}} Sprachen lässt sich nicht feststellen, was du geändert hast. Die Vergleichsbasis entsteht erst, wenn du einen Text in QuartzControl bearbeitest. Nimm „Alle Texte“, wenn eine davon dabei sein soll.',
     importHeading: 'Vorlage anwenden',
     importHint:
-      'Vorher wird automatisch ein Snapshot angelegt, der Import lässt sich also unter „Snapshots“ komplett zurücknehmen.',
+      'Vorher wird automatisch ein Snapshot angelegt.',
     planning: 'Paket wird geprüft…',
     pickBuiltin: 'Basis-Template',
     builtinDownloaded: 'Basis-Template, von GitHub geladen',
-    builtinBundled: 'Basis-Template, die Fassung aus der App (GitHub nicht erreichbar)',
-    builtinMissing: 'Das Basis-Template ließ sich weder laden noch in der App finden.',
+    builtinBundled: 'Basis-Template, die Fassung aus QuartzControl (GitHub nicht erreichbar)',
+    builtinMissing: 'Das Basis-Template konnte weder geladen noch in QuartzControl gefunden werden.',
     pickPackage: 'Vorlage wählen…',
     previewError: 'Das ist keine lesbare Vorlage (keine manifest.json gefunden).',
     legacyBadge: 'Altes Format',
     packageOrigin: 'Erstellt am {{date}} aus dem Projekt „{{project}}“',
     unknownProject: 'unbekannt',
     unknownParts:
-      'Diese Vorlage enthält Bausteine, die diese Version noch nicht kennt ({{parts}}) — sie werden übersprungen.',
+      'Diese Vorlage enthält Bausteine, die diese Version noch nicht kennt ({{parts}}). Sie werden übersprungen.',
     strategyHeading: 'Bei Konflikten',
     strategyPackage: 'Vorlage gewinnt',
     strategyProject: 'Projekt gewinnt',
@@ -2436,18 +2436,18 @@ export default {
     planKept: '{{count}} bleibt unverändert',
     planKept_other: '{{count}} bleiben unverändert',
     planIdentical: '{{count}} identisch',
-    planProjectIconKept: 'Das Projektbild bleibt: Du hast es in der App gewählt, die Vorlage ersetzt es nicht.',
-    planProjectIconKept_other: 'Die Projektbilder bleiben: Du hast sie in der App gewählt, die Vorlage ersetzt sie nicht.',
-    planUnrecordedIconReplaced: '{{names}} ist nicht das Bild von Quartz und wurde nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. „Vorlage gewinnt“ ersetzt es; „Projekt gewinnt“ behält es.',
-    planUnrecordedIconReplaced_other: '{{names}} wurden nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. „Vorlage gewinnt“ ersetzt sie; „Projekt gewinnt“ behält sie.',
-    planUnrecordedIconKept: '{{names}} ist nicht das Bild von Quartz und wurde nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. Es bleibt, weil „Projekt gewinnt“ gewählt ist.',
-    planUnrecordedIconKept_other: '{{names}} wurden nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. Sie bleiben, weil „Projekt gewinnt“ gewählt ist.',
+    planProjectIconKept: 'Das Projektbild bleibt: Du hast es in QuartzControl gewählt, die Vorlage ersetzt es nicht.',
+    planProjectIconKept_other: 'Die Projektbilder bleiben: Du hast sie in QuartzControl gewählt, die Vorlage ersetzt sie nicht.',
+    planUnrecordedIconReplaced: '{{names}} ist nicht das Bild von Quartz und wurde nicht in QuartzControl gewählt, vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. „Vorlage gewinnt“ ersetzt es; „Projekt gewinnt“ behält es.',
+    planUnrecordedIconReplaced_other: '{{names}} wurden nicht in QuartzControl gewählt, vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. „Vorlage gewinnt“ ersetzt sie; „Projekt gewinnt“ behält sie.',
+    planUnrecordedIconKept: '{{names}} ist nicht das Bild von Quartz und wurde nicht in QuartzControl gewählt, vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. Es bleibt, weil „Projekt gewinnt“ gewählt ist.',
+    planUnrecordedIconKept_other: '{{names}} wurden nicht in QuartzControl gewählt, vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. Sie bleiben, weil „Projekt gewinnt“ gewählt ist.',
     namesAnd: ' und ',
     planOutside: '{{count}} wird abgelehnt',
     planOutside_other: '{{count}} werden abgelehnt',
     planContentIsSymlink:
         'Wird übersprungen: Der Content-Ordner dieses Projekts ist ein Link in einen anderen Ordner. Dorthin schreibt eine Vorlage nichts.',
-    planLegacyStylesReplaced: '{{count}} Stylesheets aus der Aufteilung bis 1.0 lädt das Projekt danach nicht mehr — die zwölf der Vorlage ersetzen sie. Die Dateien bleiben im Ordner.',
+    planLegacyStylesReplaced: '{{count}} Stylesheets aus der Aufteilung bis 1.0 lädt das Projekt danach nicht mehr; die zwölf der Vorlage ersetzen sie. Die Dateien bleiben im Ordner.',
     planLegacyStylesKept: 'Dieses Projekt lädt noch {{count}} Stylesheets aus der Aufteilung bis 1.0, und dabei bleibt es: Die zwölf der Vorlage kommen in den Ordner, geladen werden sie nicht. Die eigenen führt „Zusammenlegen“ unter Stile → Eigenes CSS zusammen.',
     planMissingVariables: 'Die Stylesheets der Vorlage lesen {{count}} CSS-Variable, die dieses Projekt nicht hat ({{names}}). Sie kommt mit dem Teil „CSS-Variablen“; ohne ihn gilt die Regel nicht.',
     planMissingVariables_other: 'Die Stylesheets der Vorlage lesen {{count}} CSS-Variablen, die dieses Projekt nicht hat ({{names}}). Sie kommen mit dem Teil „CSS-Variablen“; ohne ihn gelten diese Regeln nicht.',
@@ -2477,7 +2477,7 @@ export default {
     confirmOverwrite:
       '{{count}} Baustein(e) anwenden? Vorhandenes in diesem Projekt wird dabei durch die Vorlage ersetzt. Vorher wird ein Snapshot angelegt.',
     confirmMerge: '{{count}} Baustein(e) anwenden? Vorhandenes in diesem Projekt bleibt unverändert.',
-    importSuccessNoWarnings: 'Fertig — alles übernommen, nichts blieb offen.',
+    importSuccessNoWarnings: 'Fertig: alles übernommen, nichts blieb offen.',
     warningsMore: 'und {{count}} weiterer Fall',
     warningsMore_other: 'und {{count}} weitere Fälle',
     parts: {
@@ -2495,7 +2495,7 @@ export default {
       },
       styles: {
         label: 'Eigenes CSS',
-        description: 'custom.scss und alle Stylesheets, die du angelegt oder importiert hast — samt ihrer Ladereihenfolge.'
+        description: 'custom.scss und alle Stylesheets, die du angelegt oder importiert hast, samt ihrer Ladereihenfolge.'
       },
       fonts: {
         label: 'Schriftdateien',
@@ -2508,7 +2508,7 @@ export default {
       },
       layout: {
         label: 'Layout',
-        description: 'Welche Komponente wo erscheint, pro Seitentyp — und ab welcher Breite umgebrochen wird.'
+        description: 'Welche Komponente wo erscheint, pro Seitentyp, und ab welcher Breite umgebrochen wird.'
       },
       frames: {
         label: 'Eigene Frames',
@@ -2529,7 +2529,7 @@ export default {
       content: {
         label: 'Inhalt',
         description:
-          'Die Notizen selbst. Bei den meisten Vorlagen willst du das nicht — eine Vorlage ist eine Gestaltung. Bei einer, die sich selbst erklärt, schon.'
+          'Die Notizen selbst. Bei den meisten Vorlagen willst du das nicht, denn eine Vorlage ist eine Gestaltung. Bei einer, die sich selbst erklärt, schon.'
       }
     },
     stats: {
@@ -2578,10 +2578,10 @@ export default {
       styleFileSkipped_other: '{{count}} vorhandene Stylesheet-Dateien blieben unverändert.',
       fontSkipped: '{{count}} gleichnamige Schriftdatei mit anderem Inhalt blieb unverändert.',
       fontSkipped_other: '{{count}} gleichnamige Schriftdateien mit anderem Inhalt blieben unverändert.',
-      projectIconKept: '{{count}} Projektbild blieb unverändert — du hast es in der App gewählt.',
-      projectIconKept_other: '{{count}} Projektbilder blieben unverändert — du hast sie in der App gewählt.',
-      fontRemoved: '{{count}} Schriftdatei der ersetzten Regeln wurde entfernt — keine Regel nennt sie mehr.',
-      fontRemoved_other: '{{count}} Schriftdateien der ersetzten Regeln wurden entfernt — keine Regel nennt sie mehr.',
+      projectIconKept: '{{count}} Projektbild blieb unverändert, weil du es in QuartzControl gewählt hast.',
+      projectIconKept_other: '{{count}} Projektbilder blieben unverändert, weil du sie in QuartzControl gewählt hast.',
+      fontRemoved: '{{count}} Schriftdatei der ersetzten Regeln wurde entfernt, weil keine Regel sie mehr nennt.',
+      fontRemoved_other: '{{count}} Schriftdateien der ersetzten Regeln wurden entfernt, weil keine Regel sie mehr nennt.',
       staticSkipped: '{{count}} gleichnamige Datei unter quartz/static blieb unverändert.',
       staticSkipped_other: '{{count}} gleichnamige Dateien unter quartz/static blieben unverändert.',
       presetSkipped: '{{count}} vorhandenes Preset blieb unverändert.',
@@ -2624,13 +2624,13 @@ export default {
     showOther: 'Weitere {{count}} Repositories anzeigen',
     hideOther: 'Weitere {{count}} Repositories ausblenden',
     otherDescription:
-      'Repositories der quartz-community-Organisation ohne die Markierung „quartz-plugin“ — darunter Quartz selbst, gemeinsam genutzte Bibliotheken, Vorlagen und Forks. Meistens nicht als Plugin installierbar.',
+      'Repositories der quartz-community ohne die Markierung „quartz-plugin“, darunter Quartz selbst, gemeinsam genutzte Bibliotheken, Vorlagen und Forks. Meistens nicht als Plugin installierbar.',
     installedMessage: '{{name}} installiert.',
     loading: 'Katalog wird geladen…',
     refresh: 'Katalog neu laden',
     refreshing: 'Lade…',
     unavailable:
-      'Der Katalog ist gerade nicht erreichbar (GitHub antwortet nicht oder das Anfragelimit ist erschöpft). Unten steht deshalb nur ein Platzhalter — mit „Katalog neu laden“ nochmal versuchen. Ein GitHub-Token in den Einstellungen hebt das Limit deutlich an.'
+      'Der Katalog ist gerade nicht erreichbar (GitHub antwortet nicht oder das Anfragelimit ist erschöpft). Unten steht deshalb nur ein Platzhalter. Mit „Katalog neu laden“ nochmal versuchen; ein GitHub-Token in den Einstellungen hebt das Limit deutlich an.'
   },
   dnd: {
     instructions:

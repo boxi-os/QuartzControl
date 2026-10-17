@@ -99,8 +99,18 @@ async function findCssFiles(dir: string, depth = 0): Promise<string[]> {
 // in Example 65 of the 66 variables the page declares itself, and with them the rows of the table.
 //
 // `layered` says whether the rule sits inside an `@layer`: the variables the page writes itself are
-// unlayered, Quartz's own are not (see getVariableGraph).
-function eachRule(css: string, visit: (selector: string, body: string, layered: boolean) => void, layered = false): void {
+// unlayered, Quartz's own are not (see getVariableGraph). `conditional` says whether it sits inside
+// any other block at-rule (@media, @supports, @container …), which only applies under a condition.
+interface RuleContext {
+  layered: boolean
+  conditional: boolean
+}
+
+function eachRule(
+  css: string,
+  visit: (selector: string, body: string, context: RuleContext) => void,
+  context: RuleContext = { layered: false, conditional: false }
+): void {
   let depth = 0
   let start = 0
   let selectorStart = 0
@@ -122,8 +132,10 @@ function eachRule(css: string, visit: (selector: string, body: string, layered: 
       if (depth === 0) {
         const selector = css.slice(selectorStart, start - 1).trim()
         const body = css.slice(start, i)
-        if (selector.startsWith('@')) eachRule(body, visit, layered || /^@layer\b/.test(selector))
-        else visit(selector, body, layered)
+        if (selector.startsWith('@')) {
+          const layer = /^@layer\b/.test(selector)
+          eachRule(body, visit, { layered: context.layered || layer, conditional: context.conditional || !layer })
+        } else visit(selector, body, context)
         start = i + 1
       }
       if (depth < 0) return // malformed input - stop rather than mis-attribute the rest
@@ -215,7 +227,11 @@ export async function getVariableGraph(
     const files = (await findCssFiles(buildDir)).slice(0, 50)
     for (const file of files) {
       const content = await readFile(file, 'utf-8')
-      eachRule(content, (selector, body, layered) => {
+      eachRule(content, (selector, body, { layered, conditional }) => {
+        // A :root rule inside @media is no base value, it is the exception to one: the template's
+        // `@media (prefers-reduced-motion: reduce) { :root { --tpl-motion: 0s } }` stood in the
+        // table as the value of --tpl-motion, and a variable only set there looked set everywhere.
+        if (conditional) return
         const mode = rootSelectorMode(selector)
         if (!mode) return
         for (const [name, value] of collectDeclarations(body)) {

@@ -259,3 +259,8 @@ was gemessen wurde, `decisions/`.
   aus der App heraus nicht zum Laufen, und „Wiederherstellen“ endet dort im Stacktrace (Mittel);
   „Projekt gewinnt“ hängt einen Kommentar an `custom.scss`, der nicht stimmt (Niedrig). Offen: 2,
   3 und 6.
+- **2026-10-17, Szene 2 (Git-Sync 1.0.2 ↔ 1.1):** derselbe Ergebnisbericht. Hin und zurück, mit und
+  ohne „Jetzt umstellen“, kein Konflikt und kein Verlust; 1.1 legt den Block, den 1.0.2 nach dem
+  Umstellen in `custom.scss` schreibt, beim nächsten Speichern zusammen. Ein Befund (Mittel): Eigene
+  Frames liegen in `.quartz-gui/` und reisen nicht mit, auf dem zweiten Rechner sagt nur die
+  Layout-Seite das. Offen: 3 und 6.

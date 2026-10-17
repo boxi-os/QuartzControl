@@ -1422,7 +1422,7 @@ export default {
     savedFlash: 'Gespeichert',
     maintenanceHeading: 'Wartung',
     maintenanceDescription:
-      'Betrifft nur die heruntergeladenen Plugin-Dateien im Ordner .quartz/plugins. An der Konfiguration und an deiner Website ändern sie nichts. Der Ordner kommt nicht mit ins Repository, nach dem Klonen auf einem anderen Rechner stellst du ihn hier aus quartz.lock.json wieder her. Fehlende npm-Pakete werden dabei zuerst installiert.',
+      'Die Buttons arbeiten an den heruntergeladenen Plugins in .quartz/plugins und ändern nichts an Konfiguration und Website. Nach dem Klonen auf einem anderen Rechner stellst du den Ordner hier aus quartz.lock.json wieder her, fehlende npm-Pakete werden dabei zuerst installiert.',
     installFromLock: 'Aus quartz.lock.json wiederherstellen',
     installFromLockRunning: 'Stelle wieder her…',
     installDone: 'Plugins aus der Lockdatei wiederhergestellt.',

@@ -2050,6 +2050,7 @@ export default {
         core: 'Quartz core',
         theme: 'Community theme',
         build: 'Last build',
+        project: 'Stylesheet {{file}}',
         user: 'changed',
         own: 'own variable'
       }

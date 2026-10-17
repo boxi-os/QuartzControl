@@ -529,7 +529,7 @@ export function stripManagedBlock(content: string, markerId: string): string {
 const IMPORTS_MARKER = 'imports' satisfies MovedMarker
 const STYLE_DIRS = ['custom', 'imported'] as const
 
-function stylesDir(projectPath: string): string {
+export function stylesDir(projectPath: string): string {
   return join(projectPath, 'quartz', 'styles')
 }
 

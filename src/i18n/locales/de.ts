@@ -2058,6 +2058,7 @@ export default {
         core: 'Quartz-Kern',
         theme: 'Community-Theme',
         build: 'Letzter Build',
+        project: 'Stylesheet {{file}}',
         user: 'geändert',
         own: 'eigene Variable'
       }

@@ -7,7 +7,7 @@ import { CSS_VARIABLES, defaultValueFor, type CssVariableDef } from '../../data/
 export type OverrideValue = { light: string; dark: string; lightOnly?: boolean }
 
 export type Mode = 'light' | 'dark'
-export type VariableOrigin = 'core' | 'theme' | 'build' | 'user' | 'own'
+export type VariableOrigin = 'core' | 'theme' | 'build' | 'project' | 'user' | 'own'
 
 export interface ResolveContext {
   graph: CssVariableGraph | null

@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from 'fs'
 import { readFile, readdir } from 'fs/promises'
-import { join } from 'path'
+import { join, relative, sep } from 'path'
 import type { CssVariableGraph, CssVariableInfo } from '@shared/ipc-contract'
 import { resolveBuildDir } from './projectDirs'
-import { getVariableOverrides } from './styleService'
+import { getVariableOverrides, projectStylesheets, stripManagedBlock, stylesDir } from './styleService'
 
 // Where a variable's value came from. Precedence when the same name appears in more than one
 // source is theme > build: an installed theme.json is authoritative and cleanly split per mode,
@@ -130,7 +130,8 @@ function eachRule(
     } else if (ch === '}') {
       depth--
       if (depth === 0) {
-        const selector = css.slice(selectorStart, start - 1).trim()
+        // A comment right before the rule is part of the slice: `/* the sticky header */ :root`.
+        const selector = css.slice(selectorStart, start - 1).replace(/\/\*[\s\S]*?\*\//g, '').trim()
         const body = css.slice(start, i)
         if (selector.startsWith('@')) {
           const layer = /^@layer\b/.test(selector)
@@ -162,6 +163,26 @@ function rootSelectorMode(selector: string): 'light' | 'dark' | null {
     if (/^(:root|html|body)+$/.test(stripped)) return mode
   }
   return null
+}
+
+// Which of the project's own stylesheets declares a name in a global :root rule - so a variable a
+// template's layout.scss sets says so, instead of "Letzter Build" (--tpl-header-pad and four more
+// in every project with the example template). The page's own block is taken out first: what it
+// declares is the user's value, not the stylesheet's. Read as SCSS only as far as this needs: `//`
+// comments go, since an apostrophe in one would open a string for eachRule. First file wins, in
+// the order projectStylesheets() lists them - custom.scss first, whose rules come last on the site.
+async function projectDeclarations(projectPath: string): Promise<Map<string, string>> {
+  const out = new Map<string, string>()
+  for (const file of await projectStylesheets(projectPath)) {
+    const text = stripManagedBlock(await readFile(file, 'utf-8').catch(() => ''), 'css-vars')
+    const css = text.replace(/(^|[\s;{}])\/\/[^\n]*/g, '$1')
+    const source = relative(stylesDir(projectPath), file).split(sep).join('/')
+    eachRule(css, (selector, body, { conditional }) => {
+      if (conditional || !rootSelectorMode(selector)) return
+      for (const name of collectDeclarations(body).keys()) if (!out.has(name)) out.set(name, source)
+    })
+  }
+  return out
 }
 
 /**
@@ -239,6 +260,15 @@ export async function getVariableGraph(
           note(name, mode, value, 'build')
         }
       })
+    }
+  }
+
+  // Only names the build has: the value shown is the compiled one, and the stylesheet is where it
+  // comes from. A theme's value stays the theme's.
+  if (hasBuild) {
+    for (const [name, source] of await projectDeclarations(projectPath)) {
+      const entry = vars[name]
+      if (entry?.origin === 'build') vars[name] = { ...entry, origin: 'project', source }
     }
   }
 

@@ -27,6 +27,7 @@ const ORIGIN_TONE: Record<VariableOrigin, 'slate' | 'green' | 'amber'> = {
   core: 'slate',
   theme: 'slate',
   build: 'slate',
+  project: 'slate',
   user: 'green',
   own: 'green'
 }
@@ -291,7 +292,9 @@ function VariableRow({
       <section>
         <SectionLabel>{t('styles.variables.section.origin')}</SectionLabel>
         <p className="mb-1 text-micro text-text-muted">
-          {isOwn ? t('styles.variables.ownHint') : t(`styles.variables.origin.${origin}`)}
+          {isOwn
+            ? t('styles.variables.ownHint')
+            : t(`styles.variables.origin.${origin}`, { file: ctx.graph?.vars[varKey]?.source })}
         </p>
         <Chain varKey={varKey} mode="light" ctx={ctx} label={t('styles.variables.light')} />
         {(dark !== light || darkResolved !== lightResolved) && (

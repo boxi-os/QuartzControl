@@ -852,8 +852,11 @@ export interface CssVariableInfo {
   light?: string
   dark?: string
   // 'theme' = declared by the installed @quartz-themes package's own :root block, 'build' = found
-  // in compiled build output (Quartz's own generated CSS, or a plugin's).
-  origin: 'theme' | 'build'
+  // in compiled build output (Quartz's own generated CSS, or a plugin's), 'project' = found there
+  // too, but declared by one of the project's own stylesheets - `source` names it.
+  origin: 'theme' | 'build' | 'project'
+  /** For 'project': the stylesheet, relative to quartz/styles (`custom/layout.scss`). */
+  source?: string
 }
 
 // A community theme can bring ~1000 variables (verified: @quartz-themes/tokyo-night declares 978,

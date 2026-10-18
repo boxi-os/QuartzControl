@@ -24,6 +24,7 @@ import * as themePresetsService from '../themePresetsService'
 import * as variableGraphService from '../variableGraphService'
 import { runCommand } from '../runCommand'
 import { mainT } from '../../i18n'
+import { catalogDef, defaultValueFor } from '@shared/cssVariables'
 import { isConsolidatedOnlyStylesheet, isConsolidatedOrder, isLegacyOnlyStylesheet } from '@shared/stylesheetConsolidation'
 import type { ZipEntry } from '../zipArchive'
 import { emptyPlan, hasNodeModule, installedVersion, listFilesFlat, writableTarget, type ApplyContext, type TemplatePart } from './shared'
@@ -200,13 +201,14 @@ const cssVariables: TemplatePart<CssVariablesPayload> = {
 // 1.0.1, with the dark half explicit, as the Variables tab writes it there: 1.0.x reads and writes
 // that custom.scss too, knows no third rule and drops it with the next variable it saves
 // (forty-seventh review, Hoch 1 - this is the same gap through the import). The dark half is the
-// value the variable graph has for the target as it stands, theme and build. Where the graph has
-// none, Quartz's palette comes from the config's darkMode colours, which is what Quartz compiles its
-// dark rule from: the graph knows that rule only from public/, and the entry stayed light-only in
-// every project never built, for exactly the palette colours a light-only edit is made of; 1.0.2
-// then deleted --tertiary with the next variable it saved (forty-eighth review, Mittel 1). A name
-// neither knows gets the light value in both modes, as the Variables tab writes a light edit whose
-// base it does not know - kept light-only, the value was gone on the way back to 1.0.x.
+// value the Variables tab shows as the base (baseValue): the variable graph for the target as it
+// stands, theme and build, then the catalog of Quartz's own variables derived from the config's
+// colours, which is what Quartz compiles its dark rule from. With the graph alone the entry stayed
+// light-only in every project never built - the graph knows that rule only from public/ - for
+// exactly the palette colours a light-only edit is made of; 1.0.2 then deleted --tertiary with the
+// next variable it saved (forty-eighth review, Mittel 1). A name neither knows gets the light value
+// in both modes, as the tab writes a light edit whose base it does not know - kept light-only, the
+// value was gone on the way back to 1.0.x.
 async function inFormOfTarget(projectPath: string, overrides: CssVariableOverride[]): Promise<CssVariableOverride[]> {
   const lightOnly = (o: CssVariableOverride): boolean => o.lightOnly === true && !o.dark?.trim()
   if (!overrides.some(lightOnly) || styleService.isMoved(await styleService.readStyleSources(projectPath))) return overrides
@@ -216,12 +218,12 @@ async function inFormOfTarget(projectPath: string, overrides: CssVariableOverrid
   const theme = config.plugins[themeEntryIndex(config.plugins)]
   const themeId = theme?.enabled && typeof theme.options?.theme === 'string' ? theme.options.theme : undefined
   const graph = await variableGraphService.getVariableGraph(projectPath, themeId)
-  const palette = (config.theme.colors?.darkMode ?? {}) as Record<string, unknown>
+  const colors = (config.theme.colors ?? {}) as Parameters<typeof defaultValueFor>[1]
   return overrides.map((o) => {
     if (!lightOnly(o)) return o
     const info = graph.vars[o.key]
-    const fromConfig = Object.hasOwn(palette, o.key) && typeof palette[o.key] === 'string' ? (palette[o.key] as string) : undefined
-    const dark = info?.dark ?? info?.light ?? fromConfig
+    const def = catalogDef(o.key)
+    const dark = info?.dark || info?.light || (def && defaultValueFor(def, colors, config.theme.typography, 'dark')) || undefined
     return dark === undefined ? { key: o.key, light: o.light } : { key: o.key, light: o.light, dark }
   })
 }

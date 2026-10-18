@@ -1,5 +1,7 @@
 import type { CssVariableGraph } from '@shared/ipc-contract'
-import { CSS_VARIABLES, defaultValueFor, type CssVariableDef } from '../../data/cssVariables'
+import { catalogDef, CSS_VARIABLES, defaultValueFor, type CssVariableDef } from '@shared/cssVariables'
+
+export { catalogDef }
 
 // One variable's override as the page holds it. An empty `dark` is "no dark declaration"; with
 // `lightOnly` the light value applies in light mode only and the dark mode keeps the theme's value
@@ -15,8 +17,6 @@ export interface ResolveContext {
   colors: { lightMode?: Record<string, string>; darkMode?: Record<string, string> }
   typography: Record<string, string> | undefined
 }
-
-const CATALOG_BY_KEY = new Map(CSS_VARIABLES.map((def) => [def.key, def]))
 
 const ANY_REFERENCE = /var\(\s*--([\w-]+)/g
 const VAR_HEAD = /^\s*--([\w-]+)\s*(?:,|$)/
@@ -48,10 +48,6 @@ export function pureAlias(value: string): { target: string; fallback?: string } 
   if (!head) return null
   const comma = inner.indexOf(',')
   return { target: head[1], fallback: comma === -1 ? undefined : inner.slice(comma + 1).trim() }
-}
-
-export function catalogDef(key: string): CssVariableDef | undefined {
-  return CATALOG_BY_KEY.get(key)
 }
 
 // What this variable resolves to today, one step deep - overrides first (custom.scss is emitted

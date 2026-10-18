@@ -1,5 +1,5 @@
 import type { StyleSettingField } from '@shared/ipc-contract'
-import { hexToHsl } from '../../data/cssVariables'
+import { hexToHsl } from '@shared/cssVariables'
 
 /**
  * How a Style Settings value has to be written into quartz.config.yaml so @quartz-themes/core

@@ -10,7 +10,7 @@ import {
   resolveCalloutColorValue,
   type CalloutColorDef,
   type CssVariableDef
-} from '../../data/cssVariables'
+} from '@shared/cssVariables'
 import {
   cssColorToHex,
   effectiveValue,

@@ -824,7 +824,7 @@ export type ScssCheckResult =
   | { status: 'error'; diagnostic: ScssDiagnostic }
   | { status: 'unavailable'; reason: string }
 
-// One derived CSS custom property (see src/data/cssVariables.ts for the curated catalog sourced
+// One derived CSS custom property (see shared/cssVariables.ts for the curated catalog sourced
 // from quartz/util/theme.ts's joinStyles()) the user has chosen to override, stored in
 // custom.scss's managed "css-vars" section. custom.scss is emitted unlayered while Quartz's own
 // generated theme CSS lives inside `@layer quartz-base` (componentResources.ts), so an unlayered

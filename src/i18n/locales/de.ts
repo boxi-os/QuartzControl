@@ -2001,6 +2001,7 @@ export default {
       allDescriptionTheme:
         'Alles, was das Theme „{{themeId}}“, Plugins oder der letzte Build mitbringen: {{count}} Variablen, nach Namensanfang gruppiert. Gruppe aufklappen oder suchen.',
       counter: '{{overridden}} von {{total}} überschrieben',
+      counterNoBuild: '{{overridden}} überschrieben, die Gesamtzahl kennt erst ein Build',
       searchPlaceholder: 'Variable suchen (z. B. callout, h1, background)…',
       onlyChanged: 'Nur geänderte',
       kind: {

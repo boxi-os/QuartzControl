@@ -1993,6 +1993,7 @@ export default {
       allDescriptionTheme:
         'Everything the theme “{{themeId}}”, plugins, or the last build bring along: {{count}} variables, grouped by name prefix. Open a group or search.',
       counter: '{{overridden}} of {{total}} overridden',
+      counterNoBuild: '{{overridden}} overridden, the total needs a build',
       searchPlaceholder: 'Search variable (e.g. callout, h1, background)…',
       onlyChanged: 'Changed only',
       kind: {

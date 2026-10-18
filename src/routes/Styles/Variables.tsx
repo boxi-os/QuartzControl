@@ -360,7 +360,11 @@ function AllVariables({
           <h3 className="text-sm font-semibold">{t('styles.variables.allHeading')}</h3>
         </button>
         <span className="text-xs text-text-muted">
-          {t('styles.variables.counter', { overridden: overriddenCount, total: keys.length })}
+          {/* Without a build the list holds only the theme's names and the page's own, so a total
+              would read as "all of them changed" (67 of 67 on a project with no public/). */}
+          {sources?.build === false
+            ? t('styles.variables.counterNoBuild', { overridden: overriddenCount })
+            : t('styles.variables.counter', { overridden: overriddenCount, total: keys.length })}
         </span>
       </div>
 
@@ -389,6 +393,7 @@ function AllVariables({
 
           {!loading && keys.length > 0 && (
             <>
+              {sources?.build === false && <p className="mb-2 text-xs text-text-muted">{t('styles.variables.noBuild')}</p>}
               <div className="mb-2 flex flex-wrap items-center gap-3">
                 <TextInput
                   value={query}

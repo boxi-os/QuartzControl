@@ -3,7 +3,7 @@ import { readFile, readdir } from 'fs/promises'
 import { join, relative, sep } from 'path'
 import type { CssVariableGraph, CssVariableInfo } from '@shared/ipc-contract'
 import { resolveBuildDir } from './projectDirs'
-import { getVariableOverrides, projectStylesheets, stripManagedBlock, stylesDir } from './styleService'
+import { getVariableOverrides, loadedStylesheetsLastFirst, stripManagedBlock, stylesDir } from './styleService'
 
 // Where a variable's value came from. Precedence when the same name appears in more than one
 // source is theme > build: an installed theme.json is authoritative and cleanly split per mode,
@@ -169,11 +169,12 @@ function rootSelectorMode(selector: string): 'light' | 'dark' | null {
 // template's layout.scss sets says so, instead of "Letzter Build" (--tpl-header-pad and four more
 // in every project with the example template). The page's own block is taken out first: what it
 // declares is the user's value, not the stylesheet's. Read as SCSS only as far as this needs: `//`
-// comments go, since an apostrophe in one would open a string for eachRule. First file wins, in
-// the order projectStylesheets() lists them - custom.scss first, whose rules come last on the site.
+// comments go, since an apostrophe in one would open a string for eachRule. Only loaded files are
+// read, and the first that declares a name wins - loadedStylesheetsLastFirst() lists the file
+// whose rules come last on the site first.
 async function projectDeclarations(projectPath: string): Promise<Map<string, string>> {
   const out = new Map<string, string>()
-  for (const file of await projectStylesheets(projectPath)) {
+  for (const file of await loadedStylesheetsLastFirst(projectPath)) {
     const text = stripManagedBlock(await readFile(file, 'utf-8').catch(() => ''), 'css-vars')
     const css = text.replace(/(^|[\s;{}])\/\/[^\n]*/g, '$1')
     const source = relative(stylesDir(projectPath), file).split(sep).join('/')

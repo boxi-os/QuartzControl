@@ -589,6 +589,18 @@ function upsertImportBlock(content: string, body: string): string {
   return migrateOnWrite(insertBeforeRules(content, `${start}\n${body}\n${end}`))
 }
 
+/**
+ * The project stylesheets whose rules reach the site, the one whose rules come last first:
+ * custom.scss, _quartzcontrol.scss, then the import block's files from its end. A file left in
+ * custom/ but not in the block is not loaded and not listed - after "Vorlage gewinnt" on a 1.0
+ * project that is 29 of 41 (forty-sixth review, Mittel 2).
+ */
+export async function loadedStylesheetsLastFirst(projectPath: string): Promise<string[]> {
+  const order = await currentOrder(projectPath)
+  const files = [customScssPath(projectPath), managedScssPath(projectPath), ...order.reverse().map((p) => styleFilePath(projectPath, p))]
+  return files.filter((f) => existsSync(f))
+}
+
 // Placed directly after the leading @charset/@use/@forward lines (Quartz's own
 // `@use "./variables.scss" as *;` among them) - *not* after the leading comments, which would
 // push the block past a "// put your custom CSS here!" line and, in a file that has one, all

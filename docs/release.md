@@ -418,8 +418,13 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
     Variablen nach `quartz/styles/_quartzcontrol.scss`; ein Projekt, das 1.1 anlegt, beginnt so.
     1.0.x liest ein solches Projekt mit 0 Variablen und 0 Stylesheets, und was man dort
     einschaltet, steht danach als zweite Kopie in `custom.scss`. Ohne „Jetzt umstellen“ schreibt
-    1.1 die Form von 1.0. Der Satz: „Wer ein Projekt auf mehreren Rechnern bearbeitet, aktualisiert
-    zuerst alle Rechner auf 1.1 und stellt die Stile erst danach um.“
+    1.1 die Form von 1.0. Unabhängig davon bricht 1.1 lange Zeilen in `quartz.config.yaml` bei 120
+    Zeichen um wie die Quartz-CLI, 1.0.x bei 80; speichern beide Fassungen abwechselnd, trägt jeder
+    Commit diesen Umbruch (gemessen an `ntp-lo`: 127 Zeilen, nur `pageTitle` geändert;
+    siebenundvierzigstes Review, Niedrig 2), und zwei Rechner laufen beim Pull in Konflikte in
+    Zeilen, die niemand geändert hat. Der Satz: „Wer ein Projekt auf mehreren Rechnern bearbeitet,
+    aktualisiert zuerst alle Rechner auf 1.1 und stellt die Stile erst danach um. Solange ein
+    Rechner noch 1.0 hat, bricht jedes Speichern die Config für die andere Fassung neu um.“
   - *Rangfolge der Variablen.* Umgestellt stehen die Variablen der Stile-Seite vor den eigenen
     Regeln in `custom.scss`, bis 1.0 standen sie dahinter. Eine eigene Regel gewinnt jetzt, wo sie
     mindestens so spezifisch ist: `:root { --x: … }` gegen den hellen Wert,

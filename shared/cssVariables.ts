@@ -208,15 +208,15 @@ export function resolveCalloutColorValue(
   return palette[match[1]] ?? ''
 }
 
-// Computes the value this variable would resolve to today, absent any override - used to prefill
-// the light/dark value fields when a variable's "anpassen" toggle is switched on, so both fields
-// start from the real current default rather than blank.
 const CATALOG_BY_KEY = new Map(CSS_VARIABLES.map((def) => [def.key, def]))
 
 export function catalogDef(key: string): CssVariableDef | undefined {
   return CATALOG_BY_KEY.get(key)
 }
 
+// Computes the value this variable would resolve to today, absent any override - used to prefill
+// the light/dark value fields when a variable's "anpassen" toggle is switched on, so both fields
+// start from the real current default rather than blank.
 export function defaultValueFor(
   def: CssVariableDef,
   colors: { lightMode?: Record<string, string>; darkMode?: Record<string, string> },

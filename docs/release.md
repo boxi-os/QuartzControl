@@ -129,6 +129,22 @@ Website wird mit dem Release veröffentlicht (Punkt 9). Die Pfade in `src/data/h
 müssen dort existieren — nach einer Umbenennung im Vault alle 36 prüfen (sie antworten mit 200 oder
 404).
 
+**Für 1.1: Kapitel 4.7 heißt neu.** Aus `4-gestaltung/07-layout-global-und-seitentypen` wurde
+`4-gestaltung/07-layout-komponenten-anordnen` (en: `07-layout-arranging-components`), und
+`handbookPages.ts` nennt seit `6e06a333` den neuen Pfad. Bis QuartzControl-Web am Release-Tag
+veröffentlicht ist, antwortet er dort mit 404 — am 2026-10-18 gemessen, die übrigen 34 mit 200. Der
+alte Pfad, den 1.0.x öffnet, steht als `aliases:` auf der neuen Seite und wird zur Weiterleitung.
+Nach dem Veröffentlichen (Punkt 9) alle Pfade der Tabelle und die zwei alten:
+
+    for p in $(grep -o "'\(en/\)\?[0-9]-[a-z0-9/-]*'" src/data/handbookPages.ts | tr -d "'") \
+        4-gestaltung/07-layout-global-und-seitentypen en/4-design/07-layout-global-and-page-types; do
+      c=$(curl -s -o /dev/null -w '%{http_code}' "https://boxi-os.github.io/QuartzControl/$p")
+      [ "$c" = 200 ] || echo "$c $p"
+    done
+
+Keine Ausgabe heißt: alle antworten mit 200. Die alten zwei sind dann Weiterleitungsseiten; dass sie
+auf die neue Seite führen, sieht man nur im Browser.
+
 **Für 1.0.0 erledigt:** Kapitel 4.4 „Variablen“ (sechsunddreißigstes Review, Befund 10) und die
 drei Plugin-Handbücher (Akkordeon und Pager im Navigations-Handbuch, Marke als Projektbild,
 Startseiten mit den Fähigkeiten) stehen seit dem 2026-09-25 online, zusammen mit der App-Website.

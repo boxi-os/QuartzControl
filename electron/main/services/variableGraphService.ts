@@ -279,18 +279,18 @@ export async function getVariableGraph(
   // comes from. A theme's value stays the theme's. A name the page sets too lost the stylesheet's
   // compiled declaration to the skip above, so its value is the stylesheet's own text - without
   // it, --tpl-header-pad set in layout.scss and in the page became "eigene Variable" with a trash
-  // can whose question said nothing would set it any more (forty-sixth review, Niedrig 1).
-  if (hasBuild) {
-    for (const [name, declaration] of await projectDeclarations(projectPath)) {
-      if (!vars[name] && own.has(name)) {
-        for (const mode of ['light', 'dark'] as const) {
-          const value = declaration[mode]
-          if (value !== undefined) note(name, mode, value, 'build')
-        }
+  // can whose question said nothing would set it any more (forty-sixth review, Niedrig 1). That
+  // fallback needs no build, so it runs before the first one too; it sat under `hasBuild`, and
+  // without public/ the same variable was "eigene Variable" again (review 2026-10-20, nebenbei).
+  for (const [name, declaration] of await projectDeclarations(projectPath)) {
+    if (!vars[name] && own.has(name)) {
+      for (const mode of ['light', 'dark'] as const) {
+        const value = declaration[mode]
+        if (value !== undefined) note(name, mode, value, 'build')
       }
-      const entry = vars[name]
-      if (entry?.origin === 'build') vars[name] = { ...entry, origin: 'project', source: declaration.source }
     }
+    const entry = vars[name]
+    if (entry?.origin === 'build') vars[name] = { ...entry, origin: 'project', source: declaration.source }
   }
 
   return {

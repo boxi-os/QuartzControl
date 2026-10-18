@@ -145,6 +145,9 @@ alten Linux den falschen Rat. Offen bleiben aus dieser Gruppe (VoiceOver ist am 
 Schriftliste, behoben) **macOS x64 auf einer Maschine seiner
 Architektur** (kein Intel-Mac, kein Rosetta) und **ein Linux mit glibc unter 2.34** — dazu weiter
 **C1 auf einem echten Linux mit git vor 2.38**; beide VMs liefern 2.47.3.
+*Seit dem 2026-10-18 entschieden: Alte Systemversionen werden nicht unterstützt; glibc unter 2.34
+und C1 mit git vor 2.38 werden nicht mehr gefahren. Offen bleibt nur macOS x64
+([`alpha-test.md`](alpha-test.md), Gruppe D).*
 
 Die Runde davor (dreiunddreißigstes Review, dreizehn Befunde, vier Mittel) ist abgearbeitet und
 auf `main`; das vierunddreißigste hat sie gelesen und achtzehn ihrer zwanzig Fixes bestätigt.

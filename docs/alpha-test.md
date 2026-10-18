@@ -235,6 +235,12 @@ ein echtes System-git vor 2.38](#c1-ein-abbruch-auf-einem-linux-mit-altem-system
 Debian-VMs liefern git 2.47.3, gemessen ist der Abbruch bisher nur unter macOS mit einem aus der
 Quelle gebauten 2.37.0.
 
+**Entschieden am 2026-10-18 (Nutzer): Alte Systemversionen werden nicht unterstützt.** C1 auf einem
+echten Linux und ein System mit glibc unter 2.34 werden deshalb nicht mehr gefahren. Was die App
+dort sagt, bleibt im Code und ist an den Stellen gemessen, die oben stehen (git 2.37.0 unter macOS,
+glibc aus den Symbolen gelesen). VoiceOver ist am 2026-09-21 gefahren. Offen bleibt aus dieser
+Gruppe nur macOS x64 auf einer Maschine seiner Architektur.
+
 ## Wenn etwas gefunden wird
 
 Ein Befund gehört hierher wie in ein Review: **die Stelle, was schiefgeht, wie es sich zeigt** — und

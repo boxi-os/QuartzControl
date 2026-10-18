@@ -79,6 +79,33 @@ Was ein `+` zeigt, wird gemergt oder bewusst verworfen (Regel in `CLAUDE.md`, �
 Branch, der nie gemergt wurde, ist keiner“). Am 2026-09-14 zeigte nur `origin/gh-pages` eines —
 der Deploy-Branch, erwartet.
 
+## 2b. Die eigenen Plugins sind vor der App veröffentlicht
+
+Seit 1.1 hängen App, Vorlage und Handbuch an Fassungen der drei eigenen Plugins
+(`quartz-layout-box`, `quartz-multilanguage`, `quartz-navigations`):
+
+- **Das Formular kommt aus dem Plugin.** Die App baut die Optionen aus dem `quartz.configSchema`
+  der *installierten* Fassung (seit layout-box 0.4.0, multilanguage 0.2.0, navigations 0.4.0);
+  eine ältere bekommt das Formular aus ihren `.d.ts`, ohne Abschnitte, Bedingungen und
+  Snippet-Auswahl. Auch die Texte des Formulars stehen dort (`x-quartz-l10n`).
+- **Die Vorlage installiert, was auf `main` liegt.** `plugins.json` des Pakets nennt die drei als
+  `github:boxi-os/<name>` ohne Ref; ein Import holt den Stand von `main` zu dem Tag, an dem er läuft.
+- **Die Vorlage wird an der installierten Fassung gebaut** (Punkt 4), und ein Plugin, das im
+  Projekt schon liegt, behält beim Import seine Fassung.
+
+Also zuerst, vor dem Neubau der Vorlagen: Was App, Vorlage oder Handbuch von einem Plugin erwarten,
+ist gepusht und als Fassung veröffentlicht (`version` = `quartz.version`, CHANGELOG, Tag), und die
+Werkstätten und Websites stehen über die Updates-Seite der App auf dieser Fassung. Geprüft je Repo:
+
+    git -C ~/Development/<plugin> fetch && git -C ~/Development/<plugin> status -sb   # nichts voraus
+    git -C ~/Development/<plugin> describe --tags                                     # ein Tag ohne -N-g…
+
+Ein Commit nach dem Tag, der nur Tests oder README ändert, braucht keine Fassung, solange er
+gepusht ist. **Stand 2026-10-18:** layout-box steht auf `v0.4.2`, gepusht; multilanguage einen
+Commit nach `v0.2.0` (`85428bf`, Test und README), gepusht; **navigations einen Commit nach
+`v0.4.2` (`1de1d98`, „Button“ statt „Knopf“ in den Texten des Schemas), nicht gepusht** — das wird
+0.4.3, bevor die Vorlagen neu gebaut werden.
+
 ## 3. Das Handbuch steht online auf dem Stand der Fassung
 
 Es reist seit dem 2026-09-18 nicht mehr mit; die App öffnet
@@ -375,6 +402,37 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
   und öffnet das Projekt erst danach mit der neuen Fassung.“ Dasselbe Release benennt den Marker
   `Quartz-GUI:syntax:` in `scripts/example-template/` um (siehe `docs/conventions.md`, Absatz zu
   `.quartz-gui/`), und dann gehört der Satz auch in die Notizen der Vorlage.
+- **für 1.1 außerdem** (Stand 2026-10-18, Messungen in
+  [`styles-and-fonts.md`](decisions/styles-and-fonts.md) und
+  [`layout-frames.md`](decisions/layout-frames.md)):
+  - *Ältere Fassungen.* „Jetzt umstellen“ auf der Stile-Seite legt Ladereihenfolge, Schriften und
+    Variablen nach `quartz/styles/_quartzcontrol.scss`; ein Projekt, das 1.1 anlegt, beginnt so.
+    1.0.x liest ein solches Projekt mit 0 Variablen und 0 Stylesheets, und was man dort
+    einschaltet, steht danach als zweite Kopie in `custom.scss`. Ohne „Jetzt umstellen“ schreibt
+    1.1 die Form von 1.0. Der Satz: „Wer ein Projekt auf mehreren Rechnern bearbeitet, aktualisiert
+    zuerst alle Rechner auf 1.1 und stellt die Stile erst danach um.“
+  - *Rangfolge der Variablen.* Umgestellt stehen die Variablen der Stile-Seite vor den eigenen
+    Regeln in `custom.scss`, bis 1.0 standen sie dahinter. Eine eigene Regel gewinnt jetzt, wo sie
+    mindestens so spezifisch ist: `:root { --x: … }` gegen den hellen Wert,
+    `:root[saved-theme="dark"]` gegen den dunklen. Ein Wert „nur hell“ steht unter
+    `:root:not([saved-theme="dark"])` und gewinnt im hellen Modus gegen ein eigenes `:root`; wer
+    ihn selbst setzen will, nimmt `:root[saved-theme="light"]`. Die Variablen-Seite nennt die
+    Namen, die `custom.scss` selbst setzt.
+  - *Der Kommentar oben in `custom.scss`.* In Projekten aus dem Basis-Template bis 1.0 nennt er
+    den Variablenblock „further down this file“; nach dem Umstellen steht er in
+    `_quartzcontrol.scss`. Der Kommentar wirkt nicht, er ist nur falsch.
+  - *Seitentypen im Wähler.* Der Reiter „Seitentypen“ im Layout ist weg; der Seitentyp wird auf der
+    Bühne gewählt, mit eigenem Frame, ausgegrauten Ausschlüssen und „Anpassung entfernen“. Ein alter
+    Link auf den Reiter landet im Layout.
+  - *Der Vorrat schaltet aus.* Die einzige Instanz einer Komponente in den Vorrat zu ziehen setzt
+    `enabled: false` (bis 1.0 blieb sie liegen); zurückgezogen ist sie wieder an. Das schaltet das
+    ganze Plugin aus, auch alles, was es außer der Komponente tut.
+  - *Formulare ab den neuen Plugin-Fassungen.* Abschnitte und Bedingungen in den Optionen der drei
+    eigenen Plugins, Snippets und Bilder in der Layout-Box gibt es ab layout-box 0.4.0, multilanguage 0.2.0 und
+    navigations 0.4.0 (Punkt 2b); ältere Fassungen über die Updates-Seite heben.
+  - *Vorlagen und 1.0.x.* Ein Vorlagenpaket aus 1.1 mit einem Wert „nur hell“ liest 1.0.x als Wert
+    für beide Modi, weil es die Angabe nicht kennt. Gemessen ist das am Paket, nicht an einem
+    Projekt, das 1.0.x nach 1.1 öffnet.
 - **die Prüfsummen** als eigener Abschnitt „Checksums (SHA-256)“:
 
       cd release && shasum -a 256 <die Paketdateien>

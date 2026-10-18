@@ -172,15 +172,26 @@ function rootSelectorMode(selector: string): 'light' | 'dark' | null {
 // comments go, since an apostrophe in one would open a string for eachRule. Only loaded files are
 // read, and the first that declares a name wins - loadedStylesheetsLastFirst() lists the file
 // whose rules come last on the site first.
-async function projectDeclarations(projectPath: string): Promise<Map<string, string>> {
-  const out = new Map<string, string>()
+interface ProjectDeclaration {
+  source: string
+  light?: string
+  dark?: string
+}
+
+async function projectDeclarations(projectPath: string): Promise<Map<string, ProjectDeclaration>> {
+  const out = new Map<string, ProjectDeclaration>()
   for (const file of await loadedStylesheetsLastFirst(projectPath)) {
     const text = stripManagedBlock(await readFile(file, 'utf-8').catch(() => ''), 'css-vars')
     const css = text.replace(/(^|[\s;{}])\/\/[^\n]*/g, '$1')
     const source = relative(stylesDir(projectPath), file).split(sep).join('/')
     eachRule(css, (selector, body, { conditional }) => {
-      if (conditional || !rootSelectorMode(selector)) return
-      for (const name of collectDeclarations(body).keys()) if (!out.has(name)) out.set(name, source)
+      const mode = conditional ? null : rootSelectorMode(selector)
+      if (!mode) return
+      for (const [name, value] of collectDeclarations(body)) {
+        const entry = out.get(name) ?? { source }
+        entry[mode] ??= value
+        out.set(name, entry)
+      }
     })
   }
   return out
@@ -236,6 +247,7 @@ export async function getVariableGraph(
     }
   }
 
+  const own = new Set((await getVariableOverrides(projectPath)).map((o) => o.key))
   const buildDir = resolveBuildDir(projectPath, outputDir)
   const hasBuild = existsSync(buildDir)
   if (hasBuild) {
@@ -245,7 +257,6 @@ export async function getVariableGraph(
     // "Zurücksetzen" deleted the declaration while the row went on showing it. So for a name the
     // page sets, an unlayered declaration is skipped - that is where the page's rule lands. Quartz's
     // own variables stay, they are inside `@layer quartz-base`.
-    const own = new Set((await getVariableOverrides(projectPath)).map((o) => o.key))
     const files = (await findCssFiles(buildDir)).slice(0, 50)
     for (const file of files) {
       const content = await readFile(file, 'utf-8')
@@ -265,11 +276,20 @@ export async function getVariableGraph(
   }
 
   // Only names the build has: the value shown is the compiled one, and the stylesheet is where it
-  // comes from. A theme's value stays the theme's.
+  // comes from. A theme's value stays the theme's. A name the page sets too lost the stylesheet's
+  // compiled declaration to the skip above, so its value is the stylesheet's own text - without
+  // it, --tpl-header-pad set in layout.scss and in the page became "eigene Variable" with a trash
+  // can whose question said nothing would set it any more (forty-sixth review, Niedrig 1).
   if (hasBuild) {
-    for (const [name, source] of await projectDeclarations(projectPath)) {
+    for (const [name, declaration] of await projectDeclarations(projectPath)) {
+      if (!vars[name] && own.has(name)) {
+        for (const mode of ['light', 'dark'] as const) {
+          const value = declaration[mode]
+          if (value !== undefined) note(name, mode, value, 'build')
+        }
+      }
       const entry = vars[name]
-      if (entry?.origin === 'build') vars[name] = { ...entry, origin: 'project', source }
+      if (entry?.origin === 'build') vars[name] = { ...entry, origin: 'project', source: declaration.source }
     }
   }
 

@@ -451,6 +451,10 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
   - *Seitentypen im Wähler.* Der Reiter „Seitentypen“ im Layout ist weg; der Seitentyp wird auf der
     Bühne gewählt, mit eigenem Frame, ausgegrauten Ausschlüssen und „Anpassung entfernen“. Ein alter
     Link auf den Reiter landet im Layout.
+  - *Breakpoints im Reiter „Frames“.* Die Breiten der Breakpoints standen bis 1.0 im Layout unter
+    dem Reiter „Global“; jetzt stehen sie im Reiter „Frames“ (bis 1.0 „Eigene Frames“), der Reiter
+    „Global“ heißt „Komponenten“ (Entscheidung im Plan 1.1; gelesen in `GlobalBoard.tsx` von 1.0.2
+    und `FrameBuilder.tsx`; vom siebenundvierzigsten Review als fehlend genannt).
   - *Der Vorrat schaltet aus.* Die einzige Instanz einer Komponente in den Vorrat zu ziehen setzt
     `enabled: false` (bis 1.0 blieb sie liegen); zurückgezogen ist sie wieder an. Das schaltet das
     ganze Plugin aus, auch alles, was es außer der Komponente tut.

@@ -148,7 +148,8 @@ export default function Variables(): JSX.Element {
     onDarkOpen: (open) =>
       setDarkOpenKeys((prev) => (open ? (prev.includes(key) ? prev : [...prev, key]) : prev.filter((k) => k !== key))),
     onChange: (next) => setOverride(key, next),
-    onNavigate: navigateTo
+    onNavigate: navigateTo,
+    moved
   })
 
   const curatedGroups = useMemo(() => {

@@ -61,6 +61,9 @@ export type VariableRowProps = {
    *  The panel gets a map of its own: it renders the same key, and a shared entry would let the
    *  row's shorter list stand for what the panel read, or the other way round. */
   readLog: Map<string, Set<string>>
+  /** The project's styles are in _quartzcontrol.scss („Jetzt umstellen“): only then is a light
+   *  edit written for light mode only (see setMode). */
+  moved: boolean
 }
 
 // Every row of an open group is mounted, and browsing has no cap: with all groups of a large
@@ -75,7 +78,7 @@ export type VariableRowProps = {
 // would be a second copy of it that drifts. The callbacks are left out of the comparison: all
 // four the page passes close over the key and state setters only.
 function sameRow(prev: VariableRowProps, next: VariableRowProps): boolean {
-  if (prev.varKey !== next.varKey || prev.selected !== next.selected || prev.variant !== next.variant || prev.darkOpen !== next.darkOpen) return false
+  if (prev.varKey !== next.varKey || prev.selected !== next.selected || prev.variant !== next.variant || prev.darkOpen !== next.darkOpen || prev.moved !== next.moved) return false
   if (prev.readLog !== next.readLog) return false
   if (prev.dependents !== next.dependents && (prev.dependents.length > 0 || next.dependents.length > 0)) return false
   const a = prev.ctx
@@ -115,7 +118,8 @@ function VariableRow({
   onDarkOpen,
   onChange,
   onNavigate,
-  readLog
+  readLog,
+  moved
 }: VariableRowProps): JSX.Element {
   const { t } = useTranslation()
   // A fresh set per render, handed on to the parts below: they resolve through the same context,
@@ -178,6 +182,9 @@ function VariableRow({
   // dark value of the day, frozen into an explicit override - the form 1.0.1 wrote, and one a
   // template carried to projects with another theme (thirty-eighth review, finding 7). A dark half
   // that only repeats the base is that frozen form and counts as unset, so it heals on the next edit.
+  // Only in a moved project, though: in one that is not, 1.0.x still reads and writes the same
+  // custom.scss, knows no third rule and drops it with the next variable it saves there - 1.1
+  // writes the form of 1.0.1 there, with the dark half explicit (forty-seventh review, Hoch 1).
   //
   // A variable of the user's own has no base to fall back to, so no edit takes its override away:
   // emptying the field would have dropped the row under the cursor. Only removeOwn() does that.
@@ -188,7 +195,7 @@ function VariableRow({
     // holds what was typed, `#A1A1A1` - measured on gui-test's --gray, where the frozen half stayed.
     const sameCss = (a: string, b: string): boolean => a.replace(/\s+/g, '').toLowerCase() === b.replace(/\s+/g, '').toLowerCase()
     const ownDark = override?.dark && !sameCss(override.dark, base.dark) ? override.dark : ''
-    if (mode === 'light' && baseDiffers && !ownDark) {
+    if (mode === 'light' && baseDiffers && !ownDark && moved) {
       onChange(lightValue === base.light ? null : { light: lightValue, dark: '', lightOnly: true })
       return
     }

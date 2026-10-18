@@ -131,7 +131,16 @@ Projektwurzel.
   die `.d.ts` mit dem TypeScript der App als Syntaxbaum. Nichts wird still verworfen — Unlesbares
   wird ein JSON-Feld mit Notiz, ein gesetzter Schlüssel ohne Schema ein Feld, ein Wert gegen das
   Schema eine `union`. Das Bedienelement wählt das Schema (`x-quartz-widget`), nicht der Name des
-  Plugins, damit ein fremdes Plugin dasselbe bekommt wie die drei eigenen. **Die `x-quartz-*`-Liste
+  Plugins, damit ein fremdes Plugin dasselbe bekommt wie die drei eigenen. Ausnahmen gibt es, und
+  sie stehen an zwei Stellen mit ihrem Grund im Kommentar: `src/routes/Plugins/optionFormExtras.ts`
+  wählt nach `quartzPluginName()` Abschnitte, Ausgrauen und „wirkt nicht“ für quartz-navigations
+  und quartz-layout-box (`rootWithoutTiles()`, auch in Plugin-Liste und Inspector), weil diese
+  Tabellen aus dem Rendercode der Plugins gelesen sind und kein Schema sie trägt;
+  `src/components/PluginOptionsForm/editors.tsx` zeigt die Platzhalterliste, wo ein Geschwisterfeld
+  `placeholders` heißt, und macht ein Feld `html` ohne Widget zum einzeiligen Feld mit Liste
+  (layout-box vor 0.4). Eine weitere Ausnahme kommt an eine dieser Stellen, nicht in einen
+  beliebigen Editor; wo sie im Schema ausdrückbar wäre, gehört sie ins Plugin (Schema) statt in die
+  App (siebenundvierzigstes Review, Niedrig 6). **Die `x-quartz-*`-Liste
   ist ein Format:** Sie steht in drei veröffentlichten Plugins, und nur QuartzControl liest sie.
   Deshalb steht sie zweimal gleichlautend, im Kopf des Lesers und für Plugin-Autoren in
   [`docs/plugin-config-schema.md`](../plugin-config-schema.md); ein unbekanntes Schlüsselwort wird

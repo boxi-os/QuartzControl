@@ -315,7 +315,7 @@ Rechnung der Rinne folgt statt eine zweite Kopie von ihr zu sein.
 | Text (`beforeBody`/`pageBody`/`afterBody`) | 4–9 | 672 px | `1fr` |
 | Apparat (`right`) | 10–12 | 300 px | `calc((300px - 8rem) / 3)` |
 
-**So stellt man das in der App ein:** *Layout → Eigene Frames →* Frame wählen → Breakpoint-Reiter →
+**So stellt man das in der App ein:** *Layout → Frames →* Frame wählen → Breakpoint-Reiter →
 Feld **„Spaltenbreiten (leer = 1fr)"**. Dort steht ein Eingabefeld je Spur; leer heißt `1fr`. Für
 einen Block über mehrere Spuren trägt man in jede seiner Spuren denselben `calc()`-Ausdruck ein.
 Ein Wert darf **kein Komma** enthalten (`cssTrackValue` in `schemas.ts`), `calc()`, `min()` und

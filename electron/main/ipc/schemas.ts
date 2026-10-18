@@ -1,5 +1,6 @@
 import { isAbsolute } from 'path'
 import { z } from 'zod'
+import { isWritableCssValue } from '@shared/cssVariables'
 import { remotePathProblem } from '@shared/remotePath'
 import { isLocaleCode, TEMPLATE_PART_IDS, type TemplatePartId } from '@shared/ipc-contract'
 
@@ -421,14 +422,11 @@ export const themePreset = z.looseObject({
   options: z.looseObject({ theme: z.string().max(128), mode: z.string().max(64) })
 })
 
-// A raw value is written straight into custom.scss, so a "}" or a comment opener would break out
-// of the generated block and corrupt the stylesheet (and thus the build). Braces, semicolons and
-// comment markers are refused; "/" itself stays legal because CSS needs it (rgb(0 0 0 / 50%),
-// font shorthand), as do parentheses and commas.
+// What a value may contain is isWritableCssValue() in shared/cssVariables.ts, with the reason.
 const cssValue = z
   .string()
   .max(512)
-  .refine((v) => !/[{};]/.test(v) && !v.includes('/*') && !v.includes('*/') && !v.includes('\\'), {
+  .refine(isWritableCssValue, {
     message: 'unerlaubtes Zeichen im CSS-Wert'
   })
 

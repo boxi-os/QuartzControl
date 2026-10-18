@@ -12,6 +12,7 @@ import { useProject } from '../ProjectLayout'
 import { fetchesGoogleFonts, persistFontDelivery, presentFontDelivery } from './fontDelivery'
 import { MANAGED_STYLESHEET } from './managedStylesheet'
 import type { OverrideValue } from './variableGraph'
+import { isWritableCssValue } from '@shared/cssVariables'
 import Basics from './Basics'
 import Theme from './Theme'
 import Variables from './Variables'
@@ -418,6 +419,15 @@ export default function Styles(): JSX.Element {
       if (!config || !scss) return false
       const configDirty = JSON.stringify(config) !== savedConfig || quartzStillDownloadsFonts
       const overridesDirty = JSON.stringify(overrides) !== savedOverrides
+      // Asked before the first write, so a value the schema refuses stops the save as a whole and
+      // names the variable, instead of the other tabs' changes going out and the error reading as a
+      // bug in QuartzControl.
+      const unwritable = overridesDirty ? Object.entries(overrides).find(([, v]) => !isWritableCssValue(v.light) || !isWritableCssValue(v.dark ?? '')) : undefined
+      if (unwritable) {
+        setStatus('error')
+        setMessage(t('styles.variableNotWritable', { name: unwritable[0] }))
+        return false
+      }
       const drafts = Object.entries(fileDrafts)
       // A draft of custom.scss that something else has written under (staleBy) is only written from
       // the tab that shows the banner saying so. Overwriting under that banner is a choice the CSS

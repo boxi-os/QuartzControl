@@ -234,3 +234,13 @@ export function defaultValueFor(
   }
   return ''
 }
+
+// A raw value is written straight into custom.scss or _quartzcontrol.scss, so a "}" or a comment
+// opener would break out of the generated block and corrupt the stylesheet (and thus the build).
+// Braces, semicolons, backslashes and comment markers are refused; "/" itself stays legal because
+// CSS needs it (rgb(0 0 0 / 50%), font shorthand), as do parentheses and commas. One rule for the
+// IPC schema and for the Styles page, which asks before it writes anything: refused only by the
+// schema, a value came back as "a bug in QuartzControl" (forty-eighth review, nebenbei 3).
+export function isWritableCssValue(value: string): boolean {
+  return !/[{};]/.test(value) && !value.includes('/*') && !value.includes('*/') && !value.includes('\\')
+}

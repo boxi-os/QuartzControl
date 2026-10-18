@@ -1969,6 +1969,8 @@ export default {
     scssStaleNotSaved:
       'custom.scss has changed since you typed in the “Custom CSS” tab. Your draft there was not saved. Everything else was; the “Custom CSS” tab lets you reload it or deliberately overwrite.',
     scssStaleReload: 'Reload from disk (discard draft)',
+    variableNotWritable:
+      'Nothing was saved: the value of --{{name}} contains a character a variable cannot hold (semicolon, curly brace, backslash or comment).',
     managedStaleNotSaved:
       '_quartzcontrol.scss has changed since you edited it on the “Custom CSS” tab. Your draft there was not saved. Everything else is saved; on the “Custom CSS” tab you can reload or deliberately overwrite.',
     managedUseRestored:

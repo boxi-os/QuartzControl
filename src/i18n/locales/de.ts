@@ -1976,6 +1976,8 @@ export default {
     scssStaleNotSaved:
       'custom.scss hat sich geändert, seit du im Reiter „Eigenes CSS“ getippt hast. Dein Entwurf dort wurde nicht gespeichert. Alles andere ist gespeichert; im Reiter „Eigenes CSS“ kannst du neu laden oder bewusst überschreiben.',
     scssStaleReload: 'Von Festplatte neu laden (Entwurf verwerfen)',
+    variableNotWritable:
+      'Nichts wurde gespeichert: Der Wert von --{{name}} enthält ein Zeichen, das in einer Variable nicht stehen kann (Semikolon, geschweifte Klammer, Backslash oder Kommentar).',
     managedStaleNotSaved:
       '_quartzcontrol.scss hat sich geändert, seit du die Datei im Reiter „Eigenes CSS“ bearbeitet hast. Dein Entwurf dort wurde nicht gespeichert. Alles andere ist gespeichert; im Reiter „Eigenes CSS“ kannst du neu laden oder bewusst überschreiben.',
     managedUseRestored:

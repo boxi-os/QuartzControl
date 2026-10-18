@@ -116,8 +116,10 @@ Editor gegen sie gelesen (`npm run check:plugin-copies`) und `*_READ_AGAINST` ge
 navigations fehlte dort bis zum 47. Review (Mittel 3). **Stand 2026-10-18:** layout-box steht auf `v0.4.2`, gepusht; multilanguage einen
 Commit nach `v0.2.0` (`85428bf`, Test und README), gepusht; navigations auf `v0.4.3`
 (`1bffddb`, am selben Tag veröffentlicht: „Button“ statt „Knopf“ in drei Texten des Schemas),
-gepusht. Offen dafür: Werkstätten und Websites über die Updates-Seite auf 0.4.3 heben, bevor die
-Vorlagen neu gebaut werden.
+gepusht. Werkstätten (Example, basic, doku, plugin) und die vier Websites stehen seit dem
+2026-10-18 über die Updates-Seite auf 0.4.3, die vier Vorlagen sind danach neu gebaut (`88e45037`).
+Die Websites kamen von 0.3.2 und sind seither nicht neu gebaut: vor ihrer Veröffentlichung
+(Punkt 9) bauen und gegen `gh-pages` vergleichen.
 
 ## 3. Das Handbuch steht online auf dem Stand der Fassung
 

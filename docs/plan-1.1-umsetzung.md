@@ -288,6 +288,8 @@ berührt sind, `npm run check:option-schema -- <gui-test>` (277/267/10/0).
     statt `_quartzcontrol.scss`. Die Projekte tragen noch den alten Satz, und `--sync` holt den
     Rumpf aus dem Projekt zurück: **vor dem Neubau mit `--only 5` vorschieben, nicht `--sync`**,
     sonst ist die Änderung wieder weg. `--check-sync` meldet die Abweichung bis dahin zu Recht.
+    *Erledigt 2026-10-18: mit `--only 5` vorgeschoben, alle vier Varianten neu gebaut
+    (`88e45037`), `--check-sync` deckungsgleich.*
   - Bis die Vorlagen online auf 1.1 stehen, holt „Basis-Template“ online das Paket 1.0 und offline
     das mitgelieferte von 1.1 — welche Form ein Projekt bekommt, hängt am Netz. Deshalb die drei
     Kopien von `qc-basic.qtpl` **am selben Tag wie die App** veröffentlichen, nicht vorher und

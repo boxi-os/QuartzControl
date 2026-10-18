@@ -17,10 +17,12 @@ import type { LayoutPosition } from '@shared/ipc-contract'
 export const NAVIGATIONS_PLUGIN = 'quartz-navigations'
 /** The version whose render.tsx the tables below are read from. */
 export const NAVIGATIONS_READ_AGAINST = '0.4.2'
-/** Versions whose src/ is the same as that one's (`git diff v0.4.0 v0.4.2 -- src` is empty): only
+/** Versions whose src/ is the same as that one's (`git diff v0.4.0 v0.4.3 -- src` is empty): only
  *  package.json, the changelog, the READMEs and tests changed. No note for them (forty-fifth
- *  review, Niedrig 8). A new release goes here only after the same diff. */
-export const NAVIGATIONS_SAME_CODE = ['0.4.0', '0.4.1'] as const
+ *  review, Niedrig 8). A new release goes here only after the same diff - 0.4.3 came out without
+ *  it, and every navigation said its details might be off (forty-seventh review, Mittel 3); the
+ *  three schema texts it changed sit in package.json, which the form reads from the plugin. */
+export const NAVIGATIONS_SAME_CODE = ['0.4.0', '0.4.1', '0.4.3'] as const
 
 export type NavVariant = 'tree' | 'accordion' | 'flyout' | 'bar' | 'dropdown' | 'mega' | 'tabs' | 'columns' | 'select' | 'pager'
 

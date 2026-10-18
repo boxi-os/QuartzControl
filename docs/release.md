@@ -101,7 +101,14 @@ Werkstätten und Websites stehen über die Updates-Seite der App auf dieser Fass
     git -C ~/Development/<plugin> describe --tags                                     # ein Tag ohne -N-g…
 
 Ein Commit nach dem Tag, der nur Tests oder README ändert, braucht keine Fassung, solange er
-gepusht ist. **Stand 2026-10-18:** layout-box steht auf `v0.4.2`, gepusht; multilanguage einen
+gepusht ist.
+
+**Jede neue Fassung braucht auch die App.** Der Editor eines Plugins ist gegen eine Fassung gelesen
+(`*_READ_AGAINST` in `src/routes/Plugins/`) und kennt die mit demselben Code (`*_SAME_CODE`); jede
+andere bekommt in jeder Zeile den Hinweis, die Angaben könnten abweichen. Ist
+`git diff v<gelesen> v<neu> -- src` leer, kommt die neue Fassung in `*_SAME_CODE`, sonst wird der
+Editor gegen sie gelesen (`npm run check:plugin-copies`) und `*_READ_AGAINST` gehoben. 0.4.3 von
+navigations fehlte dort bis zum 47. Review (Mittel 3). **Stand 2026-10-18:** layout-box steht auf `v0.4.2`, gepusht; multilanguage einen
 Commit nach `v0.2.0` (`85428bf`, Test und README), gepusht; navigations auf `v0.4.3`
 (`1bffddb`, am selben Tag veröffentlicht: „Button“ statt „Knopf“ in drei Texten des Schemas),
 gepusht. Offen dafür: Werkstätten und Websites über die Updates-Seite auf 0.4.3 heben, bevor die

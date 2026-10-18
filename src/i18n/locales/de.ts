@@ -2470,6 +2470,8 @@ export default {
         'Wird übersprungen: Der Content-Ordner dieses Projekts ist ein Link in einen anderen Ordner. Dorthin schreibt eine Vorlage nichts.',
     planLegacyStylesReplaced: '{{count}} Stylesheets aus der Aufteilung bis 1.0 lädt das Projekt danach nicht mehr; die zwölf der Vorlage ersetzen sie. Die Dateien bleiben im Ordner.',
     planCustomScssMerged: 'custom.scss behält deine Regeln und bekommt Zeilen der Vorlage dazu.',
+    planNewerStylesReplaced: '{{count}} Stylesheets aus der Aufteilung von 1.1 lädt das Projekt danach nicht mehr; die Stylesheets der Vorlage aus der Aufteilung bis 1.0 ersetzen sie. Die Dateien bleiben im Ordner.',
+    planNewerStylesKept: 'Dieses Projekt lädt {{count}} Stylesheets aus der Aufteilung von 1.1, und dabei bleibt es: Die Stylesheets der Vorlage aus der Aufteilung bis 1.0 kommen in den Ordner, geladen werden sie nicht.',
     planLegacyStylesKept: 'Dieses Projekt lädt noch {{count}} Stylesheets aus der Aufteilung bis 1.0, und dabei bleibt es: Die zwölf der Vorlage kommen in den Ordner, geladen werden sie nicht. Die eigenen führt „Zusammenlegen“ unter Stile → Eigenes CSS zusammen.',
     planMissingVariables: 'Die Stylesheets der Vorlage lesen {{count}} CSS-Variable, die dieses Projekt nicht hat ({{names}}). Sie kommt mit dem Teil „CSS-Variablen“; ohne ihn gilt die Regel nicht.',
     planMissingVariables_other: 'Die Stylesheets der Vorlage lesen {{count}} CSS-Variablen, die dieses Projekt nicht hat ({{names}}). Sie kommen mit dem Teil „CSS-Variablen“; ohne ihn gelten diese Regeln nicht.',

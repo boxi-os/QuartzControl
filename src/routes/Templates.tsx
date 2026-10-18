@@ -576,12 +576,18 @@ function planNotes(t: Translate, plan: TemplatePartPlan, strategy: TemplateConfl
       })
     )
   }
-  // A package of the twelve on a project that loads the 31: which of the two the project loads
-  // afterwards depends on the strategy (oldStylesheetsOf in templatePackage/parts.ts).
+  // A package of the twelve on a project that loads the 31, or the other way round: which of the
+  // two the project loads afterwards depends on the strategy (otherFormStylesheetsOf in
+  // templatePackage/parts.ts).
   const legacy = plan.notes.find((note) => note.startsWith('legacyStyles:'))
   if (legacy) {
     const count = Number(legacy.slice('legacyStyles:'.length))
     notes.push(t(strategy === 'packageWins' ? 'templates.planLegacyStylesReplaced' : 'templates.planLegacyStylesKept', { count }))
+  }
+  const newer = plan.notes.find((note) => note.startsWith('newerStyles:'))
+  if (newer) {
+    const count = Number(newer.slice('newerStyles:'.length))
+    notes.push(t(strategy === 'packageWins' ? 'templates.planNewerStylesReplaced' : 'templates.planNewerStylesKept', { count }))
   }
   if (strategy === 'projectWins' && plan.notes.includes('customScssMerged')) notes.push(t('templates.planCustomScssMerged'))
   // What replacing does besides the options and files it counts - only under 'packageWins', where

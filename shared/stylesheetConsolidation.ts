@@ -82,6 +82,10 @@ const isLegacyOnly = (relativePath: string): boolean => isLegacy(relativePath) &
 /** Whether a stylesheet in the load order is one only the 31 have (not a11y or plugin-layout-box). */
 export const isLegacyOnlyStylesheet = isLegacyOnly
 
+/** Whether a stylesheet in the load order is one only the twelve have - the ten new names. */
+export const isConsolidatedOnlyStylesheet = (relativePath: string): boolean =>
+  relativePath.startsWith(DIR) && relativePath.endsWith('.scss') && CONSOLIDATED_NAMES.has(stem(relativePath)) && !LEGACY_STYLESHEETS.has(stem(relativePath))
+
 /**
  * Whether a load order is that of the twelve: it names one of the ten new names and none that only
  * the 31 have. Asked of a template package, whose stylesheets are its own - not of a project, where

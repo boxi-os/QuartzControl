@@ -23,7 +23,7 @@ import * as styleService from '../styleService'
 import * as themePresetsService from '../themePresetsService'
 import { runCommand } from '../runCommand'
 import { mainT } from '../../i18n'
-import { isConsolidatedOrder, isLegacyOnlyStylesheet } from '@shared/stylesheetConsolidation'
+import { isConsolidatedOnlyStylesheet, isConsolidatedOrder, isLegacyOnlyStylesheet } from '@shared/stylesheetConsolidation'
 import type { ZipEntry } from '../zipArchive'
 import { emptyPlan, hasNodeModule, installedVersion, listFilesFlat, writableTarget, type ApplyContext, type TemplatePart } from './shared'
 type Strategy = ApplyContext['strategy']
@@ -310,11 +310,19 @@ function projectWinsCustomScss(own: string, packageScss: string): string {
  * Under 'packageWins' they leave the load order and stay in the folder; under 'projectWins' the
  * twelve stay out of it. Empty for a package of the 31, or a project that is in the form of the
  * twelve already.
+ *
+ * And the other way round: a package of the 31 (one saved with 1.0.2, or the basic template online
+ * until 1.1 is out) on a project that loads the twelve - then these are the project's ten new
+ * names, and the 31 are what stays out under 'projectWins'. Without it both strategies went from
+ * 14 loaded to 43 (forty-sixth review, Niedrig 6). Asked only of a project wasConsolidated() says
+ * is in that form, since a 1.0 project may have a `layout.scss` of its own.
  */
-async function oldStylesheetsOf(payload: StylesPayload, projectPath: string): Promise<string[]> {
-  if (!isConsolidatedOrder(payload.order)) return []
-  const loaded = (await styleService.listStyleFiles(projectPath)).files.filter((f) => f.imported).map((f) => f.relativePath)
-  return loaded.filter(isLegacyOnlyStylesheet)
+async function otherFormStylesheetsOf(payload: StylesPayload, projectPath: string): Promise<{ older: boolean; paths: string[] }> {
+  const set = await styleService.listStyleFiles(projectPath)
+  const loaded = set.files.filter((f) => f.imported).map((f) => f.relativePath)
+  if (isConsolidatedOrder(payload.order)) return { older: true, paths: loaded.filter(isLegacyOnlyStylesheet) }
+  if (payload.order.some(isLegacyOnlyStylesheet) && set.consolidated) return { older: false, paths: loaded.filter(isConsolidatedOnlyStylesheet) }
+  return { older: true, paths: [] }
 }
 
 // `--tpl-` is the template's own prefix; Quartz's variables (--light, --dark, …) come from the
@@ -391,9 +399,9 @@ const styles: TemplatePart<StylesPayload> = {
     // renderer takes custom.scss out of "bleiben unverändert" and says this instead.
     if (current !== payload.customScss && projectWinsCustomScss(current, payload.customScss) !== current) plan.notes.push('customScssMerged')
     // A package in the form of the twelve on a project that still loads the 31: what apply does
-    // with the old ones depends on the strategy (oldStylesheetsOf), and the renderer says which.
-    const old = await oldStylesheetsOf(payload, projectPath)
-    if (old.length > 0) plan.notes.push(`legacyStyles:${old.length}`)
+    // with the old ones depends on the strategy (otherFormStylesheetsOf), and the renderer says which.
+    const other = await otherFormStylesheetsOf(payload, projectPath)
+    if (other.paths.length > 0) plan.notes.push(`${other.older ? 'legacyStyles' : 'newerStyles'}:${other.paths.length}`)
     // The variables the package's stylesheets read and this project defines nowhere. They come with
     // the part cssVariables; a plan cannot know whether that is ticked, so the sentence says both.
     const missing = await missingTemplateVariables(payload, projectPath, files)
@@ -424,7 +432,7 @@ const styles: TemplatePart<StylesPayload> = {
       await writeFile(target, data)
     }
 
-    const old = await oldStylesheetsOf(payload, projectPath)
+    const old = (await otherFormStylesheetsOf(payload, projectPath)).paths
     const before = await styleService.readCustomScss(projectPath)
     const existingOrder = (await styleService.listStyleFiles(projectPath)).files
       .filter((f) => f.imported)

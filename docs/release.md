@@ -208,6 +208,14 @@ gleich. Ist die veröffentlichte nicht abrufbar, sagt es das und endet mit 1. Di
 vergleicht dieser Aufruf **nicht** — das tut nur `--variant example`, weil nur dort die Werkstatt
 die Quelle ist und nicht eine Kopie, die der Lauf selbst geschrieben hat.
 
+**Gepusht wird erst mit Punkt 8, nach der Release-Seite.** Hier entstehen Export und
+mitgelieferte Kopie, und `--check-sync` muss diese beiden gleich nennen; die veröffentlichte ist
+bis dahin noch die alte, und das meldet der Aufruf zu Recht. Jede ausgelieferte Fassung holt das
+veröffentlichte Paket im Assistenten „Neues Projekt“: Ein Push vor der Release-Seite gibt den
+Nutzern der alten Fassung das Paket der neuen, bevor es die neue zum Herunterladen gibt (für 1.1:
+1.0.x bekäme die zwölf Stylesheets; siebenundvierzigstes Review, Niedrig 3). Nach dem Push in
+Punkt 8 läuft `--check-sync` noch einmal und endet mit 0.
+
 **`minimal-lesbar.qtpl` bleibt im veröffentlichten Repo liegen.** Jede ausgelieferte App-Fassung
 vor dieser Änderung fragt genau diese Adresse; sie zu löschen nähme allen bestehenden
 Installationen ihre Online-Vorlage. Kosten fürs Liegenlassen: eine Datei.
@@ -470,6 +478,10 @@ Der Hinweis auf eine neuere Fassung auf der Startseite liest
 Erst setzen, wenn die Release-Seite mit ihren Paketen online ist — sonst führt der Hinweis ins
 Leere. Am 2026-09-16 abgerufen: `1.0.0-beta.2`, `url` auf die Release-Seite des Tags, `notes` mit
 vier Änderungen.
+
+**Im selben Push das Basis-Template aus Punkt 4.** Es liegt im selben Repo und hat dieselbe
+Bedingung: erst, wenn die Release-Seite online ist, und am selben Tag, nicht Tage danach. Danach
+`npm run template:example -- --variant basic --check-sync`, Exit 0.
 
 ## 9. Die Website nennt die neue Fassung — und wird erst mit dem Release veröffentlicht
 

@@ -49,6 +49,13 @@ Begründung.
 - **Code aus dem `node_modules` eines Projekts läuft an genau zwei Stellen im Hauptprozess**:
   `sass` (`styleService`) und `globby` (`contentService`). Eine dritte Stelle begründet selbst,
   warum sie nicht im Kindprozess laufen kann.
+- **Was ein Plugin über seine Optionen sagt, liest ein Leser, dort, wo Quartz das Paket findet.**
+  `quartz.configSchema` → `optionSchema` → `.d.ts`, `defaultOptions` darüber; ein Normalisierer in
+  `shared/pluginOptionSchema.ts`, kein Plugin-Code. Unlesbares wird ein JSON-Feld mit Notiz, ein
+  gesetzter Schlüssel ohne Schema ein Feld; das Bedienelement wählt das Schema, nie der Name. Die
+  `x-quartz-*`-Liste ist ein Format und steht zweimal (Kopf des Lesers,
+  `docs/plugin-config-schema.md`); wer sie ändert, ändert beide. Gegenprobe:
+  `check:option-schema`.
 - **Eine Datei, die ein Werkzeug erzeugt, wird nicht gemergt, sondern neu erzeugt.** Beim
   Core-Update gehören `package.json`/Lockfile npm: Plan aus `shared/packageJsonDeps.ts`, Quartz'
   Fassung nehmen, eigene Pakete per npm zurückschreiben. Was der Plan nicht nachspielen kann,

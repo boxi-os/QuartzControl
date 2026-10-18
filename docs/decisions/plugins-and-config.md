@@ -2,7 +2,7 @@
 
 Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter den Regeln, wortgleich. Die Regeln selbst stehen in CLAUDE.md; hier steht, welches Experiment sie erzwungen hat. Neue Einträge kommen mit derselben Form dazu: was gemessen wurde, was daraus folgt.
 
-**Plugin options are edited against a real schema, not free-form YAML.** `pluginSchemaService.ts` runs the TypeScript Compiler API (`ts.createSourceFile`, AST walking only — no type-checker) at runtime over an installed plugin's compiled `.quartz/plugins/<name>/dist/**/*.d.ts` to find an `interface *Options` and turns each property into a `PluginOptionField` (`boolean`/`string`/`number`/`enum` off a string-literal union/`unsupported` for anything else, e.g. functions or nested objects), then separately mines `dist/**/*.js` for whichever top-level object-literal variable shares the most property names with that field set (a plugin-agnostic heuristic, not a fixed `defaultOptions` name) to annotate each field's description with its real default. This only works for plugins installed via `quartz plugin add` (i.e. anything under `.quartz/plugins/`) — built-ins (`@quartz-community/x` config entries) ship no discoverable compiled output, so `plugins.optionsSchema()` returns `null` for those and `Installed.tsx` falls back to an inferred-type editor. That fallback **does** offer a key/value adder, because the alternative was worse than an unvalidated key: `explorer` and every other built-in has real options upstream, and editing "only the keys already in the config" meant a freshly configured plugin offered nothing at all to set. A typed value (`true`/`false`, a number, `[…]`/`{…}` as JSON) is parsed rather than stored as the string it was typed as, and each existing key gets a delete button - a key you can add and never remove is a typo you keep forever.
+**Plugin options are edited against a real schema, not free-form YAML.** *(Stand 1.0. Seit 1.1 abgelöst: „Das Options-Schema hat drei Quellen“ weiter unten.)* `pluginSchemaService.ts` runs the TypeScript Compiler API (`ts.createSourceFile`, AST walking only — no type-checker) at runtime over an installed plugin's compiled `.quartz/plugins/<name>/dist/**/*.d.ts` to find an `interface *Options` and turns each property into a `PluginOptionField` (`boolean`/`string`/`number`/`enum` off a string-literal union/`unsupported` for anything else, e.g. functions or nested objects), then separately mines `dist/**/*.js` for whichever top-level object-literal variable shares the most property names with that field set (a plugin-agnostic heuristic, not a fixed `defaultOptions` name) to annotate each field's description with its real default. This only works for plugins installed via `quartz plugin add` (i.e. anything under `.quartz/plugins/`) — built-ins (`@quartz-community/x` config entries) ship no discoverable compiled output, so `plugins.optionsSchema()` returns `null` for those and `Installed.tsx` falls back to an inferred-type editor. That fallback **does** offer a key/value adder, because the alternative was worse than an unvalidated key: `explorer` and every other built-in has real options upstream, and editing "only the keys already in the config" meant a freshly configured plugin offered nothing at all to set. A typed value (`true`/`false`, a number, `[…]`/`{…}` as JSON) is parsed rather than stored as the string it was typed as, and each existing key gets a delete button - a key you can add and never remove is a typo you keep forever.
 
 **An authored frame is a plugin, and the plugin list is where that leaks.** `layoutFrameService.saveFrame()` registers a new frame with `quartz plugin add <the frame's own directory>`, so `quartz.config.yaml` carries an entry whose source is an absolute path under `.quartz-gui/authored-frames/` - it has to, or the frame is not built. `Installed.tsx` therefore reads `layoutFrames.list()` alongside the config and gives those entries their own section: the frame's `frameName` instead of the directory id, its area count instead of a 60-character path, and a link that hands the Layout editor its tab *and* the frame to open (`primeStickyState`, since neither lives in the URL). An entry only counts as a frame when **both** halves agree - a frame with that id exists and the source really points at its directory - so a plugin that merely shares a name is still a plugin.
 - **Removing one has to go through `layoutFrames.delete`.** `quartz plugin remove` unregisters the frame but leaves its directory, and `saveFrame` only re-registers a frame whose directory is *new* - so the frame stayed in the Layout editor's list, editable and saveable, while being part of no build ever again, with nothing in the UI to show it. This was the row's Remove button until it was routed through the frame API, which deletes the directory too.
@@ -289,6 +289,49 @@ sie gegen die fremde Funktion, nicht gegen die eigene Vorstellung von ihr.
 **Und der Weg, auf dem der Befund gefunden wurde, hatte einen eigenen.** `repointProjectPaths` liest die Konfiguration *nach* dem Kopieren und *vor* `git remote remove origin`, also warf `duplicateProject` mitten in der Kopie, statt `{ success: false }` zu antworten. Gemessen am Bündel, drei Quellen: mit einer Liste als Config und mit einem Syntaxfehler wirft es vorher, das Ziel trägt die kopierten Dateien und `origin` zeigt auf das Remote des Originals — genau das, was der Kommentar am Kopf von `duplicateService.ts` ausschließt („a later Git-Sync push must never land in the original's remote“) —, und der zweite Versuch antwortet „… enthält bereits Dateien“. Nachher wird die Quelle geprüft, bevor kopiert wird: `success: false`, das Zielverzeichnis entsteht gar nicht, die heile Quelle antwortet unverändert. Der Satz dazu ist ein eigener (`duplicateSourceConfigUnreadable`), weil die unlesbare Datei hier dem **Original** gehört — `configNotAMapping` und `configNotParseable` stehen sonst immer über dem Projekt, das gerade offen ist; der Grund darin ist der von `readConfig`, Wiederherstellungspunkt eingeschlossen, und den hat die Quelle.
 
 **Nachtrag (2026-09-17): „readConfig wirft vorher, also ist der Fall nicht erreichbar“ trägt nicht.** `config.save` schreibt, was der Renderer geladen hat, und zwischen dem Laden und dem Klick kann die Datei auf der Platte etwas anderes geworden sein — ein Handedit in einem zweiten Editor ist der gewöhnliche Weg dorthin. `writeConfig` las sie mit `parseDocument` ohne Fehlerprüfung und starb dann in `doc.toString()` an yamls eigenem „Document with errors cannot be stringified“. Gemessen am Bündel, fünf kaputte Dateien: vorher vier verschiedene rohe yaml-Meldungen, nachher fünfmal der Satz, den auch das Lesen gibt. Verloren ging dabei nie etwas — die Datei blieb in allen zehn Fällen byte-gleich —, aber es sagte auch nichts, was zu tun ist. Gegenprobe: eine leere Datei, eine mit nur einem Kommentar, eine heile und eine, die es nicht gibt, werden weiter geschrieben; die leere ist der Grund für die Bedingung `contents !== null`, denn `setIn` macht daraus ein Mapping, und genau das braucht ein Projekt mit leerer Config.
+
+## Das Options-Schema hat drei Quellen (2026-10-07, 1.1 P1)
+
+Der Leser von 1.0 (Absatz oben) suchte nur unter `.quartz/plugins/<name>/dist` und nahm das erste
+Interface, das auf `Options` endet. Gemessen mit `check:option-schema` an gui-test hatte das vier
+Folgen, je ein Commit:
+
+- **Jedes npm-Plugin war ohne Schema** (explorer, graph, search …), obwohl 33 von ihnen
+  `quartz.optionSchema` mitbringen. Jetzt wird das Paket gefunden wie in Quartz'
+  `readManifestFromPackageJson` (npm unter `node_modules`, git unter
+  `.quartz/plugins/<quartzPluginName(source)>`), und gelesen wird `quartz.configSchema` →
+  `quartz.optionSchema` → `.d.ts` → nur `quartz.defaultOptions`; die Vorgaben liegen über der
+  Quelle, die gewinnt. gui-test: 280 Optionen, 268 als Feld, 10 als Text, 2 unsichtbar (vorher
+  131/6/143); explorer hat vier Felder statt keines (`74f9db5`).
+- **Bei quartz-multilanguage war es das falsche Interface**: `SeoOptions` liegt in der echten, also
+  standen `hreflang`/`ogLocale`/`xDefault` oben und die 15 gesetzten Schlüssel fehlten. Jetzt gewinnt
+  das Typargument von `QuartzTransformerPlugin<T>` und Geschwistern (`Partial<T>` ausgepackt), sonst
+  das äußerste `…Options`, das nicht `Resolved…` heißt; `seo.hreflang` steht danach unter `seo`
+  (`d14ed34`).
+- **Der Cache wurde nie geleert**, nach einem Plugin-Update standen bis zum Neustart die alten
+  Optionen da. Jetzt je Paketordner unter Größe und mtime von `package.json` und jeder `.d.ts`;
+  gemessen mit dem gebündelten Dienst an einer Kopie von quartz-layout-box: nach einer neuen Option
+  antwortete der alte Dienst weiter mit zehn Feldern, der neue mit elf (`1627e71`).
+- **Ein gesetzter Schlüssel ohne Schema war unsichtbar** (`parseArrows` von
+  obsidian-flavored-markdown). Jetzt wird er je Eintrag ein Feld, ein Wert, den das Schema nicht
+  annimmt, macht das Feld zur `union`; 0 unsichtbar an gui-test (277), navigations-testprojekt (733)
+  und Example (320) (`8c36f13`).
+
+Es gibt einen Normalisierer, für JSON Schema, in `shared/pluginOptionSchema.ts` (rein, ohne Node);
+die flache Form und das Ergebnis des `.d.ts`-Lesers werden zu ihm gebracht, und
+`check:option-schema` lädt dieselbe Datei. Kein Plugin-Code läuft: `package.json` wird unter einer
+Decke von 1 MiB als JSON gelesen, die `.d.ts` mit dem TypeScript der App als Syntaxbaum
+(höchstens 200 Dateien, 4 MiB), ohne Typprüfer. Ein geteiltes Feld über `$ref` erbt Beschreibung,
+Übersetzung und Widget seines Ziels, Schlüsselwörter neben dem `$ref` gewinnen (gefunden beim
+Schreiben des `configSchema` der Layout-Box, `f31db43`). Der alte Kanal und `attachDefaults`, das
+ein deutsches „Standard: …“ in jede Beschreibung schrieb, sind mit P3 weg (`a24bbf4`).
+
+**Die `x-quartz-*`-Schlüsselwörter sind ein Format**, das nur QuartzControl liest und das in drei
+veröffentlichten Plugins steht (seit layout-box 0.4.0, multilanguage 0.2.0, navigations 0.4.0). Die Liste steht
+zweimal, gleichlautend: im Kopfkommentar des Lesers und für Plugin-Autoren in
+[`docs/plugin-config-schema.md`](../plugin-config-schema.md). Was der Leser nicht kennt, wird eine
+Notiz (Absatz zum vierzigsten Review weiter unten), nie ein stilles Textfeld; ein Schlüsselwort, das
+wegfällt oder seine Bedeutung ändert, bricht ein veröffentlichtes Plugin.
 
 ## Snippets und Bilder der Layout-Box (2026-10-07, 1.1 P6)
 

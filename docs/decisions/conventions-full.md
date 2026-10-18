@@ -119,6 +119,25 @@ Projektwurzel.
   nicht im Kind laufen kann; der Ausweg wäre ein Skript unter der eingebetteten Laufzeit über
   `runCommand`, dann auch für `sass`. Begründung in
   [`process-model-and-ipc.md`](process-model-and-ipc.md).
+- **Was ein Plugin über seine Optionen sagt, liest ein Leser, dort, wo Quartz das Paket findet.**
+  Bis 1.0 suchte die App nur unter `.quartz/plugins/<name>/dist` und nahm das erste Interface auf
+  `Options`: Jedes npm-Plugin stand ohne Schema da, obwohl 33 eines mitbringen, quartz-multilanguage
+  bekam das verschachtelte `SeoOptions`, ein gesetzter Schlüssel ohne Schema war unsichtbar, und der
+  Cache überlebte ein Plugin-Update. Seit 1.1 wird das Paket gefunden wie in Quartz'
+  `readManifestFromPackageJson`, gelesen wird `quartz.configSchema` → `quartz.optionSchema` →
+  `.d.ts` (Typargument von `Quartz…Plugin<T>`), `defaultOptions` darüber, und es gibt einen
+  Normalisierer für JSON Schema in `shared/pluginOptionSchema.ts`, den Renderer, Hauptprozess und
+  `check:option-schema` laden. Kein Plugin-Code läuft: `package.json` als JSON unter einer Decke,
+  die `.d.ts` mit dem TypeScript der App als Syntaxbaum. Nichts wird still verworfen — Unlesbares
+  wird ein JSON-Feld mit Notiz, ein gesetzter Schlüssel ohne Schema ein Feld, ein Wert gegen das
+  Schema eine `union`. Das Bedienelement wählt das Schema (`x-quartz-widget`), nicht der Name des
+  Plugins, damit ein fremdes Plugin dasselbe bekommt wie die drei eigenen. **Die `x-quartz-*`-Liste
+  ist ein Format:** Sie steht in drei veröffentlichten Plugins, und nur QuartzControl liest sie.
+  Deshalb steht sie zweimal gleichlautend, im Kopf des Lesers und für Plugin-Autoren in
+  [`docs/plugin-config-schema.md`](../plugin-config-schema.md); ein unbekanntes Schlüsselwort wird
+  eine Notiz, die das Formular zählt (vierzigstes Review, Befund 7), und eines, das wegfällt oder
+  seine Bedeutung ändert, bricht ein veröffentlichtes Plugin. Messungen in
+  [`plugins-and-config.md`](plugins-and-config.md).
 - **Eine Datei, die ein Werkzeug erzeugt, wird nicht gemergt, sondern neu erzeugt.** `package.json`
   und `package-lock.json` gehören npm, und beim Core-Update schreiben beide Seiten sie: Quartz'
   `3dff48b` hob alle Plugin-Versionen an, die Projekte hatten eigene Theme-Pakete darin. Uncommittet

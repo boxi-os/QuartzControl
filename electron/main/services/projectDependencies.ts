@@ -34,7 +34,8 @@ export async function missingDependencies(projectPath: string): Promise<string[]
  * download. Asked before the main process requires a project's package, because Node remembers a
  * missing package.json for the life of the process: one `require('sass')` in that window, and sass
  * stayed "not installed" after npm had finished, until QuartzControl was restarted - for sass's own
- * folder and for one of its dependencies alike (alpha scene 7, finding 7.1, measured under Node
+ * folder and for one of its dependencies alike, and globby with a half-unpacked fast-glob too (alpha
+ * scene 7, finding 7.1, measured under Node
  * 26.5.1 and Electron's Node). A folder that is not there at all is not remembered, and is left to
  * the require. Lookup as Node's: the package's own node_modules, then each one above it.
  */

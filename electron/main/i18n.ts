@@ -362,6 +362,8 @@ const STRINGS = {
     contentSourceMissing: 'Den Quellordner gibt es nicht: {{path}}',
     indexPageExists: 'Im Content-Ordner liegt schon eine index.md. Sie bleibt, wie sie ist.',
     indexPageNoContent: 'Es gibt keinen erreichbaren Content-Ordner, in den die Startseite gelegt werden könnte.',
+    indexPageGlobbyUnpacking:
+      'Die Dateisuche von Quartz ist im Projekt nur halb installiert ({{name}}; npm läuft noch oder wurde abgebrochen), deshalb ist keine Startseite angelegt.',
     indexPageGlobbyBroken:
       'Die Dateisuche von Quartz im Projekt lässt sich nicht laden, deshalb ist keine Startseite angelegt ({{message}}). Ein erneutes npm install im Projekt behebt das meist.',
 
@@ -724,6 +726,8 @@ const STRINGS = {
     contentSourceMissing: 'The source folder does not exist: {{path}}',
     indexPageExists: 'The content folder already has an index.md. It stays as it is.',
     indexPageNoContent: 'There is no reachable content folder to put the start page in.',
+    indexPageGlobbyUnpacking:
+      'Quartz’s file search is only half installed in the project ({{name}}; npm is still running or was interrupted), so no start page was created.',
     indexPageGlobbyBroken:
       'Quartz’s file search in the project cannot be loaded, so no start page was created ({{message}}). Running npm install in the project again usually fixes this.',
 

@@ -8,6 +8,7 @@ import type { ContentStatus, ContentStrategy } from '@shared/ipc-contract'
 import { snapshotContent } from './backupService'
 import { createSnapshot } from './snapshotService'
 import { readConfig } from './configService'
+import { halfUnpackedModule } from './projectDependencies'
 import { mainT } from '../i18n'
 
 export function contentDirPath(projectPath: string): string {
@@ -130,6 +131,11 @@ async function hasIndexPage(dir: string): Promise<boolean> {
 type ListSource = 'quartz' | 'fallback'
 async function quartzInputFiles(projectPath: string, patterns: string[]): Promise<{ files: string[]; source: ListSource }> {
   const cwd = contentDirPath(projectPath)
+  // Not tried while npm unpacks: a fast-glob folder without its package.json left globby "broken"
+  // until a restart, and the sentence below then named npm install, which no longer helped (alpha
+  // scene 7, the same as finding 7.1 for sass; see halfUnpackedModule).
+  const unpacking = halfUnpackedModule(projectPath, 'globby')
+  if (unpacking) throw new Error(mainT('indexPageGlobbyUnpacking', { name: unpacking }))
   let entry: string
   try {
     entry = createRequire(join(projectPath, 'quartz', 'util', 'glob.ts')).resolve('globby')

@@ -62,7 +62,7 @@ Begründung.
   „Jetzt bauen“ wird abgelehnt, solange der Server dieses Projekts `public/` hält
   (`assertOutputFree()`), und „Starten“ wartet auf einen laufenden Build (`pendingStarts`, Status
   `starting`, `startedAt` beim Spawn). Ein fremder Quartz-Server desselben Projekts lässt den
-  Start ablehnen; ausgewichen wird nur vor anderen Ports.
+  Start ablehnen; hält etwas anderes den Port, weicht der Start auf einen freien aus.
 - **Zwei Türen auf denselben Ordner brauchen ein Schloss, und ein Schloss, das keinen Klick
   abweist, wartet.** `whileHoldingStyles` (`styleLock.ts`) reiht je `realpath` auf, ist
   wiedereintrittsfähig und gilt für jeden Stylesheet-Schreiber der App (auch `writeManagedBlocks`).

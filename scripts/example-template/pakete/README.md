@@ -6,10 +6,16 @@ Dateien sind seither die einzige Fassung, und deshalb liegen sie hier.
 
 | Datei | Name im Paket | exportiert | Inhalt |
 | --- | --- | --- | --- |
-| `doku.qtpl` | Doku | 2026-09-21 10:26 | 4 Frames, 49 Plugins (35 aktiv), 31 Stylesheets, 66 CSS-Variablen, 3 Schriftdateien, 3 Gruppen, 7 Seitentypen |
-| `plugin.qtpl` | Doku (Plugin) | 2026-09-21 10:26 | dasselbe, 34 statt 35 aktive Plugins (ohne Graphansicht) |
+| `doku.qtpl` | Doku | 2026-10-18 16:45 | 4 Frames, 51 Plugins (37 aktiv), 12 Stylesheets, 66 CSS-Variablen, 3 Schriftdateien, 3 Gruppen, 7 Seitentypen |
+| `plugin.qtpl` | Doku (Plugin) | 2026-10-18 16:45 | dasselbe, 36 statt 37 aktive Plugins (ohne Graphansicht) |
 
-Neu gebaut am 2026-09-21. Die Fassung davor war vom 2026-09-10 und kannte weder
+Neu exportiert für 1.1.0 (`--only 9,10` aus den Werkstätten, Manifest `appVersion 1.1.0`). Bis
+dahin lag hier die Fassung vom 2026-09-21 (`1.0.0-rc.1`, 31 Stylesheets); die Exporte für die
+Websites vom 2026-10-18 (P8) waren nur neben den Projekten liegen geblieben. Gegen diese Exporte
+von 13:30 unterscheidet sich nur `manifest.json` (`createdAt`, `appVersion`; `diff -r` der
+entpackten Pakete).
+
+Am 2026-09-21 neu gebaut. Die Fassung davor war vom 2026-09-10 und kannte weder
 `nav-navigations.scss` noch die dreizehn Callout-Tokens, weder Noto Sans noch die sechs Schalter
 für die Seitenspalten — 30 Stylesheets, 50 Variablen, vier Schriftdateien aus drei Familien.
 Beide Pakete tragen **kein** quartz-navigations: Der Baustein `plugins` schlüsselt gleichnamige

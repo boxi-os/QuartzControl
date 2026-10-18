@@ -2399,3 +2399,48 @@ sechs Alpha-Szenen.
 Die Frage zu den Messprotokollen hat der Nutzer am 2026-10-17 beantwortet: Messprotokolle in
 `docs/decisions/` sind von Wortersetzungen ausgenommen (Regel in `conventions.md`). Offen bleiben
 die sechs Alpha-Szenen.
+
+**Das sechsundvierzigste Review** ([`REVIEW-2026-10-20.md`](REVIEW-2026-10-20.md), Auftrag
+[`REVIEW-2026-10-20-auftrag.md`](REVIEW-2026-10-20-auftrag.md),
+`review-2026-10-20..review-2026-10-21`: Block A die Fixes des fünfundvierzigsten, Block B die
+umgeschriebenen Texte, die gekürzten Regeln und der Umbau der Variablen, Block C der Alpha-Test vor
+1.1 und seine Fixes): **vom selben Modell wie die gelesenen Commits und wie der Auftrag** (Claude
+Opus 5.5, in einem eigenen Agenten). 0 Hoch, 2 Mittel, 6 Niedrig; beide Mittel in Block B. Die
+letzte Runde vor dem Release von 1.1. Abgearbeitet am 2026-10-18 auf `feat/1.1`, ein Befund je
+Commit, je mit Typcheck, Build und Smoke (außer Niedrig 5, nur Doku):
+
+- **Mittel 1** `b605556` — „Datei löschen?“ auf der Stile-Seite sagt wieder, dass nur git oder ein
+  älterer Snapshot die Datei zurückholt (kein Snapshot, `rm`); die Kurzfassung der Dialog-Regel
+  nennt den Fall „ein Snapshot, den nichts automatisch anlegt“ wieder. Nur am Bündel geprüft, der
+  native Dialog nicht geöffnet.
+- **Mittel 2** `5f53326` — die Herkunft einer Projekt-Variable kommt nur aus geladenen
+  Stylesheets, das zuletzt geladene gewinnt (`loadedStylesheetsLastFirst`). An 16 Kopien: einzige
+  Änderung `gt-pkw`, `base.scss` (18) → `foundation.scss`/`layout.scss`.
+- **Niedrig 1** `41a4e1c` — eine Variable, die ein Stylesheet und die Seite setzen, behält den
+  Grundwert des Stylesheets („geändert“ mit Zurücksetzen statt „eigene Variable“ mit Mülleimer).
+  Kein Wertvergleich gegen das minifizierte Build-CSS.
+- **Niedrig 2** `040a5c4` — „running“ erst, wenn auch der WebSocket-Port antwortet; ein fremder
+  Server auf dem http-Port macht den Server nicht mehr „running“ (9,2 s → 28,3 s, als Quartz
+  lauschte).
+- **Niedrig 3** `b662a11` — `git status` hat 30 s Frist; das Band sagt „Der Git-Stand konnte nicht
+  gelesen werden“ mit dem Grund. Vorher-Messung aus dem Review übernommen, nicht wiederholt.
+- **Niedrig 4** `e25a17d` — ein laufender Install aus `quartz.lock.json` liegt im Hauptprozess (je
+  `realpath`, ein zweiter Aufruf schließt sich an); die Übersicht nimmt ihn nach einem
+  Routenwechsel wieder auf. Vorher 2 npm gleichzeitig und dreimal „Alles ok“ mitten im Install,
+  nachher keins von beidem.
+- **Niedrig 5** `e777f0e` — drei verlorene Halbsätze zurück in `conventions.md` (Breite in
+  Spalten, Raster-Getter, Schritt ohne Ziel auf der eigenen Achse).
+- **Niedrig 6** `a362b78` — ein Paket der 31 auf ein Projekt der zwölf lädt nur noch eine Form
+  (`otherFormStylesheetsOf`, Plan-Satz `newerStyles`): 14 → 43 vorher, nachher 33 bzw. 14.
+
+Offen aus dieser Runde, beim Nutzer: die **Nebenbei-Liste** des Dokuments (fünf Code-Kommentare,
+die sich auf Sätze berufen, die nicht mehr in `CLAUDE.md` stehen; `backups.vsGitSync` sagt
+„Snapshot ≠ Git-Sync“ nur noch halb; „ausgewichen wird nur vor anderen Ports“ in
+`conventions.md`; `missingDependencies() === null` ohne eigenen Satz; der Ausweg „vom anderen
+Rechner kopieren“ bei fehlenden Frames auf demselben Rechner; Herkunft und „eigene Variable“ nur
+mit `public/`), dazu: Bei Niedrig 4 kann ein gescheiterter Install, wenn die Übersicht ihn
+gestartet hat, nach einem Routenwechsel nur noch über den globalen Toast des ersten Aufrufs
+gemeldet werden. Und die Empfehlung, vor P8 eine kurze Szene „QuartzControl beenden während
+‚Installieren‘“ zu fahren.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

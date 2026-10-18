@@ -2470,3 +2470,8 @@ Dabei aufgefallen, nicht erledigt: Die „Herkunft“ im Inspector des Variablen
 Stylesheet nicht, dessen Wert „Zurücksetzen“ wiederherstellt. Ohne Build zählt „Alle Theme- und
 Build-Variablen“ „67 von 67 überschrieben“, weil nur die eigenen Variablen da sind. Offen bleibt
 die empfohlene Szene „QuartzControl beenden während ‚Installieren‘“ vor P8.
+
+Beide Punkte vor P8 erledigt (2026-10-18), je ein Commit: `8d0234a` (die Herkunft einer
+geänderten Variable nennt ihren Ursprung, etwa „Von dir geändert. Ursprung: Stylesheet
+custom/layout.scss“) und `cf7e173` (ohne Build zählt die Liste keine Gesamtzahl und wiederholt
+den Satz „noch kein Build-Output“). Gebaute App, Klon von gui-test, mit und ohne `public/`.

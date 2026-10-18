@@ -602,6 +602,14 @@ Projektwurzel.
   `text-text-secondary` auf `text-text-muted`. Gedimmt werden darf nur, was keine eigene Information
   trägt (der Knauf des Schalters, die native Checkbox). Ein Feld, dessen Wert gerade nicht gilt, ist nicht
   deaktiviert: `Field muted` setzt nur das Label auf Muted, Control und Hinweis bleiben.
+- **Was gerade nicht wirkt, sagt das mit einem Wort, nicht nur mit Grau.** Weil das Control lesbar
+  bleiben muss, bleibt für das Grau nur das Label, und das ging von `text-text-secondary` auf
+  `text-text-muted`, eine Stufe Slate bei 11 px. In der Alpha-Szene 3 (2026-10-18) sah der Nutzer an
+  beiden Stellen (Reiter „Navigationen“, „Alle Optionen“) nichts Graues, nur den kursiven Satz
+  darunter; ein blauer Schalter sah aus wie jeder andere. Seitdem steht neben dem Schlüssel eine
+  `Badge` „wirkt nicht“ vor „geändert“. Sie ist `aria-hidden`, weil der Name des Felds den Grund
+  schon trägt und VoiceOver ihn sonst zweimal sagte. Messung in
+  [`plugins-and-config.md`](plugins-and-config.md) („Was nicht wirkt, steht als Wort da“).
 - **`darkMode: 'media'`, und das ist der App-Schalter.** `nativeTheme.themeSource` flippt
   `prefers-color-scheme` im Renderer mit; `color-scheme: light dark` auf `:root`, explizite Farben
   auf `select option` für Linux. Neue UI mit `dark:`-Varianten. Kein Wechsel auf `'class'`: die

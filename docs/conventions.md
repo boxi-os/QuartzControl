@@ -181,6 +181,8 @@ Begründung.
   `text-heading` (15px), nur die Größe. Ausreißer behalten ihre Zahl.
 - **Ein deaktiviertes Control muss noch lesbar sein.** Explizite disabled-Farben, keine Opazität;
   `Field muted` setzt nur das Label.
+- **Was gerade nicht wirkt, sagt das mit einem Wort, nicht nur mit Grau.** Eine Option ohne
+  Wirkung trägt die Plakette „wirkt nicht“ (`FieldRow`, `aria-hidden`, der Name nennt den Grund).
 - **`darkMode: 'media'`, und das ist der App-Schalter** (`nativeTheme.themeSource`). Kein Wechsel
   auf `'class'`; neue UI mit `dark:`-Varianten.
 - **Ein Bereich eines Frames ist Geometrie, eine Belegung ist die Herkunft seines Inhalts.** `slot`

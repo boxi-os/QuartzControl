@@ -425,3 +425,16 @@ auf einer Seite — vorher 5 doppelte Ids und 6 Verweise ins andere SVG, nachher
 Prüfungen des gewöhnlichen Icons fragen seither, ob ein Verweis im eigenen SVG auf das richtige
 Element zeigt, statt den Namen wörtlich zu vergleichen. Der Preis: Wer eine Id der Datei in seinem
 CSS ansprach, muss jetzt die Klasse der Wurzel nehmen (`svg-<name>`), die genau dafür da ist.
+
+## Was nicht wirkt, steht als Wort da (2026-10-18, Alpha-Szene 3)
+
+Eine Option, die bei der gewählten Variante nichts tut, war „grau dort, wo sie steht“: Der
+Schlüssel ging von slate-600 (rgb(71, 85, 105)) auf slate-500 (rgb(100, 116, 139)), im Dunkelmodus
+entsprechend, bei 11 px Monospace; Control und Beschreibung bleiben nach der Regel unverändert.
+Vom Nutzer mit VoiceOver gefahren: Der Grund im Namen kam an, das Grau nicht, weder im Reiter
+„Navigationen“ noch unter „Alle Optionen“. Gemessen an der gebauten App (Wegwerf-Profil, Kopie von
+gui-test, Navigation „Test #2“, Baum, fünf Optionen anderer Varianten gesetzt): vorher 0
+Plaketten, nachher 5 im Reiter „Navigationen“ und 13 unter „Alle Optionen“, gleich der Zahl der
+kursiven Gründe. Die Namen laut CDP `Accessibility.getFullAXTree` sind unverändert („align
+geändert Wirkt nur bei den Varianten …“), die Plakette steht nicht darin. Der Preis: eine
+Plakette mehr in jeder grauen Zeile, unter „Alle Optionen“ einer Baum-Navigation dreizehn.

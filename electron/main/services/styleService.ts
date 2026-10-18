@@ -23,6 +23,7 @@ import { writeFileAtomic } from './jsonStore'
 import { whileHoldingStyles } from './styleLock'
 import { createSnapshot } from './snapshotService'
 import { resolveBuildDir } from './projectDirs'
+import { halfUnpackedModule } from './projectDependencies'
 import { mainT } from '../i18n'
 import { MAX_FONT_FILE_BYTES } from './fontFile'
 import { CONSOLIDATED_ORDER, canConsolidate, legacyCount, planConsolidation, wasConsolidated } from '@shared/stylesheetConsolidation'
@@ -1095,11 +1096,15 @@ interface ProjectSass {
 
 // This runs the project's sass inside the main process, which holds safeStorage - accepted, with
 // the reason, in docs/decisions/process-model-and-ipc.md ("Code from a project's node_modules").
-function loadProjectSass(projectPath: string): ProjectSass | null {
+// A string is the reason it is not there. While npm unpacks, the require is not even tried: it
+// would leave sass "not installed" until a restart (see halfUnpackedModule).
+function loadProjectSass(projectPath: string): ProjectSass | string {
+  const unpacking = halfUnpackedModule(projectPath, 'sass')
+  if (unpacking) return mainT('styleSassUnpacking', { name: unpacking })
   try {
     return createRequire(join(projectPath, 'package.json'))('sass') as ProjectSass
   } catch {
-    return null
+    return mainT('styleSassMissing')
   }
 }
 
@@ -1107,7 +1112,7 @@ export async function checkStyles(projectPath: string): Promise<ScssCheckResult>
   const entry = customScssPath(projectPath)
   if (!existsSync(entry)) return { status: 'unavailable', reason: mainT('styleCustomScssMissing') }
   const sass = loadProjectSass(projectPath)
-  if (!sass) return { status: 'unavailable', reason: mainT('styleSassMissing') }
+  if (typeof sass === 'string') return { status: 'unavailable', reason: sass }
   try {
     sass.compile(entry, { loadPaths: [stylesDir(projectPath)], quietDeps: true, verbose: false })
     return { status: 'ok' }
@@ -1149,7 +1154,7 @@ export async function checkStyleSource(
   content: string
 ): Promise<ScssCheckResult> {
   const sass = loadProjectSass(projectPath)
-  if (!sass) return { status: 'unavailable', reason: mainT('styleSassMissing') }
+  if (typeof sass === 'string') return { status: 'unavailable', reason: sass }
   const filePath =
     relativePath === 'custom.scss' ? customScssPath(projectPath) : styleFilePath(projectPath, relativePath)
   try {
@@ -1177,7 +1182,7 @@ export function readQuartzFrameMeasures(projectPath: string): QuartzFrameMeasure
   const dir = stylesDir(projectPath)
   if (!existsSync(join(dir, 'variables.scss'))) return { status: 'unavailable', reason: mainT('quartzMeasuresNoVariables') }
   const sass = loadProjectSass(projectPath)
-  if (!sass) return { status: 'unavailable', reason: mainT('styleSassMissing') }
+  if (typeof sass === 'string') return { status: 'unavailable', reason: sass }
 
   // `.page`'s own max-width in base.scss - the declaration before the block's first nested rule -
   // evaluated in the same scope, since base.scss writes it over `$breakpoints`. An interpolation

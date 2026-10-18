@@ -2444,3 +2444,29 @@ gemeldet werden. Und die Empfehlung, vor P8 eine kurze Szene „QuartzControl be
 ‚Installieren‘“ zu fahren.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+**Danach, auf Wunsch des Nutzers, die Nebenbei-Liste** (2026-10-18, `feat/1.1`), je ein Commit:
+
+- `a5aa052` — vier Code-Kommentare nennen statt „CLAUDE.md“ die Datei unter `docs/decisions/`, in
+  der ihre Regel heute steht; der fünfte (`Templates.tsx`) stimmt seit `e777f0e` wieder. Nur
+  Kommentare, Typcheck.
+- `20313e4` — `backups.vsGitSync` sagt wieder, wofür ein Snapshot und wofür Git-Sync da ist.
+- `081d765` — die Regel zum Ausgabeordner sagt, wovor der Start ausweicht (vor allem außer einem
+  fremden Quartz-Server desselben Projekts); gegen `buildService` geprüft.
+- `316c6bc` — eine unlesbare `package.json` bekommt auf der Übersicht eine eigene Zeile, und
+  „Alles ok“ wartet auf die Paketprüfung. Gebaute App, Klon von gui-test: vorher „Alles ok“ nach
+  315 ms, nachher der neue Satz; heil und „1 npm-Paket fehlt“ unverändert.
+- `b4252ef` — fehlen eigene Frames, nennt der Satz neben dem anderen Rechner den Snapshot (der
+  `authored-frames` enthält). Gebaute App mit gelöschtem Ordner.
+- `8b495a9` — der Rückgriff auf den Stylesheet-Wert aus Niedrig 1 läuft auch ohne `public/`; vorher
+  war die Variable vor dem ersten Build wieder „eigene Variable“ mit Mülleimer. Gebaute App, Kanal
+  und Variablen-Reiter mit und ohne Build.
+- Der eigene Punkt zu Niedrig 4 braucht nichts: Der Aufruf, der den Install gestartet hat, meldet
+  sein Scheitern über den globalen Toast, der den Routenwechsel überlebt, und die Übersicht zeigt
+  danach wieder die rote Zeile.
+
+Dabei aufgefallen, nicht erledigt: Die „Herkunft“ im Inspector des Variablen-Reiters sagt bei
+`--tpl-header-pad` (Stylesheet und Seite) nur „geändert“, mit und ohne Build, und nennt das
+Stylesheet nicht, dessen Wert „Zurücksetzen“ wiederherstellt. Ohne Build zählt „Alle Theme- und
+Build-Variablen“ „67 von 67 überschrieben“, weil nur die eigenen Variablen da sind. Offen bleibt
+die empfohlene Szene „QuartzControl beenden während ‚Installieren‘“ vor P8.

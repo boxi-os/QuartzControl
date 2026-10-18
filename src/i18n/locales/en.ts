@@ -568,7 +568,7 @@ export default {
   },
   backups: {
     vsGitSync:
-      'A snapshot is a copy of this project that exists only in QuartzControl: it stays inside the project, is never uploaded and does not touch your git history.',
+      'A snapshot is for getting a state back: a copy of this project that stays inside it, is never uploaded and does not touch your git history. Sharing with other computers is what Git-Sync is for.',
     newHeading: 'New snapshot',
     newHint:
       'A snapshot captures: the configuration, the plugin lockfile, layout frames, your own stylesheets, translations and publish targets. Not included are node_modules, the build folder and installed plugin files. The next build produces those anyway.',

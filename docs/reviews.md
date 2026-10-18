@@ -2593,3 +2593,34 @@ Offen aus dieser Runde, beim Nutzer, die **Nebenbei-Liste**:
   1.0.2.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+**Danach, auf Wunsch des Nutzers, die Nebenbei-Liste** (2026-10-18, `feat/1.1`):
+
+- Palette ohne Build `3f8c5bb6` — **der erste Punkt der Liste war falsch**: Der Reiter kennt
+  Quartz' Variablen auch ohne Build, aus dem Katalog `cssVariables.ts` (64 Namen, aus
+  `theme.colors` abgeleitet). Falsch war stattdessen der Import seit `1e81d415`: Er hatte eine
+  zweite, schmalere Kopie (nur die neun Palettenfarben). Der Katalog liegt jetzt in
+  `shared/cssVariables.ts`, und `inFormOfTarget()` fragt ihn wie `baseValue()`. Gemessen:
+  `--background-primary` „nur hell“ in ein Projekt ohne Build, vorher für beide Modi, nachher
+  dunkel `#16171A`; 1.0.2 liest 70 Variablen.
+- Ein Name, den weder Graph noch Katalog kennen, gilt weiter in beiden Modi: „nur hell“ verlöre den
+  Wert auf dem Rückweg zu 1.0.x, und „beide Modi“ schreibt der Reiter selbst für eine unbekannte
+  Basis. Übrig sind eine Theme-Variable bei ausgeschaltetem Theme und eine fremde Plugin-Variable
+  ohne Build.
+- Falsche Fehlermeldung `9a1ec9d5` — die Regel des Schemas steht als `isWritableCssValue()` in
+  `shared/cssVariables.ts`; `save()` fragt sie vor dem ersten Schreiben und nennt die Variable.
+  Über den Reiter gemessen (`#c0392b;color:red` in `--secondary`): vorher „Das ist ein Fehler in
+  QuartzControl“, nachher „Nichts wurde gespeichert: Der Wert von --secondary enthält …“, die
+  Stylesheets unverändert.
+- `}` in Zeichenketten: nichts geändert. Die eigenen Werte können seit jeher kein `}` enthalten
+  (Schema), und `firstRuleBody` liest bei keinem der acht Themes in gui-test anders als ein Leser,
+  der Zeichenketten kennt (16 von 16 Basen gleich, Skript `first-rule.mjs` im Scratchpad).
+- Handbuch 3.5 Vault `09597e7` — die zwei Buttons mit ihrem Namen, je Sprache.
+- Aus dem Review: 4.9 listet „Inhalt“ zuerst wie die App (Vault `a2d5044`). Ohne Änderung, je mit
+  Grund: die Beschreibung des Online-Pakets stimmt nach dem Push am Release-Tag; ein unbekannter
+  `?tab=` fällt nach der Regel „URL zuerst, Sticky-State als Fallback“ zurück, und eine Zeile im Log
+  des Renderers sähe kein Skript; `collectDeclarations` fasst Leerraum für die Anzeige zusammen, so
+  steht es im Kommentar; der rohe Schlüssel in 1.0.2 lässt sich nicht mehr ändern und steht in den
+  Notizen.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

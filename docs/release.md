@@ -189,9 +189,10 @@ vier Dateien unter `public/static/fonts`; veröffentlicht nach `gh-pages`
 **Das eingebaute Paket ist seit dem 2026-09-20 das Basis-Template, nicht mehr das Example.**
 Es existiert als Export (`~/Documents/QuartzProjekte/qc-basic.qtpl`, Phase 10 der Variante
 `basic`), als mitgelieferte Kopie (`resources/templates/qc-basic.qtpl`) und veröffentlicht in
-`boxi-os/quartzcontrol-templates`. Die App nimmt die veröffentlichte, sobald das Netz antwortet,
-und die mitgelieferte nur ohne Netz (`builtinTemplateService.ts`) — eine neu exportierte Vorlage,
-die nicht gepusht ist, erreicht also niemanden, der online ist.
+`boxi-os/quartzcontrol-templates`. Die App lädt die veröffentlichte (einmal am Tag) und nimmt von
+ihr und der mitgelieferten die mit dem neueren `createdAt` (`builtinTemplateService.ts`, seit dem
+47. Review) — eine neu exportierte Vorlage, die nicht gepusht ist, erreicht also nur die neue
+App-Fassung, nicht die schon ausgelieferten.
 
     npm run template:example -- --variant basic --check-sync
 

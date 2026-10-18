@@ -291,7 +291,8 @@ berührt sind, `npm run check:option-schema -- <gui-test>` (277/267/10/0).
   - Bis die Vorlagen online auf 1.1 stehen, holt „Basis-Template“ online das Paket 1.0 und offline
     das mitgelieferte von 1.1 — welche Form ein Projekt bekommt, hängt am Netz. Deshalb die drei
     Kopien von `qc-basic.qtpl` **am selben Tag wie die App** veröffentlichen, nicht vorher und
-    nicht Tage danach.
+    nicht Tage danach. *(Seit Mittel 1 des 47. Reviews nimmt 1.1 vom Cache und vom mitgelieferten
+    Paket das neuere, also immer mindestens 1.1; der Tag gilt weiter für die Nutzer von 1.0.x.)*
 
 ## Kritische Dateien
 

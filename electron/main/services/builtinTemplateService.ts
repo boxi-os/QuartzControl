@@ -10,7 +10,10 @@
 //      uses, because nothing has been downloaded yet.
 //
 // A download is cached in userData and used for a day before the app asks again; a failed check
-// silently keeps whatever is cached, and failing that the bundled copy. The one thing this must
+// silently keeps whatever is cached, and failing that the bundled copy. Of a cached and the bundled
+// copy, the newer one wins (`createdAt` of both manifests): the cache is shared by every version of
+// the app on this machine, so the copy 1.0.x downloaded would otherwise beat the one 1.1 ships -
+// offline for as long as the machine stays offline (forty-seventh review, Mittel 1). The one thing this must
 // never do is make creating a project depend on the network, so every failure path ends at a
 // package that can be *read* - which is not the same as a file that exists, and was the bug: a
 // half-written cache file is still a file, and it beat the bundled copy for a whole day.
@@ -128,15 +131,32 @@ export interface BuiltinTemplate {
 // The same read counts the sample pages, because the wizard names their number: it said
 // "zwanzig" as fixed text while the package the text describes is replaced by a push to the
 // templates repository, and nothing would have noticed the two drifting apart.
-async function inspectPackage(path: string): Promise<{ pages: number } | null> {
+async function inspectPackage(path: string): Promise<PackageInfo | null> {
   let files: Map<string, Buffer>
   try {
     files = await readZipFile(path)
   } catch {
     return null
   }
-  if (!files.has(MANIFEST_FILE)) return null
-  return { pages: countPages(files.get(partFile('content'))) }
+  const manifest = files.get(MANIFEST_FILE)
+  if (!manifest) return null
+  return { pages: countPages(files.get(partFile('content'))), createdAt: readCreatedAt(manifest) }
+}
+
+interface PackageInfo {
+  pages: number
+  /** Milliseconds, 0 when the manifest names no readable date - such a copy never wins on age. */
+  createdAt: number
+}
+
+function readCreatedAt(raw: Buffer): number {
+  try {
+    const { createdAt } = JSON.parse(raw.toString('utf-8')) as { createdAt?: unknown }
+    const time = typeof createdAt === 'string' ? Date.parse(createdAt) : NaN
+    return Number.isFinite(time) ? time : 0
+  } catch {
+    return 0
+  }
 }
 
 // A content part that is missing or cannot be parsed has no pages to offer - the import skips it
@@ -155,7 +175,7 @@ function countPages(raw: Buffer | undefined): number {
 // A cached copy that cannot be read is not merely skipped but deleted: its mtime would otherwise
 // keep ageMs under a day and block the re-download that repairs it. One download is then attempted
 // on the spot, so the recovery is now rather than tomorrow.
-async function usableCache(cached: string): Promise<{ pages: number } | null> {
+async function usableCache(cached: string): Promise<PackageInfo | null> {
   if (!existsSync(cached)) return null
   const info = await inspectPackage(cached)
   if (info) return info
@@ -168,9 +188,12 @@ export async function getBuiltinTemplate(): Promise<BuiltinTemplate | null> {
   const cached = cachedPath()
   if ((await ageMs(cached)) > MAX_AGE_MS) await refresh()
   const downloaded = await usableCache(cached)
-  if (downloaded) return { path: cached, source: 'downloaded', ...downloaded }
   const bundled = bundledPath()
   const shipped = await inspectPackage(bundled)
-  if (shipped) return { path: bundled, source: 'bundled', ...shipped }
+  // A tie is the same package in both places, and the copy inside the app cannot go away.
+  if (downloaded && (!shipped || downloaded.createdAt > shipped.createdAt)) {
+    return { path: cached, source: 'downloaded', pages: downloaded.pages }
+  }
+  if (shipped) return { path: bundled, source: 'bundled', pages: shipped.pages }
   return null
 }

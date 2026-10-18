@@ -231,6 +231,17 @@ gleich. Ist die veröffentlichte nicht abrufbar, sagt es das und endet mit 1. Di
 vergleicht dieser Aufruf **nicht** — das tut nur `--variant example`, weil nur dort die Werkstatt
 die Quelle ist und nicht eine Kopie, die der Lauf selbst geschrieben hat.
 
+**Nach Punkt 1 wird das Basis-Template neu gebaut, auch wenn es schon „erledigt“ heißt.** Das
+Manifest trägt `createdBy.appVersion` aus `app.getVersion()` (`templatePackage/index.ts`), also die
+Nummer der gebauten App: Ein Paket, das vor Punkt 1 entstand, sagt die alte Fassung (für 1.1 stand
+dort `1.0.2`, `88e45037`; achtundvierzigstes Review, Niedrig 3, entschieden vom Nutzer am
+2026-10-18). Ablauf: `npm run build`, dann `npm run template:example -- --variant basic --only
+9,10` (Prüfung und Export der bestehenden Werkstatt), dann
+`cp ~/Documents/QuartzProjekte/qc-basic.qtpl resources/templates/`. `createdAt` wandert dabei
+mit, und das ist gewollt: Daran entscheidet 1.1 zwischen Cache und mitgeliefertem Paket. Ob
+`--only 9,10` ohne die Phasen davor genügt, ist nicht gemessen; meldet Phase 9 einen Fehler, den
+ganzen Lauf der Variante fahren.
+
 **Gepusht wird erst mit Punkt 8, nach der Release-Seite.** Hier entstehen Export und
 mitgelieferte Kopie, und `--check-sync` muss diese beiden gleich nennen; die veröffentlichte ist
 bis dahin noch die alte, und das meldet der Aufruf zu Recht. Jede ausgelieferte Fassung holt das

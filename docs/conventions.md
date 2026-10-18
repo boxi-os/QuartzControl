@@ -140,7 +140,8 @@ Begründung.
 - **URL zuerst, Sticky-State als Fallback** für Sub-Tabs (`?tab=`). Der Default-Tab löscht den
   Parameter, alte Pfade bleiben als Redirects.
 - **Eine Stelle bestimmt die Seitenbreite** (`ProjectLayout`, 1800px). Seiten setzen keine eigene
-  Maximalbreite.
+  Maximalbreite; Breite wird in Spalten ausgegeben, nicht in längeren Zeilen. Ein Block, der schmal
+  bleiben will, sagt am Block, warum.
 - **Wer rollt, ist nicht wer die Breite deckelt.** Der Roller geht über die volle Breite, die
   Kappung sitzt in einem Kind.
 
@@ -201,9 +202,10 @@ Begründung.
 - **Kein natives HTML5-Drag mehr, nirgends.** Neue Stellen nehmen `@dnd-kit` mit
   `KeyboardSensor`; der Knoten ist das ganze Element, der Griff `setActivatorNodeRef`. Listen
   nehmen `sortableKeyboardCoordinates`, Raster `nearestDroppableCoordinates`
-  (`utils/dndKeyboard.ts`). `PointerSensor` mit `distance: 4`; Sensoren an den `DndContext`
-  übergeben. Ein Pfeildruck geht vom eigenen Feld aus, das Layout-Board nimmt keine schrägen
-  Schritte. Kein `stopPropagation()` über einem Drag. Das Overlay-Kind bekommt `w-fit`, die Fläche
+  (`utils/dndKeyboard.ts`); wer beides mischt, nimmt den Raster-Getter. `PointerSensor` mit
+  `distance: 4`; Sensoren an den `DndContext` übergeben. Ein Pfeildruck geht vom eigenen Feld aus;
+  ein Schritt ohne Ziel auf der eigenen Achse endet nie dort, wohin der Sensor nicht rollt, und das
+  Layout-Board nimmt keine schrägen Schritte. Kein `stopPropagation()` über einem Drag. Das Overlay-Kind bekommt `w-fit`, die Fläche
   wird nicht per `transform: scale` verkleinert. Das Layout-Board hat seine Pfeile im Inspector,
   der Vorrat schaltet aus (`parkedIndices`). **Vor jeder Drag-Änderung die Langfassung lesen.**
 - **Ein Wort, ein Name — und zwar über App und Handbuch hinweg.** Vokabular-Tabelle

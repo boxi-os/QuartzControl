@@ -2021,6 +2021,7 @@ export default {
       confirmRemoveOwn:
         '{{name}} entfernen?\n\nKein Theme und nicht Quartz setzen diese Variable, darum gibt es keinen Originalwert. Nach dem Speichern hat jede Stelle, die var({{name}}) verwendet, keinen Wert mehr.',
       confirmRemoveOwnAction: 'Entfernen',
+      changedOver: 'Von dir geändert. Ursprung: {{base}}',
       ownHint: 'Nur hier gesetzt, weder vom Theme noch von Quartz. Darum gibt es keinen Originalwert.',
       light: 'Hell',
       dark: 'Dunkel',

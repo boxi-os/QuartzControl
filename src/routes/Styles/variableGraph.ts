@@ -332,6 +332,13 @@ export function originOf(key: string, ctx: ResolveContext): VariableOrigin {
   if (key in ctx.overrides) {
     return baseValue(key, 'light', ctx) === undefined && baseValue(key, 'dark', ctx) === undefined ? 'own' : 'user'
   }
+  return baseOriginOf(key, ctx)
+}
+
+// Where the value under the user's override comes from - what "Zurücksetzen" brings back. For a
+// changed variable the panel names it, so a value set in a stylesheet and on the page says which
+// stylesheet that is instead of only "geändert".
+export function baseOriginOf(key: string, ctx: ResolveContext): Exclude<VariableOrigin, 'user' | 'own'> {
   const graphOrigin = ctx.graph?.vars[key]?.origin
   if (graphOrigin) return graphOrigin
   return catalogDef(key) ? 'core' : 'build'

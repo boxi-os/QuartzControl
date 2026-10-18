@@ -2013,6 +2013,7 @@ export default {
       confirmRemoveOwn:
         'Remove {{name}}?\n\nNo theme and not Quartz set this variable, so there is no original value. Once saved, every place that uses var({{name}}) has no value anymore.',
       confirmRemoveOwnAction: 'Remove',
+      changedOver: 'Changed by you. Origin: {{base}}',
       ownHint: 'Set only here, neither by the theme nor by Quartz. So there is no original value.',
       light: 'Light',
       dark: 'Dark',

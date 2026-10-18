@@ -9,6 +9,7 @@ import {
   effectiveValue,
   isColorVariable,
   isDisplayableColor,
+  baseOriginOf,
   originOf,
   referencedVariables,
   resolveChain,
@@ -294,7 +295,11 @@ function VariableRow({
         <p className="mb-1 text-micro text-text-muted">
           {isOwn
             ? t('styles.variables.ownHint')
-            : t(`styles.variables.origin.${origin}`, { file: ctx.graph?.vars[varKey]?.source })}
+            : origin === 'user'
+              ? t('styles.variables.changedOver', {
+                  base: t(`styles.variables.origin.${baseOriginOf(varKey, ctx)}`, { file: ctx.graph?.vars[varKey]?.source })
+                })
+              : t(`styles.variables.origin.${origin}`, { file: ctx.graph?.vars[varKey]?.source })}
         </p>
         <Chain varKey={varKey} mode="light" ctx={ctx} label={t('styles.variables.light')} />
         {(dark !== light || darkResolved !== lightResolved) && (

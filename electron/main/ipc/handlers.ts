@@ -202,7 +202,8 @@ export function registerIpcHandlers(): void {
 
   handle(IPC.projectMissingDependencies, t([s.projectDependenciesInput]), async ({ projectPath }) => ({
     packages: await projectDependencies.missingDependencies(projectPath),
-    frames: await projectDependencies.missingAuthoredFrames(projectPath)
+    frames: await projectDependencies.missingAuthoredFrames(projectPath),
+    installing: await pluginService.isInstallingFromLock(projectPath)
   }))
 
   handle(IPC.configGet, t([s.absolutePath]), (projectPath) => configService.readConfig(projectPath))

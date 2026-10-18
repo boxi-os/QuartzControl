@@ -1,7 +1,7 @@
 import { runCommand } from './runCommand'
 import { existsSync } from 'fs'
-import { readFile } from 'fs/promises'
-import { join } from 'path'
+import { readFile, realpath } from 'fs/promises'
+import { join, resolve } from 'path'
 import type { PluginActionResult } from '@shared/ipc-contract'
 import { createSnapshot } from './snapshotService'
 import { missingDependencies } from './projectDependencies'
@@ -38,7 +38,32 @@ export async function removePlugin(projectPath: string, name: string): Promise<P
 // `quartz plugin install` ends with 0 when single plugins fail: it prints "  ✗ <name>: <reason>"
 // for each and "⚠ Installed 3 plugin(s), 4 failed", and a clone's authored frames fail that way
 // every time (finding 2.1). So the names go back with the result, for the caller to say.
+//
+// One run per project, held here and not in a page: the overview's "Installiere…" lived in React
+// state, so after a route change the overview said "Alles ok" while npm was still unpacking, and
+// "Aus quartz.lock.json wiederherstellen" under Plugins started a second npm in the same folder
+// (forty-sixth review, Niedrig 4). A second call joins the running one instead of being turned
+// away. Keyed by realpath, like the other per-project locks.
+const installs = new Map<string, Promise<PluginActionResult>>()
+
+async function installKey(projectPath: string): Promise<string> {
+  return realpath(projectPath).catch(() => resolve(projectPath))
+}
+
 export async function installFromLock(projectPath: string): Promise<PluginActionResult> {
+  const key = await installKey(projectPath)
+  const running = installs.get(key)
+  if (running) return running
+  const run = installFromLockNow(projectPath).finally(() => installs.delete(key))
+  installs.set(key, run)
+  return run
+}
+
+export async function isInstallingFromLock(projectPath: string): Promise<boolean> {
+  return installs.has(await installKey(projectPath))
+}
+
+async function installFromLockNow(projectPath: string): Promise<PluginActionResult> {
   const missing = await missingDependencies(projectPath)
   let npmOutput = ''
   if (missing?.length) {

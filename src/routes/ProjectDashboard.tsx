@@ -215,6 +215,7 @@ export default function ProjectDashboard(): JSX.Element {
   const [core, setCore] = useState<CoreUpdateStatus | null>(null)
   const [missingDeps, setMissingDeps] = useState<string[] | null>(null)
   const [missingFrames, setMissingFrames] = useState<string[] | null>(null)
+  const [installRunning, setInstallRunning] = useState(false)
   const [pluginUpdates, setPluginUpdates] = useState<PluginUpdateStatus[] | null>(null)
   const [updatesPending, setUpdatesPending] = useState(true)
 
@@ -255,9 +256,10 @@ export default function ProjectDashboard(): JSX.Element {
   const loadDependencies = useCallback(() => {
     api.projects
       .missingDependencies({ projectPath: project.path })
-      .then(({ packages, frames }) => {
+      .then(({ packages, frames, installing }) => {
         setMissingDeps(packages)
         setMissingFrames(frames)
+        setInstallRunning(installing)
       })
       .catch(() => {
         setMissingDeps(null)
@@ -335,10 +337,14 @@ export default function ProjectDashboard(): JSX.Element {
   // npm install, then the plugins from quartz.lock.json - what a fresh clone lacks (plugins.installFromLock
   // runs npm first when packages are missing). A failure goes to the global toast like the others,
   // and so do single plugins Quartz could not install although it ended with 0 (finding 2.1).
-  const installDependencies = (): Promise<void> =>
+  //
+  // `join`: an install started before this mount - from here before a route change, or from
+  // Plugins → Wartung. Main hands back the running one; whoever started it reports its outcome.
+  const installDependencies = (join = false): Promise<void> =>
     withBusy('install', async () => {
       try {
         const result = await api.plugins.installFromLock(project.path)
+        if (join) return
         if (!result.success) throw new Error(result.output.trim().slice(-600))
         if (result.failed?.length)
           throw new Error(t('pluginsInstalled.installPartial', { count: result.failed.length, names: result.failed.join(', ') }))
@@ -349,6 +355,13 @@ export default function ProjectDashboard(): JSX.Element {
         api.styles.check(project.path).then(setScss).catch(() => setScss(null))
       }
     })
+
+  // npm unpacks the packages long before it ends, so the count reached 0 and the band said
+  // "Alles ok" mid-install after a route change (forty-sixth review, Niedrig 4).
+  useEffect(() => {
+    if (installRunning) void installDependencies(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [installRunning])
 
   const takeSnapshot = (): Promise<void> =>
     withBusy('snapshot', async () => {
@@ -390,12 +403,14 @@ export default function ProjectDashboard(): JSX.Element {
   // First, because nothing else on this page works until it is fixed: a clone has no node_modules,
   // and every Quartz call died on its first import while this band said "Alles ok" (alpha scenes
   // 2026-10-17, finding 4.1).
-  if (missingDeps && missingDeps.length > 0) {
+  if ((missingDeps && missingDeps.length > 0) || isBusy('install')) {
     issues.push({
       id: 'dependencies',
       tone: 'red',
       icon: TAB_ICONS.plugins,
-      title: t('dashboard.attention.dependenciesMissing', { count: missingDeps.length }),
+      title: isBusy('install')
+        ? t('dashboard.attention.dependenciesInstallingTitle')
+        : t('dashboard.attention.dependenciesMissing', { count: missingDeps?.length ?? 0 }),
       detail: t('dashboard.attention.dependenciesMissingDetail'),
       to: 'plugins',
       linkLabel: t('projectLayout.tabs.plugins'),

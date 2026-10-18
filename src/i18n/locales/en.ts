@@ -254,6 +254,7 @@ export default {
       dependenciesMissingDetail: 'Quartz does not build without them. “Install” runs npm install and fetches the plugins from quartz.lock.json.',
       dependenciesInstall: 'Install',
       dependenciesInstalling: 'Installing…',
+      dependenciesInstallingTitle: 'Installing npm packages',
       framesMissing: '{{count}} own frame is missing',
       framesMissing_other: '{{count}} own frames are missing',
       framesMissingDetail: 'Own frames live in .quartz-gui/authored-frames and do not travel with git. Until you copy that folder over from the other computer, Quartz builds with the default frame.',

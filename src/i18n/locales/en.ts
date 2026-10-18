@@ -1302,6 +1302,7 @@ export default {
     none: 'This plugin has no options.',
     unreadable: 'The description of the options could not be read: {{reason}}',
     changed: 'changed',
+    noEffect: 'no effect',
     groupCountChanged: '{{count}} · {{changed}} changed',
     searchPlaceholder: 'Search options…',
     noMatch: 'No option matches the search.'

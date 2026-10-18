@@ -4,7 +4,7 @@ import type { TFunction } from 'i18next'
 import { ArrowDown, ArrowUp, RotateCcw, Trash2 } from 'lucide-react'
 import type { OptionEnumValue, OptionField, OptionNode } from '@shared/ipc-contract'
 import { evaluateCondition, nodeAccepts, setAtPath } from '@shared/pluginOptionSchema'
-import { Button, DIVIDED_ROWS, FoldBox, IconButton, Select, TextInput, Toggle } from '../ui'
+import { Badge, Button, DIVIDED_ROWS, FoldBox, IconButton, Select, TextInput, Toggle } from '../ui'
 import { enumLabel, fieldMatch, fieldText, inlineValue, isEmptyObject, isPlainObject, type FormLanguage } from './text'
 import { ImageButton, PlaceholderList, SnippetFileField, siblingValue } from './snippets'
 
@@ -374,6 +374,14 @@ function FieldRow({
       <span className={`break-all font-mono ${text.title || dim ? 'text-micro text-text-muted' : 'text-xs font-medium text-text-secondary'}`}>
         <Marked text={shownKey} query={ctx.mark} />
       </span>
+      {/* Greyed alone, the row looked like any other: the key went one slate step lighter and the
+          control stays as it is, so only the italic sentence under it told (alpha scene 3, 3.1).
+          A word, not a colour. Hidden from the name, which carries the reason itself. */}
+      {inactive && (
+        <span aria-hidden>
+          <Badge>{t('pluginOptions.noEffect')}</Badge>
+        </span>
+      )}
       {isSet && <span className="text-micro font-medium text-accent-text">{t('pluginOptions.changed')}</span>}
       {/* The reason is part of the control's name: under it, it was only grey and italic, and a
           screen reader read the field as any other. A switch is named by Toggle, see NodeEditor. */}

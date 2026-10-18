@@ -1307,6 +1307,7 @@ export default {
     none: 'Dieses Plugin hat keine Optionen.',
     unreadable: 'Die Beschreibung der Optionen ließ sich nicht lesen: {{reason}}',
     changed: 'geändert',
+    noEffect: 'wirkt nicht',
     groupCountChanged: '{{count}} · {{changed}} geändert',
     searchPlaceholder: 'Optionen durchsuchen…',
     noMatch: 'Keine Option passt zur Suche.'

@@ -2524,3 +2524,15 @@ umgestelltes Projekt schreiben (dieselbe Lücke wie Hoch 1, anderer Schreiber); 
 „lässt sich nicht mitschreiben“ statt „konnte nicht … werden“.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+**Danach, auf Wunsch des Nutzers, die Nebenbei-Liste** (2026-10-18, `feat/1.1`):
+
+- `47c22f5f` — der Import schreibt einen Wert „nur hell“ in ein nicht umgestelltes Projekt in der
+  Form von 1.0.1 (dunkel aus dem Variablen-Graphen des Ziels). Gebaute 1.1 und 1.0.2: vorher 45
+  Variablen und die Regel gelöscht, nachher 46; ein umgestelltes Ziel behält die `:not()`-Regel.
+- Alte `lightOnly`-Einträge aus Testfassungen brauchen nichts: Gesucht in allen 17 eingetragenen
+  Projekten des Profils (ohne HinterlandHistory, das nicht gelesen wird) und in allen sechs
+  `.qtpl` unter `~/Documents/QuartzProjekte` und `resources/templates`: keine
+  `:root:not([saved-theme="dark"])`-Regel in einem nicht umgestellten Projekt, kein `lightOnly`
+  in einem Paket. Solche Einträge konnten nur unveröffentlichte Fassungen vor `b94a01be`
+  schreiben.

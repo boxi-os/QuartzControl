@@ -259,7 +259,7 @@ export default {
       dependenciesUnreadableDetail: 'The project’s package.json could not be read.',
       framesMissing: '{{count}} own frame is missing',
       framesMissing_other: '{{count}} own frames are missing',
-      framesMissingDetail: 'Own frames live in .quartz-gui/authored-frames and do not travel with git. Until you copy that folder over from the other computer, Quartz builds with the default frame.',
+      framesMissingDetail: 'Own frames live in .quartz-gui/authored-frames and do not travel with git. Until that folder is back, copied over from the other computer or restored from a snapshot, Quartz builds with the default frame.',
       serverError: 'The dev server exited with an error',
       contentTargetMissing: 'The content folder points nowhere',
       contentMissing: 'There is no content folder',

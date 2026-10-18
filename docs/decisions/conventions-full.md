@@ -608,7 +608,7 @@ Projektwurzel.
   beiden Stellen (Reiter „Navigationen“, „Alle Optionen“) nichts Graues, nur den kursiven Satz
   darunter; ein blauer Schalter sah aus wie jeder andere. Seitdem steht neben dem Schlüssel eine
   `Badge` „wirkt nicht“ vor „geändert“. Sie ist `aria-hidden`, weil der Name des Felds den Grund
-  schon trägt und VoiceOver ihn sonst zweimal sagte. Messung in
+  schon trägt. Messung in
   [`plugins-and-config.md`](plugins-and-config.md) („Was nicht wirkt, steht als Wort da“).
 - **`darkMode: 'media'`, und das ist der App-Schalter.** `nativeTheme.themeSource` flippt
   `prefers-color-scheme` im Renderer mit; `color-scheme: light dark` auf `:root`, explizite Farben

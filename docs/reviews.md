@@ -2536,3 +2536,60 @@ umgestelltes Projekt schreiben (dieselbe Lücke wie Hoch 1, anderer Schreiber); 
   `:root:not([saved-theme="dark"])`-Regel in einem nicht umgestellten Projekt, kein `lightOnly`
   in einem Paket. Solche Einträge konnten nur unveröffentlichte Fassungen vor `b94a01be`
   schreiben.
+
+**Das achtundvierzigste Review** ([`REVIEW-2026-10-23.md`](REVIEW-2026-10-23.md), Auftrag
+[`REVIEW-2026-10-23-auftrag.md`](REVIEW-2026-10-23-auftrag.md), Block A
+`review-2026-10-22..review-2026-10-23`, Block B `v1.0.2..review-2026-10-23`, dazu Handbuch 4.4 bis
+4.9 und die drei Plugin-Handbücher): **von einem anderen Modell** (Claude Fable 5.1) als die
+gelesenen Commits und der Auftrag. 0 Hoch, 1 Mittel, 4 Niedrig; Urteil „veröffentlichbar“.
+Abgearbeitet am 2026-10-18 auf `feat/1.1`, ein Befund je Commit, gemessen mit dem Messgeschirr des
+Reviews (`h/lib.mjs` im Scratchpad seiner Sitzung) an den gebauten Fassungen 1.1 und 1.0.2;
+Typcheck, Build und Smoke bei jeder Code-Änderung, die reinen Doku-Befunde ohne:
+
+- **Mittel 1** `1e81d415` — der Import schreibt einen Wert „nur hell“ in ein nicht umgestelltes
+  Projekt **ohne Build** jetzt ebenfalls in der Form von 1.0.1: Kennt der Graph den Namen nicht,
+  kommt der dunkle Wert aus `theme.colors.darkMode` der Config (daraus erzeugt Quartz seine dunkle
+  Regel), sonst gilt der helle in beiden Modi. Vorher `:not()`-Regel, 1.0.2 las 67 Variablen und
+  löschte sie; nachher `--tertiary` dunkel `#2CAFAD` (mit Build `#2cafad`), 1.0.2 liest 69. Am
+  echten Fall nachgestellt (Ziel ohne `public/`), nicht nur am erfundenen Namen des Reviews.
+- **Niedrig 1** Vault `c8f71d0` — 4.5, 4.7, 4.8 (und das deutsche Glossar, derselbe Satz), 4.9 je
+  Sprache: die Beschriftungen der App und „das Löschen legt keinen Snapshot an“ (nachgesehen in
+  `styleService.deleteFile`). `check:handbook` 36 von 36; der Fett-Abgleich des Reviews meldet die
+  drei Beschriftungen nicht mehr.
+- **Niedrig 2** `1e01842a` — der Graph liest einen Wert bis zum `;` außerhalb von Zeichenketten,
+  Klammern und Kommentaren. Folgenreicher als beschrieben: Ein „nur dunkel“-Edit von
+  `--xfa-unfocused-field-background` (Theme `minimal`) schrieb den abgeschnittenen hellen Wert, und
+  `_quartzcontrol.scss` übersetzte nicht mehr. Mit `s6b` gegen Chrome 2231 → 2233 gleich, der
+  Graph sonst unverändert. `styleService.parseDeclarations` bleibt, weil das Schema in eigenen
+  Werten kein `;` zulässt.
+- **Niedrig 3** `721d43ce` — entschieden vom Nutzer: Das Basis-Template wird am Release-Tag nach
+  der Fassungsnummer neu gebaut (`release.md` Punkt 4 mit den Befehlen; ob `--only 9,10` genügt,
+  ist nicht gemessen). P8 verweist dorthin.
+- **Niedrig 4** `95ac8595` — Halbsatz für die Notizen: Was 1.0.x in einem umgestellten Projekt
+  ändert, gilt im dunklen Modus nur, wo 1.1 keinen dunklen Wert gesetzt hat. Nachgemessen
+  (`--secondary` `#00aa00` aus 1.0.2, dunkel bleibt `#54d624`).
+
+Keine neue Regel. Den Abschnitt des Reviews zur Arbeitsweise (rechnen, wo eine Messung hinsehen
+muss; die Form von 1.0 an einem Schreiber statt an dreien; 1.0.2 als Leser in einem Prüfskript)
+hat diese Runde nicht umgesetzt; er liegt beim Nutzer.
+
+Offen aus dieser Runde, beim Nutzer, die **Nebenbei-Liste**:
+
+- Der Variablen-Graph kennt Quartz' Palette ohne Build weiter nicht; der Reiter zeigt sie in einem
+  nie gebauten Projekt nicht. Die Config als Quelle im Graphen deckte Reiter und Import zugleich
+  (Mittel 1 hat sie nur im Import).
+- Ein Name, den weder Graph noch Config kennen, ändert mit „beide Modi“ den dunklen Modus der
+  Website (Theme-Variable bei ausgeschaltetem Theme, abgeleitete Quartz-Variable ohne Build).
+- Der „nur dunkel“-Edit von `--xfa-unfocused-field-background` wird jetzt vom Schema abgewiesen,
+  mit der Meldung „Das ist ein Fehler in QuartzControl“; dieselbe Meldung kommt, wer `;` oder `{`
+  in ein Variablenfeld tippt — der Renderer prüft nichts vorher.
+- `firstRuleBody` und die Regel-Ausdrücke in `parseVariableOverrides` (`[^}]*`) enden am ersten
+  `}`, auch in einer Zeichenkette; in keinem gemessenen Projekt getroffen.
+- Handbuch 3.5 (en) „whether **all** texts come along or only the changed ones“: Prosa, liest sich
+  wie die alte Beschriftung von 4.9.
+- Aus dem Review selbst: die Beschreibung des Online-Pakets („31 Stylesheets“), `?tab=css` und
+  `?tab=layoutBoxes` fallen still auf den Sticky-State, „Inhalt“ als erster bzw. letzter Baustein
+  (App gegen 4.9), `collectDeclarations` kollabiert Leerraum, `backups.kinds.styleMigration` roh in
+  1.0.2.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

@@ -269,8 +269,17 @@ berührt sind, `npm run check:option-schema -- <gui-test>` (277/267/10/0).
 ## P8 — Vorlagen, Handbuch, Release
 
 - Vorlagen: alle vier Varianten neu bauen; `--variant basic --check-sync` und `--variant example
-  --check-sync`; veröffentlichen; `minimal-lesbar.qtpl` bleibt; bestehende Websites behalten ihre
-  31 Dateien.
+  --check-sync`; veröffentlichen; `minimal-lesbar.qtpl` bleibt. ~~Bestehende Websites behalten ihre
+  31 Dateien.~~ *Anders entschieden (Nutzer, 2026-10-18): Alle vier Websites (QuartzControl-Web und die
+  drei Plugin-Handbücher) stehen auf dem Vorlagenstand von 1.1. Je Projekt: Plugins über die
+  Updates-Seite (layout-box 0.4.2, multilanguage 0.2.0), „Jetzt umstellen“, aus `doku.qtpl` nur
+  „Eigenes CSS“ mit „Vorlage gewinnt“ (die Variablen waren schon gleich), danach die 29 ungeladenen
+  Dateien der alten Aufteilung gelöscht, je mit Snapshot. Gemessen gegen den Bau davor
+  (`styles-snapshot --site`, je 5–6 Seiten): kein berechneter Wert verändert außer dem gewollten an
+  externen Links (kein zweites `↗`, Symbol `rgb(95, 95, 95)` statt `rgb(23, 23, 26)`); das Löschen
+  ließ jeden Bau byte-gleich. Die drei Plugin-Handbücher sind veröffentlicht (gh-pages `3fdc430`,
+  `c0530f5`, `ad2927f`), QuartzControl-Web geht am Release-Tag online (Punkt 9 in `release.md`).
+  Das QuartzControl-Handbuch (Quelle des PDFs) ist umgestellt und zusammengelegt.*
 - Handbuch (de+en, `check:handbook`, Screenshots `--demo --cards`): 4.4 Variablen (drei Regeln,
   Rangfolge), 4.5 Eigenes CSS (verwaltete Datei, `@use`-Zeile, Reparatur), 4.6 Frames (Breiten jetzt
   hier), 4.7 neu „Layout: Komponenten anordnen“ mit `aliases:` auf den alten Pfad (1.0.x öffnet

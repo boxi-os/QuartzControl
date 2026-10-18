@@ -2623,4 +2623,10 @@ Offen aus dieser Runde, beim Nutzer, die **Nebenbei-Liste**:
   steht es im Kommentar; der rohe Schlüssel in 1.0.2 lässt sich nicht mehr ändern und steht in den
   Notizen.
 
-**Keinen dieser Fixes hat ein Review gelesen.**
+**Kurz gelesen vor dem Release** (2026-10-18, selbst, Diff und Umgebung, nicht an der App
+gemessen): kein Fehler in `3f8c5bb6` und `9a1ec9d5`. `inFormOfTarget()` fragt Graph und Katalog in
+der Reihenfolge von `baseValue()`, `||` statt `??` wie dessen `if (value)`. Behoben: Der Kommentar
+von `defaultValueFor()` stand nach dem Umzug über `catalogDef()` (`bf785f1c`). Bleibt, wie es ist:
+Ein Wert über 512 Zeichen lehnt weiter nur das Schema ab („Fehler in QuartzControl“), und bei einer
+nur dunklen Änderung, deren heller Wert aus dem Theme ein Semikolon trägt, nennt die Meldung die
+Variable, aber nicht, dass es der helle Wert ist.

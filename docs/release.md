@@ -459,7 +459,10 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
   - *Ältere Fassungen.* „Jetzt umstellen“ auf der Stile-Seite legt Ladereihenfolge, Schriften und
     Variablen nach `quartz/styles/_quartzcontrol.scss`; ein Projekt, das 1.1 anlegt, beginnt so.
     1.0.x liest ein solches Projekt mit 0 Variablen und 0 Stylesheets, und was man dort
-    einschaltet, steht danach als zweite Kopie in `custom.scss`. Ohne „Jetzt umstellen“ schreibt
+    einschaltet, steht danach als zweite Kopie in `custom.scss`; eine Variable, die 1.0.x dort
+    ändert, gilt im dunklen Modus nur, wo 1.1 keinen dunklen Wert gesetzt hat, auch wenn 1.0.x sie
+    als „beide Modi“ zeigt (gemessen an einer Kopie von gui-test: `--secondary: #00aa00` aus
+    1.0.2, dunkel bleibt `#54d624`; achtundvierzigstes Review, Niedrig 4). Ohne „Jetzt umstellen“ schreibt
     1.1 die Form von 1.0. Unabhängig davon bricht 1.1 lange Zeilen in `quartz.config.yaml` bei 120
     Zeichen um wie die Quartz-CLI, 1.0.x bei 80; speichern beide Fassungen abwechselnd, trägt jeder
     Commit diesen Umbruch (gemessen an `ntp-lo`: 127 Zeilen, nur `pageTitle` geändert;

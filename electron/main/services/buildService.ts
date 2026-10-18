@@ -679,12 +679,18 @@ function spawnServer(
   // Übersicht's link led nowhere, and the live-preview iframe mounted into a connection refusal and
   // stayed blank (reproduced in the running app). Probing the port answers the question directly
   // and, unlike matching the "Started a Quartz server" line, does not depend on its wording.
+  // Both ports, because the http port alone is answered by whoever binds it first: a foreign
+  // server there made this one "running" and the preview showed its page until Quartz's first
+  // build ended, now with no deadline (forty-sixth review, Niedrig 2). Quartz opens the websocket
+  // port in the same tick as the http one (quartz/cli/handlers.js), so waiting for it costs nothing.
   const stillStarting = (): boolean => runningServers.get(projectId)?.status === status && status.state === 'starting'
-  waitForPort(options.port, stillStarting, () => {
-    if (!stillStarting()) return
-    status.state = 'running'
-    emitStatus(projectId)
-  })
+  waitForPort(options.port, stillStarting, () =>
+    waitForPort(options.wsPort, stillStarting, () => {
+      if (!stillStarting()) return
+      status.state = 'running'
+      emitStatus(projectId)
+    })
+  )
   // Without this listener a failed spawn (e.g. npx missing from PATH) makes the ChildProcess
   // emit an unhandled 'error', which EventEmitter rethrows and takes the whole main process
   // down - and 'exit' never fires, so the status would otherwise stay stuck on "starting".

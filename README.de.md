@@ -20,11 +20,11 @@ kann — die Dateien bleiben normale Quartz-Dateien.
 - **Einrichtung** — Titel, Adresse und Verhalten der Website; den `content/`-Ordner zwischen einem
   echten Verzeichnis und einem Symlink umschalten (etwa in einen Obsidian-Vault); Übersetzungen.
 - **Gestaltung** — Farben und Schriften, Community-Themes, alle CSS-Variablen mit ihrem
-  Abhängigkeitsgraph, eigenes CSS. Dazu ein Layout-Editor, der die Quartz-Layouts als Raster zeigt,
-  und Frames, die man ziehen statt schreiben kann.
+  Abhängigkeitsgraph, eigenes CSS. Dazu eine Layout-Bühne, auf die man die Komponenten zieht, und
+  Frames, die man ziehen statt schreiben kann.
 - **Plugins** — installieren, konfigurieren und sortieren, offizielle wie aus dem Marktplatz. Die
-  Optionen kommen aus den `.d.ts`-Dateien des Plugins, es gibt also keine gepflegte Liste, die
-  veraltet.
+  Optionen beschreibt das Plugin selbst, mit einem Schema oder seinen `.d.ts`-Dateien; es gibt also
+  keine gepflegte Liste, die veraltet.
 - **Vorlagenpakete** — eine fertige Gestaltung als `.qtpl` exportieren und in ein anderes Projekt
   einspielen.
 - **Vorschau und Bauen** — Dev-Server starten und stoppen, Build mit Log.
@@ -35,6 +35,30 @@ kann — die Dateien bleiben normale Quartz-Dateien.
 
 Mehrere Projekte nebeneinander sind vorgesehen; die App merkt sich für jedes, wo es liegt und wie
 es eingerichtet ist.
+
+## Neu in 1.1
+
+- **Plugin-Optionen als Formular** — Abschnitte, Schalter und Auswahllisten statt einer Reihe von
+  Feldern; eine Option, die nur unter einer Bedingung wirkt, erscheint erst dann. Das Formular
+  beschreibt das Plugin in seinem `quartz.configSchema` (Format in
+  [`docs/plugin-config-schema.md`](docs/plugin-config-schema.md)); ohne Schema liest QuartzControl
+  wie bisher die `.d.ts`-Dateien. Die drei eigenen Plugins bringen es ab layout-box 0.4.0,
+  multilanguage 0.2.0 und navigations 0.4.0 mit.
+- **Layout auf einer Bühne** — die Seite schematisch, die Komponenten werden darauf gezogen, ihre
+  Optionen stehen in der Seitenleiste daneben. Der Seitentyp wird auf der Bühne gewählt, mit eigenem
+  Frame und Ausschlüssen; die Breiten der Breakpoints stehen jetzt im Reiter „Frames“. Wer die
+  letzte Instanz einer Komponente in den Vorrat zieht, schaltet ihr Plugin aus.
+- **Dateien für die Layout-Box** — HTML- und Markdown-Schnipsel anlegen, hinzufügen, bearbeiten und
+  umbenennen, Bilder nach `quartz/static/images` hinzufügen; Boxen, die eine umbenannte Datei
+  nennen, werden nachgezogen.
+- **`custom.scss` gehört wieder dir** — Ladereihenfolge, Schriften und Variablen der Stile-Seite
+  stehen in einer eigenen Datei, `quartz/styles/_quartzcontrol.scss`. Neue Projekte beginnen so,
+  bestehende stellt „Jetzt umstellen“ auf der Stile-Seite um, mit einem Snapshot davor.
+- **Ein schlankeres Basis-Template** — zwölf Stylesheets statt 31.
+
+Wer ein Projekt auf mehreren Rechnern bearbeitet, aktualisiert zuerst alle Rechner auf 1.1 und
+stellt die Stile erst danach um; was 1.0 an einem umgestellten Projekt nicht mehr versteht, steht in
+den Notizen der [Release-Seite](https://github.com/boxi-os/QuartzControl/releases).
 
 ## Was mitreist
 

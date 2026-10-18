@@ -20,10 +20,11 @@ ordinary Quartz files.
 - **Setup** — title, address and behaviour of the site; switch the `content/` folder between a real
   directory and a symlink (into an Obsidian vault, for instance); translations.
 - **Styling** — colours and fonts, community themes, every CSS variable with its dependency graph,
-  custom CSS. Plus a layout editor that shows Quartz' layouts as a grid, and frames you can drag
-  instead of write.
+  custom CSS. Plus a layout stage you drag the components onto, and frames you can drag instead of
+  write.
 - **Plugins** — install, configure and reorder them, official ones and ones from the marketplace.
-  The options come from the plugin's own `.d.ts` files, so there is no curated list to go stale.
+  The plugin describes its own options, with a schema or its `.d.ts` files, so there is no curated
+  list to go stale.
 - **Template packages** — export a finished design as a `.qtpl` and apply it to another project.
 - **Preview and build** — start and stop the dev server, build with a log.
 - **Publishing** — connections (SFTP, FTP, GitHub, rsync, folder) app-wide, targets per project;
@@ -33,6 +34,28 @@ ordinary Quartz files.
 
 Several projects side by side are the norm; the app remembers for each one where it lives and how
 it is set up.
+
+## New in 1.1
+
+- **Plugin options as a form** — sections, switches and drop-downs instead of a row of fields; an
+  option that only applies under a condition appears only then. The plugin describes the form in
+  its `quartz.configSchema` (format in [`docs/plugin-config-schema.md`](docs/plugin-config-schema.md));
+  without a schema QuartzControl reads the `.d.ts` files as before. The three own plugins ship one
+  from layout-box 0.4.0, multilanguage 0.2.0 and navigations 0.4.0.
+- **Layout on a stage** — the page as a schematic, the components are dragged onto it, their
+  options sit in the sidebar next to it. The page type is chosen on the stage, with its own frame
+  and exclusions; the breakpoint widths now live on the “Frames” tab. Dragging the last instance of
+  a component into the tray switches its plugin off.
+- **Files for the layout box** — create, add, edit and rename HTML and Markdown snippets, add
+  images to `quartz/static/images`; boxes that name a renamed file follow it.
+- **`custom.scss` is yours again** — the Styles page's load order, fonts and variables live in a
+  file of their own, `quartz/styles/_quartzcontrol.scss`. New projects start that way; existing
+  ones are moved over with “Move now” on the Styles page, with a snapshot taken first.
+- **A leaner base template** — twelve stylesheets instead of 31.
+
+If you edit a project on more than one machine, update every machine to 1.1 first and only then
+move the styles over; what 1.0 no longer understands in a moved project is in the notes on the
+[release page](https://github.com/boxi-os/QuartzControl/releases).
 
 ## What ships with it
 

@@ -441,7 +441,15 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
     navigations 0.4.0 (Punkt 2b); ältere Fassungen über die Updates-Seite heben.
   - *Vorlagen und 1.0.x.* Ein Vorlagenpaket aus 1.1 mit einem Wert „nur hell“ liest 1.0.x als Wert
     für beide Modi, weil es die Angabe nicht kennt. Gemessen ist das am Paket, nicht an einem
-    Projekt, das 1.0.x nach 1.1 öffnet.
+    Projekt, das 1.0.x nach 1.1 öffnet. Außerdem bringt ein Paket aus 1.1 die zwölf Stylesheets
+    der neuen Form mit, und 1.0.x setzt sie beim Import in ein bestehendes Projekt neben dessen
+    alte in die Ladereihenfolge, unter „Vorlage gewinnt“ wie unter „Projekt gewinnt“. Der Build
+    bleibt grün, aber beide Gestaltungen liegen übereinander; den Schutz (`otherFormStylesheetsOf`)
+    hat erst 1.1. Der Weg dahin ist ein Paket, das ein Rechner mit 1.1 exportiert hat, oder eine
+    Vorlage von der Website (der Assistent „Neues Projekt“ hat keine alte Form). Gemessen an 1.0.2
+    mit dem mitgelieferten Paket und Kopien von brain-handbuch: 40 geladene Stylesheets statt 12
+    bzw. 28 (siebenundvierzigstes Review, Niedrig 1). Der Satz: „Ein Vorlagenpaket aus 1.1 erst
+    nach dem Update auf 1.1 in ein bestehendes Projekt importieren.“
 - **die Prüfsummen** als eigener Abschnitt „Checksums (SHA-256)“:
 
       cd release && shasum -a 256 <die Paketdateien>

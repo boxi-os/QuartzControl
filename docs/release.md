@@ -457,6 +457,16 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
   - *Formulare ab den neuen Plugin-Fassungen.* Abschnitte und Bedingungen in den Optionen der drei
     eigenen Plugins, Snippets und Bilder in der Layout-Box gibt es ab layout-box 0.4.0, multilanguage 0.2.0 und
     navigations 0.4.0 (Punkt 2b); ältere Fassungen über die Updates-Seite heben.
+  - *Zurück auf 1.0.x.* „Jetzt umstellen“ legt vorher einen Snapshot `styleMigration` an, und 1.1
+    behält ihn wie einen manuellen (`KEPT_KINDS` in `snapshotService.ts`). 1.0.x kennt die Art
+    nicht: Sie dünnt ihn aus wie jeden automatischen, sobald er älter als einen Tag ist und ein
+    neuerer im selben Tages-, Wochen- oder Monats-Eimer liegt (`pruneAutomaticUnlocked`, nimmt nur
+    `manual` aus), also beim nächsten automatischen Snapshot. In der Liste steht als Art
+    `backups.kinds.styleMigration`. Der Snapshot-Speicher reist nicht über Git-Sync, es betrifft
+    also nur den Rückweg auf demselben Rechner (gelesen in beiden Fassungen, nicht gemessen;
+    siebenundvierzigstes Review, Niedrig 7). Der Satz: „Wer nach dem Umstellen zu 1.0 zurück will,
+    stellt den Snapshot vor dem Umstellen zuerst in 1.1 wieder her und öffnet das Projekt erst
+    danach mit 1.0.“
   - *Vorlagen und 1.0.x.* Ein Vorlagenpaket aus 1.1 mit einem Wert „nur hell“ liest 1.0.x als Wert
     für beide Modi, weil es die Angabe nicht kennt. Gemessen ist das am Paket, nicht an einem
     Projekt, das 1.0.x nach 1.1 öffnet. Außerdem bringt ein Paket aus 1.1 die zwölf Stylesheets

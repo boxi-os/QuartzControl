@@ -276,6 +276,11 @@ berührt sind, `npm run check:option-schema -- <gui-test>` (277/267/10/0).
   hier), 4.7 neu „Layout: Komponenten anordnen“ mit `aliases:` auf den alten Pfad (1.0.x öffnet
   `4-gestaltung/07-layout-global-und-seitentypen`) und `handbookPages.ts`, 4.8 Plugins (Formular,
   Bedingungen, Vorgaben, Snippets/Bilder), 4.9 Vorlagen (zwölf Stylesheets, `static/images`).
+  *Geschrieben 2026-10-18, Vault `b419feb`…`578161f` (ungepusht), App `6e06a333` für den neuen
+  Pfad von 4.7. Das Handbuch-Projekt ist dafür umgestellt und zusammengelegt (Snapshots
+  `2026-10-18T11-59-03-163Z-dccb`, `2026-10-18T12-00-06-670Z-9f04`; berechnete Stile auf sechs
+  Seiten unverändert, `styles-snapshot --site`). Offen: Die Website muss mit 1.1 veröffentlicht
+  werden, sonst ist der neue Pfad von 4.7 dort eine 404.*
 - `docs/decisions/` und `docs/conventions.md` nachziehen (Schloss über zwei Dateien, Marker-Absatz,
   DnD-Absatz, Schema-Format).
 - `docs/release.md`: neuer Punkt „Plugin-Releases zuerst“; Notizen mit Sätzen zu älteren Fassungen

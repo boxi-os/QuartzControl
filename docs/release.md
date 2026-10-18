@@ -1,6 +1,24 @@
 # Vor einem Release
 
-> **Zuletzt durchlaufen für 1.0.2 am 2026-10-07** (Tag `v1.0.2` auf `985fbde`, vom Branch
+> **Zuletzt durchlaufen für 1.1.0 am 2026-10-18** (annotierter Tag `v1.1.0` auf `505bc3fb`, Branch
+> `release/1.1.0`, `main` per Fast-Forward von `a282f549`). Zehn Pakete, neun auf einer Maschine
+> ihrer Architektur gestartet (macOS x64 nicht; statisch: `Info.plist` 1.1.0, App und git x86_64),
+> jedes mit Wegwerf-Profil und App-Version 1.1.0 im User-Agent, Node 24.18.1, npm 11.17.0, das
+> mitgelieferte git 2.53.0; macOS arm64 aus dem gemounteten DMG. glibc-Untergrenze unverändert
+> 2.34 (git), Electron 2.25. Die Digests der Release-Seite stimmen mit `shasum -c` über `release/`.
+> Vor Punkt 1 ein kurzes Review der zwei ungelesenen Nebenbei-Fixes (`7a1e5ab6`). Punkt 4 hat
+> alle vier Varianten neu exportiert (`1dcd2604`, `505bc3fb`; je nur das Manifest anders), und
+> dabei fiel auf, dass `scripts/example-template/pakete/` noch die Pakete vom 2026-09-21 trug. Das
+> Vorlagen-Repo steht auf `6d8ed8b` (`latest.json`, `qc-basic`, `qc-example`, Zahlen im README),
+> `--check-sync` für `basic` und `example` danach Exit 0. QuartzControl-Web: Schnipsel auf 1.1.0
+> (Vault `6d1b86b`), über die gebaute App gebaut, gegen `gh-pages` 271 geändert, 53 neu, 5 entfallen
+> (wie `deploy.diff`), veröffentlicht als `d90f0a69` und byte-gleich mit dem Bau; online alle 36
+> Pfade und die zwei alten von 4.7 mit 200. Drei Dinge für das nächste Mal: **debian-x86 hat kein
+> `curl`** (Version über `node` lesen), **ein Start auf der emulierten VM braucht über eine
+> Minute** bis zum Band, und **wer auf das Band wartet, wartet auf „Werkzeuge bereit“** — „git“
+> steht schon vorher in „GitHub“.
+>
+> Davor **1.0.2 am 2026-10-07** (Tag `v1.0.2` auf `985fbde`, vom Branch
 > `release/1.0.2` per Fast-Forward; `fix/1.0.2` ebenfalls gepusht). Zehn Pakete, neun auf einer
 > Maschine ihrer Architektur gestartet (macOS x64 nicht), alle mit App-Version 1.0.2, Node 24.18.1
 > und npm 11.17.0; das mitgelieferte git ist 2.53.0. Die Digests der Release-Seite stimmen mit

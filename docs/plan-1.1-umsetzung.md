@@ -268,6 +268,9 @@ berührt sind, `npm run check:option-schema -- <gui-test>` (277/267/10/0).
 
 ## P8 — Vorlagen, Handbuch, Release
 
+*Abgeschlossen mit dem Release von 1.1.0 am 2026-10-18 (Tag `v1.1.0`, Durchlauf oben in
+[`release.md`](release.md)); QuartzControl-Web ist veröffentlicht (gh-pages `d90f0a69`).*
+
 - Vorlagen: alle vier Varianten neu bauen; `--variant basic --check-sync` und `--variant example
   --check-sync`; veröffentlichen; `minimal-lesbar.qtpl` bleibt. ~~Bestehende Websites behalten ihre
   31 Dateien.~~ *Anders entschieden (Nutzer, 2026-10-18): Alle vier Websites (QuartzControl-Web und die

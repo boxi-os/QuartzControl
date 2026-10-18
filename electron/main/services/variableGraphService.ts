@@ -33,7 +33,7 @@ interface RawThemeJson {
 // `--codeFont` (light), `--textHighlight` (dark) and `--accent-l`. The dark one was the visible
 // symptom - with no dark value recorded, baseValue() falls back to the light one, which is correct
 // CSS semantics for a declaration that has no dark counterpart and simply wrong for one that does.
-const DECLARATION_RE = /--([\w-]+)\s*:\s*([^;}]+)(?:[;}]|$)/g
+const DECLARATION_RE = /^\s*--([\w-]+)\s*:([\s\S]+)$/
 const VAR_REFERENCE_RE = /var\(\s*--([\w-]+)/g
 
 // Only the first rule of a compiled mode blob, which is the :root block - a plain `{...}` slice
@@ -47,11 +47,38 @@ function firstRuleBody(css: string): string {
   return close === -1 ? '' : css.slice(open + 1, close)
 }
 
+// A declaration ends at a `;` outside strings, parentheses and comments. Read with `[^;}]+`, a
+// value ended at the first semicolon anywhere: the theme minimal's --xfa-unfocused-field-background,
+// a data URL with `style='fill:…;'` inside, came out as `url("data:…0.13)`, and a dark-only edit
+// carried that as the light half into _quartzcontrol.scss, where Sass then failed (forty-eighth
+// review, Niedrig 2).
+function splitDeclarations(body: string): string[] {
+  const out: string[] = []
+  let depth = 0
+  let start = 0
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i]
+    if (ch === '"' || ch === "'") {
+      for (i++; i < body.length && body[i] !== ch && body[i] !== '\n'; i++) if (body[i] === '\\') i++
+    } else if (ch === '/' && body[i + 1] === '*') {
+      const end = body.indexOf('*/', i + 2)
+      i = end === -1 ? body.length : end + 1
+    } else if (ch === '(') depth++
+    else if (ch === ')') depth = Math.max(0, depth - 1)
+    else if ((ch === ';' || ch === '}') && depth === 0) {
+      out.push(body.slice(start, i))
+      start = i + 1
+    }
+  }
+  out.push(body.slice(start))
+  return out
+}
+
 function collectDeclarations(body: string): Map<string, string> {
   const out = new Map<string, string>()
-  let match: RegExpExecArray | null
-  DECLARATION_RE.lastIndex = 0
-  while ((match = DECLARATION_RE.exec(body)) !== null) {
+  for (const declaration of splitDeclarations(body)) {
+    const match = DECLARATION_RE.exec(declaration.replace(/\/\*[\s\S]*?\*\//g, ''))
+    if (!match) continue
     // Compiled theme CSS wraps long values across lines (`var(\n  --text-normal\n)`); collapsing
     // the whitespace keeps them one-line for display and for the renderer's alias detection,
     // without changing what the value means.

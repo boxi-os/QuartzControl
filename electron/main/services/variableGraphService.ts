@@ -215,13 +215,14 @@ export async function getVariableGraph(
   const vars: Record<string, CssVariableInfo> = {}
   const dependents: Record<string, Set<string>> = {}
 
-  function note(name: string, mode: 'light' | 'dark', value: string, origin: Origin): void {
+  function note(name: string, mode: 'light' | 'dark', value: string, origin: Origin, unlayered = false): void {
     const existing = vars[name]
-    // theme wins over build for the same name+mode, but a build-only mode still fills a gap.
-    if (existing && existing.origin === 'theme' && origin === 'build' && existing[mode] !== undefined) return
+    // theme wins over build for the same name+mode, but a build-only mode still fills a gap. An
+    // unlayered declaration wins over both: the theme's CSS is layered too (`@layer obsidian-theme`).
+    if (!unlayered && existing && existing.origin === 'theme' && origin === 'build' && existing[mode] !== undefined) return
     const entry = existing ?? { origin }
     entry[mode] = value
-    if (origin === 'theme') entry.origin = 'theme'
+    if (origin === 'theme' || unlayered) entry.origin = origin
     vars[name] = entry
 
     VAR_REFERENCE_RE.lastIndex = 0
@@ -250,6 +251,12 @@ export async function getVariableGraph(
   const own = new Set((await getVariableOverrides(projectPath)).map((o) => o.key))
   const buildDir = resolveBuildDir(projectPath, outputDir)
   const hasBuild = existsSync(buildDir)
+  // An unlayered declaration beats every layered one whatever its selector, so a stylesheet's
+  // `:root { --secondary: … }` replaces Quartz's value in both modes, its `[saved-theme="dark"]`
+  // rule included. Noted in file order, these were one table with the layered values: the dark
+  // mode kept Quartz's #699dc3 on gui-test while the site showed the stylesheet's #0a7a55 in both
+  // (forty-seventh review, Mittel 2). So they are collected apart and laid over the rest at the end.
+  const unlayered = new Map<string, { light?: string; dark?: string }>()
   if (hasBuild) {
     // The build carries the page's own variables too, compiled out of _quartzcontrol.scss. Read as
     // a base value, they were their own original: in QuartzControl-Handbuch all 48 `--tpl-*`
@@ -268,27 +275,40 @@ export async function getVariableGraph(
         const mode = rootSelectorMode(selector)
         if (!mode) return
         for (const [name, value] of collectDeclarations(body)) {
-          if (!layered && own.has(name)) continue
-          note(name, mode, value, 'build')
+          if (layered) note(name, mode, value, 'build')
+          else if (!own.has(name)) {
+            const entry = unlayered.get(name) ?? {}
+            entry[mode] = value
+            unlayered.set(name, entry)
+          }
         }
       })
     }
   }
 
   // Only names the build has: the value shown is the compiled one, and the stylesheet is where it
-  // comes from. A theme's value stays the theme's. A name the page sets too lost the stylesheet's
+  // comes from. A theme's value stays the theme's, unless an unlayered rule replaces it on the
+  // site. A name the page sets too lost the stylesheet's
   // compiled declaration to the skip above, so its value is the stylesheet's own text - without
   // it, --tpl-header-pad set in layout.scss and in the page became "eigene Variable" with a trash
   // can whose question said nothing would set it any more (forty-sixth review, Niedrig 1). That
   // fallback needs no build, so it runs before the first one too; it sat under `hasBuild`, and
   // without public/ the same variable was "eigene Variable" again (review 2026-10-20, nebenbei).
-  for (const [name, declaration] of await projectDeclarations(projectPath)) {
-    if (!vars[name] && own.has(name)) {
-      for (const mode of ['light', 'dark'] as const) {
-        const value = declaration[mode]
-        if (value !== undefined) note(name, mode, value, 'build')
-      }
-    }
+  // It asked whether the name had no value yet, and one Quartz sets always has one: --secondary,
+  // set in custom/foundation.scss and on the page, showed Quartz's #1463a3/#699dc3 under the
+  // stylesheet's name, and a dark-only edit wrote #1463a3 as the light half (forty-seventh review,
+  // Mittel 2). The stylesheet's text is unlayered like its compiled rule, so it goes with those.
+  const declarations = await projectDeclarations(projectPath)
+  for (const [name, declaration] of declarations) {
+    if (own.has(name)) unlayered.set(name, { light: declaration.light, dark: declaration.dark })
+  }
+  for (const [name, values] of unlayered) {
+    if (values.light !== undefined) note(name, 'light', values.light, 'build', true)
+    // Without a dark rule of its own, dark mode gets the light one, over any layered dark value.
+    const dark = values.dark ?? (vars[name]?.dark !== undefined ? values.light : undefined)
+    if (dark !== undefined) note(name, 'dark', dark, 'build', true)
+  }
+  for (const [name, declaration] of declarations) {
     const entry = vars[name]
     if (entry?.origin === 'build') vars[name] = { ...entry, origin: 'project', source: declaration.source }
   }

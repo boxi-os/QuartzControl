@@ -78,8 +78,8 @@ const TEXTE = {
   de: {
     heading: '## Welche Variablen hier greifen',
     intro: (n, where) =>
-      `Diese ${n === 1 ? 'Variable liest' : n + ' Variablen liest'} ${where}. Ändern lassen sie sich in ` +
-      'der App unter *Stile → Variablen* — ohne eine Zeile CSS.',
+      `Diese ${n === 1 ? 'Variable liest' : n + ' Variablen liest'} ${where}. ` +
+      `Ändern ${n === 1 ? 'lässt' : 'lassen'} sie sich in QuartzControl unter *Stile → Variablen* — ohne eine Zeile CSS.`,
     cols: ['Variable', 'Wert', 'gilt außerdem für'],
     alone: 'nur hier',
     many: (n) => `${n} weitere Komponenten`,
@@ -92,8 +92,8 @@ const TEXTE = {
   en: {
     heading: '## Which variables apply here',
     intro: (n, where) =>
-      `${n === 1 ? 'This variable is read' : `These ${n} variables are read`} by ${where}. They can be ` +
-      'changed in the app under *Styles → Variables* — without a line of CSS.',
+      `${n === 1 ? 'This variable is read' : `These ${n} variables are read`} by ${where}. ` +
+      `${n === 1 ? 'It' : 'They'} can be changed in QuartzControl under *Styles → Variables* — without a line of CSS.`,
     cols: ['Variable', 'Value', 'also applies to'],
     alone: 'only here',
     many: (n) => `${n} other components`,

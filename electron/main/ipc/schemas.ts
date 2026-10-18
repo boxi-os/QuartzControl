@@ -127,7 +127,8 @@ export const frameId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/i, 'not a val
 // The two thresholds an authored frame's media queries are generated from. Both bounds are sanity
 // limits rather than taste: below ~240px no phone exists, above 3840px no media query would ever
 // match. The refine only compares two numbers, so it stays safe even when a range check above it
-// already failed - zod v4 keeps running the remaining checks (see the .refine note in CLAUDE.md).
+// already failed - zod v4 keeps running the remaining checks (see "A `.refine` must not assume the
+// checks before it passed" in docs/decisions/process-model-and-ipc.md).
 const breakpointWidth = z.number().int().min(240).max(3840)
 export const frameBreakpointWidths = z
   .object({ tablet: breakpointWidth, mobile: breakpointWidth })

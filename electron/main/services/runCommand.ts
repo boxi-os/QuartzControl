@@ -28,7 +28,7 @@ export function needsShell(command: string): boolean {
 // that stream output live (buildService) keep their own spawn.
 //
 // stdio's closed stdin is deliberate: an unexpected interactive prompt then fails fast instead of
-// hanging forever - see CLAUDE.md on `quartz create`'s wizard.
+// hanging forever - see `quartz create`'s wizard in docs/decisions/quartz-cli.md.
 export function runCommand(
   command: string,
   args: string[],

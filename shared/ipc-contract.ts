@@ -1221,7 +1221,8 @@ export type TemplatePartId =
 // Export order is also import order, and that is load-bearing: frames and plugins mutate
 // quartz.config.yaml out-of-band through the Quartz CLI, so they have to run before the parts that
 // write the config from an in-memory copy, and the three parts that write custom.scss run last,
-// one after another, each re-reading the file (see CLAUDE.md's reloadScss rule).
+// one after another, each re-reading the file (see the reloadScss rule in
+// docs/decisions/styles-and-fonts.md).
 export const TEMPLATE_PART_IDS: readonly TemplatePartId[] = [
   'frames',
   'theme',

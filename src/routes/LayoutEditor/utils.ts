@@ -173,7 +173,7 @@ export function buildPositionMap(plugins: PluginEntry[]): Record<LayoutPosition,
 // Derived, not hardcoded: page-type plugins conventionally derive their `layout` key (used in
 // `quartz.config.yaml`'s `layout.byPageType`) by dropping the "-page" suffix from their name
 // (content-page -> "content", folder-page -> "folder", ...) - verified against a real generated
-// config (CLAUDE.md's "Verified Quartz 5 CLI facts"). "404" is always available since it's a
+// config (docs/decisions/quartz-cli.md). "404" is always available since it's a
 // built-in page type shipped with quartz itself, not a separate installable plugin.
 //
 // The convention is a convention, not a rule, and a plugin is free to ignore it:

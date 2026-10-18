@@ -883,6 +883,11 @@ const plugins: TemplatePart<PluginsPayload> = {
     const themeIndex = themeEntryIndex(config.plugins)
     const entries = config.plugins.filter((entry, index) => index !== themeIndex && !isFrameEntry(entry, frameIds))
     if (entries.length === 0) return null
+    // A git source goes out as the project has it, without a `#v<version>` added: pinned, the
+    // Updates page would compare against that tag and never offer a newer release. The price is
+    // that an import installs whatever main holds that day, so a breaking change in one of the
+    // own plugins needs new packages the same day (forty-seventh review, Niedrig 4; the npm
+    // dependencies below are installed by name for the same reason).
     const requires: TemplatePackageDependency[] = []
     for (const entry of entries) {
       const name = npmPackageName(entry.source)

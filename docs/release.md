@@ -88,8 +88,13 @@ Seit 1.1 hängen App, Vorlage und Handbuch an Fassungen der drei eigenen Plugins
   der *installierten* Fassung (seit layout-box 0.4.0, multilanguage 0.2.0, navigations 0.4.0);
   eine ältere bekommt das Formular aus ihren `.d.ts`, ohne Abschnitte, Bedingungen und
   Snippet-Auswahl. Auch die Texte des Formulars stehen dort (`x-quartz-l10n`).
-- **Die Vorlage installiert, was auf `main` liegt.** `plugins.json` des Pakets nennt die drei als
-  `github:boxi-os/<name>` ohne Ref; ein Import holt den Stand von `main` zu dem Tag, an dem er läuft.
+- **Die Vorlage installiert, was auf `main` liegt, und das ist entschieden.** `plugins.json` des
+  Pakets nennt die drei als `github:boxi-os/<name>` ohne Ref; ein Import holt den Stand von `main`
+  zu dem Tag, an dem er läuft. Mit `#v<fassung>` bekäme ein Projekt aus der Vorlage auf der
+  Updates-Seite nie eine neuere Fassung angeboten. Der Preis: **Ein Breaking Change an den Optionen
+  oder Klassen eines der drei verlangt neue Vorlagen am selben Tag**, sonst setzt jedes alte Paket
+  das Plugin still auf eine Form, die es nicht mehr kennt (siebenundvierzigstes Review, Niedrig 4;
+  Begründung in [`templates-and-localization.md`](decisions/templates-and-localization.md)).
 - **Die Vorlage wird an der installierten Fassung gebaut** (Punkt 4), und ein Plugin, das im
   Projekt schon liegt, behält beim Import seine Fassung.
 

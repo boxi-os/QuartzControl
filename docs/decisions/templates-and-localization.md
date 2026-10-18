@@ -270,3 +270,24 @@ schreibt jeder Teil ohne eigenen Snapshot (`PART_WRITE` in `parts.ts`). Gemessen
 App mit Wegwerf-Profil, `qc-basic.qtpl` in eine Kopie von gui-test über
 `templatePackage.import`: vorher mit den Teilen Aussehen, Theme, Frames und Layout zwei neue
 Snapshots (`configChange`, `styleChange`), nachher einer (`styleChange`), auch mit Plugins dazu.
+
+**Die eigenen Plugins gehen ohne Ref ins Paket (2026-10-18, siebenundvierzigstes Review,
+Niedrig 4).** `parts/plugins.json` nennt `github:boxi-os/quartz-layout-box`, `…-multilanguage` und
+`…-navigations` so, wie die Config des Projekts sie hat, also ohne `#v<fassung>`; ein Import holt
+`main` vom Tag des Imports. Das stand bisher in `docs/release.md` als Tatsache, nicht als
+Entscheidung. Sie lautet: so lassen. Gelesen, nicht gemessen:
+
+- Mit Ref stünde `github:…#v0.4.3` in der Config des neuen Projekts. Quartz führt den Ref im
+  Lockfile (`entry.ref`, `quartz/cli/plugin-git-handlers.js`), und die Updates-Seite fragt mit
+  genau diesem Ref (`lsRemoteRef` in `updateService.ts`): Für einen Tag antwortet `ls-remote` mit dem Commit des Tags, also „aktuell“, für immer. Jedes
+  Projekt aus der Vorlage bliebe auf der Fassung des Exports stehen, ohne dass es jemand sieht.
+- Dieselbe Abwägung gilt schon für die npm-Abhängigkeiten eines Pakets: Sie werden nach Namen
+  installiert, nicht nach der exportierten Fassung (`TemplatePackageDependency` in
+  `ipc-contract.ts`).
+- Heute ist der Preis null: Die Optionen haben sich seit layout-box 0.3.0 und navigations 0.3.2
+  nicht geändert (`git diff v0.3.2 v0.4.0 -- src/options.ts src/types.ts` leer, laut Review).
+
+Der Preis, sobald er nicht mehr null ist: Ein Breaking Change an den Optionen oder Klassen eines der
+drei Plugins verlangt neue Vorlagenpakete am selben Tag (`docs/release.md`, Punkt 2b). Sonst
+schreibt ein altes Paket Optionen und Stylesheets einer Form, die das dann installierte Plugin nicht
+mehr kennt, und zwar still.

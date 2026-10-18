@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { BuildActivityLine } from '../components/BuildActivityLine'
+import { formatIpcError } from '../components/ErrorSurface'
 import { useBuildActivity } from '../hooks/useBuildActivity'
 import {
   ChevronRight,
@@ -213,7 +214,11 @@ export default function ProjectDashboard(): JSX.Element {
   // anything above, so a slow or unreachable remote costs the Updates tile a spinner and nothing
   // else. A failed check is 'unknown', never 'upToDate' - same distinction updateService makes.
   const [core, setCore] = useState<CoreUpdateStatus | null>(null)
-  const [missingDeps, setMissingDeps] = useState<string[] | null>(null)
+  // undefined = not read yet, null = cannot tell (package.json unreadable, or the call failed -
+  // then `missingDepsError` says why). Both used to be null, which read as "nothing missing" until
+  // the answer came (review 2026-10-20, nebenbei).
+  const [missingDeps, setMissingDeps] = useState<string[] | null | undefined>(undefined)
+  const [missingDepsError, setMissingDepsError] = useState<string | null>(null)
   const [missingFrames, setMissingFrames] = useState<string[] | null>(null)
   const [installRunning, setInstallRunning] = useState(false)
   const [pluginUpdates, setPluginUpdates] = useState<PluginUpdateStatus[] | null>(null)
@@ -258,11 +263,13 @@ export default function ProjectDashboard(): JSX.Element {
       .missingDependencies({ projectPath: project.path })
       .then(({ packages, frames, installing }) => {
         setMissingDeps(packages)
+        setMissingDepsError(null)
         setMissingFrames(frames)
         setInstallRunning(installing)
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         setMissingDeps(null)
+        setMissingDepsError(formatIpcError(err))
         setMissingFrames(null)
       })
   }, [api, project.path])
@@ -421,6 +428,16 @@ export default function ProjectDashboard(): JSX.Element {
         run: () => void installDependencies()
       }
     })
+  } else if (missingDeps === null) {
+    issues.push({
+      id: 'dependencies-unreadable',
+      tone: 'amber',
+      icon: TAB_ICONS.plugins,
+      title: t('dashboard.attention.dependenciesUnreadable'),
+      detail: missingDepsError ?? t('dashboard.attention.dependenciesUnreadableDetail'),
+      to: 'plugins',
+      linkLabel: t('projectLayout.tabs.plugins')
+    })
   }
   // A clone has no authored frames - they stay in .quartz-gui/ on the machine that made them - and
   // the build was green with the site's layout gone, while this band said "Alles ok" and only the
@@ -575,11 +592,13 @@ export default function ProjectDashboard(): JSX.Element {
       {issues.length > 0 ? (
         <AttentionBand issues={issues} />
       ) : (
-        // The sentence names four things, so it waits for all four to answer. It asked for the
+        // The sentence names four things, so it waits for all four to answer, and for the package
+        // check, which flashed "Alles ok" before the red dependency line when git answered first. It asked for the
         // config alone and stood over a Git-Sync tile reading "–" or "Stand nicht lesbar" (alpha
         // scenes 2026-10-17, scene 6; measured with a broken .git/index).
         config &&
         content &&
+        missingDeps &&
         git &&
         !git.readError &&
         scss &&

@@ -255,6 +255,8 @@ export default {
       dependenciesInstall: 'Install',
       dependenciesInstalling: 'Installing…',
       dependenciesInstallingTitle: 'Installing npm packages',
+      dependenciesUnreadable: 'Whether all npm packages are installed could not be checked',
+      dependenciesUnreadableDetail: 'The project’s package.json could not be read.',
       framesMissing: '{{count}} own frame is missing',
       framesMissing_other: '{{count}} own frames are missing',
       framesMissingDetail: 'Own frames live in .quartz-gui/authored-frames and do not travel with git. Until you copy that folder over from the other computer, Quartz builds with the default frame.',

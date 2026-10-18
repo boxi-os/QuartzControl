@@ -258,6 +258,8 @@ export default {
       dependenciesInstall: 'Installieren',
       dependenciesInstalling: 'Installiere…',
       dependenciesInstallingTitle: 'npm-Pakete werden installiert',
+      dependenciesUnreadable: 'Ob alle npm-Pakete installiert sind, konnte nicht geprüft werden',
+      dependenciesUnreadableDetail: 'Die package.json des Projekts konnte nicht gelesen werden.',
       framesMissing: '{{count}} eigener Frame fehlt',
       framesMissing_other: '{{count}} eigene Frames fehlen',
       framesMissingDetail: 'Eigene Frames liegen in .quartz-gui/authored-frames und kommen nicht über git mit. Bis du den Ordner vom anderen Rechner kopierst, baut Quartz mit dem Standard-Frame.',

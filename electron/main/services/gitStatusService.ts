@@ -8,6 +8,11 @@ import type { GitFileChange, GitStatus, GitOperationInProgress } from '@shared/i
 // keeps the real number so the UI can say "und N weitere" rather than lying about the total.
 const MAX_LISTED_CHANGES = 500
 
+// Local, but not always quick: a repository on a network drive or behind a hung fsmonitor never
+// answered, and the overview waited for it with nothing to say (forty-sixth review, Niedrig 3).
+// Generous, because a large content folder legitimately takes seconds.
+const STATUS_TIMEOUT_MS = 30_000
+
 const EMPTY: GitStatus = {
   isRepo: false,
   readError: null,
@@ -149,7 +154,7 @@ async function readLastCommit(projectPath: string): Promise<GitStatus['lastCommi
 export async function getGitStatus(projectPath: string): Promise<GitStatus> {
   // gitTextEnv because the one sentence read here - "not a git repository" - is translated
   // ("Kein Git-Repository" with a German git); only git's messages change, not the porcelain.
-  const statusResult = await run('git', ['status', '--porcelain=v2', '--branch', '-z'], projectPath, gitTextEnv())
+  const statusResult = await run('git', ['status', '--porcelain=v2', '--branch', '-z'], projectPath, gitTextEnv(), STATUS_TIMEOUT_MS)
   // Two different answers. "Not a git repository" is a state the page can act on (Git-Sync offers
   // to create one, Pull and Push are disabled); every other failure - no git, a directory git
   // refuses, a broken index - is "could not read", and the project may be a repository after all.

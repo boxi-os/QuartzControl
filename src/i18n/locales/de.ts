@@ -267,6 +267,7 @@ export default {
       gitConflicts_other: '{{count}} Dateien im Konflikt',
       gitConflictsDetail: 'Bis der Konflikt gelöst ist, kann nicht gepusht werden.',
       gitInProgress: 'Ein {{operation}} ist angefangen und nicht abgeschlossen',
+      gitUnreadable: 'Der Git-Stand konnte nicht gelesen werden',
       scssError: 'Dein CSS lässt sich nicht übersetzen',
       line: 'Zeile {{line}}',
       noIndex: 'Die Website hat keine Startseite',

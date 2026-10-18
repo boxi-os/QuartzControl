@@ -483,6 +483,18 @@ export default function ProjectDashboard(): JSX.Element {
       to: 'sync',
       linkLabel: t('projectLayout.tabs.sync')
     })
+  } else if (git === null || git?.readError) {
+    // "Alles ok" waits for git, so without this line an unreadable or hanging git left the band
+    // empty, neither "Alles ok" nor a reason (forty-sixth review, Niedrig 3).
+    issues.push({
+      id: 'git-unreadable',
+      tone: 'amber',
+      icon: TAB_ICONS.sync,
+      title: t('dashboard.attention.gitUnreadable'),
+      detail: git?.readError ?? undefined,
+      to: 'sync',
+      linkLabel: t('projectLayout.tabs.sync')
+    })
   }
   if (scss?.status === 'error') {
     const { relativePath, line, message } = scss.diagnostic

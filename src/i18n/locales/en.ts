@@ -264,6 +264,7 @@ export default {
       gitConflicts_other: '{{count}} files in conflict',
       gitConflictsDetail: 'Nothing can be pushed until the conflict is resolved.',
       gitInProgress: 'A {{operation}} was started and never finished',
+      gitUnreadable: 'The git status could not be read',
       scssError: 'Your CSS does not compile',
       line: 'line {{line}}',
       noIndex: 'The site has no start page',

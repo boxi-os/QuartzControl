@@ -102,9 +102,10 @@ Werkstätten und Websites stehen über die Updates-Seite der App auf dieser Fass
 
 Ein Commit nach dem Tag, der nur Tests oder README ändert, braucht keine Fassung, solange er
 gepusht ist. **Stand 2026-10-18:** layout-box steht auf `v0.4.2`, gepusht; multilanguage einen
-Commit nach `v0.2.0` (`85428bf`, Test und README), gepusht; **navigations einen Commit nach
-`v0.4.2` (`1de1d98`, „Button“ statt „Knopf“ in den Texten des Schemas), nicht gepusht** — das wird
-0.4.3, bevor die Vorlagen neu gebaut werden.
+Commit nach `v0.2.0` (`85428bf`, Test und README), gepusht; navigations auf `v0.4.3`
+(`1bffddb`, am selben Tag veröffentlicht: „Button“ statt „Knopf“ in drei Texten des Schemas),
+gepusht. Offen dafür: Werkstätten und Websites über die Updates-Seite auf 0.4.3 heben, bevor die
+Vorlagen neu gebaut werden.
 
 ## 3. Das Handbuch steht online auf dem Stand der Fassung
 

@@ -828,3 +828,25 @@ eine eigene Grammatik oder ein Nachfärben über der von CodeMirror wäre mehr C
 ist. Wer `https:` davorschreibt, sieht die Regel normal. Der Kommentar steht an `EXTENSIONS` in
 `src/routes/Styles/CustomCss.tsx`; meldenswert ist es bei `@lezer/sass`, wenn es jemanden trifft.
 
+## Wo sich 1.0.x und 1.1 begegnen (2026-10-18, siebenundvierzigstes Review)
+
+**„Nur hell“ in einem nicht umgestellten Projekt (Hoch 1, `b94a01be`).** `setMode` schrieb für jeden
+hellen Wert einer Variable, deren Grundwert sich zwischen den Modi unterscheidet,
+`{ light, dark: '', lightOnly: true }`, auch ohne „Jetzt umstellen“. Die dritte Regel
+`:root:not([saved-theme="dark"])` landete im css-vars-Block von `custom.scss`, den 1.0.x weiter liest
+und schreibt. Gemessen über den Variablen-Reiter der gebauten App an einer Kopie von
+navigations-testprojekt auf dem Stand der Form 1.0, `--secondary` hell auf `#c0392b`, danach
+speichert 1.0.2 `--tpl-space-md`: vorher las 1.0.2 45 von 46 Variablen, `--secondary` fehlte, und
+sein Speichern löschte die Regel; nachher schreibt 1.1 `#c0392b` in `:root` und `#699dc3` in die
+dunkle Regel, 1.0.2 liest 46 und ändert beim Speichern nur `--tpl-space-md`. Gegenprobe nach
+`styles.migrate`: Die `:not()`-Regel steht weiter in `_quartzcontrol.scss`.
+
+**Ungeschichtet schlägt geschichtet, auch im Graphen (Mittel 2, `32471bf3`).** Kopie von gui-test
+mit `:root { --secondary: #0a7a55 }` am Ende von `custom/foundation.scss`; die Website zeigt
+`#0a7a55` in beiden Modi, das Build-CSS hat `#1463a3`/`#699dc3` in der Schicht und `#0a7a55`
+außerhalb. Ohne Override der Seite vorher hell `#0a7a55`, dunkel `#699dc3`, nachher beide
+`#0a7a55`; mit dem Theme minimal vorher der Wert des Themes, nachher `#0a7a55`. Override in der
+Zeile zurückgesetzt, nur das dunkle Feld auf `#ff00aa`: vorher geschrieben hell `#1463a3`,
+nachher `#0a7a55`. Der ganze Graph, alter gegen neuen Build an vier Projekten: zweimal unverändert,
+in gt-sec2 nur `--secondary`, in ntp-lo fünf Schriftvariablen, die dort eine ungeschichtete
+`:root`-Regel setzt (am Build-CSS geprüft).

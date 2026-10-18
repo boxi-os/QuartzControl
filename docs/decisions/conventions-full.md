@@ -709,6 +709,17 @@ Projektwurzel.
   Auslassung ohne Satz schickt den nächsten Leser wieder in die Quelle, auch wenn sie richtig ist
   (dreizehntes Review: die `.sidebar`-Regeln aus `base.scss` und explorer, die ein eigenes Frame nie
   trifft, weil es seine Bereiche als `.qgframe-area-*` rendert).
+- **Wer die Kaskade nachrechnet, rechnet die Schichten mit.** Dieselbe Tatsache wie in der Regel
+  darüber, von der lesenden Seite: Der Variablen-Graph las jede `:root`-Regel des Builds in
+  Dateireihenfolge in eine Tabelle, geschichtet oder nicht, und ließ den Wert des Themes vor allem
+  anderen gelten. Auf der Website schlägt aber ein ungeschichtetes `:root { --secondary: … }` eines
+  eigenen Stylesheets Quartz' `@layer quartz-base` und das `@layer obsidian-theme` eines Themes, und
+  zwar auch im dunklen Modus, obwohl `:root[saved-theme="dark"]` spezifischer ist. Die Zeile zeigte
+  Quartz' Werte unter dem Namen des Stylesheets, und ein Speichern nur des dunklen Feldes schrieb
+  den falschen hellen Wert mit (siebenundvierzigstes Review, Mittel 2; Messung in
+  [`styles-and-fonts.md`](styles-and-fonts.md)). Jetzt sammelt der Graph ungeschichtete Werte
+  getrennt und legt sie über die geschichteten; ohne eigene dunkle Regel gilt ihr heller Wert auch
+  dunkel. Wer eine Rangfolge der Website nachbaut, fragt zuerst die Schicht, dann den Selektor.
 - **Kein natives HTML5-Drag mehr, nirgends.** Alle vier Stellen ziehen mit `@dnd-kit`
   (`Plugins/Installed`, `LayoutEditor/GlobalBoard`, `LayoutEditor/FrameBuilder`; `Styles/CustomCss`
   hatte nie eines, nur Pfeile). Eine neue Stelle nimmt `@dnd-kit` mit `KeyboardSensor`, denn natives
@@ -1139,9 +1150,15 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   einschaltet, steht als zweite Kopie in `custom.scss`. Deshalb **zieht kein Schreiber ein Projekt
   um**: Umgezogen wird nur auf „Jetzt umstellen“ der Stile-Seite, mit einem Snapshot der Art
   `styleMigration` davor (den die Ausdünnung behält), oder beim Anlegen eines Projekts in der App;
-  bis dahin schreibt jeder Schreiber die Form von 1.0. Und wo zwei Kopien zusammenkommen, wird die
-  Ladereihenfolge neu gebildet, nicht aneinandergehängt — zwei `@use` desselben Moduls brechen den
-  Bau (vierzigstes Review, Befund 2 und Schlussfrage).
+  bis dahin schreibt jeder Schreiber die Form von 1.0. „Die Form von 1.0“ heißt dabei: nur, was
+  1.0.x lesen *und zurückschreiben* kann. 1.1 schrieb einen hellen Wert, dessen Grundwert sich
+  zwischen den Modi unterscheidet, als dritte Regel `:root:not([saved-theme="dark"])` auch in ein
+  nicht umgestelltes Projekt; der Parser von 1.0.x kennt zwei Regeln, zeigte die Variable als
+  unverändert und löschte sie beim nächsten Speichern irgendeiner Variable — still, auf dem Weg,
+  den die Notizen als sicher beschrieben (siebenundvierzigstes Review, Hoch 1). Nicht umgestellt
+  schreibt ein heller Wert jetzt den dunklen ausdrücklich mit, wie 1.0.1. Und wo zwei Kopien
+  zusammenkommen, wird die Ladereihenfolge neu gebildet, nicht aneinandergehängt — zwei `@use`
+  desselben Moduls brechen den Bau (vierzigstes Review, Befund 2 und Schlussfrage).
 - **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen statt
   überschreiben.
 - **Eine Datei, die leer ist, ist nicht dasselbe wie eine, die etwas anderes enthält — und „etwas

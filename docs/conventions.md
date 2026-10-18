@@ -208,6 +208,9 @@ Begründung.
 - **Erzeugtes CSS gehört in die Kaskadenschicht dessen, was es nachspricht.** Die Kompat-Blöcke in
   `shared/gridFrameCss.ts` stehen in `@layer quartz-base`; die Grid-Regeln des Frames bleiben
   ungeschichtet. Was absichtlich fehlt, steht mit Grund in der Liste daneben.
+- **Wer die Kaskade nachrechnet, rechnet die Schichten mit.** Eine ungeschichtete Deklaration
+  schlägt jede geschichtete, gleich welcher Selektor (`variableGraphService`: Quartz in
+  `quartz-base`, Themes in `obsidian-theme`, eigene Stylesheets ungeschichtet darüber).
 - **Kein natives HTML5-Drag mehr, nirgends.** Neue Stellen nehmen `@dnd-kit` mit
   `KeyboardSensor`; der Knoten ist das ganze Element, der Griff `setActivatorNodeRef`. Listen
   nehmen `sortableKeyboardCoordinates`, Raster `nearestDroppableCoordinates`
@@ -310,7 +313,9 @@ Begründung.
   `QuartzControl:managed:`; gelesen werden beide Namen (`MARKER_NAMES`), wer schreibt, benennt alle
   um, bei Doppelten gewinnt die spätere Kopie. **`_quartzcontrol.scss` ist ab 1.1 ein Format:**
   Kein Schreiber zieht um, das tut nur „Jetzt umstellen“ (mit Snapshot `styleMigration`) oder das
-  Anlegen eines Projekts. Beim Zusammenführen wird die Ladereihenfolge neu gebildet.
+  Anlegen eines Projekts. Bis dahin heißt „die Form von 1.0“: nur, was 1.0.x lesen kann (ein Wert
+  „nur hell“ schreibt dort den dunklen ausdrücklich mit). Beim Zusammenführen wird die
+  Ladereihenfolge neu gebildet.
 - **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen.
 - **Eine Datei, die leer ist, ist nicht dasselbe wie eine, die etwas anderes enthält.** Eine leere
   Config ist gültig. Syntaxfehler (`doc.errors`, `parseDocument` wirft nicht), kein Mapping und

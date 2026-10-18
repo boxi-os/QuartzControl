@@ -2475,3 +2475,52 @@ Beide Punkte vor P8 erledigt (2026-10-18), je ein Commit: `8d0234a` (die Herkunf
 geänderten Variable nennt ihren Ursprung, etwa „Von dir geändert. Ursprung: Stylesheet
 custom/layout.scss“) und `cf7e173` (ohne Build zählt die Liste keine Gesamtzahl und wiederholt
 den Satz „noch kein Build-Output“). Gebaute App, Klon von gui-test, mit und ohne `public/`.
+
+**Das siebenundvierzigste Review** ([`REVIEW-2026-10-21.md`](REVIEW-2026-10-21.md), Auftrag
+[`REVIEW-2026-10-21-auftrag.md`](REVIEW-2026-10-21-auftrag.md), Block A
+`review-2026-10-21..review-2026-10-22`, Block B `v1.0.2..review-2026-10-22`, gelesen von den Stellen
+her, an denen sich 1.0.x und 1.1 begegnen): **vom selben Modell wie die gelesenen Commits und wie
+der Auftrag** (Claude Opus 5.5, in einem eigenen Agenten). 1 Hoch, 3 Mittel, 7 Niedrig. Abgearbeitet
+am 2026-10-18 auf `feat/1.1`, ein Befund je Commit; Typcheck, Build und Smoke bei jeder
+Code-Änderung, die reinen Doku-Befunde ohne:
+
+- **Hoch 1** `b94a01be` — ein Wert „nur hell“ in einem nicht umgestellten Projekt schreibt die Form
+  von 1.0.1 (dunkel ausdrücklich), nicht die `:not()`-Regel, die 1.0.2 nicht kennt und beim
+  nächsten Speichern löschte. Gebaute 1.1 und 1.0.2 an derselben Kopie: vorher 45 von 46 Variablen
+  und die Regel gelöscht, nachher 46 und nur die gespeicherte geändert.
+- **Mittel 1** `9e223ef7` — von Cache und mitgeliefertem Basis-Template gewinnt das mit dem neueren
+  `createdAt`; vorher schlug ein Cache 1.0 offline ohne Frist das Paket 1.1 (31 statt 12
+  Stylesheets).
+- **Mittel 2** `32471bf3` — der Variablen-Graph legt ungeschichtete Werte eigener Stylesheets über
+  Quartz und Theme; `--secondary` zeigt jetzt in beiden Modi den Wert der Website, und „nur dunkel
+  ändern“ schreibt den richtigen hellen Wert mit.
+- **Mittel 3** `3982dab9` — navigations 0.4.3 steht in `NAVIGATIONS_SAME_CODE` (`src` gleich 0.4.2),
+  der Hinweis „Angaben können abweichen“ ist weg; mit 0.3.2 bleibt er. `release.md` 2b sagt, dass
+  jede neue Plugin-Fassung auch die App braucht.
+- **Niedrig 1** `7d6fbf27`, **Niedrig 2** `3aae5b5b`, **Niedrig 7** `b32c03bb` — Sätze für die
+  Notizen in `release.md` Punkt 7: Paket 1.1 erst nach dem Update importieren, der Umbruch der
+  Config zwischen den Fassungen, und vor dem Rückweg auf 1.0.x den Snapshot `styleMigration` in 1.1
+  wiederherstellen. Nicht nachgemessen; die Zahlen sind die des Reviews.
+- **Niedrig 3** `871f127a` — das Basis-Template wird mit `latest.json` in Punkt 8 gepusht, nach der
+  Release-Seite, nicht in Punkt 4.
+- **Niedrig 4** `dfec1735` — „die Vorlage installiert `main`“ steht jetzt als Entscheidung mit Grund
+  (ein Ref friert die Updates-Seite ein) und Preis (ein Breaking Change verlangt neue Vorlagen am
+  selben Tag).
+- **Niedrig 5** `f5cafeb0` — Quartz' Zeile „Started a Quartz server listening at …“ gilt als
+  zweiter Beleg neben dem WebSocket-Port; nach 5 s ohne beides sagt das Log, worauf gewartet wird.
+  Ohne WebSocket vorher 40 s „starting“, nachher „running“ nach 9,1 s; der fremde Server des
+  sechsundvierzigsten Reviews zählt weiter nicht.
+- **Niedrig 6** `ecabd122` — die Regel zum Options-Schema nennt ihre Ausnahmen
+  (`optionFormExtras.ts`, zwei Schlüssel in `editors.tsx`).
+
+Dazu ein Commit für die Notiz zu den Breakpoints im Reiter „Frames“, die das Review vermisste, und
+die zwei neuen Regeln: „Wer die Kaskade nachrechnet, rechnet die Schichten mit“ und „die Form von
+1.0 heißt: nur, was 1.0.x lesen kann“.
+
+Offen aus dieser Runde, beim Nutzer, die **Nebenbei-Liste**: Der Vorlagen-Import (Teil
+`cssVariables` in `parts.ts`) kann einen Wert „nur hell“ als `:not()`-Regel in ein nicht
+umgestelltes Projekt schreiben (dieselbe Lücke wie Hoch 1, anderer Schreiber); Einträge mit
+`lightOnly` aus Testfassungen bleiben, bis ihre Zeile bearbeitet wird; `serverLogUnavailable` sagt
+„lässt sich nicht mitschreiben“ statt „konnte nicht … werden“.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

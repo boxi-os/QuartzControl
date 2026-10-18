@@ -80,8 +80,8 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Stand und Reviews
 
-Sechsundvierzig Review-Runden sind abgearbeitet (die letzte am 2026-10-18, vor dem Release von 1.1,
-auf `feat/1.1`). Veröffentlicht ist `1.0.2` (2026-10-07). Was aus jeder Runde wurde und was noch
+Siebenundvierzig Review-Runden sind abgearbeitet (die letzte am 2026-10-18, vor dem Release von
+1.1, auf `feat/1.1`). Veröffentlicht ist `1.0.2` (2026-10-07). Was aus jeder Runde wurde und was noch
 ungelesen ist, steht in [`docs/reviews.md`](docs/reviews.md); die früheren Stand-Absätze dieser
 Datei (Releases, Alpha-Test, Gruppe D, offene Punkte) wörtlich in [`docs/stand.md`](docs/stand.md).
 Was aus einer Runde dauerhaft gilt, steht als Regel in `docs/conventions.md`, nicht in der Chronik.

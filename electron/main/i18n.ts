@@ -80,6 +80,8 @@ const STRINGS = {
     dependenciesMissing:
       'Die npm-Pakete dieses Projekts sind nicht installiert (es fehlt {{names}}), etwa weil es frisch geklont ist. „Installieren“ in der Übersicht holt sie nach.',
     serverPortTaken: 'Port {{from}} ist belegt, der Server nimmt {{to}}.',
+    serverWaitsForWsPort:
+      'Port {{port}} antwortet, der WebSocket-Port {{wsPort}} noch nicht. QuartzControl wartet auf ihn oder auf die Zeile „Started a Quartz server“, bevor der Server als gestartet gilt.',
     serverWsPortIsHttpPort: 'Port {{from}} nimmt jetzt der Server selbst für die Seite; die automatische Aktualisierung nimmt {{to}}.',
     serverPortTakenBehindTunnel:
       'Belegte Ports: {{ports}}. Mit Remote-Dev-Host ({{host}}) weicht der Server nicht auf andere aus, weil der Tunnel genau diese Ports weiterreicht. Gib sie frei oder stell in den Server-Einstellungen andere ein.',
@@ -551,6 +553,8 @@ const STRINGS = {
     dependenciesMissing:
       'This project’s npm packages are not installed ({{names}} missing), perhaps because it was just cloned. “Install” on the Overview fetches them.',
     serverPortTaken: 'Port {{from}} is in use, the server takes {{to}} instead.',
+    serverWaitsForWsPort:
+      'Port {{port}} answers, the websocket port {{wsPort}} does not yet. QuartzControl waits for it or for the line “Started a Quartz server” before the server counts as started.',
     serverWsPortIsHttpPort: 'Port {{from}} is now the server’s own page port; live reload takes {{to}} instead.',
     serverPortTakenBehindTunnel:
       'Ports in use: {{ports}}. With a remote dev host ({{host}}) the server does not move to others, because the tunnel forwards exactly these ports. Free them or set others in the server settings.',

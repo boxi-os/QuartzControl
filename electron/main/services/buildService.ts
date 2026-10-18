@@ -683,14 +683,45 @@ function spawnServer(
   // server there made this one "running" and the preview showed its page until Quartz's first
   // build ended, now with no deadline (forty-sixth review, Niedrig 2). Quartz opens the websocket
   // port in the same tick as the http one (quartz/cli/handlers.js), so waiting for it costs nothing.
+  // The websocket port is one proof, Quartz's own line after listen is the other: a Quartz that
+  // carries its websocket on the http server never opens a second port, and waiting for one left
+  // the server on "starting" with its page answering 200 (forty-seventh review, Niedrig 5). The
+  // line names this server's port and comes only after its own listen, so a foreign server holding
+  // the port during the first build still counts for nothing. Without a log file there is no line,
+  // and after WS_PORT_GRACE_MS the log says what is still being waited for.
   const stillStarting = (): boolean => runningServers.get(projectId)?.status === status && status.state === 'starting'
-  waitForPort(options.port, stillStarting, () =>
-    waitForPort(options.wsPort, stillStarting, () => {
-      if (!stillStarting()) return
-      status.state = 'running'
-      emitStatus(projectId)
-    })
-  )
+  const announced = `Started a Quartz server listening at http://localhost:${options.port}`
+  let heard = ''
+  let listening = false
+  let httpOpen = false
+  const stopListening = (): void => {
+    serverEvents.off('log', hear)
+  }
+  const markRunning = (): void => {
+    stopListening()
+    if (!stillStarting()) return
+    status.state = 'running'
+    emitStatus(projectId)
+  }
+  function hear(line: LogLine): void {
+    if (line.projectId !== projectId || line.stream === 'warn') return
+    if (!stillStarting()) return stopListening()
+    // A chunk of the tail can end mid-line; the end of the previous one is kept for that.
+    heard = (heard + line.text).slice(-2 * announced.length)
+    if (!heard.includes(announced)) return
+    listening = true
+    if (httpOpen) markRunning()
+  }
+  serverEvents.on('log', hear)
+  child.once('exit', stopListening)
+  waitForPort(options.port, stillStarting, () => {
+    httpOpen = true
+    if (listening) return markRunning()
+    setTimeout(() => {
+      if (stillStarting()) emitLog(projectId, 'warn', `${mainT('serverWaitsForWsPort', { port: options.port, wsPort: options.wsPort })}\n`)
+    }, WS_PORT_GRACE_MS)
+    waitForPort(options.wsPort, stillStarting, markRunning)
+  })
   // Without this listener a failed spawn (e.g. npx missing from PATH) makes the ChildProcess
   // emit an unhandled 'error', which EventEmitter rethrows and takes the whole main process
   // down - and 'exit' never fires, so the status would otherwise stay stuck on "starting".
@@ -844,6 +875,10 @@ async function sameProjectServer(projectPath: string): Promise<{ port: number; p
 // VM, still "starting" after 945 s). A server that never listens ends in the 'exit' handler, which
 // stops the probe through `waiting()` and reports the real failure; one that hangs stays
 // "starting", which is what it is, and "Stoppen" ends it.
+// How long after the http port the websocket port may stay shut before the log says so. Quartz
+// opens both in one tick, so anything past a moment is worth a line.
+const WS_PORT_GRACE_MS = 5000
+
 function waitForPort(port: number, waiting: () => boolean, onOpen: () => void): void {
   const attempt = (): void => {
     if (!waiting()) return

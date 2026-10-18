@@ -224,8 +224,9 @@ Begründung.
   `handbookPages.ts`, kein Pfad). Einzige Ausnahme mit zweitem Verweis: der Content-Ordner im
   Reiter „Website“. Ein Bestätigungsdialog besteht aus Frage und einem Satz Folgen; den Rückweg
   nennt er nur, wenn er nicht offensichtlich ist (nur über git, Papierkorb, gar nicht, ein
-  Schalter). Den automatischen Snapshot sagt er höchstens an, ohne ihn als Rückweg zu erklären.
-  Sätze, die eine datenkostende Verwechslung verhindern, bleiben lang.
+  Schalter, ein Snapshot, den nichts automatisch anlegt). Den automatischen Snapshot sagt er
+  höchstens an, ohne ihn als Rückweg zu erklären. Sätze, die eine datenkostende Verwechslung
+  verhindern, bleiben lang.
 - **Sidebar nach Tätigkeit, eine Seite ist eine Aufgabe.** Die Übersicht ist eine Statusseite:
   nur lokale Reads, genau einer ins Netz, nie awaited.
 

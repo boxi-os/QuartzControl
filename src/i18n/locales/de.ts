@@ -2102,7 +2102,7 @@ export default {
       moveUp: 'Nach oben',
       moveDown: 'Nach unten',
       rename: 'Umbenennen',
-      confirmDelete: 'Datei „{{name}}“ löschen?\n\nSie wird aus der Ladereihenfolge genommen und aus dem Projekt gelöscht.',
+      confirmDelete: 'Datei „{{name}}“ löschen?\n\nSie wird aus der Ladereihenfolge genommen und aus dem Projekt gelöscht. Zurückholen lässt sie sich nur über git oder einen älteren Snapshot.',
       confirmDeleteAction: 'Datei löschen',
       create: 'Neue Datei',
       createConfirm: 'Anlegen',

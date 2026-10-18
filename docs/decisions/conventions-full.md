@@ -803,9 +803,11 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   größeren Änderung automatisch ein Snapshot entsteht, ist bekannt; der Dialog darf es ansagen
   („Vorher wird automatisch ein Snapshot angelegt.“), erklärt aber nicht jedes Mal, wie man ihn
   zurückholt. Wo der Snapshot der einzige Weg zu verlorenem Inhalt ist (eine fehlende
-  `_quartzcontrol.scss`), bleibt der Satz. Ausgenommen sind die Sätze, die eine Verwechslung verhindern, die
-  Daten kostet (Snapshot ≠ Git-Sync, verknüpfter Vault wird nicht gesichert, ein Duplikat erbt keine
-  Ziele); die bleiben lang. Gemessen am 2026-09-07: 1475 Nutzersätze, 192 über 120 Zeichen — und die
+  `_quartzcontrol.scss`), bleibt der Satz. Die Kurzfassung in `conventions.md` hatte diese Ausnahme
+  verloren, und „Datei löschen?“ auf der Stile-Seite (kein Snapshot, `rm`) seinen einzigen
+  Rückweg-Satz mit ihr (sechsundvierzigstes Review, Mittel 1). Ausgenommen sind die Sätze, die
+  eine Verwechslung verhindern, die Daten kostet (Snapshot ≠ Git-Sync, verknüpfter Vault wird
+  nicht gesichert, ein Duplikat erbt keine Ziele); die bleiben lang. Gemessen am 2026-09-07: 1475 Nutzersätze, 192 über 120 Zeichen — und die
   Länge war nicht das Problem, sondern die 75, die Mechanik erklären statt der Entscheidung.
   Messungen in [`i18n-and-vocabulary.md`](i18n-and-vocabulary.md), der Ablauf und die
   Gliederung des Benutzerhandbuchs in [`docs/handbuch.md`](../handbuch.md). Das Handbuch ist

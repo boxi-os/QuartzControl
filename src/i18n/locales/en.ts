@@ -2094,7 +2094,7 @@ export default {
       moveUp: 'Move up',
       moveDown: 'Move down',
       rename: 'Rename',
-      confirmDelete: 'Delete file “{{name}}”?\n\nIt is taken out of the load order and deleted from the project.',
+      confirmDelete: 'Delete file “{{name}}”?\n\nIt is taken out of the load order and deleted from the project. Only git or an earlier snapshot brings it back.',
       confirmDeleteAction: 'Delete file',
       create: 'New file',
       createConfirm: 'Create',

@@ -21,6 +21,7 @@ import * as pluginService from '../pluginService'
 import * as projectIconService from '../projectIconService'
 import * as styleService from '../styleService'
 import * as themePresetsService from '../themePresetsService'
+import * as variableGraphService from '../variableGraphService'
 import { runCommand } from '../runCommand'
 import { mainT } from '../../i18n'
 import { isConsolidatedOnlyStylesheet, isConsolidatedOrder, isLegacyOnlyStylesheet } from '@shared/stylesheetConsolidation'
@@ -186,12 +187,36 @@ const cssVariables: TemplatePart<CssVariablesPayload> = {
   // conflict, and dropping it would silently undo an unrelated decision in the target project.
   async apply(payload, { projectPath, strategy }) {
     const merged = new Map((await styleService.getVariableOverrides(projectPath)).map((o) => [o.key, o]))
-    for (const override of payload.overrides) {
+    const incoming = await inFormOfTarget(projectPath, payload.overrides)
+    for (const override of incoming) {
       if (strategy === 'projectWins' && merged.has(override.key)) continue
       merged.set(override.key, override)
     }
     await styleService.saveVariableOverrides(projectPath, [...merged.values()])
   }
+}
+
+// A light-only value (Form C) goes into a project not moved to _quartzcontrol.scss in the form of
+// 1.0.1, with the dark half explicit, as the Variables tab writes it there: 1.0.x reads and writes
+// that custom.scss too, knows no third rule and drops it with the next variable it saves
+// (forty-seventh review, Hoch 1 - this is the same gap through the import). The dark half is the
+// value the variable graph has for the target as it stands, theme and build. Where the graph has
+// none (no theme value, never built), the entry stays light-only: a guessed dark value would change
+// the site now, the third rule only costs something on a way back to 1.0.x.
+async function inFormOfTarget(projectPath: string, overrides: CssVariableOverride[]): Promise<CssVariableOverride[]> {
+  const lightOnly = (o: CssVariableOverride): boolean => o.lightOnly === true && !o.dark?.trim()
+  if (!overrides.some(lightOnly) || styleService.isMoved(await styleService.readStyleSources(projectPath))) return overrides
+  // The theme and the base as the Variables tab reads them (activeThemeIdOf, baseValue): a
+  // switched-off theme contributes nothing, and a mode without a value of its own takes the other.
+  const config = await configService.readConfig(projectPath)
+  const theme = config.plugins[themeEntryIndex(config.plugins)]
+  const themeId = theme?.enabled && typeof theme.options?.theme === 'string' ? theme.options.theme : undefined
+  const graph = await variableGraphService.getVariableGraph(projectPath, themeId)
+  return overrides.map((o) => {
+    const info = lightOnly(o) ? graph.vars[o.key] : undefined
+    const dark = info?.dark ?? info?.light
+    return dark === undefined ? o : { key: o.key, light: o.light, dark }
+  })
 }
 
 /* ---------------------------------------------------------------------- theme */

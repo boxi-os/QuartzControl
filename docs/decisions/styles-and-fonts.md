@@ -841,6 +841,17 @@ sein Speichern löschte die Regel; nachher schreibt 1.1 `#c0392b` in `:root` und
 dunkle Regel, 1.0.2 liest 46 und ändert beim Speichern nur `--tpl-space-md`. Gegenprobe nach
 `styles.migrate`: Die `:not()`-Regel steht weiter in `_quartzcontrol.scss`.
 
+Dieselbe Lücke hatte der Import (nebenbei zu Hoch 1): Der Teil `cssVariables` schrieb ein Paket mit
+einem Wert „nur hell“ unverändert in ein nicht umgestelltes Projekt. Jetzt nimmt er dort den dunklen
+Wert aus dem Variablen-Graphen des Ziels, wie der Variablen-Reiter (eingeschaltetes Theme, sonst
+der andere Modus); hat der Graph keinen, bleibt der Eintrag „nur hell“. Gemessen mit einem Paket aus
+einer umgestellten Kopie von navigations-testprojekt (`--secondary` nur hell `#c0392b`), importiert
+in eine nicht umgestellte, danach speichert 1.0.2 `--tpl-space-md`: vorher stand die `:not()`-Regel
+in `custom.scss`, 1.0.2 las 45 Variablen und löschte sie; nachher `#c0392b` in `:root` und
+`#699dc3` in der dunklen Regel (derselbe Wert wie über den Reiter), 1.0.2 liest 46 und ändert nur
+`--tpl-space-md`. Gegenprobe, Ziel vorher umgestellt: Die `:not()`-Regel steht in
+`_quartzcontrol.scss`.
+
 **Ungeschichtet schlägt geschichtet, auch im Graphen (Mittel 2, `32471bf3`).** Kopie von gui-test
 mit `:root { --secondary: #0a7a55 }` am Ende von `custom/foundation.scss`; die Website zeigt
 `#0a7a55` in beiden Modi, das Build-CSS hat `#1463a3`/`#699dc3` in der Schicht und `#0a7a55`

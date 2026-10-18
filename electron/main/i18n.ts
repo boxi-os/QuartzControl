@@ -280,7 +280,7 @@ const STRINGS = {
     npmInstallFailed: 'npm install ist fehlgeschlagen:',
     warmupBuild: 'Aufwärm-Build:',
     serverLogUnavailable:
-      'Die Ausgabe des Servers lässt sich nicht mitschreiben ({{reason}}). Der Server läuft, diese Konsole bleibt für diesen Lauf leer.',
+      'Die Ausgabe des Servers konnte nicht mitgeschrieben werden ({{reason}}). Der Server läuft, diese Konsole bleibt für diesen Lauf leer.',
 
     // Project creation
     createTargetExists:
@@ -653,7 +653,7 @@ const STRINGS = {
     npmInstallFailed: 'npm install failed:',
     warmupBuild: 'Warm-up build:',
     serverLogUnavailable:
-      'The server’s output cannot be recorded ({{reason}}). The server is running; this console stays empty for this run.',
+      'The server’s output could not be recorded ({{reason}}). The server is running; this console stays empty for this run.',
 
     createTargetExists:
       '“{{path}}” already contains files. Pick a different name or a different folder. An existing folder is never overwritten.',

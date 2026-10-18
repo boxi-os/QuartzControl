@@ -9,6 +9,10 @@
  *
  * Die Pfade sind die der Online-Fassung (`HANDBOOK_URL` in `menu.ts`). Am 2026-09-18 antworteten
  * alle 36 dort mit 200.
+ *
+ * 4.7 heißt seit 1.1 „Layout: Komponenten anordnen“; der alte Pfad, den 1.0.x öffnet, steht dort als
+ * `aliases:` und leitet weiter. Bis die Website mit 1.1 veröffentlicht ist, zeigt der neue Pfad
+ * die 404-Seite der Website (`openHandbook()` fragt nicht nach).
  */
 export const HANDBOOK_PAGES = {
   overview: { de: '3-einrichtung/01-die-uebersicht', en: 'en/3-setup/01-the-overview' },
@@ -20,7 +24,7 @@ export const HANDBOOK_PAGES = {
   stylesVariables: { de: '4-gestaltung/04-variablen', en: 'en/4-design/04-variables' },
   stylesCustomCss: { de: '4-gestaltung/05-eigenes-css', en: 'en/4-design/05-custom-css' },
   layoutFrames: { de: '4-gestaltung/06-layout-frames', en: 'en/4-design/06-layout-frames' },
-  layoutGlobal: { de: '4-gestaltung/07-layout-global-und-seitentypen', en: 'en/4-design/07-layout-global-and-page-types' },
+  layoutGlobal: { de: '4-gestaltung/07-layout-komponenten-anordnen', en: 'en/4-design/07-layout-arranging-components' },
   plugins: { de: '4-gestaltung/08-plugins', en: 'en/4-design/08-plugins' },
   templates: { de: '4-gestaltung/09-vorlagenpakete', en: 'en/4-design/09-template-packages' },
   preview: { de: '5-ansehen-und-bauen/01-die-vorschau', en: 'en/5-preview-and-build/01-the-preview' },

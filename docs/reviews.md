@@ -2630,3 +2630,72 @@ von `defaultValueFor()` stand nach dem Umzug über `catalogDef()` (`bf785f1c`). 
 Ein Wert über 512 Zeichen lehnt weiter nur das Schema ab („Fehler in QuartzControl“), und bei einer
 nur dunklen Änderung, deren heller Wert aus dem Theme ein Semikolon trägt, nennt die Meldung die
 Variable, aber nicht, dass es der helle Wert ist.
+
+**Das neunundvierzigste Review** ([`REVIEW-2026-10-24.md`](REVIEW-2026-10-24.md), Auftrag
+[`REVIEW-2026-10-24-auftrag.md`](REVIEW-2026-10-24-auftrag.md), Block A
+`v1.1.0..review-2026-10-24` (der Reiter „Formulare“ auf `feat/1.2`), Block B quartz-forms
+`665f51f..e79aaa6`, Block C quartz-forms als Ganzes): **von einem anderen Modell** (Claude Fable
+5.1), als Subagent gestartet. 1 Hoch, 3 Mittel, 10 Niedrig; Urteil „veröffentlichbar nach H1, M2
+und N8, M1 und M3 als Vorbehalt ins README“. Abgearbeitet am 2026-10-19, alle vierzehn, ein Befund
+je Commit; im Plugin jeweils `npm run check` mit der Relay-Suite und `dist/` im selben Commit, in
+QuartzControl Typcheck, Build und Smoke. Gemessen mit dem Messgeschirr des Reviews (`review-fable/`
+im Scratchpad seiner Sitzung: Klon, gebaute Kopie von gui-test, Relay unter `php -S`, Chrome und die
+gebaute App über playwright-core). Im Plugin (unveröffentlicht, nicht gepusht):
+
+- **Hoch 1** `449ef9d` — ein `consent`-Feld in einem Schritt mit `showIf` lehnt der Build ab
+  (`consentInConditionalStep`); vorher galt die Schrittbedingung auch für die Einwilligung, und
+  die Mail ging ohne sie hinaus. `dist/cli.js check` am Formular des Reviews: vorher nichts,
+  nachher `fields[7]`, `relay` schreibt nichts.
+- **Mittel 1** `8c9007b` — Hinweis `rateLimitLever` bei jedem Relay-Formular ohne geladenes Captcha
+  und ohne PoW, das ein Plain-Post nicht überspringt (also bei den Vorgaben), und ein README-Absatz,
+  was das Limit schützt. Ein zweiter Zähler je Quelle ist nicht gebaut; das ist eine Entscheidung.
+- **Mittel 2** `0ef9f41` — lehnt das Relay den Stempel ab, holt das Skript ein neues Ticket, wartet
+  `minSeconds` und sendet einmal neu; nebenbei gefunden und mit behoben: mit `pow` und
+  gescheitertem Ticket beim Öffnen kam vorher bei jedem Versuch „zu schnell“. In Chrome gegen das
+  Relay: beide Fälle des Reviews jetzt nach rund 1,1 s gesendet, vorher „Bitte laden Sie die Seite
+  neu“.
+- **Mittel 3** `3cffedd` — README-Absatz, was die Verschlüsselung nicht schützt; Hinweis
+  `encryptionCaptcha` bei verschlüsselndem Formular mit Captcha.
+- **Niedrig 1** `ccdd1f6` — entschieden für den README-Satz: ein `hidden`-Wert bekommt keine
+  Schrittbedingung und kommt immer an; Paritätsfall, der mit dem alten Code in Skript und Relay
+  scheitert.
+- **Niedrig 2** `16d8a12` — `qf_refund()` gibt bei `502 mail` den Platz im Stundenzähler und die
+  Markierung des Beweises zurück (zählen erst nach der Übergabe hielte das Schloss über den Versand).
+- **Niedrig 5** `9d45a96` — der php der Musterprüfung bekommt keine `QF_`-Variablen.
+- **Niedrig 7** `c4a63c2` — nur Doku: ein Hochladen über SFTP/FTP behält die 0600 von `config.php`
+  nicht, und welche Rechte gehen. Die Adapter setzen weiter keinen Modus: ein erzwungenes 0600
+  sperrte ein PHP aus, das als Nutzer des Webservers läuft.
+- **Niedrig 8** `30ebede` — Statuszeile beider READMEs auf 0.4.0, ein Test hält sie an
+  `package.json`.
+- **Niedrig 9** `5da8ba8` — halbe und Drittel-Spannen in `@supports (container-type: inline-size)`;
+  ohne Container-Queries nachgestellt (nicht in einem alten Browser) jedes Feld über die Zeile.
+
+In QuartzControl (`feat/1.2`):
+
+- **Niedrig 3** `a14d6f0d` — `remove()` und `move()` führen die offene Zeile mit; Szenario A des
+  Reviews an der gebauten App: offen bleibt „Schritt 2 · Third“, vorher sprang es auf „Last“.
+- **Niedrig 4** `bf49cc21` — ein abgelehnter Feldname behält Entwurf und Satz.
+- **Niedrig 6** `cb85ef9c` — offene `qc-relay-*` gehen bei `will-quit`, liegengebliebene über einer
+  Stunde beim Start. Der erste Messlauf entfernte dabei einen echten Rest (`qc-relay-5XRbId`),
+  bevor er angesehen war.
+- **Niedrig 10** `29ad988a` — unter quartz-forms 0.4.0 keine Seitenumbruch-Kachel, Breite,
+  Anordnung und Bedingung nur, wo gesetzt, mit „wirkt nicht“; gemessen mit einem Klon von 0.3.0.
+
+`check:plugin-copies` gegen den Klon auf dem neuen Stand (`c4a63c2`): 413 Fälle, alle gleich.
+Keine neue Regel.
+
+Nebenbei, ebenfalls im Plugin: `6f22df9` — die Relay-Suite beendete `php -S`, aber nicht seine
+vier Worker; 20 Prozesse je Lauf, 1452 nach einem Tag (vor der Arbeit beendet). Jetzt eigene
+Prozessgruppe, nach einem Lauf keiner übrig.
+
+Offen aus dieser Runde, beim Nutzer, die **Nebenbei-Liste** des Reviews: Optionswerte mit Leerraum
+sind nie wählbar (ein Build-Fehler fehlt); ein Plain-Post, der ein Textfeld zweimal nennt, bekommt
+den Mustersatz; `Reply-To` nimmt das erste `email`-Feld; das Captcha-Secret je Formular zieht beim
+Umbenennen nicht mit; abgewiesene Posts mit Captcha-Token kosten je eine Anfrage beim Anbieter;
+„no quartz-forms entry“ sagt nicht, dass der Pfad auf `quartz-forms` enden muss; „Schritt 1 von 1“
+bei einem einzigen zählenden Schritt; was die Frage beim Entfernen eines Projekts über die
+Relay-Geheimnisse sagt, ist nicht geprüft; die Commit-Nachricht von `e79aaa6` liest sich
+zweideutig. Dazu: ein Zähler je Quelle für das Ratenlimit (M1), und quartz-forms trägt die Fixes
+unter „Unreleased“, unveröffentlicht und nicht gepusht.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

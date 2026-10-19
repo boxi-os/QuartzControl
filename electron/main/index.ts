@@ -27,6 +27,7 @@ import {
   runningServerSummaries
 } from './services/buildService'
 import { getProject } from './services/projectStore'
+import { removeOpenRelayTempDirs, sweepRelayTempDirs } from './services/formsService'
 import { getSettings, saveSettings } from './services/settingsService'
 import { ensureToolPath } from './services/environmentService'
 import { applyRuntimeMode } from './services/nodeRuntime'
@@ -262,11 +263,14 @@ app.whenReady().then(async () => {
   // "there is a window" may be able to prevent the window.
   createWindow()
   void promptForOrphanedServers().catch((error) => console.error('[main] orphan check failed:', error))
+  void sweepRelayTempDirs().catch((error) => console.error('[main] relay temp sweep failed:', error))
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+app.on('will-quit', () => removeOpenRelayTempDirs())
 
 app.on('window-all-closed', () => {
   if (!isMac) app.quit()

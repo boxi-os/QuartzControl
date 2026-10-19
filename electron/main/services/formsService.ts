@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'fs'
-import { mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from 'fs/promises'
+import { existsSync, readFileSync, rmSync } from 'fs'
+import { mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, posix, relative, sep } from 'path'
 import type { FormsCheckResult, FormsKeyImport, FormsKeyReport, PluginSource, PublishTarget, RelayConflict, RelayLastUpload, RelaySettings, RelayState, RelayUploadResult } from '@shared/ipc-contract'
@@ -216,13 +216,44 @@ async function runRelayCli(projectPath: string, source: PluginSource, outDir: st
   return { ok: true, json }
 }
 
+const TEMP_PREFIX = 'qc-relay-'
+const openTempDirs = new Set<string>()
+
 async function withTempDir<T>(run: (dir: string) => Promise<T>): Promise<T> {
-  const dir = await mkdtemp(join(tmpdir(), 'qc-relay-'))
+  const dir = await mkdtemp(join(tmpdir(), TEMP_PREFIX))
+  openTempDirs.add(dir)
   try {
     return await run(dir)
   } finally {
     await rm(dir, { recursive: true, force: true })
+    openTempDirs.delete(dir)
   }
+}
+
+/**
+ * The `finally` above runs for an exception, not for a crash, a kill or a quit in the middle of a
+ * run, and the folder stayed under $TMPDIR with config.php and the relay's secret in it
+ * (forty-ninth review, Niedrig 6). On quit the folders still open go (synchronously: `will-quit`
+ * does not wait); at start the ones a previous run left. Only what this file names
+ * (`qc-relay-*` directly in tmpdir()) and only after an hour: a relay run takes seconds, and a
+ * second instance of the app may be in the middle of one.
+ */
+export function removeOpenRelayTempDirs(): void {
+  for (const dir of openTempDirs) rmSync(dir, { recursive: true, force: true })
+  openTempDirs.clear()
+}
+
+export async function sweepRelayTempDirs(now = Date.now()): Promise<string[]> {
+  const removed: string[] = []
+  for (const name of await readdir(tmpdir()).catch(() => [] as string[])) {
+    if (!name.startsWith(TEMP_PREFIX)) continue
+    const dir = join(tmpdir(), name)
+    const info = await stat(dir).catch(() => null)
+    if (!info?.isDirectory() || now - info.mtimeMs < 60 * 60_000) continue
+    await rm(dir, { recursive: true, force: true })
+    removed.push(dir)
+  }
+  return removed
 }
 
 export async function relayState(projectId: string, projectPath: string, source: PluginSource): Promise<RelayState> {

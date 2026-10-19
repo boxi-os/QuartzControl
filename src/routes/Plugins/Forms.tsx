@@ -17,6 +17,7 @@ import {
   Plus,
   Send,
   ShieldCheck,
+  Server,
   SlidersHorizontal,
   ThumbsUp,
   Trash2,
@@ -80,6 +81,7 @@ import { DraftInput } from './DraftInput'
 import { TextEditor } from './FormText'
 import { FormFieldsEditor } from './FormFieldsEditor'
 import { KeysSection } from './FormsKeys'
+import { RelaySection } from './FormsRelay'
 import { ReadAgainstNote } from './ReadAgainstNote'
 import { SavesImmediately } from './SavesImmediately'
 
@@ -90,6 +92,7 @@ const SECTION_ICONS: Record<SectionId, typeof Send> = {
   keys: KeyRound,
   spam: ShieldCheck,
   layout: LayoutTemplate,
+  relay: Server,
   texts: Type,
   technical: Wrench
 }
@@ -176,6 +179,17 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
     if (checkTimer.current) clearTimeout(checkTimer.current)
     checkTimer.current = setTimeout(() => setCheckRound((n) => n + 1), 600)
   }, [])
+  // The relay's state needs the plugin too (the hash of what it would write), so it is asked
+  // with the check, and only while a form sends through the relay.
+  const usesRelay = formsOf(entryOptions).some(([, def]) => transportKindOf(def, entryOptions) === 'relay')
+  const [relayRound, setRelayRound] = useState(0)
+  const relayQuery = useIpcQuery(
+    () =>
+      entry && usesRelay
+        ? window.quartzGui.forms.relayState({ projectId: project.id, projectPath: project.path, source: entry.plugin.source })
+        : Promise.resolve(null),
+    [project.id, project.path, sourceKey, usesRelay, checkRound, relayRound]
+  )
   const checkQuery = useIpcQuery(
     () => (entry ? window.quartzGui.forms.check({ projectPath: project.path, source: entry.plugin.source }) : Promise.resolve(null)),
     [project.path, sourceKey, checkRound]
@@ -367,6 +381,14 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
         if (!layoutForm) return t('formsEditor.noLayoutForm')
         return `${layoutForm} · ${placement ? t(`positions.${placement.position}`, placement.position) : t('formsEditor.notPlaced')}`
       }
+      case 'relay': {
+        const r = relayQuery.data
+        if (!r) return relayQuery.loading ? t('formsEditor.relay.loading') : ''
+        if (!r.lastUpload) return t('formsEditor.relay.statusNever')
+        if (r.hashProblem !== undefined) return t('formsEditor.relay.statusBroken')
+        const date = new Date(r.lastUpload.at).toLocaleDateString(i18n.resolvedLanguage)
+        return r.moved || r.currentHash !== r.lastUpload.hash ? t('formsEditor.relay.statusChanged', { date }) : t('formsEditor.relay.statusCurrent', { date })
+      }
       case 'texts': {
         const count = isObject(options.texts) ? Object.values(options.texts).reduce<number>((n, v) => n + (isObject(v) ? Object.keys(v).length : 0), 0) : 0
         return count ? t('formsEditor.ownTexts', { count }) : t('formsEditor.pluginTexts')
@@ -411,6 +433,33 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
               )
             }
           />
+        ) : selectedSection?.id === 'relay' ? (
+          <Card className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <CardHeading icon={Server}>{t('formsEditor.sections.relay')}</CardHeading>
+              <p className="text-micro text-text-secondary">{t('formsEditor.sectionHints.relay')}</p>
+            </div>
+            <RelaySection
+              state={relayQuery.data ?? null}
+              loading={relayQuery.loading}
+              error={relayQuery.error}
+              source={entry.plugin.source}
+              transportUrl={isObject(options.transport) && typeof options.transport.url === 'string' ? options.transport.url : ''}
+              siteBase={siteBaseOf(config)}
+              neededRecipients={[
+                ...new Set(
+                  forms
+                    .filter(([, def]) => transportKindOf(def, options) === 'relay')
+                    .map(([, def]) => (typeof def.recipient === 'string' ? def.recipient.trim() : ''))
+                    .filter(Boolean)
+                )
+              ]}
+              onTransportUrl={(url) =>
+                updateOptions((o) => ({ ...o, transport: { ...(isObject(o.transport) ? o.transport : { kind: 'relay' }), url } }), t('formsEditor.relay.urlAnnounce'))
+              }
+              onChanged={() => setRelayRound((n) => n + 1)}
+            />
+          </Card>
         ) : selectedSection?.id === 'keys' ? (
           <Card className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
@@ -535,7 +584,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
               <p className="text-micro text-amber-700 dark:text-amber-300">{t('pluginOptions.unreadable', { reason: schemaQuery.data.unreadable })}</p>
             )}
             <ul className="flex flex-col gap-1.5">
-              {SECTIONS.map((s) => {
+              {SECTIONS.filter((s) => s.id !== 'relay' || usesRelay).map((s) => {
                 const key = `section:${s.id}`
                 const Icon = SECTION_ICONS[s.id]
                 return (
@@ -1289,4 +1338,16 @@ function CheckSummary({
       {unplaced.length > 0 && <Messages problems={unplaced} hints={[]} />}
     </div>
   )
+}
+
+/** `configuration.baseUrl` as an https address without a trailing slash, or null. */
+function siteBaseOf(config: QuartzConfig): string | null {
+  const raw = (config.configuration as { baseUrl?: unknown } | undefined)?.baseUrl
+  if (typeof raw !== 'string' || !raw.trim()) return null
+  try {
+    const url = new URL(/^https?:\/\//.test(raw) ? raw : `https://${raw}`)
+    return `${url.origin}${url.pathname.replace(/\/+$/, '')}`
+  } catch {
+    return null
+  }
 }

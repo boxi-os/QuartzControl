@@ -631,6 +631,57 @@ export type FormsCheckResult =
   | { state: 'checked'; problems: string[]; hints: string[]; keys: FormsKeyReport[] }
   | { state: 'unavailable'; reason: string }
 
+/** The quartz-forms relay's settings that are not secret (.quartz-gui/forms-relay.json). */
+export interface RelaySettings {
+  /** A publish target of type sftp, ftp or folder. */
+  targetId?: string
+  /** The directory below the target's path the relay goes into. */
+  subdir: string
+  from: string
+  /** Empty: any origin (the relay's own rule). */
+  allowedOrigins: string[]
+  subjectPrefix: string
+  mailer: 'mail' | 'sendmail'
+  sendmailPath: string
+  /** An absolute path on the server; empty: counters/ next to send.php. */
+  counterDir: string
+}
+
+export interface RelayLastUpload {
+  at: string
+  /** quartz-forms' hash of the rules it wrote (`relay --json`). */
+  hash: string
+  targetId: string
+  location: string
+}
+
+export interface RelayConflict {
+  targetId: string
+  targetName: string
+  /** The relay's directory relative to that target's remote path, as its excludes would name it. */
+  exclude: string
+}
+
+export interface RelayState {
+  settings: RelaySettings
+  lastUpload: RelayLastUpload | null
+  /** What is stored, never a value: which recipients have an address, which captcha secrets exist. */
+  secrets: { stored: boolean; recipients: string[]; captchaSecret: boolean; captchaSecrets: string[]; storageAvailable: boolean }
+  targets: { id: string; name: string; type: string; where: string }[]
+  conflict: RelayConflict | null
+  /** The hash of what the relay would be told now; null with `hashProblem` when it cannot be made. */
+  currentHash: string | null
+  hashProblem?: string
+  siteOrigin: string | null
+  /** The forms that send through the relay, and the recipient names they use. */
+  relayForms: string[]
+  recipientNames: string[]
+  /** The target or directory changed since the last upload. */
+  moved?: boolean
+}
+
+export type RelayUploadResult = DeployResult
+
 /** forms.importKey: the path written (relative to the site root), or the one that is already there. */
 export type FormsKeyImport = { file: string } | { exists: string }
 
@@ -1597,6 +1648,12 @@ export const IPC = {
   formsCheck: 'forms:check',
   formsInspectKey: 'forms:inspectKey',
   formsImportKey: 'forms:importKey',
+  formsRelayState: 'forms:relayState',
+  formsRelaySaveSettings: 'forms:relaySaveSettings',
+  formsRelaySaveSecrets: 'forms:relaySaveSecrets',
+  formsRelayUpload: 'forms:relayUpload',
+  formsRelayExport: 'forms:relayExport',
+  formsRelayExcludeFromSite: 'forms:relayExcludeFromSite',
   pluginThemeStyleSettingsInfo: 'plugin:themeStyleSettingsInfo',
   themeMarketplaceList: 'themeMarketplace:list',
   themeMarketplaceInstall: 'themeMarketplace:install',
@@ -2298,6 +2355,13 @@ export interface QuartzGuiApi {
     inspectKey(args: { projectPath: string; source: PluginSource; armored: string }): Promise<{ key: FormsKeyReport; armored?: string } | { unavailable: string }>
     /** Copies a public key file to quartz-forms/keys/<name>.asc; a private key is refused unwritten. */
     importKey(args: { projectPath: string; sourcePath: string; name: string; overwrite: boolean }): Promise<FormsKeyImport>
+    relayState(args: { projectId: string; projectPath: string; source: PluginSource }): Promise<RelayState>
+    relaySaveSettings(args: { projectPath: string; settings: RelaySettings }): Promise<void>
+    /** An address or captcha secret of null removes it; the values never come back to the renderer. */
+    relaySaveSecrets(args: { projectId: string; recipients?: Record<string, string | null>; captchaSecret?: string | null; captchaSecrets?: Record<string, string | null> }): Promise<void>
+    relayUpload(args: { projectId: string; projectPath: string; source: PluginSource; fresh: boolean }): Promise<RelayUploadResult>
+    relayExport(args: { projectId: string; projectPath: string; source: PluginSource; dir: string }): Promise<RelayUploadResult>
+    relayExcludeFromSite(args: { projectPath: string; targetId: string; path: string }): Promise<void>
   }
   content: {
     status(projectPath: string): Promise<ContentStatus>

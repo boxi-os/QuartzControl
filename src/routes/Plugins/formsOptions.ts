@@ -329,6 +329,7 @@ export const SECTIONS = [
   { id: 'keys', keys: ['keys'] },
   { id: 'spam', keys: ['spam'] },
   { id: 'layout', keys: ['layoutForm', 'language'] },
+  { id: 'relay', keys: [] },
   { id: 'texts', keys: ['texts'] },
   { id: 'technical', keys: ['frontmatterKey', 'codeBlockLang'] }
 ] as const

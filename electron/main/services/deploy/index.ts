@@ -1,8 +1,11 @@
 import { EventEmitter } from 'events'
 import { existsSync } from 'fs'
+import { writeFile } from 'fs/promises'
+import { join, posix } from 'path'
 import type { DeployDiffEntry, DeployProgressEvent, DeployResult, PublishTarget } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
-import { resolveBuildDir } from '../projectDirs'
+import { quartzGuiDir, resolveBuildDir } from '../projectDirs'
+import { forgetManifest } from './manifest'
 import * as connectionsService from '../connectionsService'
 import * as publishTargetsService from '../publishTargetsService'
 import { sftpAdapter } from './sftp'
@@ -100,6 +103,61 @@ export async function runDeploy(
     // An adapter's setup failures (no connection configured, no SSH agent, an unreadable key file)
     // are thrown rather than returned, so they arrive as one message in the same output panel the
     // transfer errors use instead of as an unhandled rejection.
+    return { success: false, output: String(err instanceof Error ? err.message : err) }
+  }
+}
+
+/**
+ * Uploads a directory that is not the build - the quartz-forms relay (formsService) - through an
+ * existing target's connection, below its remote path. The target's adapter does the work, so
+ * host keys, the manifest diff, progress and rsync's quirks are the publish page's own; what
+ * differs is decided here:
+ *
+ * - its own manifest (`deploy-manifest-<manifestKey>.json`), so neither upload takes the other's
+ *   files for its own - an sftp/ftp/folder deploy deletes only what its manifest says it sent;
+ * - never `deleteRemoved`: the relay's directory also holds what the server writes (counters, used
+ *   proofs of work), and a wrong path with deletion would empty a directory this app does not own;
+ * - no `excludes` of the site's;
+ * - sftp, ftp and folder only: a webhook or a branch has no path to put a directory below.
+ *
+ * `fresh` forgets the manifest first, for a relay that was removed on the server by hand.
+ */
+export async function runDirectoryUpload(
+  projectPath: string,
+  targetId: string,
+  localDir: string,
+  subdir: string,
+  manifestKey: string,
+  fresh: boolean
+): Promise<DeployResult> {
+  const target = await publishTargetsService.getTarget(projectPath, targetId)
+  if (!target) return { success: false, output: mainT('deployTargetMissing', { id: targetId }) }
+  const d = target.destination
+  if (d.type !== 'sftp' && d.type !== 'ftp' && d.type !== 'folder') return { success: false, output: mainT('relayTargetType', { type: d.type }) }
+  const adapter = adapterFor(d)
+  if (!adapter) return { success: false, output: mainT('deployNoAdapter', { type: d.type }) }
+  const destination: PublishTarget['destination'] =
+    d.type === 'folder' ? { ...d, path: join(d.path, subdir), deleteRemoved: false } : { ...d, remotePath: posix.join(d.remotePath, subdir), deleteRemoved: false }
+  if (fresh) await forgetManifest(projectPath, manifestKey)
+  // A manifest of its own from the first run: an unclaimed legacy deploy-manifest.json is adopted
+  // by whichever id asks first (manifest.ts), and that must be the site's target, not this one.
+  const own = quartzGuiDir(projectPath)
+  const manifestFile = join(own, `deploy-manifest-${manifestKey}.json`)
+  if (!existsSync(manifestFile)) await writeFile(manifestFile, '{}\n', 'utf-8')
+  try {
+    const secret = target.connectionId ? await connectionsService.getSecret(target.connectionId) : null
+    const ctx: DeployContext = {
+      projectPath,
+      target: { ...target, id: manifestKey, destination, excludes: [] },
+      buildDir: localDir,
+      secret,
+      emitProgress(processed, total, currentFile) {
+        const event: DeployProgressEvent = { targetId: manifestKey, processed, total, currentFile }
+        deployEvents.emit('progress', event)
+      }
+    }
+    return await adapter.run(ctx, [])
+  } catch (err) {
     return { success: false, output: String(err instanceof Error ? err.message : err) }
   }
 }

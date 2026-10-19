@@ -16,7 +16,8 @@ import type {
   SyncOptions,
   TemplateExportOptions,
   ThemePreset,
-  PluginSource
+  PluginSource,
+  RelaySettings
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
 import { repointAuthoredFrames, repointProjectPaths } from '../services/projectPaths'
@@ -156,6 +157,8 @@ export function registerIpcHandlers(): void {
     // its port and the tracking file still held the entry.
     await buildService.stopServer(id)
     await projectStore.removeProject(id)
+    // The relay's secrets are keyed by this id; with the entry gone nothing could reach them again.
+    await connectionsService.deleteRelaySecrets(id)
   })
   handle(IPC.projectIconGet, t([s.projectIconTarget]), ({ projectPath }) => projectIconService.getProjectIcon(projectPath))
   handle(IPC.projectIconSet, t([s.projectIconSource]), ({ projectPath, sourcePath }) =>
@@ -225,6 +228,12 @@ export function registerIpcHandlers(): void {
   handle(IPC.formsCheck, t([s.formsCheckArgs]), ({ projectPath, source }) => formsService.check(projectPath, source as PluginSource))
   handle(IPC.formsInspectKey, t([s.formsInspectKeyArgs]), ({ projectPath, source, armored }) => formsService.inspectKey(projectPath, source as PluginSource, armored))
   handle(IPC.formsImportKey, t([s.formsImportKeyArgs]), ({ projectPath, sourcePath, name, overwrite }) => formsService.importKeyFile(projectPath, sourcePath, name, overwrite))
+  handle(IPC.formsRelayState, t([s.formsRelayStateArgs]), ({ projectId, projectPath, source }) => formsService.relayState(projectId, projectPath, source as PluginSource))
+  handle(IPC.formsRelaySaveSettings, t([s.formsRelaySaveSettingsArgs]), ({ projectPath, settings }) => formsService.saveRelaySettings(projectPath, settings as RelaySettings))
+  handle(IPC.formsRelaySaveSecrets, t([s.formsRelaySaveSecretsArgs]), ({ projectId, ...change }) => connectionsService.saveRelaySecrets(projectId, change))
+  handle(IPC.formsRelayUpload, t([s.formsRelayUploadArgs]), ({ projectId, projectPath, source, fresh }) => formsService.relayUpload(projectId, projectPath, source as PluginSource, fresh))
+  handle(IPC.formsRelayExport, t([s.formsRelayExportArgs]), ({ projectId, projectPath, source, dir }) => formsService.relayExport(projectId, projectPath, source as PluginSource, dir))
+  handle(IPC.formsRelayExcludeFromSite, t([s.formsRelayExcludeArgs]), ({ projectPath, targetId, path }) => formsService.excludeFromSite(projectPath, targetId, path))
   handle(IPC.pluginOptionSchema, t([s.pluginOptionSchemaArgs]), ({ projectPath, source }) =>
     pluginSchemaService.getPluginOptionSchema(projectPath, source as PluginSource)
   )

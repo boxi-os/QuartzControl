@@ -657,3 +657,30 @@ export const dialogFileFilters = z
 
 export const formsCheckArgs = pluginOptionSchemaArgs
 export const formsInspectKeyArgs = pluginOptionSchemaArgs.extend({ armored: z.string().min(1).max(256 * 1024) })
+
+// The relay (formsService). Secrets travel once, renderer to main, and only into the encrypted
+// store; the settings are plain values the relay's config.php is written from (quoted by
+// quartz-forms' php() literal), bounded only to be sane.
+const relayText = z.string().max(2048)
+const recipientName = z.string().min(1).max(200)
+export const relaySettings = z.looseObject({
+  targetId: z.string().max(200).optional(),
+  subdir: z.string().min(1).max(512).regex(/^(?!\/)(?!.*(^|\/)\.\.(\/|$))[^\0]*$/),
+  from: relayText,
+  allowedOrigins: z.array(z.string().max(512)).max(50),
+  subjectPrefix: relayText,
+  mailer: z.enum(['mail', 'sendmail']),
+  sendmailPath: relayText,
+  counterDir: relayText
+})
+export const formsRelayStateArgs = z.looseObject({ projectId: uuid, projectPath: absolutePath, source: pluginOptionSchemaArgs.shape.source })
+export const formsRelaySaveSettingsArgs = z.looseObject({ projectPath: absolutePath, settings: relaySettings })
+export const formsRelaySaveSecretsArgs = z.looseObject({
+  projectId: uuid,
+  recipients: z.record(recipientName, z.string().max(320).nullable()).optional(),
+  captchaSecret: z.string().max(512).nullable().optional(),
+  captchaSecrets: z.record(z.string().max(200), z.string().max(512).nullable()).optional()
+})
+export const formsRelayUploadArgs = formsRelayStateArgs.extend({ fresh: z.boolean() })
+export const formsRelayExportArgs = formsRelayStateArgs.extend({ dir: absolutePath })
+export const formsRelayExcludeArgs = z.looseObject({ projectPath: absolutePath, targetId: z.string().min(1).max(200), path: z.string().min(1).max(512) })

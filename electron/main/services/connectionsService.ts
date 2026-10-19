@@ -3,7 +3,7 @@ import { existsSync, mkdirSync } from 'fs'
 import { readFile, rename } from 'fs/promises'
 import { readJsonFile, readJsonFileOr, writeJsonFile } from './jsonStore'
 import { join } from 'path'
-import { randomUUID } from 'crypto'
+import { randomBytes, randomUUID } from 'crypto'
 import type {
   Connection,
   PinnedHostKey,
@@ -394,4 +394,116 @@ export async function forgetHostKey(id: string): Promise<void> {
   if (!connection?.hostKey) return
   delete connection.hostKey
   await writeAll(all)
+}
+
+// ── the quartz-forms relay's secrets ───────────────────────────────────────────────────────────
+//
+// What only the site's owner knows and the relay's config.php needs: the signing secret, the
+// recipient addresses, the captcha secrets (the Formulare tab, plan 1.2). Encrypted here, with the
+// same safeStorage calls as every connection - one module that encrypts, as the rule on credentials
+// says - but in a file of its own: connections.json is an array that 1.1 reads, and an entry of a
+// new kind in it would stand in that version's list of Zugänge after a downgrade.
+//
+// Keyed by project id, so a duplicated project (a new id) starts without them, as it starts
+// without the original's publish targets. The renderer sees which recipients have an address and
+// whether a captcha secret is set - never a value.
+
+export interface RelaySecrets {
+  secret: string
+  recipients: Record<string, string>
+  captchaSecret?: string
+  captchaSecrets?: Record<string, string>
+}
+
+interface StoredRelaySecrets {
+  encrypted: string
+  /** The recipient names with an address and whether captcha secrets exist, readable without
+   *  decrypting: the tab shows them on every visit, and macOS asks the keychain on a decrypt. */
+  recipients: string[]
+  captchaSecret: boolean
+  captchaSecrets: string[]
+  updatedAt: string
+}
+
+function relayStorePath(): string {
+  const dir = app.getPath('userData')
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+  return join(dir, 'relay-secrets.json')
+}
+
+async function readRelayStore(): Promise<Record<string, StoredRelaySecrets>> {
+  const stored = await readJsonFile<Record<string, StoredRelaySecrets>>(relayStorePath())
+  return stored.kind === 'ok' && stored.value && typeof stored.value === 'object' && !Array.isArray(stored.value) ? stored.value : {}
+}
+
+/** What the renderer may know about a project's relay secrets. */
+export async function getRelaySecretInfo(projectId: string): Promise<{ stored: boolean; recipients: string[]; captchaSecret: boolean; captchaSecrets: string[]; storage: SecretStorageInfo }> {
+  const entry = (await readRelayStore())[projectId]
+  return {
+    stored: !!entry,
+    recipients: entry?.recipients ?? [],
+    captchaSecret: entry?.captchaSecret ?? false,
+    captchaSecrets: entry?.captchaSecrets ?? [],
+    storage: getSecretStorageInfo()
+  }
+}
+
+/** Main only: the decrypted secrets, or null when none are stored. */
+export async function getRelaySecrets(projectId: string): Promise<RelaySecrets | null> {
+  const entry = (await readRelayStore())[projectId]
+  if (!entry) return null
+  const plain = decrypt(entry.encrypted)
+  return plain ? (JSON.parse(plain) as RelaySecrets) : null
+}
+
+/**
+ * Merges a change into a project's relay secrets: an address of `null` removes that recipient, a
+ * captcha secret of `null` removes it, a string sets it. The signing secret is made once, the first
+ * time anything is stored, and kept: the relay's stamps are signed with it, and a new one would
+ * turn every open page's stamp away. Throws rather than store anything in plain text.
+ */
+export async function saveRelaySecrets(
+  projectId: string,
+  change: { recipients?: Record<string, string | null>; captchaSecret?: string | null; captchaSecrets?: Record<string, string | null> }
+): Promise<void> {
+  if (!safeStorage.isEncryptionAvailable()) throw new Error(storageUnavailableMessage('secretStorageUnavailable'))
+  const all = await readRelayStore()
+  const current: RelaySecrets = (await getRelaySecrets(projectId)) ?? { secret: randomBytes(32).toString('base64url'), recipients: {} }
+  const recipients = { ...current.recipients }
+  for (const [name, address] of Object.entries(change.recipients ?? {})) {
+    if (address === null || !address.trim()) delete recipients[name]
+    else recipients[name] = address.trim()
+  }
+  const captchaSecrets = { ...(current.captchaSecrets ?? {}) }
+  for (const [form, value] of Object.entries(change.captchaSecrets ?? {})) {
+    if (value === null || !value.trim()) delete captchaSecrets[form]
+    else captchaSecrets[form] = value.trim()
+  }
+  let captchaSecret = current.captchaSecret
+  if (change.captchaSecret === null) captchaSecret = undefined
+  else if (typeof change.captchaSecret === 'string' && change.captchaSecret.trim()) captchaSecret = change.captchaSecret.trim()
+  const next: RelaySecrets = {
+    secret: current.secret,
+    recipients,
+    ...(captchaSecret ? { captchaSecret } : {}),
+    ...(Object.keys(captchaSecrets).length ? { captchaSecrets } : {})
+  }
+  const encrypted = encrypt(JSON.stringify(next))
+  if (!encrypted) throw new Error(storageUnavailableMessage('secretStorageUnavailable'))
+  all[projectId] = {
+    encrypted,
+    recipients: Object.keys(recipients),
+    captchaSecret: !!captchaSecret,
+    captchaSecrets: Object.keys(captchaSecrets),
+    updatedAt: new Date().toISOString()
+  }
+  await writeJsonFile(relayStorePath(), all)
+}
+
+/** Removes a project's relay secrets (the project left the app). */
+export async function deleteRelaySecrets(projectId: string): Promise<void> {
+  const all = await readRelayStore()
+  if (!(projectId in all)) return
+  delete all[projectId]
+  await writeJsonFile(relayStorePath(), all)
 }

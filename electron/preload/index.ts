@@ -33,6 +33,7 @@ import type {
   SitePreviewHighlightInput,
   PreviewFontsInput,
   PluginSource,
+  RelaySettings,
   StaticFileKind
 } from '@shared/ipc-contract'
 
@@ -302,7 +303,14 @@ const api: QuartzGuiApi = {
   forms: {
     check: (args: { projectPath: string; source: PluginSource }) => ipcRenderer.invoke(IPC.formsCheck, args),
     inspectKey: (args: { projectPath: string; source: PluginSource; armored: string }) => ipcRenderer.invoke(IPC.formsInspectKey, args),
-    importKey: (args: { projectPath: string; sourcePath: string; name: string; overwrite: boolean }) => ipcRenderer.invoke(IPC.formsImportKey, args)
+    importKey: (args: { projectPath: string; sourcePath: string; name: string; overwrite: boolean }) => ipcRenderer.invoke(IPC.formsImportKey, args),
+    relayState: (args: { projectId: string; projectPath: string; source: PluginSource }) => ipcRenderer.invoke(IPC.formsRelayState, args),
+    relaySaveSettings: (args: { projectPath: string; settings: RelaySettings }) => ipcRenderer.invoke(IPC.formsRelaySaveSettings, args),
+    relaySaveSecrets: (args: { projectId: string; recipients?: Record<string, string | null>; captchaSecret?: string | null; captchaSecrets?: Record<string, string | null> }) =>
+      ipcRenderer.invoke(IPC.formsRelaySaveSecrets, args),
+    relayUpload: (args: { projectId: string; projectPath: string; source: PluginSource; fresh: boolean }) => ipcRenderer.invoke(IPC.formsRelayUpload, args),
+    relayExport: (args: { projectId: string; projectPath: string; source: PluginSource; dir: string }) => ipcRenderer.invoke(IPC.formsRelayExport, args),
+    relayExcludeFromSite: (args: { projectPath: string; targetId: string; path: string }) => ipcRenderer.invoke(IPC.formsRelayExcludeFromSite, args)
   },
   content: {
     status: (projectPath: string) => ipcRenderer.invoke(IPC.contentStatus, projectPath),

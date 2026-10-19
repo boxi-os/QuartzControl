@@ -47,7 +47,11 @@ const SKIP = new Set([
   '.quartz-gui/project-prefs.json',
   // The dev server's log files. They describe a server that ran in the original, in a directory
   // buildService truncates at every start anyway.
-  '.quartz-gui/logs'
+  '.quartz-gui/logs',
+  // The quartz-forms relay's settings: they name one of the original's publish targets (which the
+  // copy does not get, above) and what was last uploaded there. The relay's secrets are keyed by
+  // project id in the app's store, so the copy has none either and starts the relay afresh.
+  '.quartz-gui/forms-relay.json'
 ])
 
 // Deliberately *not* skipped, so that the list above is not read as "everything instance-bound":

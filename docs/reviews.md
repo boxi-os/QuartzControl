@@ -2730,7 +2730,11 @@ Der Punkt „fremde `php -S`-Prozesse“ war schon `6f22df9`. `check:plugin-copi
 `13a2e7f`: keine Abweichung. Nebenbei gesehen, nicht behoben: In `send.php` steht der Doc-Kommentar
 von `qf_parse_form` über `qf_decoded_size`, zwei Kommentarblöcke hintereinander.
 
-Offen aus dieser Runde, beim Nutzer: ein Zähler je Quelle für das Ratenlimit (M1), das Release der
-Plugin-Fixes unter „Unreleased“ und der Push der Nebenbei-Commits beider Repos.
+Beide Repos gepusht (CI des Plugins 39314020044 grün). Danach, auf Wunsch des Nutzers: **kein
+Zähler je Quelle** (M1; er hielte etwas von der Adresse des Besuchers, bremste alle hinter einer
+geteilten Adresse und ist mit IPv6 leicht zu umgehen), und **quartz-forms 0.4.1** (`81c957c`):
+Versionen, Statuszeilen, CHANGELOG; die gt-Kopie baut damit, das erzeugte Relay sagt 0.4.1. In
+QuartzControl `2a1bb7a5` — `FORMS_READ_AGAINST` 0.4.1, `check:plugin-copies` 413 Fälle gleich; der
+Hinweis „kennt 0.4.0, installiert ist 0.4.1“ im Reiter vorher da, nachher nicht.
 
 **Keinen dieser Fixes hat ein Review gelesen.**

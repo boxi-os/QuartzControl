@@ -340,3 +340,78 @@ export function embedSnippets(id: string, options: Options | undefined): { codeB
   const key = typeof options?.frontmatterKey === 'string' && options.frontmatterKey.trim() ? options.frontmatterKey : 'form'
   return { codeBlock: '```' + lang + '\n' + id + '\n```', placeholder: `{{form:${id}}}`, frontmatter: `${key}: ${id}` }
 }
+
+// ── fields ─────────────────────────────────────────────────────────────────────────────────────
+
+/** The field types by the group the "add field" tiles show them in. */
+export const FIELD_GROUPS = {
+  text: ['text', 'textarea', 'email', 'tel', 'url', 'number', 'date'],
+  choice: ['select', 'radio', 'checkboxes', 'checkbox', 'scale'],
+  other: ['consent', 'pgpKey', 'hidden']
+} as const
+export type FieldType = (typeof FIELD_GROUPS)[keyof typeof FIELD_GROUPS][number]
+
+/** Types that share a shape in the plugin's schema: a field can change between them and keep its keys. */
+export const SAME_SHAPE: readonly (readonly string[])[] = [['text', 'email', 'tel', 'url', 'number', 'date', 'textarea'], ['select', 'radio', 'checkboxes']]
+
+/** Which of the input keys each input type reads (render/form.ts); a set key outside it is shown anyway. */
+export const INPUT_KEYS: Record<string, readonly string[]> = {
+  text: ['placeholder', 'autocomplete', 'pattern', 'maxLength'],
+  email: ['placeholder', 'autocomplete', 'pattern', 'maxLength'],
+  tel: ['placeholder', 'autocomplete', 'pattern', 'maxLength'],
+  url: ['placeholder', 'autocomplete', 'pattern', 'maxLength'],
+  number: ['placeholder', 'min', 'max', 'step'],
+  date: ['min', 'max'],
+  textarea: ['placeholder', 'rows', 'maxLength']
+}
+
+/** Autocomplete tokens that name a person (src/validate.ts, PERSONAL_AUTOCOMPLETE). */
+export const PERSONAL_AUTOCOMPLETE = [
+  'name',
+  'given-name',
+  'family-name',
+  'additional-name',
+  'honorific-prefix',
+  'honorific-suffix',
+  'nickname',
+  'username',
+  'street-address',
+  'address-line1',
+  'address-line2',
+  'postal-code',
+  'tel',
+  'email',
+  'bday',
+  'organization'
+] as const
+
+/** Does this field ask for something that identifies a person (src/validate.ts, isPersonalField)? */
+export function isPersonalField(field: FieldDef): boolean {
+  switch (field.type) {
+    case 'email':
+    case 'tel':
+    case 'pgpKey':
+      return true
+    case 'text':
+    case 'textarea':
+    case 'url':
+    case 'date':
+    case 'number':
+      return typeof field.autocomplete === 'string' && (PERSONAL_AUTOCOMPLETE as readonly string[]).includes(field.autocomplete)
+    default:
+      return false
+  }
+}
+
+/** A free field name after `base`: `base`, then `base2`, `base3` … (a name may not hold a hyphen at the end). */
+export function freeFieldName(base: string, taken: string[]): string {
+  const clean = base.replace(/[^A-Za-z0-9_-]+/g, '').replace(/^[^A-Za-z]+/, '') || 'field'
+  const free = (n: string): boolean => !taken.includes(n) && !(RESERVED_NAMES as readonly string[]).includes(n)
+  if (free(clean)) return clean
+  for (let n = 2; ; n++) if (free(`${clean}${n}`)) return `${clean}${n}`
+}
+
+/** What a field shows as its name in a list: its label, the consent text, else its name. */
+export function fieldLabel(field: FieldDef, lang: string): string {
+  return textIn(field.label, lang) || textIn(field.text, lang) || field.name
+}

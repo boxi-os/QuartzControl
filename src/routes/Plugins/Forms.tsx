@@ -75,6 +75,7 @@ import {
 } from './formsOptions'
 import { DraftInput } from './DraftInput'
 import { TextEditor } from './FormText'
+import { FormFieldsEditor } from './FormFieldsEditor'
 import { ReadAgainstNote } from './ReadAgainstNote'
 import { SavesImmediately } from './SavesImmediately'
 
@@ -635,7 +636,6 @@ function FormPanel({
 
   const unknownKeys = useCallback((key: string) => !KNOWN_KEYS.has(key), [])
   const hasUnknown = Object.keys(def).some((k) => !KNOWN_KEYS.has(k)) || (form?.fields.some((f) => !KNOWN_KEYS.has(f.key)) ?? false)
-  const pickFields = useCallback((key: string) => key === 'fields', [])
   const flat = useMemo(() => ({ flat: true }), [])
 
   const { copy, copied } = useCopyToClipboard()
@@ -709,8 +709,15 @@ function FormPanel({
       </PanelSection>
 
       <PanelSection icon={ListChecks} title={t('formsEditor.parts.fields')}>
-        {usesTemplateFields(def) && <p className="text-micro text-text-muted">{t('formsEditor.templateFieldsNote')}</p>}
-        <PluginOptionsForm schema={form} values={def} onChange={(next) => onDef(next ?? {})} explicitEmpty languages={languages} projectPath={project.path} pick={pickFields} freeKeys={false} root={flat} />
+        <FormFieldsEditor
+          def={def}
+          fields={eff.fields}
+          schema={form}
+          languages={languages}
+          lang={lang}
+          anonymous={anonymous}
+          onFields={(next) => setKey('fields', next)}
+        />
       </PanelSection>
 
       <PanelSection icon={Send} title={t('formsEditor.parts.sending')}>

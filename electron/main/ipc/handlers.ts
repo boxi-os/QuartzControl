@@ -23,6 +23,7 @@ import { repointAuthoredFrames, repointProjectPaths } from '../services/projectP
 import * as projectOverviewService from '../services/projectOverviewService'
 import * as projectIconService from '../services/projectIconService'
 import * as snippetService from '../services/snippetService'
+import * as formsService from '../services/formsService'
 import * as configService from '../services/configService'
 import * as pluginService from '../services/pluginService'
 import * as projectDependencies from '../services/projectDependencies'
@@ -221,6 +222,9 @@ export function registerIpcHandlers(): void {
   handle(IPC.pluginRemove, t([s.absolutePath, s.pluginName]), (projectPath, name) =>
     pluginService.removePlugin(projectPath, name)
   )
+  handle(IPC.formsCheck, t([s.formsCheckArgs]), ({ projectPath, source }) => formsService.check(projectPath, source as PluginSource))
+  handle(IPC.formsInspectKey, t([s.formsInspectKeyArgs]), ({ projectPath, source, armored }) => formsService.inspectKey(projectPath, source as PluginSource, armored))
+  handle(IPC.formsImportKey, t([s.formsImportKeyArgs]), ({ projectPath, sourcePath, name, overwrite }) => formsService.importKeyFile(projectPath, sourcePath, name, overwrite))
   handle(IPC.pluginOptionSchema, t([s.pluginOptionSchemaArgs]), ({ projectPath, source }) =>
     pluginSchemaService.getPluginOptionSchema(projectPath, source as PluginSource)
   )

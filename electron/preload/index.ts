@@ -299,6 +299,11 @@ const api: QuartzGuiApi = {
     restoreContentFolder: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.backupRestore, projectPath, id),
     deleteContentFolder: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.backupDelete, projectPath, id)
   },
+  forms: {
+    check: (args: { projectPath: string; source: PluginSource }) => ipcRenderer.invoke(IPC.formsCheck, args),
+    inspectKey: (args: { projectPath: string; source: PluginSource; armored: string }) => ipcRenderer.invoke(IPC.formsInspectKey, args),
+    importKey: (args: { projectPath: string; sourcePath: string; name: string; overwrite: boolean }) => ipcRenderer.invoke(IPC.formsImportKey, args)
+  },
   content: {
     status: (projectPath: string) => ipcRenderer.invoke(IPC.contentStatus, projectPath),
     change: (projectId: string, projectPath: string, sourcePath: string, strategy: ContentStrategy) =>

@@ -77,6 +77,7 @@ import {
 import { DraftInput } from './DraftInput'
 import { TextEditor } from './FormText'
 import { FormFieldsEditor } from './FormFieldsEditor'
+import { KeysSection } from './FormsKeys'
 import { ReadAgainstNote } from './ReadAgainstNote'
 import { SavesImmediately } from './SavesImmediately'
 
@@ -140,6 +141,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
   useEffect(
     () => () => {
       if (savedTimer.current) clearTimeout(savedTimer.current)
+      if (checkTimer.current) clearTimeout(checkTimer.current)
     },
     []
   )
@@ -164,6 +166,18 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
   )
   const usages = usagesQuery.data ?? null
   const [previewGoTo, setPreviewGoTo] = useState<{ page: string } | null>(null)
+  // The plugin's own verdict (forms.check), asked again a moment after each write settles - in a
+  // child process, so not per keystroke.
+  const [checkRound, setCheckRound] = useState(0)
+  const checkTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const recheck = useCallback((): void => {
+    if (checkTimer.current) clearTimeout(checkTimer.current)
+    checkTimer.current = setTimeout(() => setCheckRound((n) => n + 1), 600)
+  }, [])
+  const checkQuery = useIpcQuery(
+    () => (entry ? window.quartzGui.forms.check({ projectPath: project.path, source: entry.plugin.source }) : Promise.resolve(null)),
+    [project.path, sourceKey, checkRound]
+  )
 
   const configRef = useRef(config)
   configRef.current = config
@@ -185,7 +199,10 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
     if (savedTimer.current) clearTimeout(savedTimer.current)
     savedTimer.current = setTimeout(() => setSavedFlash(false), 2000)
     if (said) announce(said)
-    if (configRef.current === next) await reload()
+    if (configRef.current === next) {
+      await reload()
+      recheck()
+    }
   }
 
   // Against the newest state, like every write here: two changes in quick succession must not
@@ -385,6 +402,24 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
               )
             }
           />
+        ) : selectedSection?.id === 'keys' ? (
+          <Card className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <CardHeading icon={KeyRound}>{t('formsEditor.sections.keys')}</CardHeading>
+              <p className="text-micro text-text-secondary">{t('formsEditor.sectionHints.keys')}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <SavesImmediately saved={savedFlash} />
+              </div>
+            </div>
+            <KeysSection
+              options={options}
+              source={entry.plugin.source}
+              check={checkQuery.data ?? null}
+              checking={checkQuery.loading}
+              onOptions={(change, said) => updateOptions((o) => change(o), said)}
+              onChanged={recheck}
+            />
+          </Card>
         ) : selectedSection ? (
           <SectionPanel
             key={selectedSection.id}

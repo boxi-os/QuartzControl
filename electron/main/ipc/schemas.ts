@@ -252,6 +252,11 @@ export const projectIconSource = z.looseObject({ projectPath: absolutePath, sour
 // (refused with a leading "-" like every other source) or the object form with `repo`. Where it
 // leads is decided in pluginSchemaService.pluginPackageDir, which refuses anything outside the
 // project's node_modules and .quartz/plugins.
+// forms.check / forms.inspectKey / forms.importKey. The source is resolved the way the option schema's
+// is (pluginPackageDir); a pasted key is bounded like a key file (formsService, MAX_KEY_FILE_BYTES).
+export const formsKeyName = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
+export const formsImportKeyArgs = z.looseObject({ projectPath: absolutePath, sourcePath: absolutePath, name: formsKeyName, overwrite: z.boolean() })
+
 export const pluginOptionSchemaArgs = z.looseObject({
   projectPath: absolutePath,
   source: z.union([
@@ -649,3 +654,6 @@ export const handbookPage = z
 export const dialogFileFilters = z
   .array(z.object({ name: z.string().max(120), extensions: z.array(z.string().max(20)).max(50) }))
   .max(20)
+
+export const formsCheckArgs = pluginOptionSchemaArgs
+export const formsInspectKeyArgs = pluginOptionSchemaArgs.extend({ armored: z.string().min(1).max(256 * 1024) })

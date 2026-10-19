@@ -615,6 +615,25 @@ export interface BackupEntry {
 
 export type ContentStrategy = 'copy' | 'symlink'
 
+/** What quartz-forms says about one key of `keys` (its `dist/cli.js`, formsService). */
+export interface FormsKeyReport {
+  name: string
+  /** `AB12 CD34 …`; empty when the key could not be read. */
+  fingerprint: string
+  userIds: string[]
+  /** `YYYY-MM-DD`; missing when it never expires. */
+  expires?: string
+  problem?: string
+}
+
+/** forms.check: the plugin's own verdict, or why there is none. */
+export type FormsCheckResult =
+  | { state: 'checked'; problems: string[]; hints: string[]; keys: FormsKeyReport[] }
+  | { state: 'unavailable'; reason: string }
+
+/** forms.importKey: the path written (relative to the site root), or the one that is already there. */
+export type FormsKeyImport = { file: string } | { exists: string }
+
 /** content.formUsages: one entry per page that names a form or hides the layout form. */
 export interface FormUsagePage {
   /** Relative to content/, with `/`. */
@@ -1575,6 +1594,9 @@ export const IPC = {
   pluginAdd: 'plugin:add',
   pluginRemove: 'plugin:remove',
   pluginOptionSchema: 'plugin:optionSchema',
+  formsCheck: 'forms:check',
+  formsInspectKey: 'forms:inspectKey',
+  formsImportKey: 'forms:importKey',
   pluginThemeStyleSettingsInfo: 'plugin:themeStyleSettingsInfo',
   themeMarketplaceList: 'themeMarketplace:list',
   themeMarketplaceInstall: 'themeMarketplace:install',
@@ -2268,6 +2290,14 @@ export interface QuartzGuiApi {
     export(projectPath: string, id: string): Promise<boolean>
     settings(projectPath: string): Promise<SnapshotSettings>
     saveSettings(projectPath: string, includeContent: boolean): Promise<SnapshotSettings>
+  }
+  forms: {
+    /** quartz-forms' own problems, hints and key reports for the options in quartz.config.yaml. */
+    check(args: { projectPath: string; source: PluginSource }): Promise<FormsCheckResult>
+    /** What a pasted key is; `armored` is its public key block alone, the text to store. */
+    inspectKey(args: { projectPath: string; source: PluginSource; armored: string }): Promise<{ key: FormsKeyReport; armored?: string } | { unavailable: string }>
+    /** Copies a public key file to quartz-forms/keys/<name>.asc; a private key is refused unwritten. */
+    importKey(args: { projectPath: string; sourcePath: string; name: string; overwrite: boolean }): Promise<FormsKeyImport>
   }
   content: {
     status(projectPath: string): Promise<ContentStatus>

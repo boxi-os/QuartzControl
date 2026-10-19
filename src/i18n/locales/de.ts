@@ -1321,8 +1321,8 @@ export default {
     asAllForms: 'wie für alle Formulare',
     asAllFormsChoice: 'Wie für alle Formulare: {{value}}',
     text: {
-      perLanguage: 'Je Sprache',
-      oneForAll: 'Ein Text für alle Sprachen'
+      perLanguageNamed: '{{name}} je Sprache bearbeiten',
+      oneForAllNamed: '{{name}}: ein Text für alle Sprachen'
     },
     fieldGroups: {
       text: 'Eingabe',

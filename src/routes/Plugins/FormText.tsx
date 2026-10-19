@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button, TextInput } from '../../components/ui'
+import { Languages } from 'lucide-react'
+import { IconButton, TextInput } from '../../components/ui'
 import { isObject, textIn, type Text } from './formsOptions'
 
 /**
@@ -9,8 +10,11 @@ import { isObject, textIn, type Text } from './formsOptions'
  * has one editor for them rather than the generic union (a select "Text / Liste" and a record
  * editor), which showed a template's `{ en, de }` title as an empty field.
  *
- * - one field while the value is a string (or unset) and the site has one language; a site with
- *   several offers "per language", which writes a record with one entry per language
+ * - one field while the value is a string (or unset); a site with several languages offers "per
+ *   language" as a small icon beside the label, which writes a record with one entry per language.
+ *   A button in words under every text was six to ten of them in one panel, each as large as
+ *   "Feld hinzufügen" (user, 2026-10-19). Not a pressed state: field rows of the fields editor
+ *   are list rows, and focusRowAt finds a row by its `button[aria-pressed]`
  * - a record shows one field per site language, plus any code the record names beside them
  * - `fallback` is what applies while the value is unset (the template's text, the plugin's): its
  *   words in each language stand as the placeholder
@@ -48,9 +52,23 @@ export function TextEditor({
   if (!record) {
     return (
       <div className="flex flex-col gap-1 text-ui">
-        <label htmlFor={id} className="font-medium text-text-secondary">
-          {label}
-        </label>
+        <div className="flex items-center gap-1">
+          <label htmlFor={id} className="font-medium text-text-secondary">
+            {label}
+          </label>
+          {own.length > 1 && (
+            <IconButton
+              icon={Languages}
+              tone="neutral"
+              title={t('formsEditor.text.perLanguageNamed', { name: label })}
+              onClick={() => {
+                const base = typeof value === 'string' ? value : ''
+                const next = Object.fromEntries(own.map((code) => [code, base || textIn(fallback, code)]).filter(([, v]) => v))
+                onValue(Object.keys(next).length ? next : undefined)
+              }}
+            />
+          )}
+        </div>
         <TextDraft
           id={id}
           multiline={multiline}
@@ -58,21 +76,7 @@ export function TextEditor({
           placeholder={textIn(fallback, own[0])}
           onCommit={(v) => onValue(v === '' && !required ? undefined : v === '' ? (value as Text | undefined) : v)}
         />
-        <div className="flex flex-wrap items-center gap-2">
-          {hint && <span className="text-micro text-text-muted">{hint}</span>}
-          {own.length > 1 && (
-            <Button
-              variant="ghost"
-              onClick={() => {
-                const base = typeof value === 'string' ? value : ''
-                const next = Object.fromEntries(own.map((code) => [code, base || textIn(fallback, code)]).filter(([, v]) => v))
-                onValue(Object.keys(next).length ? next : undefined)
-              }}
-            >
-              {t('formsEditor.text.perLanguage')}
-            </Button>
-          )}
-        </div>
+        {hint && <span className="text-micro text-text-muted">{hint}</span>}
       </div>
     )
   }
@@ -87,7 +91,18 @@ export function TextEditor({
   }
   return (
     <div role="group" aria-label={label} className="flex flex-col gap-1 text-ui">
-      <span className="font-medium text-text-secondary">{label}</span>
+      <div className="flex items-center gap-1">
+        <span className="font-medium text-text-secondary">{label}</span>
+        <IconButton
+          icon={Languages}
+          tone="neutral"
+          title={t('formsEditor.text.oneForAllNamed', { name: label })}
+          onClick={() => {
+            const first = textIn(entries, own[0])
+            onValue(first || undefined)
+          }}
+        />
+      </div>
       {codes.map((code) => (
         <div key={code} className="flex items-start gap-2">
           <label htmlFor={`${id}-${code}`} className="w-8 shrink-0 pt-1.5 text-micro font-semibold uppercase text-text-secondary">
@@ -104,18 +119,7 @@ export function TextEditor({
           </div>
         </div>
       ))}
-      <div className="flex flex-wrap items-center gap-2">
-        {hint && <span className="text-micro text-text-muted">{hint}</span>}
-        <Button
-          variant="ghost"
-          onClick={() => {
-            const first = textIn(entries, own[0])
-            onValue(first || undefined)
-          }}
-        >
-          {t('formsEditor.text.oneForAll')}
-        </Button>
-      </div>
+      {hint && <span className="text-micro text-text-muted">{hint}</span>}
     </div>
   )
 }

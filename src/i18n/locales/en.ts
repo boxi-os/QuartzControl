@@ -1316,8 +1316,8 @@ export default {
     asAllForms: 'as for all forms',
     asAllFormsChoice: 'As for all forms: {{value}}',
     text: {
-      perLanguage: 'Per language',
-      oneForAll: 'One text for all languages'
+      perLanguageNamed: 'Edit {{name}} per language',
+      oneForAllNamed: '{{name}}: one text for all languages'
     },
     fieldGroups: {
       text: 'Input',

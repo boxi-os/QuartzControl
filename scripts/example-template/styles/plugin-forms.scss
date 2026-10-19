@@ -5,9 +5,10 @@
 // `--quartz-forms-*` custom property, set on `.quartz-form`. The first block hands each of them a
 // token of this template, so a palette change reaches the form the way it reaches everything else.
 // Everything after it is what those properties cannot say: the 44px target, the control edge, the
-// type scale, explicit disabled colours. Where a rule here repeats a selector of the plugin's, it
-// does so at the same specificity and wins by loading later (custom.scss comes after the
-// plugins' own styles).
+// type scale, explicit disabled colours. The plugin's stylesheet sits in `@layer quartz-base`
+// (both of its copies since quartz-forms 0.5.2; before that the transformer's copy was unlayered
+// and beat this whole file at equal specificity), so every rule here wins whatever its
+// specificity.
 //
 // The colours below are measured in palette.mjs (`formPairs`), which reads this block rather than
 // keeping a copy of it: error and success text on the page and on a field, the button's text on
@@ -75,8 +76,8 @@
   font-family: var(--font-interface);
 }
 
-// The plugin's selectors, at its specificity plus `.quartz-form`, so this wins over both the
-// plugin and content.scss's article rules.
+// The plugin's selectors under `.quartz-form`: one class more than content.scss's article rules,
+// which are unlayered like this file and would otherwise decide by order.
 .quartz-form {
   input[type="text"],
   input[type="email"],

@@ -426,6 +426,11 @@ Die Links auf Quartz, QuartzControl, Example und die Plugin-Handbücher stehen i
 - `quartz-multilanguage-handbuch`
 - `quartz-navigations-handbuch`
 
+Seit dem 2026-10-19 gibt es eine siebte Stelle, `quartz-forms-handbuch` (privat bis 1.2). **Vor
+dem Release 1.2** bekommen alle sieben einen Link „Forms“ auf `https://boxi-os.github.io/quartz-forms/`,
+sobald Repository und Website öffentlich sind; zugleich wird entschieden, ob `qc-basic` quartz-forms
+installiert (gestaltet wird es in allen Varianten schon, `plugin-forms.scss`).
+
 Am 2026-09-14 trugen alle sechs dieselben sechs Links. Ein neues Plugin oder eine neue Website
 heißt: alle sechs anfassen, Vorlage neu exportieren (Punkt 4), die vier Websites neu
 veröffentlichen. Der Footer des damals mitgelieferten Handbuchs hatte bis `f61333b` zwei Links, während

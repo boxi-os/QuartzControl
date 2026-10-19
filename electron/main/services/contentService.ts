@@ -1,10 +1,11 @@
 import { existsSync } from 'fs'
-import { lstat, readlink, readdir, cp, realpath, stat, symlink, mkdir, writeFile } from 'fs/promises'
+import { lstat, readlink, readdir, cp, readFile, realpath, stat, symlink, mkdir, writeFile } from 'fs/promises'
 import { createRequire } from 'module'
 import { dirname, isAbsolute, join, matchesGlob, posix, relative, resolve, sep } from 'path'
 import { pathToFileURL } from 'url'
-import { stringify } from 'yaml'
-import type { ContentStatus, ContentStrategy } from '@shared/ipc-contract'
+import { parse as parseYaml, stringify } from 'yaml'
+import type { ContentStatus, ContentStrategy, FormUsagePage, FormUsages } from '@shared/ipc-contract'
+import { pageFormUse, quartzSlug } from '@shared/formUsages'
 import { snapshotContent } from './backupService'
 import { createSnapshot } from './snapshotService'
 import { readConfig } from './configService'
@@ -295,6 +296,49 @@ export async function createIndexPage(
     throw err
   }
   return { path, listSource: listed.source }
+}
+
+/**
+ * Which pages embed which quartz-forms form, and every page's slug - for the Formulare tab's list
+ * and its questions before a form goes or gets another id. Read only, and over the files Quartz
+ * builds (quartzInputFiles, the project's own globby), so an ignored note does not count as a use.
+ * A file that cannot be read is counted, not passed over.
+ */
+export async function formUsages(projectPath: string, codeBlockLang: string, frontmatterKey: string): Promise<FormUsages> {
+  const status = await getContentStatus(projectPath)
+  if (!status.exists || (status.isSymlink && !status.targetExists)) return { pages: [], slugs: [], listSource: 'quartz', unreadable: 0, noContent: true }
+  let patterns: string[] = []
+  try {
+    const ignore = (await readConfig(projectPath)).configuration.ignorePatterns
+    if (Array.isArray(ignore)) patterns = ignore.filter((p): p is string => typeof p === 'string')
+  } catch {
+    // An unreadable config still leaves hidden entries out.
+  }
+  const listed = await quartzInputFiles(projectPath, patterns)
+  const markdown = listed.files.filter((path) => path.endsWith('.md'))
+  const dir = await realpath(contentDirPath(projectPath))
+  const pages: FormUsagePage[] = []
+  let unreadable = 0
+  // In batches: a vault of a few thousand notes should not open them all at once.
+  for (let i = 0; i < markdown.length; i += 32) {
+    await Promise.all(
+      markdown.slice(i, i + 32).map(async (file) => {
+        let text: string
+        try {
+          text = await readFile(join(dir, file), 'utf-8')
+        } catch {
+          unreadable++
+          return
+        }
+        const use = pageFormUse(text, codeBlockLang || 'quartz-form', frontmatterKey || 'form', (yaml) => parseYaml(yaml))
+        if (use.forms.length > 0 || use.hidesLayout) pages.push({ file, slug: quartzSlug(file), ...use })
+      })
+    )
+  }
+  const order = (a: string, b: string): number => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+  pages.sort((a, b) => order(a.file, b.file))
+  const slugs = [...new Set(markdown.map(quartzSlug))].sort(order)
+  return { pages, slugs, listSource: listed.source, unreadable }
 }
 
 // Neither direction of containment is allowed between the source and the content directory.

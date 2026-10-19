@@ -615,6 +615,27 @@ export interface BackupEntry {
 
 export type ContentStrategy = 'copy' | 'symlink'
 
+/** content.formUsages: one entry per page that names a form or hides the layout form. */
+export interface FormUsagePage {
+  /** Relative to content/, with `/`. */
+  file: string
+  slug: string
+  title?: string
+  forms: string[]
+  hidesLayout: boolean
+}
+
+export interface FormUsages {
+  pages: FormUsagePage[]
+  /** Every Markdown page's slug, sorted - the pages a redirect may name. */
+  slugs: string[]
+  listSource: 'quartz' | 'fallback'
+  /** Files that could not be read, counted rather than passed over. */
+  unreadable: number
+  /** No content folder (or a link whose target is gone): nothing to scan. */
+  noContent?: boolean
+}
+
 export interface ContentStatus {
   path: string
   exists: boolean
@@ -1690,6 +1711,7 @@ export const IPC = {
   contentChange: 'content:change',
   contentProgress: 'content:progress',
   contentCreateIndex: 'content:createIndex',
+  contentFormUsages: 'content:formUsages',
 
   settingsGet: 'settings:get',
   settingsSave: 'settings:save',
@@ -2257,6 +2279,11 @@ export interface QuartzGuiApi {
      * or - without node_modules - a fallback that reads no `.gitignore` and differs at a few edges.
      */
     createIndex(args: { projectPath: string; title: string }): Promise<{ path: string; listSource: 'quartz' | 'fallback' }>
+    /**
+     * Which pages embed which quartz-forms form (shared/formUsages.ts), and the slug of every
+     * page Quartz builds - read only. `listSource` as for createIndex.
+     */
+    formUsages(args: { projectPath: string; codeBlockLang: string; frontmatterKey: string }): Promise<FormUsages>
   }
   settings: {
     get(): Promise<Settings>

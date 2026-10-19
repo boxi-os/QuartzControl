@@ -34,7 +34,8 @@ export default function SitePreview({
   projectPath,
   stickyPrefix,
   hint,
-  highlight
+  highlight,
+  goTo
 }: {
   projectId: string
   projectPath: string
@@ -47,6 +48,9 @@ export default function SitePreview({
    * entries of the editor that selector matches - more than one means it has no class of its own.
    */
   highlight?: PreviewHighlight | null
+  /** A page the editor beside it wants shown (the Formulare tab's "Zeigen" at a page that embeds
+   *  the form). A new object each time, so asking for the same page twice shows it twice. */
+  goTo?: { page: string } | null
 }): JSX.Element {
   const { t } = useTranslation()
   const [status, setStatus] = useState<ServerStatus>({ state: 'stopped' })
@@ -67,6 +71,12 @@ export default function SitePreview({
   const [loads, setLoads] = useState(0)
   const [report, setReport] = useState<SitePreviewReport | null>(null)
   const selector = highlight?.selector ?? null
+
+  useEffect(() => {
+    if (!goTo) return
+    setPage(goTo.page)
+    setDraft(goTo.page)
+  }, [goTo, setPage])
 
   useEffect(() => {
     void window.quartzGui.server.status(projectId).then(setStatus)

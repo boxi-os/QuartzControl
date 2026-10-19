@@ -244,6 +244,8 @@ export const coreStatusOptions = z.looseObject({ resolveInstalled: z.boolean().o
 // content.createIndex. The title ends up in YAML through `stringify`, so nothing in it is
 // interpreted; the bound is only there because it is a page title.
 export const createIndexArgs = z.looseObject({ projectPath: absolutePath, title: z.string().trim().min(1).max(200) })
+// content.formUsages. The two names come from the plugin's options; they are compared, never run.
+export const formUsagesArgs = z.looseObject({ projectPath: absolutePath, codeBlockLang: z.string().max(100), frontmatterKey: z.string().max(100) })
 export const projectIconSource = z.looseObject({ projectPath: absolutePath, sourcePath: absolutePath })
 
 // plugin.optionSchema's argument. A source as quartz.config.yaml writes it: the string form
@@ -578,10 +580,14 @@ export const sitePreviewHighlightInput = z.looseObject({
   // instanceClass.ts accepts and no length of their own; a cap on the whole string bounds it. Until
   // review 2026-10-18 (nebenbei) each class was capped at 81 characters and the copies at 20, and a
   // longer hand-written class or a 21st copy ended every selection in an error toast.
+  // One attribute beside them, for the Formulare tab: `[data-form="<id>"]`, a quartz-forms form by
+  // its id - the forms of one plugin entry share every class, and the id is all that tells them
+  // apart. Its value has the shape of a form id (FORM_ID in formsOptions.ts: no quote, no bracket),
+  // so nothing about the attribute can end the string or the selector early.
   selector: z
     .string()
     .max(4096)
-    .regex(/^(\.[A-Za-z_][\w-]*|[a-z][a-z0-9]*)(\.[A-Za-z_][\w-]*)?(:not\(\.[A-Za-z_][\w-]*\))*$/)
+    .regex(/^(\.[A-Za-z_][\w-]*|[a-z][a-z0-9]*)(\.[A-Za-z_][\w-]*)?(\[data-form="[a-z0-9][a-z0-9-]*"\])?(:not\(\.[A-Za-z_][\w-]*\))*$/)
     .nullable(),
   focus: z.boolean()
 })

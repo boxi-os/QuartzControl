@@ -25,8 +25,9 @@ import {
   Vote,
   Wrench
 } from 'lucide-react'
-import type { LayoutPosition, NormalizedOptionSchema, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, DetailLayout, Field, FieldGroup, IconButton, InfoNote, PanelSection, SegmentedControl, Select, SelectableRow, TextInput, Toggle, focusRowAt, useCopyToClipboard } from '../../components/ui'
+import type { FormUsagePage, LayoutPosition, NormalizedOptionSchema, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
+import { slugPath } from '@shared/formUsages'
+import { Badge, Button, Card, CardHeading, Combobox, DetailLayout, Field, FieldGroup, IconButton, InfoNote, PanelSection, SegmentedControl, Select, SelectableRow, TextInput, Toggle, focusRowAt, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { ObjectBlock, type FormContext } from '../../components/PluginOptionsForm/editors'
@@ -151,6 +152,18 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
     [project.path, sourceKey]
   )
   const schema = schemaQuery.data?.schema ?? null
+  const entryOptions = entry?.plugin.options ?? {}
+  const codeBlockLang = typeof entryOptions.codeBlockLang === 'string' && entryOptions.codeBlockLang ? entryOptions.codeBlockLang : 'quartz-form'
+  const frontmatterKey = typeof entryOptions.frontmatterKey === 'string' && entryOptions.frontmatterKey ? entryOptions.frontmatterKey : 'form'
+  // Read once per visit and on "Neu suchen": the pages are the user's notes, which change outside
+  // QuartzControl, and a scan per write would read every note on every keystroke that is saved.
+  const [scan, setScan] = useState(0)
+  const usagesQuery = useIpcQuery(
+    () => (entry ? window.quartzGui.content.formUsages({ projectPath: project.path, codeBlockLang, frontmatterKey }) : Promise.resolve(null)),
+    [project.path, codeBlockLang, frontmatterKey, scan, !!entry]
+  )
+  const usages = usagesQuery.data ?? null
+  const [previewGoTo, setPreviewGoTo] = useState<{ page: string } | null>(null)
 
   const configRef = useRef(config)
   configRef.current = config
@@ -214,6 +227,13 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
   const layoutForm = typeof options.layoutForm === 'string' ? options.layoutForm : ''
   const languages = siteLanguages(config)
   const titleOf = (id: string, def: FormDef): string => textIn(effectiveForm(def).title, lang) || id
+  const pagesOf = (id: string): FormUsagePage[] => usages?.pages.filter((p) => p.forms.includes(id)) ?? []
+  const pageNames = (pages: FormUsagePage[]): string => {
+    const names = pages.slice(0, 5).map((p) => p.file)
+    return pages.length > 5 ? t('formsEditor.andMore', { list: names.join(', '), count: pages.length - 5 }) : names.join(', ')
+  }
+  // Pages that name a form the options do not have: the build stops on them.
+  const unknownUses = (usages?.pages ?? []).flatMap((p) => p.forms.filter((f) => !ids.includes(f)).map((f) => ({ form: f, file: p.file })))
 
   const selectedForm = selected?.startsWith('form:') ? (forms.find(([id]) => id === selected.slice(5)) ?? null) : null
   const selectedSection = selected?.startsWith('section:') ? (SECTIONS.find((s) => s.id === selected.slice(8)) ?? null) : null
@@ -226,7 +246,14 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
 
   async function remove(id: string, def: FormDef): Promise<void> {
     const name = titleOf(id, def)
-    if (!(await confirmDialog({ text: t('formsEditor.removeConfirm', { name, id }), confirmLabel: t('common.remove'), danger: true }))) return
+    const used = pagesOf(id)
+    // Three answers, by what the scan knows: pages that embed it, none, or no scan to ask.
+    const text = used.length
+      ? t('formsEditor.removeConfirmUsed', { name, id, count: used.length, pages: pageNames(used) })
+      : usages
+        ? t('formsEditor.removeConfirmUnused', { name })
+        : t('formsEditor.removeConfirm', { name, id })
+    if (!(await confirmDialog({ text, confirmLabel: t('common.remove'), danger: true }))) return
     if (selected === `form:${id}`) setSelected(null)
     flushSync(() => updateOptions((o) => removeForm(o, id), t('formsEditor.removedAnnounce', { name })))
     focusRowAt(listRef.current, ids.indexOf(id))
@@ -242,7 +269,14 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
   }
 
   async function rename(from: string, to: string): Promise<void> {
-    if (!(await confirmDialog({ text: t('formsEditor.renameConfirm', { from, to }), confirmLabel: t('formsEditor.renameSubmit') }))) return
+    const used = pagesOf(from)
+    // Asked only where a page names the old id, or where the scan could not say.
+    const text = used.length
+      ? t('formsEditor.renameConfirmUsed', { from, to, count: used.length, pages: pageNames(used) })
+      : usages
+        ? null
+        : t('formsEditor.renameConfirm', { from, to })
+    if (text && !(await confirmDialog({ text, confirmLabel: t('formsEditor.renameSubmit') }))) return
     setSelected(`form:${to}`)
     updateOptions((o) => renameForm(o, from, to), t('formsEditor.renamedAnnounce', { from, to }))
   }
@@ -268,12 +302,17 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
 
   const kindLabel = (kind: string): string => t(`formsEditor.transportKinds.${kind}`, kind)
   const modeLabel = (mode: string): string => t(`formsEditor.encryptionModes.${mode}`, mode)
-  const subtitle = (def: FormDef): string => {
+  const subtitle = (def: FormDef): ((id: string) => string) => {
     const eff = effectiveForm(def)
     const fieldsPart = usesTemplateFields(def)
       ? t('formsEditor.fromTemplate', { template: t(`formsEditor.templates.${String(def.template)}`) })
       : t('formsEditor.fieldCount', { count: eff.fields.length })
-    return [fieldsPart, kindLabel(transportKindOf(def, options)), modeLabel(encryptionModeOf(def))].join(' · ')
+    const where = (id: string): string | null => {
+      if (!usages) return null
+      const n = pagesOf(id).length
+      return n ? t('formsEditor.onPages', { count: n }) : layoutForm === id ? null : t('formsEditor.onNoPage')
+    }
+    return (id: string) => [fieldsPart, kindLabel(transportKindOf(def, options)), modeLabel(encryptionModeOf(def)), where(id)].filter(Boolean).join(' · ')
   }
 
   const sectionSummary = (id: SectionId): string => {
@@ -334,6 +373,11 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
             onDef={(next) => updateOptions((o) => withForm(o, selectedForm[0], next))}
             onRename={(to) => void rename(selectedForm[0], to)}
             onOpenSection={(sid) => setSelected(`section:${sid}`)}
+            pages={usages ? pagesOf(selectedForm[0]) : null}
+            slugs={usages?.slugs ?? []}
+            scanning={usagesQuery.loading}
+            onRescan={() => setScan((n) => n + 1)}
+            onShowPage={(slug) => setPreviewGoTo({ page: slugPath(slug) })}
             onLayoutForm={(on) =>
               updateOptions(
                 (o) => ({ ...o, layoutForm: on ? selectedForm[0] : '' }),
@@ -371,6 +415,12 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
         </p>
       )}
       {entries.length > 1 && <p className="text-ui text-amber-700 dark:text-amber-400">{t('formsEditor.severalEntries', { count: entries.length })}</p>}
+      {unknownUses.length > 0 && (
+        <p className="text-ui text-amber-700 dark:text-amber-400">
+          {t('formsEditor.unknownUses', { count: unknownUses.length, list: unknownUses.slice(0, 5).map((u) => `${u.form} (${u.file})`).join(', ') })}
+        </p>
+      )}
+      {usagesQuery.error && <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.scanFailed', { reason: usagesQuery.error })}</p>}
 
       <Card className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -410,7 +460,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
                 onSelect={() => setSelected(key)}
                 leading={<ClipboardList size={15} aria-hidden className="shrink-0 text-text-secondary" />}
                 title={name === id ? id : `${name} (${id})`}
-                subtitle={subtitle(def)}
+                subtitle={subtitle(def)(id)}
                 trailing={
                   <>
                     {layoutForm === id && <Badge tone="green">{t('formsEditor.layoutBadge')}</Badge>}
@@ -462,6 +512,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
         projectPath={project.path}
         stickyPrefix="forms"
         hint={t('formsEditor.previewHint')}
+        goTo={previewGoTo}
         highlight={
           selectedForm
             ? { selector: `form.quartz-form[data-form="${selectedForm[0]}"]`, name: titleOf(selectedForm[0], selectedForm[1]), matches: 1, ownClass: true }
@@ -567,7 +618,12 @@ function FormPanel({
   onDef,
   onRename,
   onLayoutForm,
-  onOpenSection
+  onOpenSection,
+  pages,
+  slugs,
+  scanning,
+  onRescan,
+  onShowPage
 }: {
   id: string
   def: FormDef
@@ -583,6 +639,12 @@ function FormPanel({
   onRename: (to: string) => void
   onLayoutForm: (on: boolean) => void
   onOpenSection: (id: SectionId) => void
+  /** The pages that embed this form; null while the scan has not answered. */
+  pages: FormUsagePage[] | null
+  slugs: string[]
+  scanning: boolean
+  onRescan: () => void
+  onShowPage: (slug: string) => void
 }): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
@@ -696,9 +758,11 @@ function FormPanel({
         {successMode === 'inline' ? (
           <TextEditor label={t('formsEditor.successText')} hint={t('formsEditor.successTextHint')} value={success.text} languages={languages} onValue={(v) => setSuccess({ text: v })} />
         ) : (
-          <Field label={t('formsEditor.successSlug')} hint={t('formsEditor.successSlugHint')}>
-            <DraftInput value={typeof success.slug === 'string' ? success.slug : ''} placeholder="danke" onCommit={(v) => setSuccess({ slug: v.trim() || undefined })} />
-          </Field>
+          <SlugField
+            value={typeof success.slug === 'string' ? success.slug : ''}
+            slugs={slugs}
+            onCommit={(v) => setSuccess({ slug: v.trim() || undefined })}
+          />
         )}
         <div className="flex flex-col gap-3">
           <p className="text-micro font-semibold uppercase tracking-wide text-text-muted">{t('pluginOptions.rarelyUsed')}</p>
@@ -847,6 +911,34 @@ function FormPanel({
         <p aria-live="polite" className="text-micro text-green-600 dark:text-green-400">
           {copied ? t('formsEditor.copied') : ''}
         </p>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-micro font-medium text-text-secondary">{t('formsEditor.usedOn')}</span>
+            <Button variant="ghost" onClick={onRescan} disabled={scanning}>
+              {t('formsEditor.rescan')}
+            </Button>
+          </div>
+          {pages === null ? (
+            <p className="text-micro text-text-muted">{t('formsEditor.scanning')}</p>
+          ) : pages.length === 0 ? (
+            <p className="text-micro text-text-muted">{isLayoutForm ? t('formsEditor.onNoPageLayout') : t('formsEditor.onNoPageHint')}</p>
+          ) : (
+            <ul className="flex flex-col gap-1">
+              {pages.map((p) => (
+                <li key={p.file} className="flex flex-wrap items-center gap-2 text-ui">
+                  <span className="min-w-0 flex-1 truncate" title={p.file}>
+                    {p.title ?? p.file}
+                    {p.title && <span className="ml-1.5 text-micro text-text-muted">{p.file}</span>}
+                  </span>
+                  <Button variant="ghost" onClick={() => onShowPage(p.slug)}>
+                    {t('formsEditor.showInPreview')}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <span className="text-micro text-text-muted">{t('formsEditor.usedOnHint')}</span>
+        </div>
         <Toggle label={t('formsEditor.useAsLayoutForm')} hint={t('formsEditor.useAsLayoutFormHint')} checked={isLayoutForm} onChange={onLayoutForm} />
       </PanelSection>
 
@@ -856,6 +948,31 @@ function FormPanel({
         </PanelSection>
       )}
     </Card>
+  )
+}
+
+/** The target page of a redirect: free text, the site's pages as suggestions. */
+function SlugField({ value, slugs, onCommit }: { value: string; slugs: string[]; onCommit: (value: string) => void }): JSX.Element {
+  const { t } = useTranslation()
+  const [draft, setDraft] = useState(value)
+  const options = useMemo(() => slugs.map((slug) => ({ value: slug, label: slug })), [slugs])
+  const unknown = value !== '' && slugs.length > 0 && !slugs.includes(value)
+  return (
+    <Field label={t('formsEditor.successSlug')} hint={unknown ? t('formsEditor.successSlugUnknown') : t('formsEditor.successSlugHint')}>
+      <Combobox
+        value={draft}
+        onChange={(v) => {
+          setDraft(v)
+          if (slugs.includes(v)) onCommit(v)
+        }}
+        onBlur={() => draft !== value && onCommit(draft)}
+        options={options}
+        emptyText={t('formsEditor.noSuchPage')}
+        listLabel={t('formsEditor.successSlug')}
+        label={t('formsEditor.successSlug')}
+        placeholder="danke"
+      />
+    </Field>
   )
 }
 

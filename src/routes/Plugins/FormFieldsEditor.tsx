@@ -520,9 +520,12 @@ function FieldEditor({
             onDraft={(v) => setNameDraft(v.trim())}
             onCommit={(v) => {
               const to = v.trim()
+              // A name the editor refuses keeps its draft and the sentence saying why: clearing the
+              // sentence left the refused name in the field as if it had been taken, with the
+              // config unchanged (forty-ninth review, Niedrig 4).
+              if (to !== field.name && fieldNameProblem(to, others)) return
               setNameDraft(null)
-              if (to === field.name || fieldNameProblem(to, others)) return
-              set('name', to)
+              if (to !== field.name) set('name', to)
             }}
           />
         </Field>

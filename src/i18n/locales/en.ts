@@ -1552,6 +1552,20 @@ export default {
       uploadedAnnounce: 'Relay uploaded.',
       uploadFailedAnnounce: 'The relay could not be uploaded.'
     },
+    recipientPick: {
+      none: 'No recipient',
+      new: 'New recipient …',
+      name: 'Recipient name',
+      nameHint: 'What the forms and the relay call them, such as “contact” or “editors”. Nobody sees the address on the site.',
+      nameProblem: {
+        empty: 'The name is missing.',
+        pattern: 'Letters, digits, “.”, “_” and “-”, starting with a letter or a digit.',
+        taken: 'This name exists already; choose it in the list.'
+      },
+      address: 'Address',
+      addressHint: 'Stored encrypted and written only into the relay’s config.php. Leave it empty to enter it later in the “Relay” section.',
+      add: 'Take over'
+    },
     templateFieldsNote: 'The form takes the fields of its template. Own fields replace them entirely.',
     ownTransport: 'Sending for this form',
     ownTransportHint: 'What is not set here applies as under “Sending” for all forms.',

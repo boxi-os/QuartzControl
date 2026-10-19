@@ -81,7 +81,7 @@ import { DraftInput } from './DraftInput'
 import { TextEditor } from './FormText'
 import { FormFieldsEditor } from './FormFieldsEditor'
 import { KeysSection } from './FormsKeys'
-import { RelaySection } from './FormsRelay'
+import { RelayRecipientField, RelaySection } from './FormsRelay'
 import { ReadAgainstNote } from './ReadAgainstNote'
 import { SavesImmediately } from './SavesImmediately'
 
@@ -426,6 +426,22 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
             onRescan={() => setScan((n) => n + 1)}
             onShowPage={(slug) => setPreviewGoTo({ page: slugPath(slug) })}
             messages={messagesOf((m) => m.form === selectedForm[0])}
+            relayRecipients={{
+              names: [
+                ...forms
+                  .filter(([id, def]) => id !== selectedForm[0] && transportKindOf(def, options) === 'relay')
+                  .map(([, def]) => (typeof def.recipient === 'string' ? def.recipient.trim() : ''))
+                  .filter(Boolean),
+                ...(relayQuery.data?.secrets.recipients ?? [])
+              ],
+              stored: relayQuery.data ? relayQuery.data.secrets.recipients : null,
+              storageAvailable: relayQuery.data?.secrets.storageAvailable ?? true,
+              saveAddress: async (name, address) => {
+                await window.quartzGui.forms.relaySaveSecrets({ projectId: project.id, recipients: { [name]: address } })
+                announce(t('formsEditor.relay.addressSetAnnounce', { name }))
+                setRelayRound((n) => n + 1)
+              }
+            }}
             onLayoutForm={(on) =>
               updateOptions(
                 (o) => ({ ...o, layoutForm: on ? selectedForm[0] : '' }),
@@ -728,7 +744,8 @@ function FormPanel({
   scanning,
   onRescan,
   onShowPage,
-  messages
+  messages,
+  relayRecipients
 }: {
   id: string
   def: FormDef
@@ -751,6 +768,7 @@ function FormPanel({
   onRescan: () => void
   onShowPage: (slug: string) => void
   messages: { problems: PlacedMessage[]; hints: PlacedMessage[] }
+  relayRecipients: { names: string[]; stored: string[] | null; storageAvailable: boolean; saveAddress: (name: string, address: string) => Promise<void> }
 }): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
@@ -894,13 +912,24 @@ function FormPanel({
 
       <PanelSection icon={Send} title={t('formsEditor.parts.sending')}>
         <p className="text-micro text-text-secondary">{t('formsEditor.sendsVia', { kind: t(`formsEditor.transportKinds.${kind}`, kind) })}</p>
-        <Field label={t(`formsEditor.recipient.${recipientRole}`)} hint={t(`formsEditor.recipientHint.${recipientRole}`)} muted={recipientRole === 'none'}>
-          <DraftInput
+        {recipientRole === 'relay' ? (
+          <RelayRecipientField
             value={typeof def.recipient === 'string' ? def.recipient : ''}
-            placeholder={recipientRole === 'mailto' ? 'name@example.org' : recipientRole === 'relay' ? 'owner' : undefined}
-            onCommit={(v) => setKey('recipient', v.trim() || undefined)}
+            names={relayRecipients.names}
+            stored={relayRecipients.stored}
+            storageAvailable={relayRecipients.storageAvailable}
+            onPick={(name) => setKey('recipient', name)}
+            onSaveAddress={relayRecipients.saveAddress}
           />
-        </Field>
+        ) : (
+          <Field label={t(`formsEditor.recipient.${recipientRole}`)} hint={t(`formsEditor.recipientHint.${recipientRole}`)} muted={recipientRole === 'none'}>
+            <DraftInput
+              value={typeof def.recipient === 'string' ? def.recipient : ''}
+              placeholder={recipientRole === 'mailto' ? 'name@example.org' : undefined}
+              onCommit={(v) => setKey('recipient', v.trim() || undefined)}
+            />
+          </Field>
+        )}
         <TextEditor
           label={t('formsEditor.subject')}
           hint={t('formsEditor.subjectHint')}

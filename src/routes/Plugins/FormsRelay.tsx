@@ -361,3 +361,152 @@ function blockers(state: RelayState, missing: string[], t: TFunction): string[] 
   if (state.hashProblem !== undefined) out.push(t('formsEditor.relay.blockProblems'))
   return out
 }
+
+/** A recipient name the relay maps to an address: no spaces, nothing PHP or YAML would read twice. */
+const RECIPIENT_NAME = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/
+
+/**
+ * A form's recipient when it sends through the relay: a choice among the names that are already
+ * there - the other relay forms' and the ones with a stored address - so no one has to guess what
+ * the relay calls someone, with the address's state beside it. "Neuer Empfänger …" takes a name
+ * and an address at once; the address goes into the encrypted store, as in the Relay section.
+ */
+export function RelayRecipientField({
+  value,
+  names,
+  stored,
+  storageAvailable,
+  onPick,
+  onSaveAddress
+}: {
+  value: string
+  /** The names to offer: the other relay forms' recipients and the stored ones. */
+  names: string[]
+  /** The names with a stored address; null while the relay's state is not known. */
+  stored: string[] | null
+  storageAvailable: boolean
+  onPick: (name: string | undefined) => void
+  onSaveAddress: (name: string, address: string) => Promise<void>
+}): JSX.Element {
+  const { t } = useTranslation()
+  const [adding, setAdding] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [address, setAddress] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const options = [...new Set([...names, ...(value ? [value] : [])])].sort((a, b) => a.localeCompare(b))
+  const hasAddress = stored === null || !value ? null : stored.includes(value)
+
+  async function saveAddress(name: string, text: string): Promise<boolean> {
+    const trimmed = text.trim()
+    if (!trimmed.includes('@')) return false
+    // The relay reads an address at @example. as its template's placeholder, i.e. as missing.
+    if (/@example\./i.test(trimmed)) {
+      setError(t('formsEditor.relay.exampleAddress'))
+      return false
+    }
+    setBusy(true)
+    try {
+      await onSaveAddress(name, trimmed)
+      setError(null)
+      return true
+    } catch (err) {
+      setError(formatIpcError(err))
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const nameProblem = !newName ? 'empty' : !RECIPIENT_NAME.test(newName) ? 'pattern' : options.includes(newName) ? 'taken' : null
+
+  return (
+    <div className="flex flex-col gap-1.5 text-ui">
+      <label className="flex flex-col gap-1">
+        <span className="font-medium text-text-secondary">{t('formsEditor.recipient.relay')}</span>
+        <Select
+          value={adding ? '__new' : value}
+          onChange={(e) => {
+            setError(null)
+            if (e.target.value === '__new') {
+              setAdding(true)
+              return
+            }
+            setAdding(false)
+            onPick(e.target.value || undefined)
+          }}
+        >
+          <option value="">{t('formsEditor.recipientPick.none')}</option>
+          {options.map((name) => (
+            <option key={name} value={name}>
+              {stored === null ? name : `${name} (${stored.includes(name) ? t('formsEditor.relay.addressSet') : t('formsEditor.relay.addressMissing')})`}
+            </option>
+          ))}
+          <option value="__new">{t('formsEditor.recipientPick.new')}</option>
+        </Select>
+      </label>
+      {!adding && hasAddress !== null && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone={hasAddress ? 'green' : 'red'}>{hasAddress ? t('formsEditor.relay.addressSet') : t('formsEditor.relay.addressMissing')}</Badge>
+        </div>
+      )}
+      {!adding && hasAddress === false && storageAvailable && (
+        <div className="flex flex-wrap items-center gap-2">
+          <TextInput
+            type="email"
+            autoComplete="off"
+            aria-label={t('formsEditor.relay.addressFor', { name: value })}
+            placeholder="name@example.org"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="min-w-0 flex-1"
+          />
+          <Button
+            disabled={!address.includes('@') || busy}
+            onClick={() => void saveAddress(value, address).then((saved) => saved && setAddress(''))}
+          >
+            {t('formsEditor.relay.saveAddress')}
+          </Button>
+        </div>
+      )}
+      {adding && (
+        <div className="flex flex-col gap-2 rounded-md border border-ink/10 p-2.5 dark:border-ink/10">
+          <Field label={t('formsEditor.recipientPick.name')} hint={t('formsEditor.recipientPick.nameHint')}>
+            <TextInput value={newName} onChange={(e) => setNewName(e.target.value.trim())} placeholder="kontakt" aria-invalid={!!newName && !!nameProblem} />
+          </Field>
+          {newName && nameProblem && <p className="-mt-1 text-micro text-red-600 dark:text-red-400">{t(`formsEditor.recipientPick.nameProblem.${nameProblem}`)}</p>}
+          {storageAvailable && (
+            <Field label={t('formsEditor.recipientPick.address')} hint={t('formsEditor.recipientPick.addressHint')}>
+              <TextInput type="email" autoComplete="off" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="name@example.org" />
+            </Field>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              disabled={!!nameProblem || busy}
+              onClick={() =>
+                void (async () => {
+                  if (storageAvailable && address.trim() && !(await saveAddress(newName, address))) return
+                  onPick(newName)
+                  setAdding(false)
+                  setNewName('')
+                  setAddress('')
+                })()
+              }
+            >
+              {t('formsEditor.recipientPick.add')}
+            </Button>
+            <Button variant="ghost" onClick={() => setAdding(false)}>
+              {t('common.cancel')}
+            </Button>
+          </div>
+        </div>
+      )}
+      {error && (
+        <p role="alert" className="text-micro text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      )}
+      <span className="text-micro text-text-muted">{t('formsEditor.recipientHint.relay')}</span>
+    </div>
+  )
+}

@@ -1557,6 +1557,20 @@ export default {
       uploadedAnnounce: 'Relay hochgeladen.',
       uploadFailedAnnounce: 'Relay konnte nicht hochgeladen werden.'
     },
+    recipientPick: {
+      none: 'Kein Empfänger',
+      new: 'Neuer Empfänger …',
+      name: 'Name des Empfängers',
+      nameHint: 'So nennen ihn die Formulare und das Relay, z. B. „kontakt“ oder „redaktion“. Die Adresse sieht niemand auf der Website.',
+      nameProblem: {
+        empty: 'Der Name fehlt.',
+        pattern: 'Buchstaben, Ziffern, „.“, „_“ und „-“, am Anfang ein Buchstabe oder eine Ziffer.',
+        taken: 'Diesen Namen gibt es schon; wähle ihn in der Liste.'
+      },
+      address: 'Adresse',
+      addressHint: 'Wird verschlüsselt gespeichert und nur in die config.php des Relays geschrieben. Leer lassen, um sie später im Abschnitt „Relay“ einzutragen.',
+      add: 'Übernehmen'
+    },
     templateFieldsNote: 'Das Formular nimmt die Felder seiner Vorlage. Eigene Felder ersetzen sie ganz.',
     ownTransport: 'Versandweg für dieses Formular',
     ownTransportHint: 'Was hier nicht gesetzt ist, gilt wie unter „Versand“ für alle Formulare.',

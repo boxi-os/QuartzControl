@@ -5,6 +5,7 @@ import { readConfig } from './configService'
 import { getCustomIconThumbnail } from './projectIconService'
 import { getServerStatus } from './buildService'
 import { listProjects } from './projectStore'
+import { projectsWithRelaySecrets } from './connectionsService'
 
 // The start screen's list. Assembled here, in one pass in main, rather than as N calls from the
 // renderer: it is what the launcher renders first, so it must be cheap and finish in one round
@@ -18,6 +19,7 @@ import { listProjects } from './projectStore'
 // perfectly normal-looking card that opened into a project page where every fetch failed.
 export async function getProjectOverviews(): Promise<ProjectOverview[]> {
   const projects = await listProjects()
+  const withRelaySecrets = await projectsWithRelaySecrets().catch(() => new Set<string>())
   return Promise.all(
     projects.map(async (project): Promise<ProjectOverview> => {
       const missing = !existsSync(project.path)
@@ -48,7 +50,8 @@ export async function getProjectOverviews(): Promise<ProjectOverview[]> {
         baseUrl,
         icon,
         serverRunning: status.state === 'running',
-        serverPort: status.state === 'running' ? status.options?.port : undefined
+        serverPort: status.state === 'running' ? status.options?.port : undefined,
+        relaySecrets: withRelaySecrets.has(project.id)
       }
     })
   )

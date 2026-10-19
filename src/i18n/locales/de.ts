@@ -92,6 +92,10 @@ export default {
     confirmRemoveAction: 'Aus der Liste entfernen',
     confirmRemoveRunning:
       '„{{name}}“ aus der Liste entfernen?\n\nDer laufende Dev-Server wird dabei beendet. Der Ordner auf der Festplatte bleibt unangetastet.',
+    confirmRemoveRelay:
+      '„{{name}}“ aus der Liste entfernen?\n\nDer Ordner auf der Festplatte bleibt unangetastet. Die Empfänger-Adressen und Captcha-Secrets des Formular-Relays löscht QuartzControl dabei; wer das Projekt wieder hinzufügt, trägt sie neu ein.',
+    confirmRemoveRunningRelay:
+      '„{{name}}“ aus der Liste entfernen?\n\nDer laufende Dev-Server wird dabei beendet. Der Ordner auf der Festplatte bleibt unangetastet. Die Empfänger-Adressen und Captcha-Secrets des Formular-Relays löscht QuartzControl dabei; wer das Projekt wieder hinzufügt, trägt sie neu ein.',
     environment: {
       titleProblem: 'Diese Werkzeuge fehlen',
       titleUnusable: 'Diese Werkzeuge lassen sich nicht benutzen',

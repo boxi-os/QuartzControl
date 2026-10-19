@@ -1456,6 +1456,9 @@ export interface ProjectOverview extends Project {
   baseUrl?: string
   serverRunning: boolean
   serverPort?: number
+  /** The app keeps a quartz-forms relay address or captcha secret for it (relay-secrets.json, by
+   *  project id); removing the project from the list deletes them, so the question says so. */
+  relaySecrets: boolean
   /**
    * The project's own picture as a data: URL, or undefined when it still carries the icon Quartz
    * ships - those are identical in every project, so the launcher falls back to the letter avatar

@@ -90,6 +90,10 @@ export default {
     confirmRemoveAction: 'Remove from list',
     confirmRemoveRunning:
       'Remove “{{name}}” from the list?\n\nIts running dev server will be stopped. The folder on disk is left untouched.',
+    confirmRemoveRelay:
+      'Remove “{{name}}” from the list?\n\nThe folder on disk is left untouched. QuartzControl deletes the form relay’s recipient addresses and captcha secrets; adding the project again means entering them again.',
+    confirmRemoveRunningRelay:
+      'Remove “{{name}}” from the list?\n\nIts running dev server will be stopped. The folder on disk is left untouched. QuartzControl deletes the form relay’s recipient addresses and captcha secrets; adding the project again means entering them again.',
     environment: {
       titleProblem: 'These tools are missing',
       titleUnusable: 'These tools cannot be used',

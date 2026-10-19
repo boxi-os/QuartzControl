@@ -448,6 +448,16 @@ export async function getRelaySecretInfo(projectId: string): Promise<{ stored: b
   }
 }
 
+/**
+ * The projects with a recipient address or a captcha secret stored, from the names beside the
+ * ciphertext (no decrypt). The signing secret alone does not count: it is made anew and asks for
+ * nothing to be entered again.
+ */
+export async function projectsWithRelaySecrets(): Promise<Set<string>> {
+  const all = await readRelayStore()
+  return new Set(Object.keys(all).filter((id) => all[id]!.recipients?.length || all[id]!.captchaSecret || all[id]!.captchaSecrets?.length))
+}
+
 /** Main only: the decrypted secrets, or null when none are stored. */
 export async function getRelaySecrets(projectId: string): Promise<RelaySecrets | null> {
   const entry = (await readRelayStore())[projectId]

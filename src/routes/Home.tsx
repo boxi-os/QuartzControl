@@ -190,12 +190,17 @@ export default function Home(): JSX.Element {
                       locale={i18n.language}
                       onOpen={() => navigate(`/project/${project.id}`)}
                       onRemove={async () => {
-                        // Removing the entry also stops the project's dev server (see the
-                        // project:remove handler), so the question says so rather than leaving a
-                        // process running that nothing in the app points at any more.
+                        // Removing the entry also stops the project's dev server and deletes its relay
+                        // secrets (see the project:remove handler); the folder keeps neither, so the
+                        // question says so (third review of 1.2, aside, 2026-10-19).
+                        const name = project.name
                         const question = project.serverRunning
-                          ? t('home.confirmRemoveRunning', { name: project.name })
-                          : t('home.confirmRemove', { name: project.name })
+                          ? project.relaySecrets
+                            ? t('home.confirmRemoveRunningRelay', { name })
+                            : t('home.confirmRemoveRunning', { name })
+                          : project.relaySecrets
+                            ? t('home.confirmRemoveRelay', { name })
+                            : t('home.confirmRemove', { name })
                         if (!(await confirmDialog({ text: question, confirmLabel: t('home.confirmRemoveAction'), danger: true }))) return
                         await removeProject(project.id)
                         await reload()

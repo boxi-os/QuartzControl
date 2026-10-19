@@ -2640,7 +2640,7 @@ und N8, M1 und M3 als Vorbehalt ins README“. Abgearbeitet am 2026-10-19, alle 
 je Commit; im Plugin jeweils `npm run check` mit der Relay-Suite und `dist/` im selben Commit, in
 QuartzControl Typcheck, Build und Smoke. Gemessen mit dem Messgeschirr des Reviews (`review-fable/`
 im Scratchpad seiner Sitzung: Klon, gebaute Kopie von gui-test, Relay unter `php -S`, Chrome und die
-gebaute App über playwright-core). Im Plugin (unveröffentlicht, nicht gepusht):
+gebaute App über playwright-core). Im Plugin (unveröffentlicht; gepusht am 2026-10-19, CI grün):
 
 - **Hoch 1** `449ef9d` — ein `consent`-Feld in einem Schritt mit `showIf` lehnt der Build ab
   (`consentInConditionalStep`); vorher galt die Schrittbedingung auch für die Einwilligung, und
@@ -2688,14 +2688,49 @@ Nebenbei, ebenfalls im Plugin: `6f22df9` — die Relay-Suite beendete `php -S`, 
 vier Worker; 20 Prozesse je Lauf, 1452 nach einem Tag (vor der Arbeit beendet). Jetzt eigene
 Prozessgruppe, nach einem Lauf keiner übrig.
 
-Offen aus dieser Runde, beim Nutzer, die **Nebenbei-Liste** des Reviews: Optionswerte mit Leerraum
-sind nie wählbar (ein Build-Fehler fehlt); ein Plain-Post, der ein Textfeld zweimal nennt, bekommt
-den Mustersatz; `Reply-To` nimmt das erste `email`-Feld; das Captcha-Secret je Formular zieht beim
-Umbenennen nicht mit; abgewiesene Posts mit Captcha-Token kosten je eine Anfrage beim Anbieter;
-„no quartz-forms entry“ sagt nicht, dass der Pfad auf `quartz-forms` enden muss; „Schritt 1 von 1“
-bei einem einzigen zählenden Schritt; was die Frage beim Entfernen eines Projekts über die
-Relay-Geheimnisse sagt, ist nicht geprüft; die Commit-Nachricht von `e79aaa6` liest sich
-zweideutig. Dazu: ein Zähler je Quelle für das Ratenlimit (M1), und quartz-forms trägt die Fixes
-unter „Unreleased“, unveröffentlicht und nicht gepusht.
+**Danach, auf Wunsch des Nutzers, die Nebenbei-Liste des Reviews** (2026-10-19), ein Punkt je
+Commit; im Plugin `npm run check` mit der Relay-Suite (Vorher-Messung: der neue Test scheitert am
+alten Code), in QuartzControl Typcheck, Build, Smoke und eine Messung an der gebauten App vorher
+und nachher. Im Plugin (unveröffentlicht, unter „Unreleased“, nicht gepusht):
+
+- `88af51a` — ein Optionswert mit Leerraum am Rand ist ein Build-Fehler (`optionSpace`);
+  `dist/cli.js check` an `" a "`, `"x\t"` und `" "`: vorher nichts, nachher je ein Fehler.
+- `97cf72b` — ein Wert, der kein String ist, eine Liste für ein Feld mit einem Wert und ungültiges
+  UTF-8 heißen `malformed` mit eigenem Satz („Dieser Wert konnte nicht gelesen werden.“), im Relay,
+  in den Locales und im Skript. `comment=a&comment=b`: vorher „Was könnte besser sein?: Bitte
+  verwenden Sie das verlangte Format.“
+- `00f7946` — `Reply-To` nimmt ein `email`-Feld mit `autocomplete: email`, wenn es eins gibt (sonst
+  wie bisher das erste ausgefüllte); der Build schreibt die Kandidaten als `replyTo` ins Relay.
+  Freund vor eigener Adresse: vorher `Reply-To` an den Freund, nachher an die eigene.
+- `d46e63f` — kein „Schritt 1 von 1“: unter zwei zählenden Schritten bleibt die Zeile leer und
+  verborgen. In Chrome an der gebauten gt-Kopie (Einwilligung dort in den ersten Schritt
+  verlegt, H1): vorher „Schritt 1 von 1“, nachher leer, mit Häkchen „Schritt 1 von 2“.
+- `5509f6e` — „no quartz-forms entry“ sagt, dass die `source` auf `quartz-forms` enden muss.
+- `c7a85c9` — das Relay fragt den Captcha-Anbieter zuletzt, nach Feldern, Verschlüsselung und
+  Empfänger: Ein unbekanntes Feld und ein verschlüsselter Post an ein unverschlüsseltes Formular
+  kosteten vorher zwei Anfragen beim Anbieter (und verbrauchten das Token), nachher keine.
+  Abgewiesene Posts mit *gültigen* Feldern kosten weiter je eine; das trifft nur ein Zähler je
+  Quelle (M1), und der bleibt beim Nutzer.
+- `13a2e7f` — die Nachricht von `e79aaa6` bleibt, wie sie gepusht ist; ein Kommentar an
+  `node-version` im Workflow sagt, dass die Prüfungen auf Node 22 laufen und Node 24 das der
+  Actions ist.
+
+In QuartzControl (`feat/1.2`):
+
+- `3192d649` — das eigene Captcha-Secret eines Formulars zieht beim Umbenennen mit
+  (`moveCaptchaSecret` an `forms.relaySaveSecrets`, nachdem die neue Kennung in der Datei steht).
+  An der gebauten App mit `safeStorage`-Ersatz: vorher blieb es unter `plain`, nachher unter
+  `plainx`; ohne Secret kein Eintrag und keine Entschlüsselung.
+- `cd6f06e0` — geprüft, was die Frage beim Entfernen eines Projekts sagt: nur „Der Ordner auf der
+  Festplatte bleibt unangetastet.“, obwohl Main dabei Adressen und Captcha-Secrets des Relays
+  löscht. Jetzt sagt sie es, wenn welche gespeichert sind (`relaySecrets` in der Projektübersicht,
+  ohne Entschlüsselung gelesen; das Signatur-Secret allein zählt nicht).
+
+Der Punkt „fremde `php -S`-Prozesse“ war schon `6f22df9`. `check:plugin-copies` gegen den Klon auf
+`13a2e7f`: keine Abweichung. Nebenbei gesehen, nicht behoben: In `send.php` steht der Doc-Kommentar
+von `qf_parse_form` über `qf_decoded_size`, zwei Kommentarblöcke hintereinander.
+
+Offen aus dieser Runde, beim Nutzer: ein Zähler je Quelle für das Ratenlimit (M1), das Release der
+Plugin-Fixes unter „Unreleased“ und der Push der Nebenbei-Commits beider Repos.
 
 **Keinen dieser Fixes hat ein Review gelesen.**

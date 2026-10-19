@@ -153,6 +153,7 @@ export function KeysSection({
                   {report?.userIds[0] && <span className="text-micro text-text-secondary">{report.userIds[0]}</span>}
                   {report?.expires && !report.problem && <span className="text-micro text-text-muted">{t('formsEditor.keys.expires', { date: report.expires })}</span>}
                   {report?.problem && <span className="text-micro text-red-600 dark:text-red-400">{report.problem}</span>}
+                  {report?.notice && !report.problem && <span className="text-micro text-amber-700 dark:text-amber-400">{report.notice}</span>}
                   {!report && check?.state === 'checked' && !checking && <span className="text-micro text-text-muted">{t('formsEditor.keys.unread')}</span>}
                   <span className="text-micro text-text-muted">{users.length ? t('formsEditor.keys.usedBy', { forms: users.join(', ') }) : t('formsEditor.keys.unused')}</span>
                 </div>

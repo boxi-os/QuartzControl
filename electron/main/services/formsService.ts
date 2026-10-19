@@ -76,7 +76,8 @@ function keyReport(v: unknown): FormsKeyReport {
     fingerprint: typeof r.fingerprint === 'string' ? r.fingerprint : '',
     userIds: strings(r.userIds),
     ...(typeof r.expires === 'string' ? { expires: r.expires } : {}),
-    ...(typeof r.problem === 'string' ? { problem: r.problem } : {})
+    ...(typeof r.problem === 'string' ? { problem: r.problem } : {}),
+    ...(typeof r.notice === 'string' ? { notice: r.notice } : {})
   }
 }
 

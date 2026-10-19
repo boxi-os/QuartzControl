@@ -624,6 +624,8 @@ export interface FormsKeyReport {
   /** `YYYY-MM-DD`; missing when it never expires. */
   expires?: string
   problem?: string
+  /** What the owner should know about a key that passes (quartz-forms 0.5.5: gpg cannot read it). */
+  notice?: string
 }
 
 /** forms.check: the plugin's own verdict, or why there is none. */

@@ -532,3 +532,21 @@ Plugins abgewiesen.
 **In der Plugin-Liste** kennt `optionFormExtras.ts` quartz-forms über `formsRoot`: Ein Formular ist
 dort ein Eintrag des Records `forms`, und unter einem anonymen steht `pageContext` als „wirkt
 nicht“ (`entryReason`), wie im Reiter.
+
+**Breite, Bedingungen und Schritte (quartz-forms 0.4.0).** Das Plugin bekam auf Wunsch des
+Nutzers (2026-10-19) Feldbreiten (`width: full | half | third`), Optionen nebeneinander
+(`layout: inline`), bedingte Felder (`showIf: { field, equals }`, eine Bedingung je Feld, Ketten
+erlaubt) und Seitenumbrüche (`{ type: pageBreak, title?, showIf? }`). Welche Felder zählen, steht
+dort einmal als `when`-Liste je Feld; Browser und Relay werten sie in einem Durchgang aus und werden
+an einem Katalog gegeneinander gehalten. Gemessen in Chrome an einer mit Quartz gebauten Seite, mit
+und ohne JavaScript, bis in die Mail (Commits des Plugins). Im Reiter: „Breite“ als Segmente an
+jedem sichtbaren Feld, „Anordnung der Möglichkeiten“ bei Radio und Mehrfachwahl, „Nur zeigen,
+wenn …“ mit den Steuerfeldern davor und je Wert einem Schalter, mindestens einer an. Ein
+Umbenennen nimmt die Bedingungen mit, die den Namen nennen. Ein Seitenumbruch ist eine gestrichelte
+Zeile „Schritt 2 · Titel“ mit der Kennung `page:<n>` für dnd-kit. Was der Bedingungs-Editor
+anbietet, ist abgeschrieben (`CONTROLLER_TYPES`, `showIfOf`, `controllerValues`) und wird mit den
+Feldtypen von `check:plugin-copies` gegen das Plugin gehalten: 48 Fälle, jeder angebotene Wert
+besteht die Prüfung des Plugins, ein anderer nicht. Gegenprobe: `scale` aus `CONTROLLER_TYPES`
+gestrichen und eine Skala einen Wert zu weit: drei Abweichungen. Gemessen an der gebauten App
+gegen eine Wegwerf-Kopie von gui-test; ein Seitenumbruch wurde nur über die Pfeile verschoben,
+nicht per Maus- oder Tastatur-Drag.

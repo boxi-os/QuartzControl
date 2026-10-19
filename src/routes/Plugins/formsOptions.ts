@@ -1,16 +1,18 @@
 import { quartzPluginName } from '@shared/quartzPluginName'
 import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 
-// What the Formulare editor needs to know about quartz-forms 0.3.0, read from its source rather
+// What the Formulare editor needs to know about quartz-forms 0.4.0, read from its source rather
 // than its README: the id and field-name rules and the reserved names (src/validate.ts), the four
-// templates (src/templates/index.ts) and how a form is laid over its template and the global
-// transport (resolveForm in src/options.ts). scripts/check-plugin-copies.mjs holds each copy
+// templates (src/templates/index.ts), how a form is laid over its template and the global
+// transport (resolveForm in src/options.ts), the field types (the schema in package.json) and
+// which fields a condition may name with which values (src/conditions.ts, controllerHas in
+// src/validate.ts). scripts/check-plugin-copies.mjs holds each copy
 // against the installed plugin. What the build says about a definition is not copied: the tab
 // asks the plugin itself (`dist/cli.js check`).
 
 export const FORMS_PLUGIN = 'quartz-forms'
 /** The version whose source the copies below are read from. */
-export const FORMS_READ_AGAINST = '0.3.0'
+export const FORMS_READ_AGAINST = '0.4.0'
 
 type Options = Record<string, unknown>
 export type FormDef = Record<string, unknown>

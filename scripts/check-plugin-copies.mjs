@@ -583,6 +583,53 @@ function tally(label, cases, diffs) {
       }
       tally('Einbindung (Frontmatter, Platzhalter)', values.length + texts.length, diffs)
     }
+
+    // Feldtypen und Bedingungen (0.4.0): die Arten der Kacheln gegen die Varianten im Schema des
+    // Plugins, CONTROLLER_TYPES und showIfOf gegen src/conditions.ts, und die Werte, die der
+    // Bedingungs-Editor anbietet, gegen die Prüfung des Plugins: Jeder angebotene besteht, ein
+    // anderer nicht. Ob eine Bedingung als Ganzes stimmt, sagt weiter das Plugin selbst.
+    {
+      const conditions = await load(path.join(dir, 'src/conditions.ts'), 'plugin-forms-conditions')
+      const defs = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8')).quartz.configSchema.$defs
+      const theirTypes = defs.field.anyOf.flatMap((v) => {
+        const d = v.$ref ? defs[v.$ref.split('/').pop()] : v
+        return d.properties.type.enum ?? [d.properties.type.const]
+      })
+      const ourTypes = Object.values(copy.FIELD_GROUPS).flat()
+      const diffs = []
+      let cases = 2
+      if (show([...ourTypes].sort()) !== show([...theirTypes].sort())) diffs.push(`Feldtypen: App ${show(ourTypes)}, Plugin ${show(theirTypes)}`)
+      if (show(copy.CONTROLLER_TYPES) !== show(conditions.CONTROLLER_TYPES)) diffs.push(`CONTROLLER_TYPES: App ${show(copy.CONTROLLER_TYPES)}, Plugin ${show(conditions.CONTROLLER_TYPES)}`)
+      const probes = [undefined, null, 'x', [], {}, { field: 'a' }, { field: 'a', equals: 'x' }, { field: 'a', equals: ['x', '', 3, 'y'] }, { field: '', equals: 'x' }, { field: 3, equals: 'x' }, { field: 'a', equals: [] }, { field: 'a', equals: ' x ' }]
+      for (const showIf of probes) {
+        cases++
+        const theirs = conditions.conditionOf({ type: 'text', name: 'f', label: 'F', showIf })
+        const ours = copy.showIfOf({ showIf })
+        if (show(ours) !== show(theirs)) diffs.push(`showIf ${show(showIf)}: App ${show(ours)}, Plugin ${show(theirs)}`)
+      }
+      const options2 = [
+        { value: 'a', label: 'A' },
+        { value: 'b', label: { de: 'B', en: 'B' } }
+      ]
+      const controllers = [
+        { type: 'radio', name: 'c', label: 'C', options: options2 },
+        { type: 'select', name: 'c', label: 'C', options: options2 },
+        { type: 'checkboxes', name: 'c', label: 'C', options: options2 },
+        { type: 'checkbox', name: 'c', label: 'C' },
+        { type: 'scale', name: 'c', label: 'C', min: 0, max: 3 },
+        { type: 'scale', name: 'c', label: 'C', min: -2, max: 2 }
+      ]
+      for (const c of controllers) {
+        const offered = copy.controllerValues(c, 'de').map((o) => o.value)
+        for (const v of [...offered, 'nope', '1.5', 'on']) {
+          cases++
+          const resolved = await quiet(() => options.resolveOptions({ forms: { f: { fields: [c, { type: 'text', name: 'd', label: 'D', showIf: { field: 'c', equals: v } }] } } }))
+          const refused = resolved.problemMessages.some((m) => m.code.startsWith('showIf'))
+          if (refused === offered.includes(v)) diffs.push(`${c.type} ${show(v)}: App ${offered.includes(v) ? 'bietet an' : 'bietet nicht an'}, Plugin ${refused ? 'weist ab' : 'nimmt an'}`)
+        }
+      }
+      tally('Feldtypen und Bedingungen (FIELD_GROUPS, CONTROLLER_TYPES, showIfOf, controllerValues)', cases, diffs)
+    }
   }
 
   // Quartz' Slug-Regel, gegen die Fassung im Projekt (@quartz-community/utils).

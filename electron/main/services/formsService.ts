@@ -1,4 +1,4 @@
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, posix, relative, sep } from 'path'
@@ -8,10 +8,11 @@ import { runDirectoryUpload } from './deploy'
 import { readJsonFile, writeJsonFile } from './jsonStore'
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
 import { getTarget, listTargets, saveTarget } from './publishTargetsService'
+import { isNewerVersion } from '@shared/semver'
 import { pluginPackageDir } from './pluginSchemaService'
 import { runCommand } from './runCommand'
 import { writableTarget } from './templatePackage/shared'
-import { mainT } from '../i18n'
+import { mainLanguage, mainT } from '../i18n'
 
 // What the Formulare tab asks quartz-forms itself, instead of copying its rules: the problems and
 // hints its build would give (`check`) and what a key is (`key`). Both run the plugin's command
@@ -36,10 +37,26 @@ function cliPath(projectPath: string, source: PluginSource): string | null {
   return existsSync(cli) ? cli : null
 }
 
+/**
+ * `--lang` for the plugin's command line, from 0.3.0 on, which has its messages in German too; an
+ * older one refuses the flag as an unknown argument, and the tab would say "konnte nicht geprüft
+ * werden" for a plugin that can check. Asked of its package.json, the version Quartz loads.
+ */
+function langArgs(projectPath: string, source: PluginSource): string[] {
+  const dir = pluginPackageDir(projectPath, source)
+  try {
+    const version = (JSON.parse(readFileSync(join(dir ?? '', 'package.json'), 'utf-8')) as { version?: unknown }).version
+    if (typeof version === 'string' && !isNewerVersion('0.3.0', version)) return ['--lang', mainLanguage()]
+  } catch {
+    // No readable package.json: no flag, the messages come in English.
+  }
+  return []
+}
+
 async function runCli(projectPath: string, source: PluginSource, args: string[], env?: Record<string, string>): Promise<{ ok: true; json: Record<string, unknown> } | { ok: false; reason: string }> {
   const cli = cliPath(projectPath, source)
   if (!cli) return { ok: false, reason: mainT('formsNoCli') }
-  const result = await runCommand('node', [cli, ...args, '--json'], projectPath, env, CHECK_TIMEOUT_MS)
+  const result = await runCommand('node', [cli, ...args, '--json', ...langArgs(projectPath, source)], projectPath, env, CHECK_TIMEOUT_MS)
   let json: Record<string, unknown>
   try {
     json = JSON.parse(result.stdout.trim().split('\n').at(-1) ?? '') as Record<string, unknown>
@@ -180,7 +197,7 @@ async function rsyncConflict(projectPath: string, relayTarget: PublishTarget, su
 async function runRelayCli(projectPath: string, source: PluginSource, outDir: string, operator?: Record<string, unknown>, skipPatternCheck = false): Promise<{ ok: true; json: Record<string, unknown> } | { ok: false; reason: string; json?: Record<string, unknown> }> {
   const cli = cliPath(projectPath, source)
   if (!cli) return { ok: false, reason: mainT('formsNoCli') }
-  const args = [cli, 'relay', '--site', projectPath, '--out', outDir, ...(skipPatternCheck ? ['--skip-pattern-check'] : []), '--json']
+  const args = [cli, 'relay', '--site', projectPath, '--out', outDir, ...(skipPatternCheck ? ['--skip-pattern-check'] : []), '--json', ...langArgs(projectPath, source)]
   const result = await runCommand('node', args, projectPath, operator ? { QF_RELAY_OPERATOR: JSON.stringify(operator) } : undefined, CHECK_TIMEOUT_MS)
   let json: Record<string, unknown>
   try {

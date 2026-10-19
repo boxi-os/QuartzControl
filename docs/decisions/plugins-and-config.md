@@ -496,7 +496,9 @@ Gemessen wurde jede Phase an der gebauten App, gegen gui-test (Config vorher kop
 (`forms.<id>.fields[i].pattern: …`), und nur daran hängt der Reiter sie an Formular, Feld oder
 Abschnitt (`placeMessage`). Gemessen: ein Formular ohne Relay-Adresse und Empfänger zeigte
 „2 Probleme“, nach dem Eintragen des Empfängers von allein „ein Problem“; ein Feld mit `[^]` trug den
-Satz des Plugins am Feld. Die Meldungen sind englisch, so wie das Plugin sie ins Build-Log schreibt.
+Satz des Plugins am Feld. Seit quartz-forms 0.3.0 kommen die Meldungen in der Sprache der App
+(`--lang`, Code und Werte je Meldung, `src/messages/` des Plugins); das Build-Log bleibt englisch
+(Entscheidung des Nutzers, 2026-10-19).
 
 **Mehrsprachige Texte haben einen eigenen Editor.** Das generische Formular zeigte einen
 Vorlagentitel `{ en, de }` als leeres Feld und jedes Label als Union „Text / Liste“. `TextEditor`

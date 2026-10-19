@@ -1307,8 +1307,8 @@ function SectionPanel({
 
 /**
  * What quartz-forms says about a form or a section: its problems, which stop the build, and its
- * hints. The sentences are the plugin's own (English, as its build log prints them), shown with the
- * path the place already names taken off.
+ * hints. The sentences are the plugin's own, in the app's language (`--lang`, quartz-forms 0.3.0),
+ * shown with the path the place already names taken off.
  */
 function Messages({ problems, hints }: { problems: PlacedMessage[]; hints: PlacedMessage[] }): JSX.Element | null {
   const { t } = useTranslation()

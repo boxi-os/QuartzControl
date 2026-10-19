@@ -1,7 +1,7 @@
 import { quartzPluginName } from '@shared/quartzPluginName'
 import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 
-// What the Formulare editor needs to know about quartz-forms 0.2.0, read from its source rather
+// What the Formulare editor needs to know about quartz-forms 0.3.0, read from its source rather
 // than its README: the id and field-name rules and the reserved names (src/validate.ts), the four
 // templates (src/templates/index.ts) and how a form is laid over its template and the global
 // transport (resolveForm in src/options.ts). scripts/check-plugin-copies.mjs holds each copy
@@ -10,7 +10,7 @@ import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } f
 
 export const FORMS_PLUGIN = 'quartz-forms'
 /** The version whose source the copies below are read from. */
-export const FORMS_READ_AGAINST = '0.2.0'
+export const FORMS_READ_AGAINST = '0.3.0'
 
 type Options = Record<string, unknown>
 export type FormDef = Record<string, unknown>

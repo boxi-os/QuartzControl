@@ -97,6 +97,15 @@ Was ein `+` zeigt, wird gemergt oder bewusst verworfen (Regel in `CLAUDE.md`, �
 Branch, der nie gemergt wurde, ist keiner“). Am 2026-09-14 zeigte nur `origin/gh-pages` eines —
 der Deploy-Branch, erwartet.
 
+**Zwei Linien nach einem Release.** Fixes für die veröffentlichte Fassung liegen auf
+`fix/<major>.<minor>.x`, neue Features auf `feat/<nächste>`; beide zweigen vom selben Punkt ab
+(seit 2026-10-19: `fix/1.1.x` und `feat/1.2` vom letzten Commit auf `feat/1.1`). Die Fix-Linie wird in die
+Feature-Linie **gemergt**, nie umgekehrt und nicht per Cherry-Pick, spätestens nach jedem
+Fix-Release. Ein Fix-Release entsteht aus der Fix-Linie (`release/<fassung>`, Tag, `main` per
+Fast-Forward). Bei einem Fix-Release zeigt die Schleife oben die Feature-Linie mit `+` — erwartet;
+bei einem Feature-Release darf die Fix-Linie keines zeigen. So lief es schon bei 1.0.1 und 1.0.2
+(`fix/1.0.x` von `v1.0.0`, später in die 1.1-Linie gemergt).
+
 ## 2b. Die eigenen Plugins sind vor der App veröffentlicht
 
 Seit 1.1 hängen App, Vorlage und Handbuch an Fassungen der drei eigenen Plugins

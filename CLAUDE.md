@@ -86,6 +86,10 @@ ungelesen ist, steht in [`docs/reviews.md`](docs/reviews.md); die früheren Stan
 Datei (Releases, Alpha-Test, Gruppe D, offene Punkte) wörtlich in [`docs/stand.md`](docs/stand.md).
 Was aus einer Runde dauerhaft gilt, steht als Regel in `docs/conventions.md`, nicht in der Chronik.
 
+Seit dem 2026-10-19 gibt es zwei Linien: Bugfixes für 1.1 auf `fix/1.1.x`, neue Features auf
+`feat/1.2`; die Fix-Linie wird in die Feature-Linie gemergt, nie umgekehrt
+([`docs/release.md`](docs/release.md), Punkt 2).
+
 **Arbeitsregel** für eine Review-Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was nebenbei auffällt, wird gesammelt und
 genannt, nicht mit erledigt. Was nur ein laufendes Programm beantworten kann, wird an der gebauten

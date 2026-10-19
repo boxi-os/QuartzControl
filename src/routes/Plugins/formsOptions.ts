@@ -412,6 +412,65 @@ export function freeFieldName(base: string, taken: string[]): string {
   for (let n = 2; ; n++) if (free(`${clean}${n}`)) return `${clean}${n}`
 }
 
+// ── conditions (quartz-forms 0.4.0) ──────────────────────────────────────────────────────────
+
+/** The fields a condition may name: they have values to compare (src/conditions.ts, CONTROLLER_TYPES). */
+export const CONTROLLER_TYPES = ['select', 'radio', 'checkboxes', 'checkbox', 'scale'] as const
+
+export interface ShowIf {
+  field: string
+  equals: string[]
+}
+
+/** A field's or a page break's `showIf` as the plugin reads it (src/conditions.ts, conditionOf); undefined when absent or not well formed. */
+export function showIfOf(field: Record<string, unknown>): ShowIf | undefined {
+  const showIf = field.showIf
+  if (!isObject(showIf)) return undefined
+  const { field: name, equals } = showIf
+  if (typeof name !== 'string' || !name) return undefined
+  const list = typeof equals === 'string' ? [equals] : Array.isArray(equals) ? equals : []
+  const values = list.filter((v): v is string => typeof v === 'string' && v !== '')
+  return values.length ? { field: name, equals: values } : undefined
+}
+
+export function isController(field: FieldDef): boolean {
+  return (CONTROLLER_TYPES as readonly string[]).includes(field.type) && typeof field.name === 'string'
+}
+
+/**
+ * The values a condition on this field can name, with what visitors see (src/validate.ts,
+ * controllerHas): its options, `yes` for a checkbox, every step of a scale.
+ */
+export function controllerValues(field: FieldDef, lang: string): { value: string; label: string }[] {
+  switch (field.type) {
+    case 'select':
+    case 'radio':
+    case 'checkboxes':
+      return Array.isArray(field.options)
+        ? field.options.filter(isObject).flatMap((o) => (typeof o.value === 'string' && o.value ? [{ value: o.value, label: textIn(o.label, lang) || o.value }] : []))
+        : []
+    case 'checkbox':
+      return [{ value: 'yes', label: 'yes' }]
+    case 'scale': {
+      const { min, max } = field
+      if (!Number.isInteger(min) || !Number.isInteger(max) || (max as number) < (min as number) || (max as number) - (min as number) > 20) return []
+      return Array.from({ length: (max as number) - (min as number) + 1 }, (_, i) => String((min as number) + i)).map((v) => ({ value: v, label: v }))
+    }
+    default:
+      return []
+  }
+}
+
+/** One value as a string, several as a list: what a person would write in the YAML. */
+export function showIfValue(field: string, equals: string[]): { field: string; equals: string | string[] } {
+  return { field, equals: equals.length === 1 ? equals[0] : equals }
+}
+
+/** A field renamed from `from` to `to`: every condition that named it names the new name (as renameForm does for layoutForm). */
+export function renameInConditions(fields: FieldDef[], from: string, to: string): FieldDef[] {
+  return fields.map((f) => (isObject(f.showIf) && f.showIf.field === from ? { ...f, showIf: { ...f.showIf, field: to } } : f))
+}
+
 /** What a field shows as its name in a list: its label, the consent text, else its name. */
 export function fieldLabel(field: FieldDef, lang: string): string {
   return textIn(field.label, lang) || textIn(field.text, lang) || field.name

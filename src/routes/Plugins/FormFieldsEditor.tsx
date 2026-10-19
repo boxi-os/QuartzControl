@@ -41,13 +41,18 @@ import {
   INPUT_KEYS,
   SAME_SHAPE,
   TEMPLATES,
+  controllerValues,
   fieldLabel,
   fieldNameProblem,
   fieldVariant,
   freeFieldName,
+  isController,
   isObject,
   isPersonalField,
   isTemplate,
+  renameInConditions,
+  showIfOf,
+  showIfValue,
   type FieldDef,
   type FieldType,
   type PlacedMessage,
@@ -76,7 +81,7 @@ const TYPE_ICONS: Record<FieldType, LucideIcon> = {
 
 // The keys the editor shows with its own controls; the rest of a type's keys go through the
 // plugin's form (fieldVariant), so the schema's own words and limits explain them.
-const OWN_KEYS = new Set(['type', 'name', 'label', 'hint', 'required', 'placeholder', 'options', 'text', 'linkLabel', 'minLabel', 'maxLabel', 'width', 'layout'])
+const OWN_KEYS = new Set(['type', 'name', 'label', 'hint', 'required', 'placeholder', 'options', 'text', 'linkLabel', 'minLabel', 'maxLabel', 'width', 'layout', 'showIf'])
 
 // quartz-forms 0.4.0: a field spans the form, half or a third of it (`width`, every visible type).
 const WIDTHS = ['full', 'half', 'third'] as const
@@ -129,7 +134,24 @@ export function FormFieldsEditor({
     onFields(next)
     if (said) announce(t('formsEditor.fieldMovedAnnounce', { name: fieldLabel(item, lang), n: to + 1, count: fields.length }))
   }
-  const update = (index: number, next: FieldDef): void => onFields(fields.map((f, i) => (i === index ? next : f)))
+  const update = (index: number, next: FieldDef): void => {
+    const before = fields[index]
+    const list = fields.map((f, i) => (i === index ? next : f))
+    // A condition names its field by name: a rename takes the conditions along.
+    onFields(before.name !== next.name && typeof before.name === 'string' ? renameInConditions(list, before.name, next.name) : list)
+  }
+
+  // "Only shown if …" for the row, in the words visitors see (labels, not values).
+  const conditionText = (field: FieldDef): string | null => {
+    const c = showIfOf(field)
+    if (!c) return null
+    const controller = fields.find((g) => g.name === c.field)
+    const label = controller ? fieldLabel(controller, lang) : c.field
+    if (controller?.type === 'checkbox') return t('formsEditor.conditionSentenceTicked', { field: label })
+    const offered = controller ? controllerValues(controller, lang) : []
+    const values = c.equals.map((v) => t('formsEditor.quoted', { text: offered.find((o) => o.value === v)?.label ?? v })).join(t('formsEditor.orWord'))
+    return t('formsEditor.conditionSentence', { field: label, values })
+  }
 
   async function remove(index: number): Promise<void> {
     const name = fieldLabel(fields[index], lang)
@@ -215,6 +237,7 @@ export function FormFieldsEditor({
                 label={fieldLabel(f, lang)}
                 typeName={typeName(f.type)}
                 optionalByAnonymous={anonymous && f.required === true && isPersonalField(f)}
+                condition={conditionText(f)}
                 problems={fieldMessages.filter((m) => m.field === i)}
                 onToggle={() => setOpen(open === f.name ? null : f.name)}
                 onMove={(by) => move(i, i + by)}
@@ -223,6 +246,8 @@ export function FormFieldsEditor({
                 <FieldEditor
                   field={f}
                   others={fields.filter((_, j) => j !== i).map((g) => g.name)}
+                  controllers={fields.slice(0, i).filter(isController)}
+                  lang={lang}
                   schema={schema}
                   languages={languages}
                   hasPgpKey={hasPgpKey}
@@ -264,6 +289,7 @@ function SortableField({
   label,
   typeName,
   optionalByAnonymous,
+  condition,
   problems,
   onToggle,
   onMove,
@@ -278,6 +304,8 @@ function SortableField({
   label: string
   typeName: string
   optionalByAnonymous: boolean
+  /** The sentence of the field's condition, or null for a field that always shows. */
+  condition: string | null
   problems: PlacedMessage[]
   onToggle: () => void
   onMove: (by: -1 | 1) => void
@@ -319,6 +347,12 @@ function SortableField({
           <span className="shrink-0 text-micro text-text-muted">{typeName}</span>
         </button>
         {problems.length > 0 && <Badge tone="red">{t('formsEditor.check.problemBadge', { count: problems.length })}</Badge>}
+        {condition && (
+          <span title={condition}>
+            <Badge>{t('formsEditor.conditionalBadge')}</Badge>
+            <span className="sr-only">{condition}</span>
+          </span>
+        )}
         {required && !optionalByAnonymous && <Badge>{t('formsEditor.requiredBadge')}</Badge>}
         {optionalByAnonymous && <Badge tone="amber">{t('formsEditor.optionalByAnonymousBadge')}</Badge>}
         <IconButton icon={ArrowUp} tone="neutral" title={t('pluginsInstalled.moveUp', { name: label })} onClick={() => onMove(-1)} disabled={index === 0} />
@@ -390,6 +424,8 @@ function AddFieldTiles({ hasPgpKey, onAdd, onCancel }: { hasPgpKey: boolean; onA
 function FieldEditor({
   field,
   others,
+  controllers,
+  lang,
   schema,
   languages,
   hasPgpKey,
@@ -397,6 +433,9 @@ function FieldEditor({
 }: {
   field: FieldDef
   others: string[]
+  /** The fields before this one a condition may name. */
+  controllers: FieldDef[]
+  lang: string
   schema: NormalizedOptionSchema | null
   languages: string[]
   hasPgpKey: boolean
@@ -509,10 +548,63 @@ function FieldEditor({
           />
         </FieldGroup>
       )}
+      {field.type !== 'hidden' && field.type !== 'consent' && <ConditionEditor value={field.showIf} controllers={controllers} lang={lang} onValue={(v) => set('showIf', v)} />}
       {variant && (
         <PluginOptionsForm schema={variant} values={field} onChange={(next) => onField((next ?? { type: field.type, name: field.name }) as FieldDef)} explicitEmpty={false} languages={languages} projectPath={project.path} pick={pick} freeKeys={false} root={flat} />
       )}
     </>
+  )
+}
+
+/**
+ * "Only show if …": a field before this one (choices, checkboxes and scales, CONTROLLER_TYPES)
+ * and the values it must have, at least one. A condition the plugin would refuse - a field no
+ * longer before this one, a value it can no longer have - stays visible here so it can be changed;
+ * the plugin's check says what is wrong at the row.
+ */
+export function ConditionEditor({ value, controllers, lang, onValue }: { value: unknown; controllers: FieldDef[]; lang: string; onValue: (next: unknown) => void }): JSX.Element {
+  const { t } = useTranslation()
+  const named = isObject(value) && typeof value.field === 'string' ? value.field : ''
+  const chosen = showIfOf({ showIf: value })?.equals ?? []
+  const controller = controllers.find((c) => c.name === named)
+  const offered = controller ? controllerValues(controller, lang).map((o) => (controller.type === 'checkbox' ? { ...o, label: t('formsEditor.showIfTickedValue') } : o)) : []
+  const stale = chosen.filter((v) => !offered.some((o) => o.value === v))
+  const pick = (name: string): void => {
+    const c = controllers.find((x) => x.name === name)
+    const first = c ? controllerValues(c, lang)[0]?.value : undefined
+    onValue(name ? showIfValue(name, first ? [first] : []) : undefined)
+  }
+  const toggle = (v: string, on: boolean): void => {
+    const next = on ? [...chosen, v] : chosen.filter((x) => x !== v)
+    // A condition without a value is none; the plugin refuses it, so the last value stays.
+    if (next.length === 0) return
+    onValue(showIfValue(named, [...offered.map((o) => o.value), ...stale].filter((x) => next.includes(x))))
+  }
+  const toggles = controller && (controller.type !== 'checkbox' || stale.length > 0)
+  return (
+    <FieldGroup label={t('formsEditor.showIf')}>
+      <Select aria-label={t('formsEditor.showIfField')} value={named} onChange={(e) => pick(e.target.value)} className="self-start">
+        <option value="">{t('formsEditor.showIfAlways')}</option>
+        {controllers.map((c) => (
+          <option key={c.name} value={c.name}>
+            {fieldLabel(c, lang)}
+          </option>
+        ))}
+        {named && !controller && <option value={named}>{t('formsEditor.showIfMissing', { name: named })}</option>}
+      </Select>
+      {controller?.type === 'checkbox' && !toggles && <span className="text-ui text-text-secondary">{t('formsEditor.showIfTicked')}</span>}
+      {toggles && (
+        <>
+          <span className="text-ui text-text-secondary">{t('formsEditor.showIfValues')}</span>
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+            {[...offered, ...stale.map((v) => ({ value: v, label: t('formsEditor.showIfStale', { value: v }) }))].map((o) => (
+              <Toggle key={o.value} label={o.label} checked={chosen.includes(o.value)} onChange={(on) => toggle(o.value, on)} />
+            ))}
+          </div>
+        </>
+      )}
+      <span className="text-micro text-text-muted">{t('formsEditor.showIfHint')}</span>
+    </FieldGroup>
   )
 }
 

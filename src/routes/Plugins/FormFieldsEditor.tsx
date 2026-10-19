@@ -39,6 +39,7 @@ import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { useProject } from '../ProjectLayout'
 import {
   FIELD_GROUPS,
+  FORMS_LAYOUT_SINCE,
   INPUT_KEYS,
   SAME_SHAPE,
   TEMPLATES,
@@ -61,6 +62,7 @@ import {
   type FormDef
 } from './formsOptions'
 import { DraftInput } from './DraftInput'
+import { NoEffect } from './NoEffect'
 import { TextEditor } from './FormText'
 
 const TYPE_ICONS: Record<FieldType, LucideIcon> = {
@@ -103,6 +105,7 @@ export function FormFieldsEditor({
   lang,
   anonymous,
   fieldMessages,
+  olderPlugin,
   onFields
 }: {
   def: FormDef
@@ -115,6 +118,8 @@ export function FormFieldsEditor({
   anonymous: boolean
   /** The plugin's problems that name a field by its place (`fields[i]`). */
   fieldMessages: PlacedMessage[]
+  /** The installed quartz-forms when it is older than FORMS_LAYOUT_SINCE, else null. */
+  olderPlugin: string | null
   onFields: (next: FieldDef[]) => void
 }): JSX.Element {
   const { t } = useTranslation()
@@ -260,6 +265,7 @@ export function FormFieldsEditor({
   const hasPgpKey = fields.some((f) => f.type === 'pgpKey')
   return (
     <div className="flex flex-col gap-2">
+      {olderPlugin && <NoEffect reason={t('formsEditor.olderPlugin', { since: FORMS_LAYOUT_SINCE, installed: olderPlugin })} />}
       {fields.length === 0 && <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.noFields')}</p>}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} accessibility={{ announcements, screenReaderInstructions }}>
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
@@ -292,6 +298,7 @@ export function FormFieldsEditor({
                     schema={schema}
                     languages={languages}
                     hasPgpKey={hasPgpKey}
+                    olderPlugin={olderPlugin}
                     onField={(next) => {
                       if (next.name !== f.name && open === ids[i]) setOpen(next.name)
                       update(i, next)
@@ -304,7 +311,7 @@ export function FormFieldsEditor({
         </SortableContext>
       </DndContext>
       {adding ? (
-        <AddFieldTiles hasPgpKey={hasPgpKey} onAdd={add} onCancel={() => setAdding(false)} />
+        <AddFieldTiles hasPgpKey={hasPgpKey} withBreaks={!olderPlugin} onAdd={add} onCancel={() => setAdding(false)} />
       ) : (
         <div>
           <Button variant="ghost" onClick={() => setAdding(true)}>
@@ -421,7 +428,18 @@ function SortableField({
   )
 }
 
-function AddFieldTiles({ hasPgpKey, onAdd, onCancel }: { hasPgpKey: boolean; onAdd: (type: FieldType) => void; onCancel: () => void }): JSX.Element {
+function AddFieldTiles({
+  hasPgpKey,
+  withBreaks,
+  onAdd,
+  onCancel
+}: {
+  hasPgpKey: boolean
+  /** False under a plugin older than FORMS_LAYOUT_SINCE, which refuses a page break. */
+  withBreaks: boolean
+  onAdd: (type: FieldType) => void
+  onCancel: () => void
+}): JSX.Element {
   const { t } = useTranslation()
   return (
     <div
@@ -433,10 +451,10 @@ function AddFieldTiles({ hasPgpKey, onAdd, onCancel }: { hasPgpKey: boolean; onA
         }
       }}
     >
-      {(Object.keys(FIELD_GROUPS) as (keyof typeof FIELD_GROUPS)[]).map((group) => (
+      {(Object.keys(FIELD_GROUPS) as (keyof typeof FIELD_GROUPS)[]).filter((group) => withBreaks || FIELD_GROUPS[group].some((type) => type !== 'pageBreak')).map((group) => (
         <FieldGroup key={group} label={t(`formsEditor.fieldGroups.${group}`)}>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-1.5">
-            {FIELD_GROUPS[group].map((type) => {
+            {FIELD_GROUPS[group].filter((type) => withBreaks || type !== 'pageBreak').map((type) => {
               const Icon = TYPE_ICONS[type]
               const disabled = type === 'pgpKey' && hasPgpKey
               return (
@@ -473,6 +491,7 @@ function FieldEditor({
   schema,
   languages,
   hasPgpKey,
+  olderPlugin,
   onField
 }: {
   field: FieldDef
@@ -483,10 +502,15 @@ function FieldEditor({
   schema: NormalizedOptionSchema | null
   languages: string[]
   hasPgpKey: boolean
+  olderPlugin: string | null
   onField: (next: FieldDef) => void
 }): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
+  // Under an older plugin a key of 0.4.0 shows only where it is set, to be taken out, and says it
+  // does nothing there.
+  const offer = (key: string): boolean => !olderPlugin || field[key] !== undefined
+  const tooOld = olderPlugin ? <NoEffect reason={t('formsEditor.needsNewerPlugin', { since: FORMS_LAYOUT_SINCE })} /> : null
   const [nameDraft, setNameDraft] = useState<string | null>(null)
   const problem = nameDraft === null ? null : fieldNameProblem(nameDraft, others)
   const set = (key: string, value: unknown): void => {
@@ -571,7 +595,7 @@ function FieldEditor({
       )}
       {hasLabel && <TextEditor label={t('formsEditor.fieldHint')} hint={t('formsEditor.fieldHintHint')} value={field.hint} languages={languages} onValue={(v) => set('hint', v)} />}
       {hasLabel && <Toggle label={t('formsEditor.required')} checked={field.required === true} onChange={(on) => set('required', on ? true : undefined)} />}
-      {field.type !== 'hidden' && (
+      {field.type !== 'hidden' && offer('width') && (
         <FieldGroup label={t('formsEditor.fieldWidth')}>
           <SegmentedControl
             label={t('formsEditor.fieldWidth')}
@@ -580,12 +604,13 @@ function FieldEditor({
             onChange={(w) => set('width', w === 'full' ? undefined : w)}
           />
           <span className="text-micro text-text-muted">{t('formsEditor.fieldWidthHint')}</span>
+          {tooOld}
         </FieldGroup>
       )}
       {(field.type === 'select' || field.type === 'radio' || field.type === 'checkboxes') && (
         <ChoiceOptions value={field.options} languages={languages} onValue={(v) => set('options', v)} />
       )}
-      {(field.type === 'radio' || field.type === 'checkboxes') && (
+      {(field.type === 'radio' || field.type === 'checkboxes') && offer('layout') && (
         <FieldGroup label={t('formsEditor.optionLayout')}>
           <SegmentedControl
             label={t('formsEditor.optionLayout')}
@@ -593,9 +618,15 @@ function FieldEditor({
             options={(['stacked', 'inline'] as const).map((l) => ({ value: l, label: t(`formsEditor.optionLayouts.${l}`) }))}
             onChange={(l) => set('layout', l === 'inline' ? l : undefined)}
           />
+          {tooOld}
         </FieldGroup>
       )}
-      {field.type !== 'hidden' && field.type !== 'consent' && <ConditionEditor value={field.showIf} controllers={controllers} lang={lang} onValue={(v) => set('showIf', v)} />}
+      {field.type !== 'hidden' && field.type !== 'consent' && offer('showIf') && (
+        <>
+          <ConditionEditor value={field.showIf} controllers={controllers} lang={lang} onValue={(v) => set('showIf', v)} />
+          {tooOld}
+        </>
+      )}
       {variant && (
         <PluginOptionsForm schema={variant} values={field} onChange={(next) => onField((next ?? { type: field.type, name: field.name }) as FieldDef)} explicitEmpty={false} languages={languages} projectPath={project.path} pick={pick} freeKeys={false} root={flat} />
       )}

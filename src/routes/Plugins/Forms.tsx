@@ -42,7 +42,10 @@ import { useIpcQuery } from '../../state/useIpcQuery'
 import { confirmDialog } from '../../utils/confirm'
 import { POSITIONS, buildPositionMap, componentRef, getLayout, placeComponent } from '../LayoutEditor/utils'
 import { useProject } from '../ProjectLayout'
+import { isNewerVersion } from '@shared/semver'
+import { NoEffect } from './NoEffect'
 import {
+  FORMS_LAYOUT_SINCE,
   FORMS_PLUGIN,
   FORMS_READ_AGAINST,
   SECTIONS,
@@ -162,6 +165,9 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
     [project.path, sourceKey]
   )
   const schema = schemaQuery.data?.schema ?? null
+  // The installed version when it is older than the one that knows widths, conditions and steps.
+  const installedVersion = schemaQuery.data?.packageVersion
+  const olderPlugin = installedVersion && isNewerVersion(FORMS_LAYOUT_SINCE, installedVersion) ? installedVersion : null
   const entryOptions = entry?.plugin.options ?? {}
   const codeBlockLang = typeof entryOptions.codeBlockLang === 'string' && entryOptions.codeBlockLang ? entryOptions.codeBlockLang : 'quartz-form'
   const frontmatterKey = typeof entryOptions.frontmatterKey === 'string' && entryOptions.frontmatterKey ? entryOptions.frontmatterKey : 'form'
@@ -420,6 +426,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
             lang={lang}
             saved={savedFlash}
             isLayoutForm={layoutForm === selectedForm[0]}
+            olderPlugin={olderPlugin}
             onDef={(next) => updateOptions((o) => withForm(o, selectedForm[0], next))}
             onRename={(to) => void rename(selectedForm[0], to)}
             onOpenSection={(sid) => setSelected(`section:${sid}`)}
@@ -739,6 +746,7 @@ function FormPanel({
   lang,
   saved,
   isLayoutForm,
+  olderPlugin,
   onDef,
   onRename,
   onLayoutForm,
@@ -761,6 +769,8 @@ function FormPanel({
   lang: FormLanguage
   saved: boolean
   isLayoutForm: boolean
+  /** The installed quartz-forms when it is older than FORMS_LAYOUT_SINCE, else null. */
+  olderPlugin: string | null
   onDef: (next: FormDef) => void
   onRename: (to: string) => void
   onLayoutForm: (on: boolean) => void
@@ -910,6 +920,7 @@ function FormPanel({
           lang={lang}
           anonymous={anonymous}
           fieldMessages={messages.problems.filter((m) => m.field !== undefined)}
+          olderPlugin={olderPlugin}
           onFields={(next) => setKey('fields', next)}
         />
       </PanelSection>
@@ -1114,20 +1125,6 @@ function SlugField({ value, slugs, onCommit }: { value: string; slugs: string[];
         placeholder="danke"
       />
     </Field>
-  )
-}
-
-/** "wirkt nicht" and why, under a switch whose setting does nothing right now (conventions: a word,
- *  not only grey). The badge is hidden from the name; the reason is read as the line it is. */
-function NoEffect({ reason }: { reason: string }): JSX.Element {
-  const { t } = useTranslation()
-  return (
-    <p className="flex flex-wrap items-center gap-1.5 text-micro italic text-text-muted">
-      <span aria-hidden className="not-italic">
-        <Badge>{t('pluginOptions.noEffect')}</Badge>
-      </span>
-      <span>{reason}</span>
-    </p>
   )
 }
 

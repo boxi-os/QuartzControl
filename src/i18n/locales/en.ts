@@ -1418,6 +1418,8 @@ export default {
     fieldWidth: 'Width',
     fieldWidths: { full: 'Full', half: 'Half', third: 'Third' },
     fieldWidthHint: 'Half and third fields stand side by side; in a narrow form they move below each other.',
+    olderPlugin: 'Widths, arrangement, conditions and page breaks come with quartz-forms {{since}}; {{installed}} is installed.',
+    needsNewerPlugin: 'only from quartz-forms {{since}}',
     widthBadge: { half: 'half width', third: 'a third wide' },
     optionLayout: 'Arrangement of the options',
     optionLayouts: { stacked: 'Below each other', inline: 'Side by side' },

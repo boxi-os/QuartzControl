@@ -1423,6 +1423,8 @@ export default {
     fieldWidth: 'Breite',
     fieldWidths: { full: 'Ganz', half: 'Halb', third: 'Drittel' },
     fieldWidthHint: 'Halbe und Drittel-Felder stehen nebeneinander; in einem schmalen Formular rücken sie untereinander.',
+    olderPlugin: 'Breite, Anordnung, Bedingungen und Seitenumbrüche gibt es ab quartz-forms {{since}}; installiert ist {{installed}}.',
+    needsNewerPlugin: 'erst ab quartz-forms {{since}}',
     widthBadge: { half: 'halbe Breite', third: 'ein Drittel breit' },
     optionLayout: 'Anordnung der Möglichkeiten',
     optionLayouts: { stacked: 'Untereinander', inline: 'Nebeneinander' },

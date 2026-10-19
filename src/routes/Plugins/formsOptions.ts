@@ -13,6 +13,12 @@ import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } f
 export const FORMS_PLUGIN = 'quartz-forms'
 /** The version whose source the copies below are read from. */
 export const FORMS_READ_AGAINST = '0.4.0'
+/**
+ * Widths, the arrangement of options, conditions and page breaks came with this version. An older
+ * plugin builds `width`, `layout` and `showIf` without effect and without a word, and refuses a
+ * `pageBreak` as an unknown type (forty-ninth review, Niedrig 10).
+ */
+export const FORMS_LAYOUT_SINCE = '0.4.0'
 
 type Options = Record<string, unknown>
 export type FormDef = Record<string, unknown>

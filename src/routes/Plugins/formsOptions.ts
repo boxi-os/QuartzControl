@@ -450,3 +450,36 @@ export function placeMessage(text: string): PlacedMessage {
   const section = SECTION_OF.find(([re]) => re.test(text))
   return { text, ...(section ? { section: section[1] } : {}), rest: text }
 }
+
+// ── which captcha secrets the relay needs ───────────────────────────────────────────────────────
+
+export interface CaptchaNeeds {
+  /** A relay form uses the captcha set for all forms: `captchaSecret` in config.php. */
+  global: { provider: string } | null
+  /** Relay forms with a provider or site key of their own: `captchaSecrets[<form>]`. */
+  forms: { id: string; provider: string }[]
+}
+
+/**
+ * What the relay must be told to verify the captchas (send.php: `captchaSecrets[<form>]`, else
+ * `captchaSecret`). Only relay forms count, and not anonymous ones (no captcha is loaded there,
+ * resolveForm). A form needs a secret of its own when its `spam` sets a provider or a site key
+ * other than the one for all forms - with the global secret alone the relay would answer every
+ * submission of that form with "captcha".
+ */
+export function captchaNeeds(options: Options | undefined, globalSpam: Options): CaptchaNeeds {
+  const globalProvider = typeof globalSpam.captcha === 'string' ? globalSpam.captcha : 'none'
+  const globalKey = typeof globalSpam.captchaSiteKey === 'string' ? globalSpam.captchaSiteKey : ''
+  let usesGlobal = false
+  const own: { id: string; provider: string }[] = []
+  for (const [id, def] of formsOf(options)) {
+    if (transportKindOf(def, options) !== 'relay' || isAnonymous(def)) continue
+    const spam = isObject(def.spam) ? def.spam : {}
+    const provider = typeof spam.captcha === 'string' ? spam.captcha : globalProvider
+    if (provider === 'none') continue
+    const key = typeof spam.captchaSiteKey === 'string' ? spam.captchaSiteKey : globalKey
+    if (provider === globalProvider && key === globalKey) usesGlobal = true
+    else own.push({ id, provider })
+  }
+  return { global: usesGlobal ? { provider: globalProvider } : null, forms: own }
+}

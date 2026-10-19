@@ -9,6 +9,7 @@ import { announce } from '../../state/announcer'
 import { confirmDialog } from '../../utils/confirm'
 import { useProject } from '../ProjectLayout'
 import { DraftInput } from './DraftInput'
+import type { CaptchaNeeds } from './formsOptions'
 
 /**
  * The quartz-forms relay (plan 1.2, phase 7): where it goes, what it is told, and the upload.
@@ -25,6 +26,7 @@ export function RelaySection({
   transportUrl,
   siteBase,
   neededRecipients,
+  captcha,
   onTransportUrl,
   onChanged
 }: {
@@ -38,6 +40,8 @@ export function RelaySection({
   /** The recipient names the relay forms use, read from the config: the plugin names them only
    *  once it writes a relay, which it does not while the forms have problems. */
   neededRecipients: string[]
+  /** Which captcha secrets the relay needs (captchaNeeds), read from the config. */
+  captcha: CaptchaNeeds
   onTransportUrl: (url: string) => void
   onChanged: () => void
 }): JSX.Element {
@@ -47,7 +51,6 @@ export function RelaySection({
   const [result, setResult] = useState<{ success: boolean; output: string } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
-  const [captchaDraft, setCaptchaDraft] = useState('')
 
   if (error) return <p className="text-micro text-red-600 dark:text-red-400">{error}</p>
   if (!state) return <p className="text-micro text-text-muted">{loading ? t('formsEditor.relay.loading') : ''}</p>
@@ -90,7 +93,12 @@ export function RelaySection({
           : state.currentHash !== state.lastUpload.hash
             ? { tone: 'amber' as const, text: t('formsEditor.relay.statusChanged', { date }) }
             : { tone: 'green' as const, text: t('formsEditor.relay.statusCurrent', { date }) }
-  const canUpload = !!s.targetId && !!s.from.trim() && missing.length === 0 && !state.conflict && state.secrets.storageAvailable && state.hashProblem === undefined
+  const missingCaptcha = [
+    ...(captcha.global && !state.secrets.captchaSecret ? [t('formsEditor.relay.allForms')] : []),
+    ...captcha.forms.filter((f) => !state.secrets.captchaSecrets.includes(f.id)).map((f) => f.id)
+  ]
+  const canUpload =
+    !!s.targetId && !!s.from.trim() && missing.length === 0 && missingCaptcha.length === 0 && !state.conflict && state.secrets.storageAvailable && state.hashProblem === undefined
 
   async function upload(fresh: boolean): Promise<void> {
     setBusy('upload')
@@ -266,38 +274,32 @@ export function RelaySection({
         <span className="text-micro text-text-muted">{t('formsEditor.relay.recipientsHint')}</span>
       </FieldGroup>
 
-      <FieldGroup label={t('formsEditor.relay.captchaSecret')}>
-        <div className="flex flex-wrap items-center gap-2">
-          {state.secrets.captchaSecret && <Badge tone="green">{t('formsEditor.relay.secretSet')}</Badge>}
-          <TextInput
-            type="password"
-            autoComplete="off"
-            aria-label={t('formsEditor.relay.captchaSecret')}
-            value={captchaDraft}
-            onChange={(e) => setCaptchaDraft(e.target.value)}
-            className="min-w-0 flex-1"
+      {(captcha.global || state.secrets.captchaSecret) && (
+        <SecretRow
+          label={t('formsEditor.relay.captchaSecret')}
+          hint={captcha.global ? t('formsEditor.relay.captchaSecretHint', { provider: captcha.global.provider }) : t('formsEditor.relay.captchaUnused')}
+          isSet={state.secrets.captchaSecret}
+          needed={!!captcha.global}
+          disabled={!state.secrets.storageAvailable}
+          onSave={(value) => void saveSecrets({ projectId: project.id, captchaSecret: value }, t('formsEditor.relay.secretSetAnnounce'))}
+          onRemove={() => void saveSecrets({ projectId: project.id, captchaSecret: null }, t('formsEditor.relay.secretRemovedAnnounce'))}
+        />
+      )}
+      {[...new Set([...captcha.forms.map((f) => f.id), ...state.secrets.captchaSecrets])].map((id) => {
+        const need = captcha.forms.find((f) => f.id === id)
+        return (
+          <SecretRow
+            key={id}
+            label={t('formsEditor.relay.captchaSecretFor', { form: id })}
+            hint={need ? t('formsEditor.relay.captchaSecretForHint', { provider: need.provider }) : t('formsEditor.relay.captchaUnused')}
+            isSet={state.secrets.captchaSecrets.includes(id)}
+            needed={!!need}
             disabled={!state.secrets.storageAvailable}
+            onSave={(value) => void saveSecrets({ projectId: project.id, captchaSecrets: { [id]: value } }, t('formsEditor.relay.secretSetAnnounce'))}
+            onRemove={() => void saveSecrets({ projectId: project.id, captchaSecrets: { [id]: null } }, t('formsEditor.relay.secretRemovedAnnounce'))}
           />
-          <Button
-            disabled={!captchaDraft.trim() || !state.secrets.storageAvailable}
-            onClick={() => {
-              const value = captchaDraft
-              setCaptchaDraft('')
-              void saveSecrets({ projectId: project.id, captchaSecret: value }, t('formsEditor.relay.secretSetAnnounce'))
-            }}
-          >
-            {t('formsEditor.relay.saveSecret')}
-          </Button>
-          {state.secrets.captchaSecret && (
-            <IconButton
-              icon={Trash2}
-              title={t('formsEditor.relay.removeSecret')}
-              onClick={() => void saveSecrets({ projectId: project.id, captchaSecret: null }, t('formsEditor.relay.secretRemovedAnnounce'))}
-            />
-          )}
-        </div>
-        <span className="text-micro text-text-muted">{t('formsEditor.relay.captchaSecretHint')}</span>
-      </FieldGroup>
+        )
+      })}
 
       <FieldGroup label={t('formsEditor.relay.mailer')}>
         <SegmentedControl
@@ -340,7 +342,7 @@ export function RelaySection({
             {t('formsEditor.relay.export')}
           </Button>
         </div>
-        {!canUpload && <span className="text-micro text-text-muted">{t('formsEditor.relay.cannotUpload', { reasons: blockers(state, missing, t).join(' ') })}</span>}
+        {!canUpload && <span className="text-micro text-text-muted">{t('formsEditor.relay.cannotUpload', { reasons: blockers(state, missing, missingCaptcha, t).join(' ') })}</span>}
         {result && (
           <pre aria-live="polite" className={`max-h-48 overflow-auto whitespace-pre-wrap rounded-md bg-ink/[0.04] p-2 font-mono text-xs dark:bg-ink/10 ${result.success ? 'text-text' : 'text-red-600 dark:text-red-400'}`}>
             {(result.success ? t('formsEditor.relay.done') + '\n' : '') + result.output}
@@ -351,12 +353,13 @@ export function RelaySection({
   )
 }
 
-function blockers(state: RelayState, missing: string[], t: TFunction): string[] {
+function blockers(state: RelayState, missing: string[], missingCaptcha: string[], t: TFunction): string[] {
   const out: string[] = []
   if (!state.secrets.storageAvailable) out.push(t('formsEditor.relay.blockStorage'))
   if (!state.settings.targetId) out.push(t('formsEditor.relay.blockTarget'))
   if (!state.settings.from.trim()) out.push(t('formsEditor.relay.blockFrom'))
   if (missing.length) out.push(t('formsEditor.relay.blockRecipients', { names: missing.join(', ') }))
+  if (missingCaptcha.length) out.push(t('formsEditor.relay.blockCaptcha', { names: missingCaptcha.join(', ') }))
   if (state.conflict) out.push(t('formsEditor.relay.blockConflict'))
   if (state.hashProblem !== undefined) out.push(t('formsEditor.relay.blockProblems'))
   return out
@@ -508,5 +511,59 @@ export function RelayRecipientField({
       )}
       <span className="text-micro text-text-muted">{t('formsEditor.recipientHint.relay')}</span>
     </div>
+  )
+}
+
+/** A secret the relay needs: whether it is set (never its value), a field to set or replace it, a bin to remove it. */
+function SecretRow({
+  label,
+  hint,
+  isSet,
+  needed,
+  disabled,
+  onSave,
+  onRemove
+}: {
+  label: string
+  hint: string
+  isSet: boolean
+  needed: boolean
+  disabled: boolean
+  onSave: (value: string) => void
+  onRemove: () => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const [draft, setDraft] = useState('')
+  return (
+    <FieldGroup label={label}>
+      <div className="flex flex-wrap items-center gap-2">
+        {needed ? (
+          <Badge tone={isSet ? 'green' : 'red'}>{isSet ? t('formsEditor.relay.secretSet') : t('formsEditor.relay.secretMissing')}</Badge>
+        ) : (
+          isSet && <Badge>{t('formsEditor.relay.secretSet')}</Badge>
+        )}
+        <TextInput
+          type="password"
+          autoComplete="off"
+          aria-label={label}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          className="min-w-0 flex-1"
+          disabled={disabled}
+        />
+        <Button
+          disabled={!draft.trim() || disabled}
+          onClick={() => {
+            const value = draft
+            setDraft('')
+            onSave(value)
+          }}
+        >
+          {t('formsEditor.relay.saveSecret')}
+        </Button>
+        {isSet && <IconButton icon={Trash2} title={t('formsEditor.relay.removeSecretNamed', { name: label })} onClick={onRemove} />}
+      </div>
+      <span className="text-micro text-text-muted">{hint}</span>
+    </FieldGroup>
   )
 }

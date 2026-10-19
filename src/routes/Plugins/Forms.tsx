@@ -69,6 +69,7 @@ import {
   transportKindOf,
   usesTemplateFields,
   placeMessage,
+  captchaNeeds,
   withForm,
   type EncryptionMode,
   type PlacedMessage,
@@ -462,6 +463,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
               source={entry.plugin.source}
               transportUrl={isObject(options.transport) && typeof options.transport.url === 'string' ? options.transport.url : ''}
               siteBase={siteBaseOf(config)}
+              captcha={captchaNeeds(options, resolvedGlobal(schema, options, 'spam'))}
               neededRecipients={[
                 ...new Set(
                   forms

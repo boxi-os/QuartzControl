@@ -57,7 +57,7 @@ export const TEMPLATES: Record<FormTemplate, FormDef> = {
         type: 'email',
         name: 'email',
         label: tx('E-mail', 'E-Mail'),
-        hint: tx('Only if you want a reply.', 'Nur, wenn Sie eine Antwort möchten.'),
+        hint: tx('Only if you want a reply.', 'Nur, wenn du eine Antwort möchtest.'),
         autocomplete: 'email'
       },
       { type: 'textarea', name: 'message', label: tx('Message', 'Nachricht'), required: true },
@@ -116,7 +116,7 @@ export const TEMPLATES: Record<FormTemplate, FormDef> = {
       {
         type: 'radio',
         name: 'usage',
-        label: tx('How often do you visit this site?', 'Wie oft besuchen Sie diese Website?'),
+        label: tx('How often do you visit this site?', 'Wie oft besuchst du diese Website?'),
         required: true,
         options: [
           { value: 'first', label: tx('First time', 'Zum ersten Mal') },
@@ -127,14 +127,14 @@ export const TEMPLATES: Record<FormTemplate, FormDef> = {
       {
         type: 'checkboxes',
         name: 'topics',
-        label: tx('Which topics interest you?', 'Welche Themen interessieren Sie?'),
+        label: tx('Which topics interest you?', 'Welche Themen interessieren dich?'),
         options: [
           { value: 'news', label: tx('News', 'Neuigkeiten') },
           { value: 'guides', label: tx('Guides', 'Anleitungen') },
           { value: 'background', label: tx('Background', 'Hintergrund') }
         ]
       },
-      { type: 'scale', name: 'satisfaction', label: tx('How satisfied are you overall?', 'Wie zufrieden sind Sie insgesamt?'), min: 1, max: 5 },
+      { type: 'scale', name: 'satisfaction', label: tx('How satisfied are you overall?', 'Wie zufrieden bist du insgesamt?'), min: 1, max: 5 },
       { type: 'textarea', name: 'comment', label: tx('Anything else?', 'Noch etwas?'), rows: 3 }
     ]
   }

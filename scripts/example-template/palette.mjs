@@ -332,7 +332,49 @@ export function controlEdgePairs() {
   return rows.map((row) => ({ ...row, ok: row.ratio >= row.min }))
 }
 
+/* ------------------------------------------------------ quartz-forms, read from the file */
+
+/**
+ * The form's colours: which token each `--quartz-forms-*` property gets is read from
+ * plugin-forms.scss, its value from the tokens - the same split as the callouts. A property the
+ * file no longer assigns is an error, not a skipped row.
+ *
+ * The button's hover ground is `tertiary` in the stylesheet itself, not a property, and is
+ * measured as the fixed pair it is.
+ */
+export function formPairs() {
+  const source = readFileSync(join(import.meta.dirname, 'styles', 'plugin-forms.scss'), 'utf-8')
+  const assigned = {}
+  for (const [, name, value] of source.matchAll(/--quartz-forms-([\w-]+):\s*var\(--([\w-]+)\);/g)) assigned[name] = value
+  const resolve = (name, mode) => {
+    const value = assigned[name]
+    if (!value) throw new Error(`plugin-forms.scss no longer assigns --quartz-forms-${name}`)
+    if (value.startsWith('tpl-')) return tokenColour(value, mode)
+    const colour = PALETTE[mode][value]
+    if (!colour) throw new Error(`--quartz-forms-${name} is var(--${value}), and the palette has no such colour`)
+    return colour
+  }
+  const rows = []
+  for (const [mode, colours] of Object.entries(PALETTE)) {
+    const field = resolve('field-bg', mode)
+    const pairs = [
+      { fg: resolve('error', mode), bg: colours.light, min: 4.5, what: 'form error text on the page' },
+      { fg: resolve('error', mode), bg: field, min: 4.5, what: 'form error text on a field' },
+      { fg: resolve('success', mode), bg: colours.light, min: 4.5, what: 'form success text on the page' },
+      { fg: resolve('button-fg', mode), bg: resolve('button-bg', mode), min: 4.5, what: 'form button text' },
+      { fg: resolve('button-fg', mode), bg: colours.tertiary, min: 4.5, what: 'hovered form button text' },
+      { fg: resolve('border', mode), bg: colours.light, min: 3.0, what: 'edge of a form field on the page' },
+      { fg: resolve('border', mode), bg: field, min: 3.0, what: 'edge of a form field against its own ground' }
+    ]
+    for (const pair of pairs) {
+      const ratio = contrast(pair.fg, pair.bg, colours.light)
+      rows.push({ mode, ...pair, ratio, ok: ratio >= pair.min })
+    }
+  }
+  return rows
+}
+
 /** Everything this template puts on top of something else, in one list. */
 export function checkAll() {
-  return [...checkContrast(), ...calloutPairs(), ...syntaxPairs(), ...controlEdgePairs()]
+  return [...checkContrast(), ...calloutPairs(), ...syntaxPairs(), ...controlEdgePairs(), ...formPairs()]
 }

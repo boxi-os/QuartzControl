@@ -1,0 +1,186 @@
+// quartz-forms: the form, its fields, the notes above it, the buttons, the status line, the steps
+// and the demo transport's output - in this template's tokens.
+//
+// The plugin ships one stylesheet of its own (forms.scss) with every tunable value as a
+// `--quartz-forms-*` custom property, set on `.quartz-form`. The first block hands each of them a
+// token of this template, so a palette change reaches the form the way it reaches everything else.
+// Everything after it is what those properties cannot say: the 44px target, the control edge, the
+// type scale, explicit disabled colours. Where a rule here repeats a selector of the plugin's, it
+// does so at the same specificity and wins by loading later (custom.scss comes after the
+// plugins' own styles).
+//
+// The colours below are measured in palette.mjs (`formPairs`), which reads this block rather than
+// keeping a copy of it: error and success text on the page and on a field, the button's text on
+// its ground, the field's edge against the page and the field.
+
+.quartz-form {
+  --quartz-forms-gap: var(--tpl-space-md);
+  --quartz-forms-radius: var(--tpl-radius-md);
+  --quartz-forms-border: var(--tpl-rule-control);
+  --quartz-forms-border-focus: var(--tpl-focus-color);
+  --quartz-forms-field-bg: var(--light);
+  --quartz-forms-error: var(--tpl-callout-danger);
+  --quartz-forms-success: var(--tpl-positive);
+  --quartz-forms-button-bg: var(--secondary);
+  --quartz-forms-button-fg: var(--light);
+  // The text column, not a narrower one of the form's own: the fields line up with the paragraphs
+  // above and below them. A form in a sidebar is narrower anyway.
+  --quartz-forms-max-width: 100%;
+
+  margin-block: var(--tpl-space-lg);
+  line-height: var(--tpl-leading-normal);
+}
+
+/* ------------------------------------------------------------------------ title and notes */
+
+// The form's heading is an h3 inside the article and takes content.scss's rhythm, minus the
+// space above it: the form's own margin already separates it from the text.
+.quartz-form .quartz-form__title {
+  margin-block: 0;
+}
+
+.quartz-form .quartz-form__description,
+.quartz-form .quartz-form__note,
+.quartz-form .quartz-form__hint,
+.quartz-form .quartz-form__progress,
+.quartz-form .quartz-form__scale-caption {
+  font-size: var(--tpl-text-sm);
+  line-height: var(--tpl-leading-snug);
+}
+
+// The two notes that change what the visitor should expect - "anonymous" and "sends nothing" - are
+// an aside, not a line of meta text: the quiet tint and the accent bar the callouts and the
+// blockquote use.
+.quartz-form .quartz-form__note--anonymous,
+.quartz-form .quartz-form__note--demo {
+  padding: var(--tpl-space-xs) var(--tpl-space-sm);
+  color: var(--darkgray);
+  background: var(--tpl-surface-tint);
+  border-inline-start: var(--tpl-accent-bar) solid var(--secondary);
+  border-radius: var(--tpl-radius-sm);
+}
+
+// The step count reads as a label above the step, like the micro-labels above the panels.
+.quartz-form .quartz-form__progress {
+  font-family: var(--font-interface);
+  text-transform: uppercase;
+  letter-spacing: var(--tpl-tracking-label);
+  font-weight: 700;
+}
+
+/* -------------------------------------------------------------------------------- fields */
+
+.quartz-form .quartz-form__label,
+.quartz-form legend.quartz-form__label {
+  font-family: var(--font-interface);
+}
+
+// The plugin's selectors, at its specificity plus `.quartz-form`, so this wins over both the
+// plugin and content.scss's article rules.
+.quartz-form {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    // A finger's target, like every control of this template.
+    min-height: var(--tpl-target);
+    padding: var(--tpl-space-xs) var(--tpl-space-sm);
+    border-width: var(--tpl-rule-width);
+    transition: border-color var(--tpl-motion);
+
+    &::placeholder {
+      color: var(--gray);
+    }
+
+    &:hover {
+      border-color: var(--secondary);
+    }
+
+    // The template's focus ring, not a second one with its own numbers.
+    &:focus-visible {
+      outline: var(--tpl-focus-width) solid var(--tpl-focus-color);
+      outline-offset: var(--tpl-focus-offset);
+    }
+
+    &[aria-invalid="true"] {
+      border-color: var(--quartz-forms-error);
+    }
+  }
+
+  textarea {
+    line-height: var(--tpl-leading-normal);
+  }
+
+  .quartz-form__error,
+  .quartz-form__key-status {
+    font-size: var(--tpl-text-sm);
+    line-height: var(--tpl-leading-snug);
+  }
+}
+
+/* ------------------------------------------------------------------------------- buttons */
+
+.quartz-form .quartz-form__button {
+  min-height: var(--tpl-target);
+  padding-inline: var(--tpl-space-md);
+  font-family: var(--font-interface);
+  font-size: var(--tpl-text-sm);
+  border-radius: var(--tpl-radius-md);
+  transition:
+    background-color var(--tpl-motion),
+    color var(--tpl-motion);
+
+  // The hovered link's colour as the hovered button's ground; both are measured as text colours
+  // against `light`, which is the button's text here.
+  &:hover:not(:disabled) {
+    background: var(--tertiary);
+  }
+
+  &:focus-visible {
+    outline: var(--tpl-focus-width) solid var(--tpl-focus-color);
+    outline-offset: var(--tpl-focus-offset);
+  }
+
+  // "Back", "Try again": the card surface with a control's edge, like the header's icon buttons.
+  &--secondary {
+    color: var(--dark);
+    background: var(--tpl-surface);
+    border: var(--tpl-rule-width) solid var(--tpl-rule-control);
+
+    &:hover:not(:disabled) {
+      color: var(--dark);
+      background: var(--tpl-surface-tint);
+      border-color: var(--secondary);
+    }
+  }
+
+  // Explicit colours instead of the plugin's opacity: a faded button is a button with too little
+  // contrast. Meta text on a card (gray on lightgray) is measured at 4.5.
+  &:disabled {
+    opacity: 1;
+    color: var(--gray);
+    background: var(--tpl-surface);
+  }
+}
+
+/* ------------------------------------------------------------------------ status and demo */
+
+.quartz-form .quartz-form__status {
+  font-size: var(--tpl-text-sm);
+  line-height: var(--tpl-leading-snug);
+}
+
+// What the demo transport would have sent: a code block in all but the copy button.
+.quartz-form .quartz-form__demo {
+  padding: var(--tpl-space-sm);
+  font-size: var(--tpl-text-sm);
+  line-height: var(--tpl-leading-snug);
+  color: var(--darkgray);
+  background: var(--tpl-surface-code);
+  border: var(--tpl-rule-width) solid var(--tpl-rule);
+  border-radius: var(--tpl-radius-md);
+}

@@ -23,6 +23,7 @@
 //
 // Twelve files since 1.1, 31 before: one for the layout, one for the content, one per category of
 // component, one for the callouts and one for each of the three plugins this template brings.
+// Thirteen since 1.2, with quartz-forms, which it styles without bringing it.
 // Every file names, section by section, the old stylesheet its rules came from. Putting them
 // together moved several sections in the load order - the footer now loads with the layout, the
 // breadcrumbs with the navigation, the search results with the header, the language switcher
@@ -56,6 +57,10 @@ export const STYLE_ORDER = [
 
   // the plugin this template brings with it
   'plugin-layout-box',
+  // quartz-forms is styled although no variant installs it (yet): whoever adds it gets forms that
+  // already look like the rest of the site, the same promise the template makes for the
+  // components it switches off.
+  'plugin-forms',
 
   // last on purpose: several of these have to beat a decision made further up
   'a11y'

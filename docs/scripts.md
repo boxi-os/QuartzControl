@@ -93,8 +93,9 @@ Wörtlich aus `CLAUDE.md` hierher gezogen am 2026-10-16, damit `CLAUDE.md` nicht
   Vorher-Stand am 2026-10-07 an gui-test (alte Plugins-Seite): 280 Optionen, 131 als Feld, 6 als
   Text, 143 unsichtbar; nach P1 von 1.1: 277, 267 / 10 / 0. Existiert, weil ein fehlendes Feld auf
   keinem Bildschirm als Fehler erscheint
-- `npm run check:plugin-copies -- <projektpfad> [--alle]` — die Abschriften der drei
-  Plugin-Editoren (`navigationVariants.ts`, `layoutBoxes.ts`, `multilanguageOptions.ts`) gegen die
+- `npm run check:plugin-copies -- <projektpfad> [--alle]` — die Abschriften der vier
+  Plugin-Editoren (`navigationVariants.ts`, `layoutBoxes.ts`, `multilanguageOptions.ts`,
+  `formsOptions.ts`) gegen die
   Plugins, die ein Projekt installiert hat: lädt deren Funktionen aus `.quartz/plugins/<name>/src`
   und die der App, beide per esbuild, und gibt beiden dieselben Eingaben — `resolveOptions` gegen
   die Leser der App, für quartz-navigations die echte Komponente je Art und Mobil-Darstellung gegen
@@ -105,6 +106,13 @@ Wörtlich aus `CLAUDE.md` hierher gezogen am 2026-10-16, damit `CLAUDE.md` nicht
   (641 Fälle; seit quartz-layout-box 0.4.1 645, die Abschrift fragt dort die installierte
   Version; seit dem 2026-10-10 dazu die acht Platzhalter, die „Zusätzliche Inhalte“ anbietet,
   gegen `placeholders.ts` in beide Richtungen). Ein fehlendes Plugin zählt als „nicht geprüft“
+  Seit 1.2 (2026-10-19) auch quartz-forms: die vier Vorlagen, Kennungs- und Feldnamen-Regel,
+  reservierte Namen, `isPersonalField`, das Zusammenlegen mit Vorlage und globalem Versand und die
+  Erkennung einer Einbindung (`shared/formUsages.ts`), dazu Quartz' Slug-Regel aus dem
+  `@quartz-community/utils` des Projekts gegen `quartzSlug`. Beim ersten Lauf (gui-test, 0.2.0)
+  365 + 16 Fälle, alle gleich; Gegenprobe: ein geänderter Vorlagentext und `&` → `-und-` wurden
+  beide gemeldet. Was das Plugin über eine Definition urteilt, steht hier nicht: Das fragt der
+  Reiter das Plugin selbst (`dist/cli.js check`).
 - `npm run check:inline-svg -- [projektpfad]` — der SVG-Bereiniger (`src/utils/inlineSvg.ts`, „Als Code einfügen“
   im Snippet-Editor) gegen 38 böse Eingaben, ein gewöhnliches Icon, zwei Icons mit denselben Ids auf einer Seite und (seit dem vierundvierzigsten Review) vier Schreibweisen eines Verweises, die das Präfix der Ids mitziehen muss: jedes Ergebnis in Chrome als
   HTML in eine Box, wie die Website es rendert — und seit dem dreiundvierzigsten Review auch durch

@@ -25,7 +25,7 @@ startest oder seine Ausgabe deutest.**
 - `npm run check:stylesheet-consolidation` — „Zusammenlegen“ der Stile-Seite gegen die Vorlagen-Geschichte
 - `npm run check:plugin-names -- [projekt]` — Plugin-Namen gegen Quartz' `extractPluginName`
 - `npm run check:option-schema -- <projekt>` — Schema-Leser der Plugin-Optionen gegen echte Plugins
-- `npm run check:plugin-copies -- <projekt>` — Abschriften der drei Plugin-Editoren gegen die installierten Plugins
+- `npm run check:plugin-copies -- <projekt>` — Abschriften der vier Plugin-Editoren gegen die installierten Plugins
 - `npm run check:inline-svg -- [projekt]` — SVG-Bereiniger gegen böse Eingaben in Chrome (braucht Chrome)
 - `npm run check:core-update` — Plan des Core-Updates für `package.json`/Lockfile
 - `npm run check:i18n` — `t()`/`mainT()`-Schlüssel gegen `de.ts`/`en.ts`, Parität, ungenutzte Schlüssel

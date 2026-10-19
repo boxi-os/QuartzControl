@@ -58,6 +58,11 @@ Begründung.
   (`placeholders`, `html`). Die `x-quartz-*`-Liste ist ein Format und steht zweimal (Kopf des Lesers,
   `docs/plugin-config-schema.md`); wer sie ändert, ändert beide. Gegenprobe:
   `check:option-schema`.
+- **Was ein eigenes Plugin über eine Definition urteilt, fragt die App das Plugin — im
+  Kindprozess, über seine Kommandozeile.** quartz-forms: `dist/cli.js` (`check`, `key`, `relay`)
+  über `formsService`, Geheimnisse und eingefügte Schlüssel in der Umgebung, nie in argv.
+  Abgeschrieben (`formsOptions.ts`, geprüft von `check:plugin-copies`) wird nur, was die Oberfläche
+  vor jeder Antwort braucht. Antwortet das Plugin nicht, heißt es „konnte nicht geprüft werden“.
 - **Eine Datei, die ein Werkzeug erzeugt, wird nicht gemergt, sondern neu erzeugt.** Beim
   Core-Update gehören `package.json`/Lockfile npm: Plan aus `shared/packageJsonDeps.ts`, Quartz'
   Fassung nehmen, eigene Pakete per npm zurückschreiben. Was der Plan nicht nachspielen kann,
@@ -257,6 +262,9 @@ Begründung.
   gegen die Anfrage gehalten; was fehlt, wird genannt.
 - **Ein Prädikat, das für einen Lauf geschrieben ist, wird als Aussagesatz nicht wahr.** Was ein
   Prüfskript nicht sehen kann, gehört in `docs/release.md`.
+- **Was einen Fehler beheben soll, hängt nicht an der Antwort, die der Fehler verhindert.** Der
+  Relay-Abschnitt nimmt Adresse, Origin und Empfängernamen aus der Config, nicht aus dem
+  Relay-Lauf, der bei Problemen nichts schreibt.
 - **Ein Ausweg, den eine Meldung nennt, wird an der Oberfläche gemessen, nicht am Kanal darunter.**
   Ein Kanal, der einen Satz antwortet, braucht einen Aufrufer, der ihn liest.
 - **Zwei Arten zu scheitern bekommen zwei Antworten** („fehlt“ ≠ „kaputt“, getrennt am Ort des

@@ -147,6 +147,21 @@ Projektwurzel.
   eine Notiz, die das Formular zählt (vierzigstes Review, Befund 7), und eines, das wegfällt oder
   seine Bedeutung ändert, bricht ein veröffentlichtes Plugin. Messungen in
   [`plugins-and-config.md`](plugins-and-config.md).
+- **Was ein eigenes Plugin über eine Definition urteilt, fragt die App das Plugin — im
+  Kindprozess, über seine Kommandozeile.** Seit 1.2 (2026-10-19, Reiter Formulare). Die drei
+  älteren Editoren schreiben ihr Plugin ab und halten die Abschrift mit `check:plugin-copies`
+  gegen das Original. Für quartz-forms reicht das nicht: Seine Prüfung (`validate.ts`, gut 500
+  Zeilen, Muster gegen PCRE, Schlüssel gegen OpenPGP) ist das, was den Build stoppt, und eine
+  Abschrift davon wäre eine zweite Meinung, die abweichen kann. quartz-forms 0.2.0 bringt deshalb
+  `dist/cli.js` mit (`yaml` eingebündelt, läuft aus `.quartz/plugins/quartz-forms` ohne npm), und
+  `formsService` ruft es mit der Node-Laufzeit der App im Kindprozess - im Hauptprozess dürfen nur
+  sass und globby aus einem Projekt laufen. Ein Geheimnis (die Werte des Relay-Betreibers, ein
+  eingefügter Schlüssel) geht über die Umgebung des Kindes, nie über argv, wo jede Prozessliste es
+  zeigt. Abgeschrieben wird nur, was die Oberfläche vor jeder Antwort braucht: Vorlagen,
+  Namensregeln, reservierte Namen, `isPersonalField`, das Zusammenlegen mit der Vorlage
+  (`formsOptions.ts`), und auch das steht unter `check:plugin-copies`. Antwortet das Plugin nicht
+  (ältere Version ohne Kommandozeile, kein Node, Ausgabe ohne JSON), sagt der Reiter „konnte nicht
+  geprüft werden“ mit dem Grund, nie „keine Probleme“.
 - **Eine Datei, die ein Werkzeug erzeugt, wird nicht gemergt, sondern neu erzeugt.** `package.json`
   und `package-lock.json` gehören npm, und beim Core-Update schreiben beide Seiten sie: Quartz'
   `3dff48b` hob alle Plugin-Versionen an, die Projekte hatten eigene Theme-Pakete darin. Uncommittet
@@ -911,6 +926,16 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   nicht sehen kann, gehört in `docs/release.md`: `check:handbook` prüft Blockzitate, also sah es
   nicht, dass das Handbuch drei Prüfzustände aufzählt, während die Updates-Seite vier zeigt und
   genau dieses Kapitel im Kopf verlinkt.
+- **Was einen Fehler beheben soll, hängt nicht an der Antwort, die der Fehler verhindert.**
+  Gefunden am 2026-10-19 beim Messen des Relay-Abschnitts im Reiter Formulare (1.2, Phase 7): Den
+  Vorschlag für die Adresse von send.php, den Origin der Website und die Empfängernamen las der
+  Abschnitt zuerst aus der Antwort von `dist/cli.js relay`. Ein neues Formular hat aber noch keine
+  Relay-Adresse, das ist ein Problem der Definition, und bei Problemen schreibt quartz-forms gar
+  nichts und nennt weder Origin noch Empfänger. Der Abschnitt bot damit genau den Knopf nicht an,
+  der das Problem behoben hätte („eintragen“ fehlte, die Adresse für „owner“ ließ sich nicht
+  setzen). Jetzt kommen alle drei aus der Config (`baseUrl` samt Pfad, die `recipient` der
+  Relay-Formulare); der Lauf liefert nur noch, was es ohne ihn nicht gibt: den Hash dessen, was das
+  Relay erführe.
 - **Ein Ausweg, den eine Meldung nennt, wird an der Oberfläche gemessen, nicht am Kanal darunter.**
   „Behebe den Fehler oben und starte das Update erneut“ stand vier Runden lang über einem Button,
   den derselbe Lauf deaktiviert hatte — HEAD enthielt den Merge, der Status hieß „Aktuell“. Gesehen

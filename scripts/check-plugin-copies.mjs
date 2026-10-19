@@ -1,12 +1,12 @@
-// Die Abschriften der drei Plugin-Editoren gegen die Plugins, die ein Projekt wirklich installiert hat.
+// Die Abschriften der vier Plugin-Editoren gegen die Plugins, die ein Projekt wirklich installiert hat.
 //
 //   npm run check:plugin-copies -- <projektpfad> [--alle]
 //
 // `--alle` nennt jede Abweichung statt der ersten zwölf je Prüfung.
 //
-// Die Reiter Navigationen, Zusätzliche Inhalte und Mehrsprachigkeit kennen ihr Plugin aus einer
-// Abschrift seines Codes (src/routes/Plugins/navigationVariants.ts, layoutBoxes.ts,
-// multilanguageOptions.ts), gelesen gegen eine Version (`*_READ_AGAINST`). Die App sagt am Reiter,
+// Die Reiter Navigationen, Zusätzliche Inhalte, Mehrsprachigkeit und Formulare kennen ihr Plugin aus
+// einer Abschrift seines Codes (src/routes/Plugins/navigationVariants.ts, layoutBoxes.ts,
+// multilanguageOptions.ts, formsOptions.ts), gelesen gegen eine Version (`*_READ_AGAINST`). Die App sagt am Reiter,
 // wenn eine andere installiert ist (ReadAgainstNote) — aber nicht, ob die Abschrift dann noch
 // stimmt, und auch nicht, ob sie gegen die gelesene Version je gestimmt hat. Dieses Skript fragt
 // beides am Code selbst: Es lädt die Funktionen des installierten Plugins aus
@@ -27,6 +27,13 @@
 //                         Dateien ihren eigenen Pfad enthalten, je Seitensprache; dagegen
 //                         `boxContentKind` und `snippetRefs` — Text aus der Konfiguration oder
 //                         welche Datei aus welchem Ordner
+//   quartz-forms          die Vorlagen (templateOf), Kennungs- und Feldnamen-Regel, reservierte
+//                         Namen, isPersonalField, das Zusammenlegen mit Vorlage und globalem
+//                         Versand (resolveOptions gegen effectiveForm), und die Erkennung einer
+//                         Einbindung (frontmatterForms, FORM_PLACEHOLDER gegen
+//                         shared/formUsages.ts); dazu Quartz' Slug-Regel aus dem Projekt
+//                         (@quartz-community/utils) gegen quartzSlug. Was das Plugin über eine
+//                         Definition urteilt, schreibt die App nicht ab: sie fragt es (dist/cli.js)
 //
 // Ein Plugin, das im Projekt fehlt, wird nicht geprüft, und das Skript sagt es („kann nicht prüfen“
 // ist nicht „alles gut“). Rückgabewert 1, sobald eine Antwort abweicht.
@@ -451,6 +458,146 @@ function tally(label, cases, diffs) {
     }
     if (!source.includes(`"${copy.LAYOUT_BOX_FRONTMATTER_PLACEHOLDER}"`)) placeholderDiffs.push(`${copy.LAYOUT_BOX_FRONTMATTER_PLACEHOLDER}: das Plugin nennt dieses Präfix nicht mehr`)
     tally('Platzhalter (LAYOUT_BOX_PLACEHOLDERS)', offered.length, placeholderDiffs)
+  }
+}
+
+// ─── quartz-forms ───────────────────────────────────────────────────────────────────────────────
+
+{
+  const copy = await load(path.join(APP_DIR, 'src/routes/Plugins/formsOptions.ts'), 'app-forms')
+  const usages = await load(path.join(APP_DIR, 'shared/formUsages.ts'), 'app-form-usages')
+  const dir = section(copy.FORMS_PLUGIN, copy.FORMS_READ_AGAINST)
+  if (dir) {
+    const templates = await load(path.join(dir, 'src/templates/index.ts'), 'plugin-forms-templates')
+    const validate = await load(path.join(dir, 'src/validate.ts'), 'plugin-forms-validate')
+    const options = await load(path.join(dir, 'src/options.ts'), 'plugin-forms-options')
+    const transformer = await load(path.join(dir, 'src/transformer.ts'), 'plugin-forms-transformer')
+
+    // Die Vorlagen, Wort für Wort.
+    {
+      const diffs = []
+      const names = templates.templateNames
+      if (show([...names].sort()) !== show([...copy.TEMPLATE_NAMES].sort())) diffs.push(`Namen: App ${show(copy.TEMPLATE_NAMES)}, Plugin ${show(names)}`)
+      for (const name of names) {
+        const theirs = templates.templateOf(name)
+        const ours = copy.TEMPLATES[name]
+        if (show(theirs) !== show(ours)) diffs.push(`${name}: App ${show(ours).slice(0, 120)}…, Plugin ${show(theirs).slice(0, 120)}…`)
+      }
+      tally('Vorlagen', names.length, diffs)
+    }
+
+    // Kennung, Feldname, reservierte Namen.
+    {
+      const diffs = []
+      if (copy.FORM_ID.source !== validate.FORM_ID.source) diffs.push(`FORM_ID: App ${copy.FORM_ID}, Plugin ${validate.FORM_ID}`)
+      if (copy.FIELD_NAME.source !== validate.FIELD_NAME.source) diffs.push(`FIELD_NAME: App ${copy.FIELD_NAME}, Plugin ${validate.FIELD_NAME}`)
+      const theirs = [...validate.RESERVED_NAMES].sort()
+      const ours = [...copy.RESERVED_NAMES].sort()
+      if (show(theirs) !== show(ours)) diffs.push(`RESERVED_NAMES: App ${show(ours)}, Plugin ${show(theirs)}`)
+      const probes = ['contact', 'a', '1x', '-x', 'Contact', 'x_y', 'x y', 'form', 'pageTitle', 'name', 'Name1', '_honey', 'a-b']
+      for (const p of probes) {
+        const okId = copy.formIdProblem(p, []) === null
+        if (okId !== validate.FORM_ID.test(p)) diffs.push(`Kennung ${show(p)}: App ${okId}, Plugin ${validate.FORM_ID.test(p)}`)
+        const okName = copy.fieldNameProblem(p, []) === null
+        const plugin = validate.FIELD_NAME.test(p) && !validate.RESERVED_NAMES.has(p)
+        if (okName !== plugin) diffs.push(`Feldname ${show(p)}: App ${okName}, Plugin ${plugin}`)
+      }
+      tally('Kennungen und Feldnamen', 3 + probes.length * 2, diffs)
+    }
+
+    // Personenfelder (für „optional, weil anonym“).
+    {
+      const diffs = []
+      let cases = 0
+      const types = ['text', 'textarea', 'email', 'tel', 'url', 'number', 'date', 'select', 'radio', 'checkboxes', 'checkbox', 'scale', 'consent', 'pgpKey', 'hidden']
+      const tokens = [undefined, 'off', 'url', 'country', ...copy.PERSONAL_AUTOCOMPLETE]
+      for (const type of types)
+        for (const autocomplete of tokens) {
+          const field = { type, name: 'f', label: 'F', ...(autocomplete ? { autocomplete } : {}) }
+          cases++
+          if (copy.isPersonalField(field) !== validate.isPersonalField(field)) diffs.push(`${show(field)}: App ${copy.isPersonalField(field)}, Plugin ${validate.isPersonalField(field)}`)
+        }
+      tally('Personenfelder', cases, diffs)
+    }
+
+    // Ein Formular über seiner Vorlage und dem globalen Versand (resolveForm).
+    {
+      const diffs = []
+      const defs = [
+        { template: 'contact' },
+        { template: 'feedback', pageContext: false },
+        { template: 'survey', anonymous: false, title: 'Eigen' },
+        { template: 'rsvp', fields: [{ type: 'text', name: 'x', label: 'X' }] },
+        { template: 'contact', title: null, fields: null },
+        { fields: [{ type: 'textarea', name: 'm', label: 'M', required: true }], transport: { kind: 'mailto' }, recipient: 'a@b.de' },
+        { template: 'nope', fields: [{ type: 'text', name: 'x', label: 'X' }] },
+        { encryption: { mode: 'optional' }, fields: [{ type: 'text', name: 'x', label: 'X' }] }
+      ]
+      const globals = [{}, { transport: { kind: 'endpoint', url: 'https://example.org/x' } }]
+      let cases = 0
+      for (const g of globals)
+        for (const def of defs) {
+          cases++
+          const resolved = await quiet(() => options.resolveOptions({ ...g, forms: { f: structuredClone(def) } }))
+          const theirs = resolved.forms.f
+          const eff = copy.effectiveForm(structuredClone(def))
+          const got = {
+            fields: eff.fields,
+            title: eff.title,
+            anonymous: eff.anonymous === true,
+            pageContext: eff.anonymous === true ? false : eff.pageContext === true,
+            kind: copy.transportKindOf(def, g),
+            mode: copy.encryptionModeOf(def)
+          }
+          // The plugin makes required personal fields optional under anonymous; the app shows the
+          // fields as written and marks them, so the comparison takes that step back out.
+          const want = {
+            fields: eff.anonymous === true ? eff.fields : theirs.fields,
+            title: theirs.title,
+            anonymous: theirs.anonymous,
+            pageContext: theirs.pageContext,
+            kind: theirs.transport.kind,
+            mode: theirs.encryption.mode
+          }
+          for (const key of Object.keys(want)) if (show(want[key]) !== show(got[key])) diffs.push(`${show(g)} ${show(def)} → ${key}: App ${show(got[key])}, Plugin ${show(want[key])}`)
+        }
+      tally('Formular über Vorlage und Versand', cases, diffs)
+    }
+
+    // Frontmatter-Einbindung (shared/formUsages.ts gegen frontmatterForms).
+    {
+      const diffs = []
+      const values = ['kontakt', ' kontakt ', '', ['a', 'b'], ['a', '', 3, ' b '], false, true, null, 42, { a: 1 }]
+      for (const v of values) {
+        const theirs = transformer.frontmatterForms({ form: v }, 'form')
+        const ours = usages.pageFormUse('---\nx\n---\n', 'quartz-form', 'form', () => ({ form: v }))
+        const got = { ids: ours.forms, hideLayout: ours.hidesLayout }
+        if (show(got) !== show(theirs)) diffs.push(`form: ${show(v)} → App ${show(got)}, Plugin ${show(theirs)}`)
+      }
+      const texts = ['{{form:a}}', '{{ form:a }}', '%7B%7Bform:a%7D%7D', '{{form:A-1}}', '{{form:a b}}', '{{form:}}']
+      for (const text of texts) {
+        const m = transformer.FORM_PLACEHOLDER.exec(text)
+        const theirs = m ? [m[1] ?? m[2]] : []
+        const ours = usages.pageFormUse(text, 'quartz-form', 'form', () => null).forms
+        if (show(ours) !== show(theirs)) diffs.push(`${show(text)} → App ${show(ours)}, Plugin ${show(theirs)}`)
+      }
+      tally('Einbindung (Frontmatter, Platzhalter)', values.length + texts.length, diffs)
+    }
+  }
+
+  // Quartz' Slug-Regel, gegen die Fassung im Projekt (@quartz-community/utils).
+  {
+    const utilsPath = path.join(PROJECT, 'node_modules/@quartz-community/utils/dist/path.js')
+    report.push('', `Quartz-Slug (shared/formUsages.ts, quartzSlug)`)
+    if (!fs.existsSync(utilsPath)) {
+      unchecked++
+      report.push('  @quartz-community/utils fehlt im Projekt — nicht geprüft')
+    } else {
+      const utils = await import(`file://${utilsPath}`)
+      const paths = ['index.md', 'a/index.md', 'A B.md', 'ordner/Umfrage Seite.md', 'x/x.md', 'x/_index.md', 'Q&A.md', '50%.md', 'what?.md', 'c#.md', 'a<b>:c.md', 'bild.png', 'Seite.HTML', 'tief/ganz/Unten.md', '_index.md', 'ä ö ü.md']
+      const diffs = paths.filter((p) => usages.quartzSlug(p) !== utils.slugifyFilePath(p)).map((p) => `${show(p)}: App ${show(usages.quartzSlug(p))}, Quartz ${show(utils.slugifyFilePath(p))}`)
+      tally('Slugs', paths.length, diffs)
+    }
   }
 }
 

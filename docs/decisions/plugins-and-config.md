@@ -481,3 +481,52 @@ Plaketten, nachher 5 im Reiter „Navigationen“ und 13 unter „Alle Optionen�
 kursiven Gründe. Die Namen laut CDP `Accessibility.getFullAXTree` sind unverändert („align
 geändert Wirkt nur bei den Varianten …“), die Plakette steht nicht darin. Der Preis: eine
 Plakette mehr in jeder grauen Zeile, unter „Alle Optionen“ einer Baum-Navigation dreizehn.
+
+## Der Reiter Formulare (2026-10-19, 1.2)
+
+quartz-forms ist ein Eintrag für die ganze Website, deshalb folgt der Reiter Mehrsprachigkeit:
+links die Formulare (`options.forms`) und die Einstellungen für alle (Versand, Schlüssel,
+Spamschutz, Layout-Formular, Relay, Texte, Technisches), rechts eine Leiste, die sofort schreibt.
+Gemessen wurde jede Phase an der gebauten App, gegen gui-test (Config vorher kopiert, danach
+`cmp`-gleich) oder gegen eine Wegwerf-Kopie, deren `content/` ein echter Ordner ist - nie im Vault.
+
+**Das Plugin wird gefragt, nicht abgeschrieben.** quartz-forms 0.2.0 bringt `dist/cli.js` mit
+(`check`, `key`, `relay`, je mit `--json`); `formsService` ruft es im Kindprozess. Die Prüfung läuft
+600 ms nach jedem Schreiben erneut; ihre Meldungen tragen den Pfad der Option
+(`forms.<id>.fields[i].pattern: …`), und nur daran hängt der Reiter sie an Formular, Feld oder
+Abschnitt (`placeMessage`). Gemessen: ein Formular ohne Relay-Adresse und Empfänger zeigte
+„2 Probleme“, nach dem Eintragen des Empfängers von allein „ein Problem“; ein Feld mit `[^]` trug den
+Satz des Plugins am Feld. Die Meldungen sind englisch, so wie das Plugin sie ins Build-Log schreibt.
+
+**Mehrsprachige Texte haben einen eigenen Editor.** Das generische Formular zeigte einen
+Vorlagentitel `{ en, de }` als leeres Feld und jedes Label als Union „Text / Liste“. `TextEditor`
+(`FormText.tsx`) zeigt ein Feld je Website-Sprache für einen Record, eines für einen String, mit dem
+Wort der Vorlage als Platzhalter. Ein Wert, der dem der Vorlage gleicht, wird nicht geschrieben.
+Eine Vorlage verlassen schreibt ihre Felder, Titel und Schalter ins Formular - ohne eigene Felder
+bräche der Build ab. `FormContext.above` benennt „wie oben“, wo „oben“ die Einstellungen für alle
+Formulare sind („wie für alle Formulare“).
+
+**Felder sind eine sortierbare Liste** (dnd-kit wie überall, Pfeilpaar wie in der Plugin-Liste).
+Gemessen: Pfeil, Maus-Drag nach oben und Tastatur-Drag (Griff fokussiert, Leertaste, Pfeil hoch,
+Leertaste; echte Tastendrücke) schrieben je die erwartete Reihenfolge, die Live-Region sagte
+„Nachricht bei Name abgelegt.“
+
+**Fundstellen.** `content.formUsages` liest die Markdown-Dateien, die Quartz baut
+(`quartzInputFiles`, das globby des Projekts), und findet ein Formular auf denselben drei Wegen wie
+das Plugin (`shared/formUsages.ts`). Gemessen: ein verschachtelter Codeblock, Inline-Code und der
+ignorierte Ordner `private/` zählen nicht; eine Seite mit einer unbekannten Kennung erscheint nach
+„Neu suchen“. „Zeigen“ lädt die Seite in die Vorschau über Quartz' Slug (`ordner/Umfrage Seite.md`
+→ `/ordner/umfrage-seite`), die Markierung trifft `form.quartz-form[data-form="kontakt"]`. Dafür
+bekam die Selektor-Grammatik von `sitePreview:highlight` genau ein Attribut: `[data-form="<id>"]`
+mit dem Zeichensatz einer Kennung. Die erste Messung endete im Fehler-Toast des Schemas.
+
+**Schlüssel.** Aus einer Datei nach `quartz-forms/keys/<name>.asc` im Projekt (außerhalb von
+`content/` und `static/`: der Build liest sie, die Website trägt sie nicht als Datei), oder
+eingefügt, dann gespeichert als Block allein, nachdem das Plugin ihn gelesen hat. Eine Datei mit
+privatem Block wird abgewiesen, bevor etwas geschrieben ist. Gemessen mit OpenPGP.js 6.3.2: der
+angezeigte Fingerabdruck gleich dem berechneten; ein abgelaufener Schlüssel mit dem Satz des
+Plugins abgewiesen.
+
+**In der Plugin-Liste** kennt `optionFormExtras.ts` quartz-forms über `formsRoot`: Ein Formular ist
+dort ein Eintrag des Records `forms`, und unter einem anonymen steht `pageContext` als „wirkt
+nicht“ (`entryReason`), wie im Reiter.

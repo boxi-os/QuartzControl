@@ -130,7 +130,12 @@ if (SCHEMES.length === 0) {
 // Unter --demo entfällt die Sperre, und zwar nicht aus Nachlässigkeit: Dort legt das Skript das
 // Profil selbst an, leer, und trägt seine eigenen erfundenen Zugänge ein. Es kann dort keine
 // echten geben.
-const CARD_BLOCKLIST = DEMO ? [] : [/^zugaenge$/, /^connections$/]
+//
+// Dazu die zwei Karten des Reiters Formulare, die Daten des Betreibers zeigen: „Relay“ (Absender,
+// Origins, Pfade der Ziele, Empfängernamen) und „Schlüssel“ (Fingerabdrücke und Benutzer-IDs mit
+// E-Mail-Adressen). Sie stehen nur in der Seitenleiste, wenn ihre Zeile gewählt ist - die Auswahl
+// bleibt aber im Sticky-State stehen.
+const CARD_BLOCKLIST = DEMO ? [] : [/^zugaenge$/, /^connections$/, /^relay$/, /^schluessel$/, /^keys$/]
 const outDir = path.resolve(arg('--out', path.join(VAULT, 'assets/screenshots', lang)))
 
 if (!fs.existsSync(path.join(APP_DIR, 'out/main/index.js'))) {

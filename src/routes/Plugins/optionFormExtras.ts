@@ -5,6 +5,7 @@ import type { RootExtras } from '../../components/PluginOptionsForm/editors'
 import { enumLabel, type FormLanguage } from '../../components/PluginOptionsForm/text'
 import { NAVIGATIONS_PLUGIN, NAV_VARIANTS, VARIANT_KEYS, hasNoEffect, noEffectReason, variantOf, type NavVariant } from './navigationVariants'
 import { LAYOUT_BOX_PLUGIN, boxContentKind, nullBreaks, withoutNulls } from './layoutBoxes'
+import { FORMS_PLUGIN, isAnonymous, isObject } from './formsOptions'
 
 // What the form adds for the two plugins whose editors know more than the schema says, in one
 // place: the plugins page (Navigations.tsx, ExtraContent.tsx) and the layout board's inspector
@@ -115,6 +116,19 @@ export function rootWithoutTiles(plugin: PluginEntry, data: PluginOptionSchemaRe
       ? navigationRoot(options, data?.schema?.fields ?? [], t, lang, true)
       : name === LAYOUT_BOX_PLUGIN
         ? layoutBoxRoot(options, data?.packageVersion, t, false)
-        : undefined
+        : name === FORMS_PLUGIN
+          ? formsRoot(t)
+          : undefined
   return root && { ...root, hideUnlessSet: undefined }
+}
+
+/**
+ * quartz-forms in the plugin list and the inspector: a form is an entry of the `forms` record, and
+ * an anonymous one sends no page context (resolveForm forces `pageContext` off), which its schema
+ * cannot say. The Formulare tab marks the same switch the same way.
+ */
+export function formsRoot(t: TFunction): RootExtras {
+  return {
+    entryReason: (key, entry) => (key === 'pageContext' && isObject(entry) && isAnonymous(entry) ? t('formsEditor.pageContextAnonymous') : null)
+  }
 }

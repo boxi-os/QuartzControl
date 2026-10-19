@@ -44,6 +44,7 @@ import {
   FORMS_PLUGIN,
   FORMS_READ_AGAINST,
   SECTIONS,
+  TEMPLATES,
   TEMPLATE_NAMES,
   duplicateForm,
   effectiveForm,
@@ -56,6 +57,7 @@ import {
   freeId,
   isAnonymous,
   isObject,
+  isTemplate,
   newForm,
   objectSchema,
   removeForm,
@@ -65,12 +67,14 @@ import {
   transportKindOf,
   usesTemplateFields,
   withForm,
+  type EncryptionMode,
   type FormDef,
   type FormTemplate,
   type IdProblem,
   type SectionId
 } from './formsOptions'
 import { DraftInput } from './DraftInput'
+import { TextEditor } from './FormText'
 import { ReadAgainstNote } from './ReadAgainstNote'
 import { SavesImmediately } from './SavesImmediately'
 
@@ -328,6 +332,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
             isLayoutForm={layoutForm === selectedForm[0]}
             onDef={(next) => updateOptions((o) => withForm(o, selectedForm[0], next))}
             onRename={(to) => void rename(selectedForm[0], to)}
+            onOpenSection={(sid) => setSelected(`section:${sid}`)}
             onLayoutForm={(on) =>
               updateOptions(
                 (o) => ({ ...o, layoutForm: on ? selectedForm[0] : '' }),
@@ -527,12 +532,25 @@ function AddFormForm({ ids, onAdd, onCancel }: { ids: string[]; onAdd: (id: stri
   )
 }
 
-// The keys of a form, by the part of the panel that shows them. What none names (a key a newer
-// plugin knows) falls under "Allgemein", so nothing is out of reach.
-const GENERAL_KEYS = ['template', 'title', 'description', 'submitLabel', 'success', 'className']
-const SENDING_KEYS = ['recipient', 'subject']
-const PRIVACY_KEYS = ['encryption', 'anonymous', 'pageContext']
-const OWN_PARTS = new Set([...SENDING_KEYS, ...PRIVACY_KEYS, 'fields', 'transport', 'spam'])
+// The keys of a form the panel shows with its own controls. A key it does not know (one a newer
+// plugin adds, a typo) stands under "Weitere Schlüssel" in the plugin's form, so nothing is out
+// of reach.
+const KNOWN_KEYS = new Set([
+  'template',
+  'title',
+  'description',
+  'submitLabel',
+  'fields',
+  'recipient',
+  'subject',
+  'transport',
+  'encryption',
+  'anonymous',
+  'pageContext',
+  'spam',
+  'success',
+  'className'
+])
 
 function FormPanel({
   id,
@@ -547,7 +565,8 @@ function FormPanel({
   isLayoutForm,
   onDef,
   onRename,
-  onLayoutForm
+  onLayoutForm,
+  onOpenSection
 }: {
   id: string
   def: FormDef
@@ -562,28 +581,66 @@ function FormPanel({
   onDef: (next: FormDef) => void
   onRename: (to: string) => void
   onLayoutForm: (on: boolean) => void
+  onOpenSection: (id: SectionId) => void
 }): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
   const [idDraft, setIdDraft] = useState<string | null>(null)
   const idProblem: IdProblem | null = idDraft === null ? null : formIdProblem(idDraft, ids, id)
   const form = useMemo(() => formSchema(schema), [schema])
-  const anonymous = isAnonymous(def)
-  const onChange = (next: Record<string, unknown> | undefined): void => onDef(next ?? {})
+  const template = isTemplate(def.template) ? TEMPLATES[def.template] : null
+  const eff = effectiveForm(def)
+  const anonymous = eff.anonymous === true
+  const kind = transportKindOf(def, options)
+  const encryption = isObject(def.encryption) ? def.encryption : {}
+  const mode = encryptionModeOf(def) as EncryptionMode
+  const keyNames = isObject(options.keys) ? Object.keys(options.keys) : []
+  const chosenKeys = Array.isArray(encryption.keys) ? encryption.keys.filter((k): k is string => typeof k === 'string') : keyNames
+  const success = isObject(def.success) ? def.success : {}
+  const successMode = success.mode === 'redirect' ? 'redirect' : 'inline'
 
-  const pickGeneral = useCallback((key: string) => GENERAL_KEYS.includes(key) || !OWN_PARTS.has(key), [])
+  // Sets one key of the form; undefined takes it away. A value the template already gives is
+  // taken away too: written again, it would stay when the template changes.
+  const setKey = (key: string, value: unknown): void => {
+    const next = { ...def }
+    if (value === undefined || (template && JSON.stringify(template[key]) === JSON.stringify(value) && key !== 'fields')) delete next[key]
+    else next[key] = value
+    onDef(next)
+  }
+  const setEncryption = (change: Record<string, unknown>): void => {
+    const next: Record<string, unknown> = { ...encryption, ...change }
+    for (const [k, v] of Object.entries(next)) if (v === undefined) delete next[k]
+    // `mode` is required by the schema; off without anything else is the plugin's default.
+    if (next.mode === 'off' && Object.keys(next).length === 1) setKey('encryption', undefined)
+    else setKey('encryption', { mode: next.mode ?? 'off', ...next })
+  }
+  const setSuccess = (change: Record<string, unknown>): void => {
+    const next: Record<string, unknown> = { mode: successMode, ...success, ...change }
+    for (const [k, v] of Object.entries(next)) if (v === undefined) delete next[k]
+    if (next.mode === 'inline' && Object.keys(next).length === 1) setKey('success', undefined)
+    else setKey('success', next)
+  }
+  // Leaving the template: its fields, title and switches become the form's own, so the form
+  // stays what it was - without them a form with no fields of its own stops the build.
+  const setTemplate = (name: string): void => {
+    if (name === (def.template ?? '')) return
+    if (!name) {
+      const own: FormDef = { ...(template ? structuredClone(template) : {}), ...def }
+      delete own.template
+      onDef(own)
+      return
+    }
+    onDef({ ...def, template: name })
+  }
+
+  const unknownKeys = useCallback((key: string) => !KNOWN_KEYS.has(key), [])
+  const hasUnknown = Object.keys(def).some((k) => !KNOWN_KEYS.has(k)) || (form?.fields.some((f) => !KNOWN_KEYS.has(f.key)) ?? false)
   const pickFields = useCallback((key: string) => key === 'fields', [])
-  const pickSending = useCallback((key: string) => SENDING_KEYS.includes(key), [])
-  const pickPrivacy = useCallback((key: string) => PRIVACY_KEYS.includes(key), [])
-  // An anonymous form sends no page context: the plugin forces it off (resolveForm).
-  const privacyRoot = useMemo(
-    () => ({ flat: true, inactiveReason: (key: string) => (key === 'pageContext' && anonymous ? t('formsEditor.pageContextAnonymous') : null) }),
-    [anonymous, t]
-  )
   const flat = useMemo(() => ({ flat: true }), [])
 
   const { copy, copied } = useCopyToClipboard()
   const snippets = embedSnippets(id, options)
+  const recipientRole = kind === 'relay' ? 'relay' : kind === 'mailto' ? 'mailto' : 'none'
 
   return (
     <Card className="flex flex-col gap-4">
@@ -612,16 +669,67 @@ function FormPanel({
       {idProblem && <p className="-mt-2 text-micro text-red-600 dark:text-red-400">{t(`formsEditor.idProblem.${idProblem}`)}</p>}
 
       <PanelSection icon={SlidersHorizontal} title={t('formsEditor.parts.general')}>
-        <PluginOptionsForm schema={form} values={def} onChange={onChange} explicitEmpty languages={languages} projectPath={project.path} pick={pickGeneral} freeKeys={false} root={flat} />
+        <Field label={t('formsEditor.template')} hint={t(Array.isArray(def.fields) && template ? 'formsEditor.templateOwnFieldsHint' : 'formsEditor.templateHint')}>
+          <Select value={isTemplate(def.template) ? def.template : ''} onChange={(e) => setTemplate(e.target.value)}>
+            <option value="">{t('formsEditor.noTemplate')}</option>
+            {TEMPLATE_NAMES.map((name) => (
+              <option key={name} value={name}>
+                {t(`formsEditor.templates.${name}`)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <TextEditor label={t('formsEditor.title')} value={def.title} fallback={template?.title} languages={languages} onValue={(v) => setKey('title', v)} />
+        <TextEditor label={t('formsEditor.description')} hint={t('formsEditor.descriptionHint')} value={def.description} languages={languages} multiline onValue={(v) => setKey('description', v)} />
+        <TextEditor label={t('formsEditor.submitLabel')} hint={t('formsEditor.submitLabelHint')} value={def.submitLabel} languages={languages} onValue={(v) => setKey('submitLabel', v)} />
+        <FieldGroup label={t('formsEditor.afterSending')}>
+          <SegmentedControl
+            label={t('formsEditor.afterSending')}
+            value={successMode}
+            onChange={(m) => setSuccess({ mode: m })}
+            options={[
+              { value: 'inline', label: t('formsEditor.successModes.inline') },
+              { value: 'redirect', label: t('formsEditor.successModes.redirect') }
+            ]}
+          />
+        </FieldGroup>
+        {successMode === 'inline' ? (
+          <TextEditor label={t('formsEditor.successText')} hint={t('formsEditor.successTextHint')} value={success.text} languages={languages} onValue={(v) => setSuccess({ text: v })} />
+        ) : (
+          <Field label={t('formsEditor.successSlug')} hint={t('formsEditor.successSlugHint')}>
+            <DraftInput value={typeof success.slug === 'string' ? success.slug : ''} placeholder="danke" onCommit={(v) => setSuccess({ slug: v.trim() || undefined })} />
+          </Field>
+        )}
+        <div className="flex flex-col gap-3">
+          <p className="text-micro font-semibold uppercase tracking-wide text-text-muted">{t('pluginOptions.rarelyUsed')}</p>
+          <Field label="className" configKey hint={t('formsEditor.classNameHint')}>
+            <DraftInput value={typeof def.className === 'string' ? def.className : ''} onCommit={(v) => setKey('className', v.trim() || undefined)} />
+          </Field>
+        </div>
       </PanelSection>
 
       <PanelSection icon={ListChecks} title={t('formsEditor.parts.fields')}>
         {usesTemplateFields(def) && <p className="text-micro text-text-muted">{t('formsEditor.templateFieldsNote')}</p>}
-        <PluginOptionsForm schema={form} values={def} onChange={onChange} explicitEmpty languages={languages} projectPath={project.path} pick={pickFields} freeKeys={false} root={flat} />
+        <PluginOptionsForm schema={form} values={def} onChange={(next) => onDef(next ?? {})} explicitEmpty languages={languages} projectPath={project.path} pick={pickFields} freeKeys={false} root={flat} />
       </PanelSection>
 
       <PanelSection icon={Send} title={t('formsEditor.parts.sending')}>
-        <PluginOptionsForm schema={form} values={def} onChange={onChange} explicitEmpty languages={languages} projectPath={project.path} pick={pickSending} freeKeys={false} root={flat} />
+        <p className="text-micro text-text-secondary">{t('formsEditor.sendsVia', { kind: t(`formsEditor.transportKinds.${kind}`, kind) })}</p>
+        <Field label={t(`formsEditor.recipient.${recipientRole}`)} hint={t(`formsEditor.recipientHint.${recipientRole}`)} muted={recipientRole === 'none'}>
+          <DraftInput
+            value={typeof def.recipient === 'string' ? def.recipient : ''}
+            placeholder={recipientRole === 'mailto' ? 'name@example.org' : recipientRole === 'relay' ? 'owner' : undefined}
+            onCommit={(v) => setKey('recipient', v.trim() || undefined)}
+          />
+        </Field>
+        <TextEditor
+          label={t('formsEditor.subject')}
+          hint={t('formsEditor.subjectHint')}
+          value={def.subject}
+          fallback={eff.title}
+          languages={languages}
+          onValue={(v) => setKey('subject', v)}
+        />
         <InheritedBlock
           title={t('formsEditor.ownTransport')}
           hint={t('formsEditor.ownTransportHint')}
@@ -630,17 +738,71 @@ function FormPanel({
           values={isObject(def.transport) ? def.transport : {}}
           languages={languages}
           lang={lang}
-          onValues={(next) => {
-            const rest = { ...def }
-            if (next) rest.transport = next
-            else delete rest.transport
-            onDef(rest)
-          }}
+          onValues={(next) => setKey('transport', next)}
         />
       </PanelSection>
 
       <PanelSection icon={Lock} title={t('formsEditor.parts.privacy')}>
-        <PluginOptionsForm schema={form} values={def} onChange={onChange} explicitEmpty languages={languages} projectPath={project.path} pick={pickPrivacy} freeKeys={false} root={privacyRoot} />
+        <FieldGroup label={t('formsEditor.encryption')}>
+          <SegmentedControl
+            label={t('formsEditor.encryption')}
+            value={mode}
+            onChange={(m) => setEncryption({ mode: m })}
+            options={(['off', 'optional', 'required'] as const).map((m) => ({ value: m, label: t(`formsEditor.encryptionChoices.${m}`) }))}
+          />
+          <span className="text-micro text-text-muted">{t(`formsEditor.encryptionHints.${mode}`)}</span>
+        </FieldGroup>
+        {mode !== 'off' &&
+          (keyNames.length === 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.noKeysYet')}</p>
+              <Button variant="ghost" onClick={() => onOpenSection('keys')}>
+                <KeyRound size={14} aria-hidden />
+                {t('formsEditor.sections.keys')}
+              </Button>
+            </div>
+          ) : (
+            <FieldGroup label={t('formsEditor.encryptTo')}>
+              {keyNames.map((name) => (
+                <Toggle
+                  key={name}
+                  label={name}
+                  checked={chosenKeys.includes(name)}
+                  onChange={(on) => {
+                    const next = on ? [...new Set([...chosenKeys, name])] : chosenKeys.filter((k) => k !== name)
+                    // Every key: the key goes, and a key added later is used too. None: the build
+                    // stops ("no keys to encrypt to"), so the last one stays.
+                    if (next.length === 0) return
+                    setEncryption({ keys: keyNames.every((k) => next.includes(k)) ? undefined : next })
+                  }}
+                />
+              ))}
+              <span className="text-micro text-text-muted">{t('formsEditor.encryptToHint')}</span>
+            </FieldGroup>
+          ))}
+        {mode !== 'off' && (
+          <Toggle
+            label={t('formsEditor.showFingerprint')}
+            hint={t('formsEditor.showFingerprintHint')}
+            checked={encryption.showFingerprint !== false}
+            onChange={(on) => setEncryption({ showFingerprint: on ? undefined : false })}
+          />
+        )}
+        <Toggle
+          label={t('formsEditor.anonymous')}
+          hint={t('formsEditor.anonymousHint')}
+          checked={anonymous}
+          onChange={(on) => setKey('anonymous', on === (template?.anonymous === true) ? undefined : on)}
+        />
+        <div className="flex flex-col gap-1">
+          <Toggle
+            label={t('formsEditor.pageContext')}
+            hint={anonymous ? undefined : t('formsEditor.pageContextHint')}
+            checked={eff.pageContext === true}
+            onChange={(on) => setKey('pageContext', on === (template?.pageContext === true) ? undefined : on)}
+          />
+          {anonymous && <NoEffect reason={t('formsEditor.pageContextAnonymous')} />}
+        </div>
       </PanelSection>
 
       <PanelSection icon={ShieldCheck} title={t('formsEditor.parts.spam')}>
@@ -651,12 +813,7 @@ function FormPanel({
           values={isObject(def.spam) ? def.spam : {}}
           languages={languages}
           lang={lang}
-          onValues={(next) => {
-            const rest = { ...def }
-            if (next) rest.spam = next
-            else delete rest.spam
-            onDef(rest)
-          }}
+          onValues={(next) => setKey('spam', next)}
         />
       </PanelSection>
 
@@ -668,13 +825,13 @@ function FormPanel({
             ['codeBlock', snippets.codeBlock],
             ['frontmatter', snippets.frontmatter]
           ] as const
-        ).map(([kind, text]) => (
-          <div key={kind} className="flex flex-wrap items-start gap-2">
+        ).map(([k, text]) => (
+          <div key={k} className="flex flex-wrap items-start gap-2">
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="text-micro font-medium text-text-secondary">{t(`formsEditor.embedKinds.${kind}`)}</span>
+              <span className="text-micro font-medium text-text-secondary">{t(`formsEditor.embedKinds.${k}`)}</span>
               <pre className="overflow-x-auto rounded-md bg-ink/[0.04] px-2 py-1.5 font-mono text-xs text-text dark:bg-ink/10">{text}</pre>
             </div>
-            <Button variant="ghost" onClick={() => copy(text, t(`formsEditor.embedKinds.${kind}`))}>
+            <Button variant="ghost" onClick={() => copy(text, t(`formsEditor.embedKinds.${k}`))}>
               <Copy size={14} aria-hidden />
               {t('formsEditor.copy')}
             </Button>
@@ -685,7 +842,27 @@ function FormPanel({
         </p>
         <Toggle label={t('formsEditor.useAsLayoutForm')} hint={t('formsEditor.useAsLayoutFormHint')} checked={isLayoutForm} onChange={onLayoutForm} />
       </PanelSection>
+
+      {hasUnknown && (
+        <PanelSection icon={Wrench} title={t('pluginOptions.moreKeys')}>
+          <PluginOptionsForm schema={form} values={def} onChange={(next) => onDef(next ?? {})} explicitEmpty languages={languages} projectPath={project.path} pick={unknownKeys} freeKeys={false} root={flat} />
+        </PanelSection>
+      )}
     </Card>
+  )
+}
+
+/** "wirkt nicht" and why, under a switch whose setting does nothing right now (conventions: a word,
+ *  not only grey). The badge is hidden from the name; the reason is read as the line it is. */
+function NoEffect({ reason }: { reason: string }): JSX.Element {
+  const { t } = useTranslation()
+  return (
+    <p className="flex flex-wrap items-center gap-1.5 text-micro italic text-text-muted">
+      <span aria-hidden className="not-italic">
+        <Badge>{t('pluginOptions.noEffect')}</Badge>
+      </span>
+      <span>{reason}</span>
+    </p>
   )
 }
 
@@ -712,8 +889,20 @@ function InheritedBlock({
   lang: FormLanguage
   onValues: (next: Record<string, unknown> | undefined) => void
 }): JSX.Element | null {
+  const { t } = useTranslation()
   const project = useProject()
-  const ctx: FormContext = useMemo(() => ({ lang, explicitEmpty: false, languages, projectPath: project.path, query: '', mark: '' }), [lang, languages, project.path])
+  const ctx: FormContext = useMemo(
+    () => ({
+      lang,
+      explicitEmpty: false,
+      languages,
+      projectPath: project.path,
+      query: '',
+      mark: '',
+      above: { short: t('formsEditor.asAllForms'), choice: t('formsEditor.asAllFormsChoice', { value: '{{value}}' }) }
+    }),
+    [lang, languages, project.path, t]
+  )
   if (!schema) return null
   return (
     <div className="flex flex-col gap-2">

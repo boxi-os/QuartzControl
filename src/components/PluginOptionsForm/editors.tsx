@@ -27,6 +27,10 @@ export interface FormContext {
   muted?: boolean
   /** RootExtras.entryReason, handed to the record entries wherever they stand. */
   entryReason?: RootExtras['entryReason']
+  /** What "as above" is called where the values above are not a parent option but something the
+   *  reader knows by another name - a form's spam keys lie over the settings for all forms. `short`
+   *  stands beside an unset switch, `choice` is the empty choice of a select (`{{value}}` filled). */
+  above?: { short: string; choice: string }
 }
 
 /**
@@ -510,7 +514,7 @@ function NodeEditor({
           <Toggle label={note ? `${field?.key ?? ''}. ${note}` : (field?.key ?? '')} hideLabel checked={effective} onChange={(checked) => onValue(checked)} />
           {value === undefined && (
             <span className="text-micro text-text-muted">
-              {fromAbove ? t('pluginOptions.asAbove') : hasDefault ? t('pluginOptions.isDefault') : t('pluginOptions.notSet')}
+              {fromAbove ? (ctx.above?.short ?? t('pluginOptions.asAbove')) : hasDefault ? t('pluginOptions.isDefault') : t('pluginOptions.notSet')}
             </span>
           )}
         </span>
@@ -596,7 +600,9 @@ function EnumSelect({
       {/* The empty choice is "not set", and it says what that means. */}
       <option value="">
         {hasDefault && (typeof defaultValue === 'string' || typeof defaultValue === 'number' || typeof defaultValue === 'boolean')
-          ? t(fromAbove ? 'pluginOptions.asAboveChoice' : 'pluginOptions.defaultChoice', { value: enumLabel(field, defaultValue, ctx.lang) })
+          ? fromAbove && ctx.above
+            ? ctx.above.choice.replace('{{value}}', enumLabel(field, defaultValue, ctx.lang))
+            : t(fromAbove ? 'pluginOptions.asAboveChoice' : 'pluginOptions.defaultChoice', { value: enumLabel(field, defaultValue, ctx.lang) })
           : t('pluginOptions.notSet')}
       </option>
       {unknownValue && <option value="unknown">{inlineValue(value)}</option>}

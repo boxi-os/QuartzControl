@@ -1264,11 +1264,69 @@ export default {
       spam: 'Spamschutz',
       embed: 'Einbinden'
     },
+    template: 'Vorlage',
+    noTemplate: 'Keine Vorlage',
+    templateHint: 'Die Vorlage liefert Felder, Titel und Voreinstellungen. Ohne Vorlage werden sie zu eigenen Angaben des Formulars.',
+    templateOwnFieldsHint: 'Das Formular hat eigene Felder; die Vorlage liefert nur noch Titel und Voreinstellungen.',
+    title: 'Titel',
+    description: 'Beschreibung',
+    descriptionHint: 'Ein Satz unter dem Titel.',
+    submitLabel: 'Text des Senden-Buttons',
+    submitLabelHint: 'Leer: der Text des Plugins.',
+    afterSending: 'Nach dem Senden',
+    successModes: {
+      inline: 'Dank anzeigen',
+      redirect: 'Zu einer Seite wechseln'
+    },
+    successText: 'Danktext',
+    successTextHint: 'Ersetzt das Formular nach dem Senden. Leer: der Text des Plugins.',
+    successSlug: 'Zielseite',
+    successSlugHint: 'Der Slug einer Seite der Website, z. B. „danke“. Der Build prüft, ob es sie gibt.',
+    classNameHint: 'Zusätzliche CSS-Klassen am Formular, neben „quartz-form“.',
+    sendsVia: 'Sendet über: {{kind}}. Den Weg für alle Formulare legst du unter „Versand“ fest.',
+    recipient: {
+      relay: 'Empfänger (Name)',
+      mailto: 'Empfänger (E-Mail-Adresse)',
+      none: 'Empfänger'
+    },
+    recipientHint: {
+      relay: 'Ein Name, dem das Relay eine Adresse zuordnet. Die Adresse steht nur auf dem Server.',
+      mailto: 'Die Adresse, an die das E-Mail-Programm des Besuchers schreibt.',
+      none: 'Wirkt nicht: Dieser Versandweg kennt keinen Empfänger, der Dienst stellt selbst zu.'
+    },
+    subject: 'Betreff',
+    subjectHint: 'Leer: der Titel des Formulars.',
+    encryption: 'Verschlüsselung',
+    encryptionChoices: {
+      off: 'Aus',
+      optional: 'Wahlweise',
+      required: 'Immer'
+    },
+    encryptionHints: {
+      off: 'Die Nachricht geht als Klartext.',
+      optional: 'Ein Häkchen, das der Besucher abwählen kann. Ohne JavaScript sendet das Formular unverschlüsselt.',
+      required: 'Nichts verlässt die Seite unverschlüsselt. Ohne JavaScript kann das Formular nicht senden.'
+    },
+    noKeysYet: 'Es gibt noch keinen Schlüssel, an den verschlüsselt werden kann.',
+    encryptTo: 'Verschlüsseln an',
+    encryptToHint: 'Sind alle gewählt, gilt auch jeder später angelegte Schlüssel.',
+    showFingerprint: 'Fingerabdruck zeigen',
+    showFingerprintHint: 'Unter dem Formular, damit Besucher ihn mit dem vergleichen können, den du veröffentlichst.',
+    anonymous: 'Anonym',
+    anonymousHint: 'Keine Pflichtangaben zur Person, kein Reply-To, kein Seitenkontext, kein Captcha eines Drittanbieters.',
+    pageContext: 'Seite mitschicken',
+    pageContextHint: 'Titel und Slug der Seite, auf der das Formular steht, etwa für Feedback.',
+    asAllForms: 'wie für alle Formulare',
+    asAllFormsChoice: 'Wie für alle Formulare: {{value}}',
+    text: {
+      perLanguage: 'Je Sprache',
+      oneForAll: 'Ein Text für alle Sprachen'
+    },
     templateFieldsNote: 'Das Formular nimmt die Felder seiner Vorlage. Eigene Felder ersetzen sie ganz.',
     ownTransport: 'Versandweg für dieses Formular',
     ownTransportHint: 'Was hier nicht gesetzt ist, gilt wie unter „Versand“ für alle Formulare.',
     ownSpamHint: 'Was hier nicht gesetzt ist, gilt wie unter „Spamschutz“ für alle Formulare.',
-    pageContextAnonymous: 'Wirkt nicht, weil das Formular anonym ist.',
+    pageContextAnonymous: 'Ein anonymes Formular schickt die Seite nie mit.',
     embedHint: 'Eine Seite bindet das Formular mit einer dieser Zeilen ein. QuartzControl schreibt nichts in deine Seiten.',
     embedKinds: {
       placeholder: 'Platzhalter im Text',

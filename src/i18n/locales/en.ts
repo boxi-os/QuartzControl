@@ -1259,11 +1259,69 @@ export default {
       spam: 'Spam protection',
       embed: 'Embedding'
     },
+    template: 'Template',
+    noTemplate: 'No template',
+    templateHint: 'The template brings fields, title and presets. Without a template they become the form’s own.',
+    templateOwnFieldsHint: 'The form has fields of its own; the template only brings title and presets.',
+    title: 'Title',
+    description: 'Description',
+    descriptionHint: 'A sentence under the title.',
+    submitLabel: 'Text of the send button',
+    submitLabelHint: 'Empty: the plugin’s text.',
+    afterSending: 'After sending',
+    successModes: {
+      inline: 'Show thanks',
+      redirect: 'Go to a page'
+    },
+    successText: 'Thank-you text',
+    successTextHint: 'Replaces the form once it is sent. Empty: the plugin’s text.',
+    successSlug: 'Target page',
+    successSlugHint: 'The slug of a page of the site, such as “thanks”. The build checks that it exists.',
+    classNameHint: 'Extra CSS classes on the form, next to “quartz-form”.',
+    sendsVia: 'Sends through: {{kind}}. The way for all forms is set under “Sending”.',
+    recipient: {
+      relay: 'Recipient (name)',
+      mailto: 'Recipient (e-mail address)',
+      none: 'Recipient'
+    },
+    recipientHint: {
+      relay: 'A name the relay maps to an address. The address stays on the server.',
+      mailto: 'The address the visitor’s mail program writes to.',
+      none: 'Has no effect: this way of sending knows no recipient, the service delivers itself.'
+    },
+    subject: 'Subject',
+    subjectHint: 'Empty: the form’s title.',
+    encryption: 'Encryption',
+    encryptionChoices: {
+      off: 'Off',
+      optional: 'Optional',
+      required: 'Always'
+    },
+    encryptionHints: {
+      off: 'The message goes as plain text.',
+      optional: 'A tick the visitor may clear. Without JavaScript the form sends unencrypted.',
+      required: 'Nothing leaves the page unencrypted. Without JavaScript the form cannot send.'
+    },
+    noKeysYet: 'There is no key yet to encrypt to.',
+    encryptTo: 'Encrypt to',
+    encryptToHint: 'With all of them chosen, a key added later is used too.',
+    showFingerprint: 'Show the fingerprint',
+    showFingerprintHint: 'Below the form, so visitors can compare it with the one you publish.',
+    anonymous: 'Anonymous',
+    anonymousHint: 'No required personal details, no Reply-To, no page context, no third-party captcha.',
+    pageContext: 'Send the page along',
+    pageContextHint: 'Title and slug of the page the form stands on, for feedback for instance.',
+    asAllForms: 'as for all forms',
+    asAllFormsChoice: 'As for all forms: {{value}}',
+    text: {
+      perLanguage: 'Per language',
+      oneForAll: 'One text for all languages'
+    },
     templateFieldsNote: 'The form takes the fields of its template. Own fields replace them entirely.',
     ownTransport: 'Sending for this form',
     ownTransportHint: 'What is not set here applies as under “Sending” for all forms.',
     ownSpamHint: 'What is not set here applies as under “Spam protection” for all forms.',
-    pageContextAnonymous: 'Has no effect because the form is anonymous.',
+    pageContextAnonymous: 'An anonymous form never sends the page along.',
     embedHint: 'A page embeds the form with one of these lines. QuartzControl writes nothing into your pages.',
     embedKinds: {
       placeholder: 'Placeholder in the text',

@@ -1029,6 +1029,7 @@ export default {
       navigations: 'Navigationen',
       extras: 'Zusätzliche Inhalte',
       languages: 'Mehrsprachigkeit',
+      forms: 'Formulare',
       marketplace: 'Marktplatz'
     },
     descriptions: {
@@ -1036,6 +1037,7 @@ export default {
       navigations: 'Einstellungen für das Plugin „quartz-navigations“: Navigationen erstellen, verwalten und konfigurieren.',
       extras: 'Einstellungen für das Plugin „quartz-layout-box“: Zusätzliche Inhaltsboxen erstellen, verwalten und konfigurieren.',
       languages: 'Einstellungen für das Plugin „quartz-multilanguage“: Sprachen der Website und wie sie erkannt, umgeschaltet und veröffentlicht werden.',
+      forms: 'Einstellungen für das Plugin „quartz-forms“: Formulare erstellen, verwalten und konfigurieren, samt Versand, Verschlüsselung und Spamschutz.',
       marketplace: 'Der Plugin-Katalog der quartz-community, inklusive der mitgelieferten. Plugins von anderswo fügst du über „owner/repo“ hinzu.'
     }
   },
@@ -1141,6 +1143,142 @@ export default {
       trashedAnnounce: '„{{name}}“ liegt im Papierkorb.',
       addedAnnounce: '„{{name}}“ hinzugefügt.'
     }
+  },
+  formsEditor: {
+    intro: 'quartz-forms hält alle Formulare der Website in einem Eintrag. Ein Formular steht auf einer Seite, wenn diese es über seine Kennung einbindet, oder als Layout-Formular auf jeder Seite. Jede Änderung wird sofort gespeichert.',
+    notInstalledTitle: 'quartz-forms ist nicht installiert',
+    notInstalledText: 'Dieser Reiter bearbeitet die Formulare des Plugins quartz-forms. Installiere es im Marktplatz über „boxi-os/quartz-forms“.',
+    severalEntries: 'Die Konfiguration nennt quartz-forms {{count}}-mal. Hier steht der erste Eintrag; die übrigen bearbeitest du unter „Installiert“.',
+    enabled: 'Eingeschaltet',
+    enabledHint: 'Ausgeschaltet baut die Website ohne Formulare. Seiten, die eines einbinden, zeigen dann den Codeblock oder den Platzhalter.',
+    enabledAnnounce: 'Formulare eingeschaltet.',
+    disabledAnnounce: 'Formulare ausgeschaltet.',
+    allOptions: 'Alle Optionen',
+    listTitle_one: 'Ein Formular',
+    listTitle_other: '{{count}} Formulare',
+    empty: 'Noch kein Formular. Lege eines aus einer Vorlage an.',
+    add: 'Neues Formular',
+    addSubmit: 'Anlegen',
+    start: 'Beginnen mit',
+    id: 'Kennung',
+    idHint: 'Damit bindet eine Seite das Formular ein. Kleinbuchstaben, Ziffern und Bindestriche.',
+    idRenameHint: 'Seiten, die das Formular einbinden, nennen diese Kennung. Wer sie ändert, ändert sie auch dort.',
+    idProblem: {
+      empty: 'Die Kennung fehlt.',
+      pattern: 'Nur Kleinbuchstaben, Ziffern und Bindestriche, am Anfang ein Buchstabe oder eine Ziffer.',
+      taken: 'Diese Kennung hat schon ein anderes Formular.'
+    },
+    templates: {
+      contact: 'Kontakt',
+      feedback: 'Feedback',
+      rsvp: 'Anmeldung',
+      survey: 'Umfrage',
+      empty: 'Leer'
+    },
+    templateIds: {
+      contact: 'kontakt',
+      feedback: 'feedback',
+      rsvp: 'anmeldung',
+      survey: 'umfrage',
+      empty: 'formular'
+    },
+    templateHints: {
+      contact: 'Name, E-Mail, Nachricht, Einwilligung',
+      feedback: 'Bewertung und Kommentar zur Seite',
+      rsvp: 'Name, E-Mail, Termin, Personen',
+      survey: 'Anonym: Auswahl, Skala, Kommentar',
+      empty: 'Ein Nachrichtenfeld, alles Weitere selbst'
+    },
+    messageLabel: 'Nachricht',
+    fromTemplate: 'Felder der Vorlage „{{template}}“',
+    fieldCount_one: 'Ein Feld',
+    fieldCount_other: '{{count}} Felder',
+    transportKinds: {
+      relay: 'Relay',
+      endpoint: 'Endpunkt',
+      formspree: 'Formspree',
+      web3forms: 'Web3Forms',
+      mailto: 'E-Mail-Programm'
+    },
+    encryptionModes: {
+      required: 'verschlüsselt',
+      optional: 'wahlweise verschlüsselt',
+      off: 'unverschlüsselt'
+    },
+    layoutBadge: 'Layout',
+    anonymousBadge: 'anonym',
+    duplicateNamed: '„{{name}}“ kopieren',
+    addedAnnounce: 'Formular „{{id}}“ angelegt.',
+    duplicatedAnnounce: 'Kopie „{{id}}“ angelegt.',
+    removeConfirm: '„{{name}}“ entfernen?\n\nSeiten, die „{{id}}“ einbinden, bauen danach nicht mehr, bis die Kennung dort entfernt ist.',
+    removedAnnounce: '„{{name}}“ entfernt.',
+    renameConfirm: 'Kennung „{{from}}“ in „{{to}}“ ändern?\n\nSeiten, die „{{from}}“ einbinden, bauen danach nicht mehr, bis die Kennung dort angepasst ist. Das Layout-Formular zieht mit.',
+    renameSubmit: 'Kennung ändern',
+    renamedAnnounce: 'Kennung „{{from}}“ heißt jetzt „{{to}}“.',
+    positionAnnounce: 'Das Layout-Formular steht jetzt in „{{position}}“.',
+    layoutOnAnnounce: '„{{id}}“ ist jetzt das Layout-Formular.',
+    layoutOffAnnounce: '„{{id}}“ ist nicht mehr das Layout-Formular.',
+    sectionsTitle: 'Einstellungen für alle Formulare',
+    sections: {
+      transport: 'Versand',
+      keys: 'Schlüssel',
+      spam: 'Spamschutz',
+      layout: 'Layout-Formular',
+      texts: 'Texte',
+      technical: 'Technisches'
+    },
+    sectionHints: {
+      transport: 'Wohin ein Formular sendet. Jedes Formular kann einzelne Angaben für sich ändern.',
+      keys: 'Öffentliche PGP-Schlüssel, an die verschlüsselnde Formulare senden.',
+      spam: 'Schutz und Grenzen für alle Formulare. Jedes Formular kann einzelne Werte für sich ändern.',
+      layout: 'Ein Formular, das auf jeder Seite an derselben Stelle steht, etwa unter dem Text. Eine Seite blendet es mit „form: false“ im Frontmatter aus.',
+      texts: 'Eigene Wortlaute für die Texte des Plugins, je Sprache.',
+      technical: 'Woran das Plugin eine Einbindung in einer Seite erkennt.'
+    },
+    noUrl: 'keine Adresse',
+    noKeys: 'keine',
+    allOff: 'alles aus',
+    spamShort: {
+      honeypot: 'Honeypot',
+      minSeconds: 'Zeitfalle {{seconds}} s',
+      pow: 'Rechenaufgabe',
+      rate: 'höchstens {{perHour}}/h'
+    },
+    noLayoutForm: 'Kein Layout-Formular',
+    unknownForm: 'Unbekanntes Formular „{{id}}“',
+    layoutFormHint: 'Das Formular, das über den Layout-Block dieses Eintrags auf jeder Seite steht.',
+    notPlaced: 'nicht platziert',
+    notPlacedHint: 'Der Eintrag hat noch keinen Layout-Block. Eine Position legt ihn an.',
+    ownTexts_one: 'Ein eigener Text',
+    ownTexts_other: '{{count}} eigene Texte',
+    pluginTexts: 'Texte des Plugins',
+    panelLabel: 'Formular bearbeiten',
+    panelEmptyTitle: 'Formulare',
+    panelEmptyText: 'Wähle links ein Formular oder eine Einstellung.',
+    previewHint: 'Ein Formular erscheint auf Seiten, die es einbinden, und als Layout-Formular auf jeder Seite.',
+    parts: {
+      general: 'Allgemein',
+      fields: 'Felder',
+      sending: 'Versand',
+      privacy: 'Datenschutz und Verschlüsselung',
+      spam: 'Spamschutz',
+      embed: 'Einbinden'
+    },
+    templateFieldsNote: 'Das Formular nimmt die Felder seiner Vorlage. Eigene Felder ersetzen sie ganz.',
+    ownTransport: 'Versandweg für dieses Formular',
+    ownTransportHint: 'Was hier nicht gesetzt ist, gilt wie unter „Versand“ für alle Formulare.',
+    ownSpamHint: 'Was hier nicht gesetzt ist, gilt wie unter „Spamschutz“ für alle Formulare.',
+    pageContextAnonymous: 'Wirkt nicht, weil das Formular anonym ist.',
+    embedHint: 'Eine Seite bindet das Formular mit einer dieser Zeilen ein. QuartzControl schreibt nichts in deine Seiten.',
+    embedKinds: {
+      placeholder: 'Platzhalter im Text',
+      codeBlock: 'Codeblock',
+      frontmatter: 'Frontmatter (am Seitenende)'
+    },
+    copy: 'Kopieren',
+    copied: 'In die Zwischenablage kopiert.',
+    useAsLayoutForm: 'Als Layout-Formular verwenden',
+    useAsLayoutFormHint: 'Steht dann auf jeder Seite an der Position des Layout-Formulars. Es gibt nur eines.'
   },
   multilanguageEditor: {
     intro: 'quartz-multilanguage betrifft die ganze Website. Jede Änderung wird sofort gespeichert.',

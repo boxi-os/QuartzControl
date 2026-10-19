@@ -1024,6 +1024,7 @@ export default {
       navigations: 'Navigations',
       extras: 'Additional content',
       languages: 'Languages',
+      forms: 'Forms',
       marketplace: 'Marketplace'
     },
     descriptions: {
@@ -1031,6 +1032,7 @@ export default {
       navigations: 'Settings for the “quartz-navigations” plugin: create, manage and configure navigations.',
       extras: 'Settings for the “quartz-layout-box” plugin: create, manage and configure additional content boxes.',
       languages: 'Settings for the “quartz-multilanguage” plugin: the site’s languages and how they are detected, switched and published.',
+      forms: 'Settings for the “quartz-forms” plugin: create, manage and configure forms, with sending, encryption and spam protection.',
       marketplace: 'The plugin catalog of quartz-community, built-in ones included. Add plugins from anywhere else via “owner/repo”.'
     }
   },
@@ -1136,6 +1138,142 @@ export default {
       trashedAnnounce: '“{{name}}” is in the trash.',
       addedAnnounce: '“{{name}}” added.'
     }
+  },
+  formsEditor: {
+    intro: 'quartz-forms keeps all forms of the site in one entry. A form appears on a page that embeds it by its id, or on every page as the layout form. Every change is saved at once.',
+    notInstalledTitle: 'quartz-forms is not installed',
+    notInstalledText: 'This tab edits the forms of the quartz-forms plugin. Install it in the marketplace via “boxi-os/quartz-forms”.',
+    severalEntries: 'The configuration names quartz-forms {{count}} times. This is the first entry; edit the others under “Installed”.',
+    enabled: 'Switched on',
+    enabledHint: 'Switched off, the site builds without forms. Pages that embed one then show the code block or the placeholder.',
+    enabledAnnounce: 'Forms switched on.',
+    disabledAnnounce: 'Forms switched off.',
+    allOptions: 'All options',
+    listTitle_one: 'One form',
+    listTitle_other: '{{count}} forms',
+    empty: 'No form yet. Create one from a template.',
+    add: 'New form',
+    addSubmit: 'Create',
+    start: 'Start with',
+    id: 'Id',
+    idHint: 'A page embeds the form by it. Lower-case letters, digits and hyphens.',
+    idRenameHint: 'Pages that embed the form name this id. Changing it here means changing it there too.',
+    idProblem: {
+      empty: 'The id is missing.',
+      pattern: 'Only lower-case letters, digits and hyphens, starting with a letter or a digit.',
+      taken: 'Another form already has this id.'
+    },
+    templates: {
+      contact: 'Contact',
+      feedback: 'Feedback',
+      rsvp: 'Sign-up',
+      survey: 'Survey',
+      empty: 'Empty'
+    },
+    templateIds: {
+      contact: 'contact',
+      feedback: 'feedback',
+      rsvp: 'signup',
+      survey: 'survey',
+      empty: 'form'
+    },
+    templateHints: {
+      contact: 'Name, e-mail, message, consent',
+      feedback: 'Rating and comment on the page',
+      rsvp: 'Name, e-mail, date, people',
+      survey: 'Anonymous: choice, scale, comment',
+      empty: 'One message field, the rest is yours'
+    },
+    messageLabel: 'Message',
+    fromTemplate: 'Fields of the template “{{template}}”',
+    fieldCount_one: 'One field',
+    fieldCount_other: '{{count}} fields',
+    transportKinds: {
+      relay: 'Relay',
+      endpoint: 'Endpoint',
+      formspree: 'Formspree',
+      web3forms: 'Web3Forms',
+      mailto: 'Mail program'
+    },
+    encryptionModes: {
+      required: 'encrypted',
+      optional: 'optionally encrypted',
+      off: 'unencrypted'
+    },
+    layoutBadge: 'Layout',
+    anonymousBadge: 'anonymous',
+    duplicateNamed: 'Copy “{{name}}”',
+    addedAnnounce: 'Form “{{id}}” created.',
+    duplicatedAnnounce: 'Copy “{{id}}” created.',
+    removeConfirm: 'Remove “{{name}}”?\n\nPages that embed “{{id}}” no longer build until the id is removed there.',
+    removedAnnounce: '“{{name}}” removed.',
+    renameConfirm: 'Change the id “{{from}}” to “{{to}}”?\n\nPages that embed “{{from}}” no longer build until the id is changed there. The layout form follows.',
+    renameSubmit: 'Change id',
+    renamedAnnounce: 'The id “{{from}}” is now “{{to}}”.',
+    positionAnnounce: 'The layout form now stands in “{{position}}”.',
+    layoutOnAnnounce: '“{{id}}” is now the layout form.',
+    layoutOffAnnounce: '“{{id}}” is no longer the layout form.',
+    sectionsTitle: 'Settings for all forms',
+    sections: {
+      transport: 'Sending',
+      keys: 'Keys',
+      spam: 'Spam protection',
+      layout: 'Layout form',
+      texts: 'Texts',
+      technical: 'Technical'
+    },
+    sectionHints: {
+      transport: 'Where a form sends to. Each form can change single settings for itself.',
+      keys: 'Public PGP keys that encrypting forms send to.',
+      spam: 'Protection and limits for all forms. Each form can change single values for itself.',
+      layout: 'A form that stands in the same place on every page, such as below the text. A page hides it with “form: false” in its frontmatter.',
+      texts: 'Own wording for the plugin’s texts, per language.',
+      technical: 'How the plugin recognises a form embedded in a page.'
+    },
+    noUrl: 'no address',
+    noKeys: 'none',
+    allOff: 'all off',
+    spamShort: {
+      honeypot: 'honeypot',
+      minSeconds: 'time trap {{seconds}} s',
+      pow: 'proof of work',
+      rate: 'at most {{perHour}}/h'
+    },
+    noLayoutForm: 'No layout form',
+    unknownForm: 'Unknown form “{{id}}”',
+    layoutFormHint: 'The form that stands on every page through this entry’s layout block.',
+    notPlaced: 'not placed',
+    notPlacedHint: 'The entry has no layout block yet. Choosing a position creates it.',
+    ownTexts_one: 'One own text',
+    ownTexts_other: '{{count}} own texts',
+    pluginTexts: 'The plugin’s texts',
+    panelLabel: 'Edit form',
+    panelEmptyTitle: 'Forms',
+    panelEmptyText: 'Choose a form or a setting on the left.',
+    previewHint: 'A form appears on pages that embed it, and on every page as the layout form.',
+    parts: {
+      general: 'General',
+      fields: 'Fields',
+      sending: 'Sending',
+      privacy: 'Privacy and encryption',
+      spam: 'Spam protection',
+      embed: 'Embedding'
+    },
+    templateFieldsNote: 'The form takes the fields of its template. Own fields replace them entirely.',
+    ownTransport: 'Sending for this form',
+    ownTransportHint: 'What is not set here applies as under “Sending” for all forms.',
+    ownSpamHint: 'What is not set here applies as under “Spam protection” for all forms.',
+    pageContextAnonymous: 'Has no effect because the form is anonymous.',
+    embedHint: 'A page embeds the form with one of these lines. QuartzControl writes nothing into your pages.',
+    embedKinds: {
+      placeholder: 'Placeholder in the text',
+      codeBlock: 'Code block',
+      frontmatter: 'Frontmatter (at the end of the page)'
+    },
+    copy: 'Copy',
+    copied: 'Copied to the clipboard.',
+    useAsLayoutForm: 'Use as the layout form',
+    useAsLayoutFormHint: 'Then stands on every page at the position of the layout form. There is only one.'
   },
   multilanguageEditor: {
     intro: 'quartz-multilanguage applies to the whole site. Every change is saved right away.',

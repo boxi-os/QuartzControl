@@ -11,18 +11,19 @@ import Marketplace from './Marketplace'
 import Navigations from './Navigations'
 import ExtraContent from './ExtraContent'
 import Multilanguage from './Multilanguage'
+import Forms from './Forms'
 import HandbookLink from '../../components/HandbookLink'
 
 // Beide Reiter stehen im selben Kapitel - der Marktplatz ist dort der letzte Abschnitt.
-const HANDBOOK = { installed: 'plugins', navigations: 'plugins', extras: 'plugins', languages: 'plugins', marketplace: 'plugins' } as const
+const HANDBOOK = { installed: 'plugins', navigations: 'plugins', extras: 'plugins', languages: 'plugins', forms: 'plugins', marketplace: 'plugins' } as const
 
 // Finding a plugin and configuring it is one job, so it is one page. Updating is not: that is
 // maintenance, it covers the Quartz core as much as the plugins, and it lives next to Backups.
-export type PluginsTab = 'installed' | 'navigations' | 'extras' | 'languages' | 'marketplace'
+export type PluginsTab = 'installed' | 'navigations' | 'extras' | 'languages' | 'forms' | 'marketplace'
 
 // The editors for this project's own plugins sit between the list and the marketplace: they are a
-// closer look at entries of the list (plan 1.1, phases 5-7).
-const TAB_ORDER: PluginsTab[] = ['installed', 'navigations', 'extras', 'languages', 'marketplace']
+// closer look at entries of the list (plan 1.1, phases 5-7; Formulare in 1.2).
+const TAB_ORDER: PluginsTab[] = ['installed', 'navigations', 'extras', 'languages', 'forms', 'marketplace']
 
 function isTab(value: string | null): value is PluginsTab {
   return value !== null && (TAB_ORDER as string[]).includes(value)
@@ -81,6 +82,7 @@ export default function Plugins(): JSX.Element {
       {tab === 'navigations' && <Navigations onShowAllOptions={showInList} />}
       {tab === 'extras' && <ExtraContent onShowAllOptions={showInList} />}
       {tab === 'languages' && <Multilanguage onShowAllOptions={showInList} />}
+      {tab === 'forms' && <Forms onShowAllOptions={showInList} />}
       {tab === 'marketplace' && <Marketplace />}
     </div>
   )

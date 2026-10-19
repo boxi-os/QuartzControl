@@ -1,0 +1,851 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
+import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
+import {
+  Blocks,
+  ChevronRight,
+  ClipboardList,
+  Code,
+  Copy,
+  FileText,
+  KeyRound,
+  LayoutTemplate,
+  ListChecks,
+  Lock,
+  MessageSquare,
+  Plus,
+  Send,
+  ShieldCheck,
+  SlidersHorizontal,
+  ThumbsUp,
+  Trash2,
+  Type,
+  UserCheck,
+  Vote,
+  Wrench
+} from 'lucide-react'
+import type { LayoutPosition, NormalizedOptionSchema, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
+import { Badge, Button, Card, CardHeading, DetailLayout, Field, FieldGroup, IconButton, InfoNote, PanelSection, SegmentedControl, Select, SelectableRow, TextInput, Toggle, focusRowAt, useCopyToClipboard } from '../../components/ui'
+import { formatIpcError } from '../../components/ErrorSurface'
+import PluginOptionsForm from '../../components/PluginOptionsForm'
+import { ObjectBlock, type FormContext } from '../../components/PluginOptionsForm/editors'
+import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
+import type { FormLanguage } from '../../components/PluginOptionsForm/text'
+import SitePreview from '../../components/SitePreview'
+import { announce } from '../../state/announcer'
+import { primeStickyState, useStickyState } from '../../state/uiState'
+import { markReturn } from '../../state/returnLink'
+import { useIpcQuery } from '../../state/useIpcQuery'
+import { confirmDialog } from '../../utils/confirm'
+import { POSITIONS, buildPositionMap, componentRef, getLayout, placeComponent } from '../LayoutEditor/utils'
+import { useProject } from '../ProjectLayout'
+import {
+  FORMS_PLUGIN,
+  FORMS_READ_AGAINST,
+  SECTIONS,
+  TEMPLATE_NAMES,
+  duplicateForm,
+  effectiveForm,
+  embedSnippets,
+  encryptionModeOf,
+  formIdProblem,
+  formSchema,
+  formsEntries,
+  formsOf,
+  freeId,
+  isAnonymous,
+  isObject,
+  newForm,
+  objectSchema,
+  removeForm,
+  renameForm,
+  resolvedGlobal,
+  textIn,
+  transportKindOf,
+  usesTemplateFields,
+  withForm,
+  type FormDef,
+  type FormTemplate,
+  type IdProblem,
+  type SectionId
+} from './formsOptions'
+import { DraftInput } from './DraftInput'
+import { ReadAgainstNote } from './ReadAgainstNote'
+import { SavesImmediately } from './SavesImmediately'
+
+type Options = Record<string, unknown>
+
+const SECTION_ICONS: Record<SectionId, typeof Send> = {
+  transport: Send,
+  keys: KeyRound,
+  spam: ShieldCheck,
+  layout: LayoutTemplate,
+  texts: Type,
+  technical: Wrench
+}
+
+const START_ICONS: Record<FormTemplate | 'empty', typeof Send> = {
+  contact: MessageSquare,
+  feedback: ThumbsUp,
+  rsvp: UserCheck,
+  survey: Vote,
+  empty: FileText
+}
+
+/**
+ * The editor for quartz-forms (plan 1.2). Like quartz-multilanguage the plugin is one entry for the
+ * whole site, so the list on the left holds its forms - the entries of `options.forms` - and below
+ * them the global settings, each a row that opens in the panel. A form's panel shows the plugin's
+ * own schema for a form (formSchema), in parts; its spam and transport settings are laid over the
+ * global ones, shown as such (ObjectBlock's `inherit`, as layout-box's byLang).
+ *
+ * The writes follow the plugin list's rules, as in Multilanguage.tsx: each one against the newest
+ * state, queued, and re-read once the queue is empty.
+ */
+export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyKey: string) => void }): JSX.Element {
+  const { t, i18n } = useTranslation()
+  const lang: FormLanguage = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'de'
+  const project = useProject()
+  const navigate = useNavigate()
+  const [config, setConfig] = useState<QuartzConfig | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  // `form:<id>` or `section:<id>` - an id is stable, a row's position is not.
+  const [selected, setSelected] = useStickyState<string | null>('forms.selected', null)
+  const [adding, setAdding] = useState(false)
+  const listRef = useRef<HTMLUListElement>(null)
+  const [savedFlash, setSavedFlash] = useState(false)
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const reload = useCallback(async (): Promise<void> => {
+    try {
+      setConfig(await window.quartzGui.config.get(project.path))
+      setLoadError(null)
+    } catch (err) {
+      setLoadError(formatIpcError(err))
+    }
+  }, [project.path])
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
+
+  useEffect(
+    () => () => {
+      if (savedTimer.current) clearTimeout(savedTimer.current)
+    },
+    []
+  )
+
+  const entries = formsEntries(config)
+  const entry = entries[0] ?? null
+  const sourceKey = JSON.stringify(entry?.plugin.source ?? null)
+  const schemaQuery = useIpcQuery(
+    () => (entry ? window.quartzGui.plugins.optionSchema({ projectPath: project.path, source: entry.plugin.source }) : Promise.resolve(null)),
+    [project.path, sourceKey]
+  )
+  const schema = schemaQuery.data?.schema ?? null
+
+  const configRef = useRef(config)
+  configRef.current = config
+  const writes = useRef<Promise<unknown>>(Promise.resolve())
+  async function write(next: QuartzConfig, said?: string): Promise<void> {
+    configRef.current = next
+    setConfig(next)
+    const pending = writes.current.then(() => window.quartzGui.config.save(project.path, next))
+    writes.current = pending.catch(() => {})
+    try {
+      await pending
+    } catch (err) {
+      await reload()
+      setMessage(formatIpcError(err))
+      return
+    }
+    setMessage(null)
+    setSavedFlash(true)
+    if (savedTimer.current) clearTimeout(savedTimer.current)
+    savedTimer.current = setTimeout(() => setSavedFlash(false), 2000)
+    if (said) announce(said)
+    if (configRef.current === next) await reload()
+  }
+
+  // Against the newest state, like every write here: two changes in quick succession must not
+  // undo each other.
+  function updatePlugins(change: (plugins: PluginEntry[], index: number) => PluginEntry[], said?: string): void {
+    const base = configRef.current
+    const current = formsEntries(base)[0]
+    if (!base || !current) return
+    void write({ ...base, plugins: change(base.plugins, current.index) }, said)
+  }
+  function updateEntry(change: (p: PluginEntry) => PluginEntry, said?: string): void {
+    updatePlugins((plugins, index) => plugins.map((p, i) => (i === index ? change(p) : p)), said)
+  }
+  function updateOptions(change: (options: Options) => Options | undefined, said?: string): void {
+    updateEntry((p) => {
+      const next = { ...p }
+      const options = change(p.options ?? {})
+      if (options && Object.keys(options).length) next.options = options
+      else delete next.options
+      return next
+    }, said)
+  }
+
+  if (loadError) return <p className="text-ui text-red-600 dark:text-red-400">{loadError}</p>
+  if (!config) return <p className="text-ui text-text-muted">{t('common.loading')}</p>
+
+  if (!entry) {
+    return (
+      <Card className="flex max-w-[95ch] flex-col items-start gap-2">
+        <CardHeading icon={ClipboardList}>{t('formsEditor.notInstalledTitle')}</CardHeading>
+        <p className="text-ui text-text-secondary">{t('formsEditor.notInstalledText')}</p>
+      </Card>
+    )
+  }
+
+  const options = entry.plugin.options ?? {}
+  const forms = formsOf(options)
+  const ids = forms.map(([id]) => id)
+  const layoutForm = typeof options.layoutForm === 'string' ? options.layoutForm : ''
+  const languages = siteLanguages(config)
+  const titleOf = (id: string, def: FormDef): string => textIn(effectiveForm(def).title, lang) || id
+
+  const selectedForm = selected?.startsWith('form:') ? (forms.find(([id]) => id === selected.slice(5)) ?? null) : null
+  const selectedSection = selected?.startsWith('section:') ? (SECTIONS.find((s) => s.id === selected.slice(8)) ?? null) : null
+
+  function addForm(id: string, start: FormTemplate | 'empty'): void {
+    setAdding(false)
+    setSelected(`form:${id}`)
+    updateOptions((o) => withForm(o, id, newForm(start, t('formsEditor.messageLabel'))), t('formsEditor.addedAnnounce', { id }))
+  }
+
+  async function remove(id: string, def: FormDef): Promise<void> {
+    const name = titleOf(id, def)
+    if (!(await confirmDialog({ text: t('formsEditor.removeConfirm', { name, id }), confirmLabel: t('common.remove'), danger: true }))) return
+    if (selected === `form:${id}`) setSelected(null)
+    flushSync(() => updateOptions((o) => removeForm(o, id), t('formsEditor.removedAnnounce', { name })))
+    focusRowAt(listRef.current, ids.indexOf(id))
+  }
+
+  function duplicate(id: string): void {
+    const base = configRef.current
+    const current = formsEntries(base)[0]
+    if (!current) return
+    const { id: copyId } = duplicateForm(current.plugin.options ?? {}, id)
+    setSelected(`form:${copyId}`)
+    updateOptions((o) => duplicateForm(o, id).options, t('formsEditor.duplicatedAnnounce', { id: copyId }))
+  }
+
+  async function rename(from: string, to: string): Promise<void> {
+    if (!(await confirmDialog({ text: t('formsEditor.renameConfirm', { from, to }), confirmLabel: t('formsEditor.renameSubmit') }))) return
+    setSelected(`form:${to}`)
+    updateOptions((o) => renameForm(o, from, to), t('formsEditor.renamedAnnounce', { from, to }))
+  }
+
+  function openOnStage(): void {
+    if (!config || !entry) return
+    const target = `/project/${project.id}/layout`
+    primeStickyState(target, 'layout.pageType', null)
+    primeStickyState(target, 'layout.selected', componentRef(config.plugins, entry.index))
+    primeStickyState(target, 'layout.tab', 'global')
+    markReturn(project.id, 'plugins?tab=forms', 'layout?tab=global')
+    navigate(target)
+  }
+
+  function setPosition(position: LayoutPosition): void {
+    updatePlugins((plugins, index) => {
+      if (getLayout(plugins[index])) return placeComponent(plugins, buildPositionMap(plugins), index, position)
+      const others = buildPositionMap(plugins)[position].map((i) => getLayout(plugins[i])?.priority ?? 0)
+      const priority = (others.length ? Math.max(...others) : 0) + 10
+      return plugins.map((p, i) => (i === index ? { ...p, layout: { position, priority } } : p))
+    }, t('formsEditor.positionAnnounce', { position: t(`positions.${position}`, position) }))
+  }
+
+  const kindLabel = (kind: string): string => t(`formsEditor.transportKinds.${kind}`, kind)
+  const modeLabel = (mode: string): string => t(`formsEditor.encryptionModes.${mode}`, mode)
+  const subtitle = (def: FormDef): string => {
+    const eff = effectiveForm(def)
+    const fieldsPart = usesTemplateFields(def)
+      ? t('formsEditor.fromTemplate', { template: t(`formsEditor.templates.${String(def.template)}`) })
+      : t('formsEditor.fieldCount', { count: eff.fields.length })
+    return [fieldsPart, kindLabel(transportKindOf(def, options)), modeLabel(encryptionModeOf(def))].join(' · ')
+  }
+
+  const sectionSummary = (id: SectionId): string => {
+    switch (id) {
+      case 'transport': {
+        const tr = resolvedGlobal(schema, options, 'transport')
+        const url = typeof tr.url === 'string' && tr.url ? tr.url : t('formsEditor.noUrl')
+        return `${kindLabel(String(tr.kind ?? 'relay'))} · ${url}`
+      }
+      case 'keys': {
+        const names = isObject(options.keys) ? Object.keys(options.keys) : []
+        return names.length ? names.join(', ') : t('formsEditor.noKeys')
+      }
+      case 'spam': {
+        const s = resolvedGlobal(schema, options, 'spam')
+        const parts = [
+          s.honeypot !== false ? t('formsEditor.spamShort.honeypot') : null,
+          typeof s.minSeconds === 'number' && s.minSeconds > 0 ? t('formsEditor.spamShort.minSeconds', { seconds: s.minSeconds }) : null,
+          s.pow === true ? t('formsEditor.spamShort.pow') : null,
+          s.captcha && s.captcha !== 'none' ? String(s.captcha) : null,
+          typeof s.rateLimitPerHour === 'number' && s.rateLimitPerHour > 0 ? t('formsEditor.spamShort.rate', { perHour: s.rateLimitPerHour }) : null
+        ].filter(Boolean)
+        return parts.length ? parts.join(' · ') : t('formsEditor.allOff')
+      }
+      case 'layout': {
+        const placement = getLayout(entry.plugin)
+        if (!layoutForm) return t('formsEditor.noLayoutForm')
+        return `${layoutForm} · ${placement ? t(`positions.${placement.position}`, placement.position) : t('formsEditor.notPlaced')}`
+      }
+      case 'texts': {
+        const count = isObject(options.texts) ? Object.values(options.texts).reduce<number>((n, v) => n + (isObject(v) ? Object.keys(v).length : 0), 0) : 0
+        return count ? t('formsEditor.ownTexts', { count }) : t('formsEditor.pluginTexts')
+      }
+      case 'technical':
+        return `${typeof options.codeBlockLang === 'string' && options.codeBlockLang ? options.codeBlockLang : 'quartz-form'} · ${typeof options.frontmatterKey === 'string' && options.frontmatterKey ? options.frontmatterKey : 'form'}`
+    }
+  }
+
+  return (
+    <DetailLayout
+      panelWidth="wide"
+      panelLabel={t('formsEditor.panelLabel')}
+      onDismiss={() => setSelected(null)}
+      panel={
+        selectedForm ? (
+          <FormPanel
+            key={selectedForm[0]}
+            id={selectedForm[0]}
+            def={selectedForm[1]}
+            ids={ids}
+            title={titleOf(selectedForm[0], selectedForm[1])}
+            options={options}
+            schema={schema}
+            languages={languages}
+            lang={lang}
+            saved={savedFlash}
+            isLayoutForm={layoutForm === selectedForm[0]}
+            onDef={(next) => updateOptions((o) => withForm(o, selectedForm[0], next))}
+            onRename={(to) => void rename(selectedForm[0], to)}
+            onLayoutForm={(on) =>
+              updateOptions(
+                (o) => ({ ...o, layoutForm: on ? selectedForm[0] : '' }),
+                t(on ? 'formsEditor.layoutOnAnnounce' : 'formsEditor.layoutOffAnnounce', { id: selectedForm[0] })
+              )
+            }
+          />
+        ) : selectedSection ? (
+          <SectionPanel
+            key={selectedSection.id}
+            id={selectedSection.id}
+            options={options}
+            schema={schema}
+            languages={languages}
+            saved={savedFlash}
+            ids={ids}
+            placement={getLayout(entry.plugin)}
+            onOptions={(next) => updateOptions(() => next)}
+            onPosition={setPosition}
+            onOpenOnStage={openOnStage}
+          />
+        ) : (
+          <Card className="flex flex-col gap-3">
+            <CardHeading icon={ClipboardList}>{t('formsEditor.panelEmptyTitle')}</CardHeading>
+            <p className="text-ui text-text-secondary">{t('formsEditor.panelEmptyText')}</p>
+          </Card>
+        )
+      }
+    >
+      <InfoNote>{t('formsEditor.intro')}</InfoNote>
+      <ReadAgainstNote plugin={FORMS_PLUGIN} readAgainst={FORMS_READ_AGAINST} installed={schemaQuery.data?.packageVersion} />
+      {message && (
+        <p role="alert" className="text-ui text-red-600 dark:text-red-400">
+          {message}
+        </p>
+      )}
+      {entries.length > 1 && <p className="text-ui text-amber-700 dark:text-amber-400">{t('formsEditor.severalEntries', { count: entries.length })}</p>}
+
+      <Card className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardHeading icon={Blocks}>{entry.plugin.name}</CardHeading>
+          <Button variant="ghost" onClick={() => onShowAllOptions(entry.plugin.name)}>
+            {t('formsEditor.allOptions')}
+          </Button>
+        </div>
+        <Toggle
+          label={t('formsEditor.enabled')}
+          hint={t('formsEditor.enabledHint')}
+          checked={entry.plugin.enabled}
+          onChange={(on) => updateEntry((p) => ({ ...p, enabled: on }), t(on ? 'formsEditor.enabledAnnounce' : 'formsEditor.disabledAnnounce'))}
+        />
+      </Card>
+
+      <Card className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardHeading icon={ClipboardList}>{t('formsEditor.listTitle', { count: forms.length })}</CardHeading>
+          {!adding && (
+            <Button variant="ghost" onClick={() => setAdding(true)}>
+              <Plus size={14} aria-hidden />
+              {t('formsEditor.add')}
+            </Button>
+          )}
+        </div>
+        {adding && <AddFormForm ids={ids} onAdd={addForm} onCancel={() => setAdding(false)} />}
+        {forms.length === 0 && !adding && <p className="text-micro text-text-muted">{t('formsEditor.empty')}</p>}
+        <ul ref={listRef} className="flex flex-col gap-1.5">
+          {forms.map(([id, def]) => {
+            const key = `form:${id}`
+            const name = titleOf(id, def)
+            return (
+              <SelectableRow
+                key={id}
+                selected={selected === key}
+                onSelect={() => setSelected(key)}
+                leading={<ClipboardList size={15} aria-hidden className="shrink-0 text-text-secondary" />}
+                title={name === id ? id : `${name} (${id})`}
+                subtitle={subtitle(def)}
+                trailing={
+                  <>
+                    {layoutForm === id && <Badge tone="green">{t('formsEditor.layoutBadge')}</Badge>}
+                    {isAnonymous(def) && <Badge>{t('formsEditor.anonymousBadge')}</Badge>}
+                    <IconButton icon={Copy} title={t('formsEditor.duplicateNamed', { name: id })} onClick={() => duplicate(id)} />
+                    <IconButton icon={Trash2} title={t('common.removeNamed', { name: id })} onClick={() => void remove(id, def)} />
+                  </>
+                }
+              />
+            )
+          })}
+        </ul>
+      </Card>
+
+      <Card className="flex flex-col gap-3">
+        <CardHeading icon={SlidersHorizontal}>{t('formsEditor.sectionsTitle')}</CardHeading>
+        {schemaQuery.loading ? (
+          <p className="text-micro text-text-muted">{t('layoutEditor.inspector.optionsLoading')}</p>
+        ) : schemaQuery.error ? (
+          <p className="text-micro text-red-600 dark:text-red-400">{t('layoutEditor.inspector.optionsError', { reason: schemaQuery.error })}</p>
+        ) : (
+          <>
+            {schemaQuery.data?.unreadable && (
+              <p className="text-micro text-amber-700 dark:text-amber-300">{t('pluginOptions.unreadable', { reason: schemaQuery.data.unreadable })}</p>
+            )}
+            <ul className="flex flex-col gap-1.5">
+              {SECTIONS.map((s) => {
+                const key = `section:${s.id}`
+                const Icon = SECTION_ICONS[s.id]
+                return (
+                  <SelectableRow
+                    key={s.id}
+                    selected={selected === key}
+                    onSelect={() => setSelected(key)}
+                    leading={<Icon size={15} aria-hidden className="shrink-0 text-text-secondary" />}
+                    title={t(`formsEditor.sections.${s.id}`)}
+                    subtitle={sectionSummary(s.id)}
+                    trailing={<ChevronRight size={14} aria-hidden className="shrink-0 text-text-muted" />}
+                  />
+                )
+              })}
+            </ul>
+          </>
+        )}
+      </Card>
+
+      <SitePreview
+        projectId={project.id}
+        projectPath={project.path}
+        stickyPrefix="forms"
+        hint={t('formsEditor.previewHint')}
+        highlight={
+          selectedForm
+            ? { selector: `form.quartz-form[data-form="${selectedForm[0]}"]`, name: titleOf(selectedForm[0], selectedForm[1]), matches: 1, ownClass: true }
+            : null
+        }
+      />
+    </DetailLayout>
+  )
+}
+
+function AddFormForm({ ids, onAdd, onCancel }: { ids: string[]; onAdd: (id: string, start: FormTemplate | 'empty') => void; onCancel: () => void }): JSX.Element {
+  const { t } = useTranslation()
+  const [start, setStart] = useState<FormTemplate | 'empty'>('contact')
+  const [id, setId] = useState(() => freeId(t('formsEditor.templateIds.contact'), ids))
+  const [touched, setTouched] = useState(false)
+  const [tried, setTried] = useState(false)
+  const problem = formIdProblem(id, ids)
+  return (
+    <form
+      className="flex flex-col gap-3 rounded-md border border-ink/10 p-3 dark:border-ink/10"
+      onSubmit={(e) => {
+        e.preventDefault()
+        setTried(true)
+        if (!problem) onAdd(id, start)
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          onCancel()
+        }
+      }}
+    >
+      <FieldGroup label={t('formsEditor.start')}>
+        <SegmentedControl
+          label={t('formsEditor.start')}
+          variant="tiles"
+          value={start}
+          onChange={(next) => {
+            setStart(next)
+            // The id follows the choice until it was typed in.
+            if (!touched) setId(freeId(t(`formsEditor.templateIds.${next}`), ids))
+          }}
+          options={[...TEMPLATE_NAMES, 'empty' as const].map((name) => ({
+            value: name,
+            label: t(`formsEditor.templates.${name}`),
+            icon: START_ICONS[name],
+            description: t(`formsEditor.templateHints.${name}`)
+          }))}
+        />
+      </FieldGroup>
+      <Field label={t('formsEditor.id')} hint={t('formsEditor.idHint')}>
+        <TextInput
+          value={id}
+          onChange={(e) => {
+            setTouched(true)
+            setId(e.target.value.trim())
+          }}
+          aria-invalid={tried && !!problem}
+        />
+      </Field>
+      {tried && problem && <p className="text-micro text-red-600 dark:text-red-400">{t(`formsEditor.idProblem.${problem}`)}</p>}
+      <div className="flex gap-2">
+        <Button type="submit">{t('formsEditor.addSubmit')}</Button>
+        <Button variant="ghost" onClick={onCancel}>
+          {t('common.cancel')}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+// The keys of a form, by the part of the panel that shows them. What none names (a key a newer
+// plugin knows) falls under "Allgemein", so nothing is out of reach.
+const GENERAL_KEYS = ['template', 'title', 'description', 'submitLabel', 'success', 'className']
+const SENDING_KEYS = ['recipient', 'subject']
+const PRIVACY_KEYS = ['encryption', 'anonymous', 'pageContext']
+const OWN_PARTS = new Set([...SENDING_KEYS, ...PRIVACY_KEYS, 'fields', 'transport', 'spam'])
+
+function FormPanel({
+  id,
+  def,
+  ids,
+  title,
+  options,
+  schema,
+  languages,
+  lang,
+  saved,
+  isLayoutForm,
+  onDef,
+  onRename,
+  onLayoutForm
+}: {
+  id: string
+  def: FormDef
+  ids: string[]
+  title: string
+  options: Options
+  schema: NormalizedOptionSchema | null
+  languages: string[]
+  lang: FormLanguage
+  saved: boolean
+  isLayoutForm: boolean
+  onDef: (next: FormDef) => void
+  onRename: (to: string) => void
+  onLayoutForm: (on: boolean) => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const project = useProject()
+  const [idDraft, setIdDraft] = useState<string | null>(null)
+  const idProblem: IdProblem | null = idDraft === null ? null : formIdProblem(idDraft, ids, id)
+  const form = useMemo(() => formSchema(schema), [schema])
+  const anonymous = isAnonymous(def)
+  const onChange = (next: Record<string, unknown> | undefined): void => onDef(next ?? {})
+
+  const pickGeneral = useCallback((key: string) => GENERAL_KEYS.includes(key) || !OWN_PARTS.has(key), [])
+  const pickFields = useCallback((key: string) => key === 'fields', [])
+  const pickSending = useCallback((key: string) => SENDING_KEYS.includes(key), [])
+  const pickPrivacy = useCallback((key: string) => PRIVACY_KEYS.includes(key), [])
+  // An anonymous form sends no page context: the plugin forces it off (resolveForm).
+  const privacyRoot = useMemo(
+    () => ({ flat: true, inactiveReason: (key: string) => (key === 'pageContext' && anonymous ? t('formsEditor.pageContextAnonymous') : null) }),
+    [anonymous, t]
+  )
+  const flat = useMemo(() => ({ flat: true }), [])
+
+  const { copy, copied } = useCopyToClipboard()
+  const snippets = embedSnippets(id, options)
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <CardHeading icon={ClipboardList}>
+          <span className="break-words">{title}</span>
+        </CardHeading>
+        <div className="flex flex-wrap items-center gap-2">
+          <SavesImmediately saved={saved} />
+        </div>
+      </div>
+
+      <Field label={t('formsEditor.id')} hint={t('formsEditor.idRenameHint')}>
+        <DraftInput
+          value={id}
+          aria-invalid={!!idProblem}
+          onDraft={(v) => setIdDraft(v.trim())}
+          onCommit={(v) => {
+            const to = v.trim()
+            setIdDraft(null)
+            if (to === id || formIdProblem(to, ids, id)) return
+            onRename(to)
+          }}
+        />
+      </Field>
+      {idProblem && <p className="-mt-2 text-micro text-red-600 dark:text-red-400">{t(`formsEditor.idProblem.${idProblem}`)}</p>}
+
+      <PanelSection icon={SlidersHorizontal} title={t('formsEditor.parts.general')}>
+        <PluginOptionsForm schema={form} values={def} onChange={onChange} explicitEmpty languages={languages} projectPath={project.path} pick={pickGeneral} freeKeys={false} root={flat} />
+      </PanelSection>
+
+      <PanelSection icon={ListChecks} title={t('formsEditor.parts.fields')}>
+        {usesTemplateFields(def) && <p className="text-micro text-text-muted">{t('formsEditor.templateFieldsNote')}</p>}
+        <PluginOptionsForm schema={form} values={def} onChange={onChange} explicitEmpty languages={languages} projectPath={project.path} pick={pickFields} freeKeys={false} root={flat} />
+      </PanelSection>
+
+      <PanelSection icon={Send} title={t('formsEditor.parts.sending')}>
+        <PluginOptionsForm schema={form} values={def} onChange={onChange} explicitEmpty languages={languages} projectPath={project.path} pick={pickSending} freeKeys={false} root={flat} />
+        <InheritedBlock
+          title={t('formsEditor.ownTransport')}
+          hint={t('formsEditor.ownTransportHint')}
+          schema={objectSchema(schema, 'transport')}
+          above={resolvedGlobal(schema, options, 'transport')}
+          values={isObject(def.transport) ? def.transport : {}}
+          languages={languages}
+          lang={lang}
+          onValues={(next) => {
+            const rest = { ...def }
+            if (next) rest.transport = next
+            else delete rest.transport
+            onDef(rest)
+          }}
+        />
+      </PanelSection>
+
+      <PanelSection icon={Lock} title={t('formsEditor.parts.privacy')}>
+        <PluginOptionsForm schema={form} values={def} onChange={onChange} explicitEmpty languages={languages} projectPath={project.path} pick={pickPrivacy} freeKeys={false} root={privacyRoot} />
+      </PanelSection>
+
+      <PanelSection icon={ShieldCheck} title={t('formsEditor.parts.spam')}>
+        <InheritedBlock
+          hint={t('formsEditor.ownSpamHint')}
+          schema={objectSchema(schema, 'spam')}
+          above={resolvedGlobal(schema, options, 'spam')}
+          values={isObject(def.spam) ? def.spam : {}}
+          languages={languages}
+          lang={lang}
+          onValues={(next) => {
+            const rest = { ...def }
+            if (next) rest.spam = next
+            else delete rest.spam
+            onDef(rest)
+          }}
+        />
+      </PanelSection>
+
+      <PanelSection icon={Code} title={t('formsEditor.parts.embed')}>
+        <p className="text-micro text-text-muted">{t('formsEditor.embedHint')}</p>
+        {(
+          [
+            ['placeholder', snippets.placeholder],
+            ['codeBlock', snippets.codeBlock],
+            ['frontmatter', snippets.frontmatter]
+          ] as const
+        ).map(([kind, text]) => (
+          <div key={kind} className="flex flex-wrap items-start gap-2">
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-micro font-medium text-text-secondary">{t(`formsEditor.embedKinds.${kind}`)}</span>
+              <pre className="overflow-x-auto rounded-md bg-ink/[0.04] px-2 py-1.5 font-mono text-xs text-text dark:bg-ink/10">{text}</pre>
+            </div>
+            <Button variant="ghost" onClick={() => copy(text, t(`formsEditor.embedKinds.${kind}`))}>
+              <Copy size={14} aria-hidden />
+              {t('formsEditor.copy')}
+            </Button>
+          </div>
+        ))}
+        <p aria-live="polite" className="text-micro text-green-600 dark:text-green-400">
+          {copied ? t('formsEditor.copied') : ''}
+        </p>
+        <Toggle label={t('formsEditor.useAsLayoutForm')} hint={t('formsEditor.useAsLayoutFormHint')} checked={isLayoutForm} onChange={onLayoutForm} />
+      </PanelSection>
+    </Card>
+  )
+}
+
+/**
+ * The inside of a form's `spam` or `transport`: each key either stands as the global setting (shown
+ * as what it is there) or is set for this form. Resetting a key gives it back to the global one.
+ */
+function InheritedBlock({
+  title,
+  hint,
+  schema,
+  above,
+  values,
+  languages,
+  lang,
+  onValues
+}: {
+  title?: string
+  hint: string
+  schema: NormalizedOptionSchema | null
+  above: Record<string, unknown>
+  values: Record<string, unknown>
+  languages: string[]
+  lang: FormLanguage
+  onValues: (next: Record<string, unknown> | undefined) => void
+}): JSX.Element | null {
+  const project = useProject()
+  const ctx: FormContext = useMemo(() => ({ lang, explicitEmpty: false, languages, projectPath: project.path, query: '', mark: '' }), [lang, languages, project.path])
+  if (!schema) return null
+  return (
+    <div className="flex flex-col gap-2">
+      {title && <h4 className="text-micro font-semibold text-text-secondary">{title}</h4>}
+      <p className="text-micro text-text-muted">{hint}</p>
+      <ObjectBlock
+        fields={schema.fields}
+        values={values}
+        ctx={ctx}
+        inherit={{ values: above, fields: schema.fields }}
+        root={{ flat: true }}
+        onValue={(next) => onValues(Object.keys(next).length ? next : undefined)}
+      />
+    </div>
+  )
+}
+
+function SectionPanel({
+  id,
+  options,
+  schema,
+  languages,
+  saved,
+  ids,
+  placement,
+  onOptions,
+  onPosition,
+  onOpenOnStage
+}: {
+  id: SectionId
+  options: Options
+  schema: NormalizedOptionSchema | null
+  languages: string[]
+  saved: boolean
+  ids: string[]
+  placement: ReturnType<typeof getLayout>
+  onOptions: (next: Options | undefined) => void
+  onPosition: (position: LayoutPosition) => void
+  onOpenOnStage: () => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const project = useProject()
+  const section = SECTIONS.find((s) => s.id === id)!
+  const Icon = SECTION_ICONS[id]
+  // A section that is one object (`spam`, `transport`) shows what is inside it, with the keys as
+  // they stand in quartz.config.yaml (`spam.pow`), as Mehrsprachigkeit does with `switcher`.
+  const sole = section.keys.length === 1 ? objectSchema(schema, section.keys[0]) : null
+  const soleKey = sole ? section.keys[0] : null
+  const pick = useCallback((key: string) => (section.keys as readonly string[]).includes(key) && key !== 'layoutForm', [section])
+  const root = useMemo(() => ({ flat: true, ...(soleKey ? { keyPrefix: `${soleKey}.` } : {}) }), [soleKey])
+  const soleDefault = soleKey ? schema?.fields.find((f) => f.key === soleKey) : undefined
+  const soleValues = soleKey && isObject(options[soleKey]) ? (options[soleKey] as Options) : {}
+  // The section's schema with the defaults of `defaultOptions` on each key, so an unset key shows
+  // what the plugin takes for it.
+  const soleSchema = useMemo<NormalizedOptionSchema | null>(() => {
+    if (!sole) return null
+    const defaults = soleDefault?.hasDefault && isObject(soleDefault.default) ? soleDefault.default : {}
+    return {
+      ...sole,
+      fields: sole.fields.map((f) => (f.hasDefault || !(f.key in defaults) ? f : { ...f, hasDefault: true, default: defaults[f.key] }))
+    }
+  }, [sole, soleDefault])
+  const layoutForm = typeof options.layoutForm === 'string' ? options.layoutForm : ''
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <CardHeading icon={Icon}>{t(`formsEditor.sections.${id}`)}</CardHeading>
+        <p className="text-micro text-text-secondary">{t(`formsEditor.sectionHints.${id}`)}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <SavesImmediately saved={saved} />
+        </div>
+      </div>
+
+      {id === 'layout' && (
+        <>
+          <Field label="layoutForm" configKey hint={t('formsEditor.layoutFormHint')}>
+            <Select
+              value={ids.includes(layoutForm) || layoutForm === '' ? layoutForm : '__unknown'}
+              onChange={(e) => {
+                const rest = { ...options, layoutForm: e.target.value }
+                onOptions(rest)
+              }}
+            >
+              <option value="">{t('formsEditor.noLayoutForm')}</option>
+              {!ids.includes(layoutForm) && layoutForm !== '' && <option value="__unknown">{t('formsEditor.unknownForm', { id: layoutForm })}</option>}
+              {ids.map((formId) => (
+                <option key={formId} value={formId}>
+                  {formId}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label={t('layoutEditor.inspector.position')} hint={placement ? undefined : t('formsEditor.notPlacedHint')}>
+            <Select value={placement?.position ?? ''} onChange={(e) => e.target.value && onPosition(e.target.value as LayoutPosition)}>
+              {!placement && <option value="">{t('formsEditor.notPlaced')}</option>}
+              {POSITIONS.map((p) => (
+                <option key={p} value={p}>
+                  {t(`positions.${p}`, p)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {placement && (
+            <div>
+              <Button variant="ghost" onClick={onOpenOnStage}>
+                {t('pluginsInstalled.showOnStage')}
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+
+      {soleKey && soleSchema ? (
+        <PluginOptionsForm
+          schema={soleSchema}
+          values={soleValues}
+          onChange={(next) => {
+            const rest = { ...options }
+            if (next) rest[soleKey] = next
+            else delete rest[soleKey]
+            onOptions(Object.keys(rest).length ? rest : undefined)
+          }}
+          explicitEmpty
+          languages={languages}
+          projectPath={project.path}
+          freeKeys={false}
+          root={root}
+        />
+      ) : (
+        <PluginOptionsForm schema={schema} values={options} onChange={onOptions} explicitEmpty languages={languages} projectPath={project.path} pick={pick} freeKeys={false} root={root} />
+      )}
+    </Card>
+  )
+}

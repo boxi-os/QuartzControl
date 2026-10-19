@@ -125,7 +125,19 @@ export function FormFieldsEditor({
   // Sortable ids must be unique; a name written twice by hand gets its place appended. A page
   // break has no name: it is `page:<n>`, n counting the breaks, which a title edit leaves alone.
   const breaksBefore = (i: number): number => fields.slice(0, i).filter(isPageBreak).length
-  const ids = fields.map((f, i) => (isPageBreak(f) ? `page:${breaksBefore(i) + 1}` : fields.findIndex((g) => g.name === f.name) === i ? f.name : `${f.name}#${i}`))
+  const idsOf = (list: FieldDef[]): string[] =>
+    list.map((f, i) => (isPageBreak(f) ? `page:${list.slice(0, i).filter(isPageBreak).length + 1}` : list.findIndex((g) => g.name === f.name) === i ? f.name : `${f.name}#${i}`))
+  const ids = idsOf(fields)
+  // Those ids count places, so a row that goes or moves renumbers the breaks after it, and the
+  // open panel jumped to the next break: "Schritt 3" open, "Schritt 2" removed, open was the
+  // break after it (forty-ninth review, Niedrig 3). The open row is followed to its new place.
+  const keepOpen = (next: FieldDef[]): void => {
+    if (open === null) return
+    const item = fields[ids.indexOf(open)]
+    if (item === undefined) return
+    const at = next.indexOf(item)
+    setOpen(at < 0 ? null : idsOf(next)[at])
+  }
   // A page break is called by the step it begins: "Schritt 2 · Details".
   const rowLabel = (f: FieldDef, i: number): string => {
     if (!isPageBreak(f)) return fieldLabel(f, lang)
@@ -143,6 +155,7 @@ export function FormFieldsEditor({
     const next = [...fields]
     const [item] = next.splice(from, 1)
     next.splice(to, 0, item)
+    keepOpen(next)
     onFields(next)
     if (said) announce(t('formsEditor.fieldMovedAnnounce', { name: rowLabel(item, from), n: to + 1, count: fields.length }))
   }
@@ -170,7 +183,9 @@ export function FormFieldsEditor({
     const pageBreak = isPageBreak(fields[index])
     const text = t(pageBreak ? 'formsEditor.removeBreakConfirm' : 'formsEditor.removeFieldConfirm', { name })
     if (!(await confirmDialog({ text, confirmLabel: t('common.remove'), danger: true }))) return
-    onFields(fields.filter((_, i) => i !== index))
+    const next = fields.filter((_, i) => i !== index)
+    keepOpen(next)
+    onFields(next)
     announce(t(pageBreak ? 'formsEditor.breakRemovedAnnounce' : 'formsEditor.fieldRemovedAnnounce', { name }))
     focusRowAt(listRef.current, index)
   }

@@ -29,7 +29,7 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import type { NormalizedOptionSchema } from '@shared/ipc-contract'
-import { Badge, Button, Field, FieldGroup, IconButton, Select, Toggle, focusRowAt } from '../../components/ui'
+import { Badge, Button, Field, FieldGroup, IconButton, SegmentedControl, Select, Toggle, focusRowAt } from '../../components/ui'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import type { FormLanguage } from '../../components/PluginOptionsForm/text'
 import { announce } from '../../state/announcer'
@@ -76,7 +76,10 @@ const TYPE_ICONS: Record<FieldType, LucideIcon> = {
 
 // The keys the editor shows with its own controls; the rest of a type's keys go through the
 // plugin's form (fieldVariant), so the schema's own words and limits explain them.
-const OWN_KEYS = new Set(['type', 'name', 'label', 'hint', 'required', 'placeholder', 'options', 'text', 'linkLabel', 'minLabel', 'maxLabel'])
+const OWN_KEYS = new Set(['type', 'name', 'label', 'hint', 'required', 'placeholder', 'options', 'text', 'linkLabel', 'minLabel', 'maxLabel', 'width', 'layout'])
+
+// quartz-forms 0.4.0: a field spans the form, half or a third of it (`width`, every visible type).
+const WIDTHS = ['full', 'half', 'third'] as const
 
 /**
  * The fields of one form (plan 1.2, phase 3): a list sorted by dragging (dnd-kit, as everywhere
@@ -307,6 +310,12 @@ function SortableField({
           {isOpen ? <ChevronDown size={14} aria-hidden className="shrink-0 text-text-muted" /> : <ChevronRight size={14} aria-hidden className="shrink-0 text-text-muted" />}
           <TypeIcon type={field.type} />
           <span className="min-w-0 flex-1 truncate text-ui text-text">{label}</span>
+          {(field.width === 'half' || field.width === 'third') && (
+            <span className="shrink-0 text-micro text-text-muted" title={t(`formsEditor.widthBadge.${field.width}`)}>
+              <span aria-hidden>{field.width === 'half' ? '½' : '⅓'}</span>
+              <span className="sr-only">{t(`formsEditor.widthBadge.${field.width}`)}</span>
+            </span>
+          )}
           <span className="shrink-0 text-micro text-text-muted">{typeName}</span>
         </button>
         {problems.length > 0 && <Badge tone="red">{t('formsEditor.check.problemBadge', { count: problems.length })}</Badge>}
@@ -436,7 +445,15 @@ function FieldEditor({
         </Field>
         <Field label={t('formsEditor.fieldType')}>
           {shape ? (
-            <Select value={field.type} onChange={(e) => set('type', e.target.value)}>
+            <Select
+              value={field.type}
+              onChange={(e) => {
+                // A select's options are a list to open: its `layout` would do nothing (the plugin says so).
+                const next: FieldDef = { ...field, type: e.target.value }
+                if (next.type === 'select') delete next.layout
+                onField(next)
+              }}
+            >
               {shape.map((type) => (
                 <option key={type} value={type} disabled={type === 'pgpKey' && hasPgpKey && field.type !== 'pgpKey'}>
                   {t(`formsEditor.fieldTypes.${type}`)}
@@ -468,8 +485,29 @@ function FieldEditor({
       )}
       {hasLabel && <TextEditor label={t('formsEditor.fieldHint')} hint={t('formsEditor.fieldHintHint')} value={field.hint} languages={languages} onValue={(v) => set('hint', v)} />}
       {hasLabel && <Toggle label={t('formsEditor.required')} checked={field.required === true} onChange={(on) => set('required', on ? true : undefined)} />}
+      {field.type !== 'hidden' && (
+        <FieldGroup label={t('formsEditor.fieldWidth')}>
+          <SegmentedControl
+            label={t('formsEditor.fieldWidth')}
+            value={(WIDTHS as readonly unknown[]).includes(field.width) ? (field.width as (typeof WIDTHS)[number]) : 'full'}
+            options={WIDTHS.map((w) => ({ value: w, label: t(`formsEditor.fieldWidths.${w}`) }))}
+            onChange={(w) => set('width', w === 'full' ? undefined : w)}
+          />
+          <span className="text-micro text-text-muted">{t('formsEditor.fieldWidthHint')}</span>
+        </FieldGroup>
+      )}
       {(field.type === 'select' || field.type === 'radio' || field.type === 'checkboxes') && (
         <ChoiceOptions value={field.options} languages={languages} onValue={(v) => set('options', v)} />
+      )}
+      {(field.type === 'radio' || field.type === 'checkboxes') && (
+        <FieldGroup label={t('formsEditor.optionLayout')}>
+          <SegmentedControl
+            label={t('formsEditor.optionLayout')}
+            value={field.layout === 'inline' ? 'inline' : 'stacked'}
+            options={(['stacked', 'inline'] as const).map((l) => ({ value: l, label: t(`formsEditor.optionLayouts.${l}`) }))}
+            onChange={(l) => set('layout', l === 'inline' ? l : undefined)}
+          />
+        </FieldGroup>
       )}
       {variant && (
         <PluginOptionsForm schema={variant} values={field} onChange={(next) => onField((next ?? { type: field.type, name: field.name }) as FieldDef)} explicitEmpty={false} languages={languages} projectPath={project.path} pick={pick} freeKeys={false} root={flat} />

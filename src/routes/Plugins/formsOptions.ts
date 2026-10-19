@@ -415,3 +415,37 @@ export function freeFieldName(base: string, taken: string[]): string {
 export function fieldLabel(field: FieldDef, lang: string): string {
   return textIn(field.label, lang) || textIn(field.text, lang) || field.name
 }
+
+// ── what the plugin's check says, placed ──────────────────────────────────────────────────────
+
+/**
+ * A problem or hint of quartz-forms (`dist/cli.js check`) with the place it names. The plugin
+ * starts every message with the option's path (src/validate.ts: `forms.<id>.fields[i].pattern: …`,
+ * `keys.<name>: …`, `spam.pow: …`); that path is all this reads. `rest` is the message without the
+ * part of the path the place already says.
+ */
+export interface PlacedMessage {
+  text: string
+  form?: string
+  field?: number
+  section?: SectionId
+  rest: string
+}
+
+const SECTION_OF: [RegExp, SectionId][] = [
+  [/^keys[.:]/, 'keys'],
+  [/^transport[.:]/, 'transport'],
+  [/^spam[.:]/, 'spam'],
+  [/^(layoutForm|language)[.:]/, 'layout'],
+  [/^texts[.:]/, 'texts'],
+  [/^(frontmatterKey|codeBlockLang)[.:]/, 'technical']
+]
+
+export function placeMessage(text: string): PlacedMessage {
+  const form = /^forms\.([a-z0-9][a-z0-9-]*)(?:\.fields\[(\d+)\])?\.?/.exec(text)
+  if (form) {
+    return { text, form: form[1], ...(form[2] !== undefined ? { field: Number(form[2]) } : {}), rest: text.slice(form[0].length).replace(/^[:\s]+/, '') }
+  }
+  const section = SECTION_OF.find(([re]) => re.test(text))
+  return { text, ...(section ? { section: section[1] } : {}), rest: text }
+}

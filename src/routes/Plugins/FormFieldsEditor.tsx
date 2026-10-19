@@ -50,6 +50,7 @@ import {
   isTemplate,
   type FieldDef,
   type FieldType,
+  type PlacedMessage,
   type FormDef
 } from './formsOptions'
 import { DraftInput } from './DraftInput'
@@ -90,6 +91,7 @@ export function FormFieldsEditor({
   languages,
   lang,
   anonymous,
+  fieldMessages,
   onFields
 }: {
   def: FormDef
@@ -100,6 +102,8 @@ export function FormFieldsEditor({
   languages: string[]
   lang: FormLanguage
   anonymous: boolean
+  /** The plugin's problems that name a field by its place (`fields[i]`). */
+  fieldMessages: PlacedMessage[]
   onFields: (next: FieldDef[]) => void
 }): JSX.Element {
   const { t } = useTranslation()
@@ -208,6 +212,7 @@ export function FormFieldsEditor({
                 label={fieldLabel(f, lang)}
                 typeName={typeName(f.type)}
                 optionalByAnonymous={anonymous && f.required === true && isPersonalField(f)}
+                problems={fieldMessages.filter((m) => m.field === i)}
                 onToggle={() => setOpen(open === f.name ? null : f.name)}
                 onMove={(by) => move(i, i + by)}
                 onRemove={() => void remove(i)}
@@ -256,6 +261,7 @@ function SortableField({
   label,
   typeName,
   optionalByAnonymous,
+  problems,
   onToggle,
   onMove,
   onRemove,
@@ -269,6 +275,7 @@ function SortableField({
   label: string
   typeName: string
   optionalByAnonymous: boolean
+  problems: PlacedMessage[]
   onToggle: () => void
   onMove: (by: -1 | 1) => void
   onRemove: () => void
@@ -302,13 +309,27 @@ function SortableField({
           <span className="min-w-0 flex-1 truncate text-ui text-text">{label}</span>
           <span className="shrink-0 text-micro text-text-muted">{typeName}</span>
         </button>
+        {problems.length > 0 && <Badge tone="red">{t('formsEditor.check.problemBadge', { count: problems.length })}</Badge>}
         {required && !optionalByAnonymous && <Badge>{t('formsEditor.requiredBadge')}</Badge>}
         {optionalByAnonymous && <Badge tone="amber">{t('formsEditor.optionalByAnonymousBadge')}</Badge>}
         <IconButton icon={ArrowUp} tone="neutral" title={t('pluginsInstalled.moveUp', { name: label })} onClick={() => onMove(-1)} disabled={index === 0} />
         <IconButton icon={ArrowDown} tone="neutral" title={t('pluginsInstalled.moveDown', { name: label })} onClick={() => onMove(1)} disabled={index === count - 1} />
         <IconButton icon={Trash2} title={t('common.removeNamed', { name: label })} onClick={onRemove} />
       </div>
-      {isOpen && <div className="flex flex-col gap-3 border-t border-ink/[0.06] px-3 py-3 dark:border-ink/10">{children}</div>}
+      {isOpen && (
+        <div className="flex flex-col gap-3 border-t border-ink/[0.06] px-3 py-3 dark:border-ink/10">
+          {problems.length > 0 && (
+            <ul className="flex flex-col gap-0.5">
+              {problems.map((m, j) => (
+                <li key={j} className="break-words font-mono text-micro text-red-600 dark:text-red-400">
+                  {m.rest || m.text}
+                </li>
+              ))}
+            </ul>
+          )}
+          {children}
+        </div>
+      )}
     </li>
   )
 }

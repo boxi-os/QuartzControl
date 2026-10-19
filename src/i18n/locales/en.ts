@@ -1465,6 +1465,19 @@ export default {
       removeConfirmUsed_one: 'Remove the key “{{name}}”?\n\nThe form {{forms}} encrypts to it. Without another key the build stops.',
       removeConfirmUsed_other: 'Remove the key “{{name}}”?\n\nThe forms {{forms}} encrypt to it. Without another key the build stops.'
     },
+    check: {
+      checking: 'quartz-forms is checking …',
+      unavailable: 'Could not be checked: {{reason}}',
+      summaryOk: 'quartz-forms reports no problems.',
+      summaryProblems_one: 'quartz-forms reports one problem. The build stops on it.',
+      summaryProblems_other: 'quartz-forms reports {{count}} problems. The build stops on them.',
+      problemBadge_one: 'one problem',
+      problemBadge_other: '{{count}} problems',
+      problems_one: 'One problem (reported by quartz-forms)',
+      problems_other: '{{count}} problems (reported by quartz-forms)',
+      hints_one: 'One hint',
+      hints_other: '{{count}} hints'
+    },
     templateFieldsNote: 'The form takes the fields of its template. Own fields replace them entirely.',
     ownTransport: 'Sending for this form',
     ownTransportHint: 'What is not set here applies as under “Sending” for all forms.',

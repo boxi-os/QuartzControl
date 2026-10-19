@@ -1470,6 +1470,19 @@ export default {
       removeConfirmUsed_one: 'Schlüssel „{{name}}“ entfernen?\n\nDas Formular {{forms}} verschlüsselt an ihn. Ohne einen anderen Schlüssel bricht der Build ab.',
       removeConfirmUsed_other: 'Schlüssel „{{name}}“ entfernen?\n\nDie Formulare {{forms}} verschlüsseln an ihn. Ohne einen anderen Schlüssel bricht der Build ab.'
     },
+    check: {
+      checking: 'quartz-forms prüft …',
+      unavailable: 'Konnte nicht geprüft werden: {{reason}}',
+      summaryOk: 'quartz-forms meldet keine Probleme.',
+      summaryProblems_one: 'quartz-forms meldet ein Problem. Der Build bricht daran ab.',
+      summaryProblems_other: 'quartz-forms meldet {{count}} Probleme. Der Build bricht daran ab.',
+      problemBadge_one: 'ein Problem',
+      problemBadge_other: '{{count}} Probleme',
+      problems_one: 'Ein Problem (Meldung von quartz-forms)',
+      problems_other: '{{count}} Probleme (Meldungen von quartz-forms)',
+      hints_one: 'Ein Hinweis',
+      hints_other: '{{count}} Hinweise'
+    },
     templateFieldsNote: 'Das Formular nimmt die Felder seiner Vorlage. Eigene Felder ersetzen sie ganz.',
     ownTransport: 'Versandweg für dieses Formular',
     ownTransportHint: 'Was hier nicht gesetzt ist, gilt wie unter „Versand“ für alle Formulare.',

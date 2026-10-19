@@ -25,7 +25,7 @@ import {
   Vote,
   Wrench
 } from 'lucide-react'
-import type { FormUsagePage, LayoutPosition, NormalizedOptionSchema, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
+import type { FormsCheckResult, FormUsagePage, LayoutPosition, NormalizedOptionSchema, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 import { slugPath } from '@shared/formUsages'
 import { Badge, Button, Card, CardHeading, Combobox, DetailLayout, Field, FieldGroup, IconButton, InfoNote, PanelSection, SegmentedControl, Select, SelectableRow, TextInput, Toggle, focusRowAt, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
@@ -67,8 +67,10 @@ import {
   textIn,
   transportKindOf,
   usesTemplateFields,
+  placeMessage,
   withForm,
   type EncryptionMode,
+  type PlacedMessage,
   type FormDef,
   type FormTemplate,
   type IdProblem,
@@ -250,6 +252,12 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
     return pages.length > 5 ? t('formsEditor.andMore', { list: names.join(', '), count: pages.length - 5 }) : names.join(', ')
   }
   // Pages that name a form the options do not have: the build stops on them.
+  const check = checkQuery.data ?? null
+  const placed = check?.state === 'checked' ? { problems: check.problems.map(placeMessage), hints: check.hints.map(placeMessage) } : { problems: [], hints: [] }
+  const messagesOf = (pred: (m: PlacedMessage) => boolean): { problems: PlacedMessage[]; hints: PlacedMessage[] } => ({
+    problems: placed.problems.filter(pred),
+    hints: placed.hints.filter(pred)
+  })
   const unknownUses = (usages?.pages ?? []).flatMap((p) => p.forms.filter((f) => !ids.includes(f)).map((f) => ({ form: f, file: p.file })))
 
   const selectedForm = selected?.startsWith('form:') ? (forms.find(([id]) => id === selected.slice(5)) ?? null) : null
@@ -395,6 +403,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
             scanning={usagesQuery.loading}
             onRescan={() => setScan((n) => n + 1)}
             onShowPage={(slug) => setPreviewGoTo({ page: slugPath(slug) })}
+            messages={messagesOf((m) => m.form === selectedForm[0])}
             onLayoutForm={(on) =>
               updateOptions(
                 (o) => ({ ...o, layoutForm: on ? selectedForm[0] : '' }),
@@ -411,6 +420,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
                 <SavesImmediately saved={savedFlash} />
               </div>
             </div>
+            <Messages {...messagesOf((m) => m.section === 'keys')} />
             <KeysSection
               options={options}
               source={entry.plugin.source}
@@ -422,6 +432,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
           </Card>
         ) : selectedSection ? (
           <SectionPanel
+            messages={messagesOf((m) => m.section === selectedSection.id)}
             key={selectedSection.id}
             id={selectedSection.id}
             options={options}
@@ -455,6 +466,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
           {t('formsEditor.unknownUses', { count: unknownUses.length, list: unknownUses.slice(0, 5).map((u) => `${u.form} (${u.file})`).join(', ') })}
         </p>
       )}
+      <CheckSummary check={check} checking={checkQuery.loading} error={checkQuery.error} unplaced={placed.problems.filter((m) => !m.form && !m.section)} />
       {usagesQuery.error && <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.scanFailed', { reason: usagesQuery.error })}</p>}
 
       <Card className="flex flex-col gap-3">
@@ -498,6 +510,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
                 subtitle={subtitle(def)(id)}
                 trailing={
                   <>
+                    {placed.problems.some((m) => m.form === id) && <Badge tone="red">{t('formsEditor.check.problemBadge', { count: placed.problems.filter((m) => m.form === id).length })}</Badge>}
                     {layoutForm === id && <Badge tone="green">{t('formsEditor.layoutBadge')}</Badge>}
                     {isAnonymous(def) && <Badge>{t('formsEditor.anonymousBadge')}</Badge>}
                     <IconButton icon={Copy} title={t('formsEditor.duplicateNamed', { name: id })} onClick={() => duplicate(id)} />
@@ -533,7 +546,14 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
                     leading={<Icon size={15} aria-hidden className="shrink-0 text-text-secondary" />}
                     title={t(`formsEditor.sections.${s.id}`)}
                     subtitle={sectionSummary(s.id)}
-                    trailing={<ChevronRight size={14} aria-hidden className="shrink-0 text-text-muted" />}
+                    trailing={
+                      <>
+                        {placed.problems.some((m) => m.section === s.id) && (
+                          <Badge tone="red">{t('formsEditor.check.problemBadge', { count: placed.problems.filter((m) => m.section === s.id).length })}</Badge>
+                        )}
+                        <ChevronRight size={14} aria-hidden className="shrink-0 text-text-muted" />
+                      </>
+                    }
                   />
                 )
               })}
@@ -658,7 +678,8 @@ function FormPanel({
   slugs,
   scanning,
   onRescan,
-  onShowPage
+  onShowPage,
+  messages
 }: {
   id: string
   def: FormDef
@@ -680,6 +701,7 @@ function FormPanel({
   scanning: boolean
   onRescan: () => void
   onShowPage: (slug: string) => void
+  messages: { problems: PlacedMessage[]; hints: PlacedMessage[] }
 }): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
@@ -764,6 +786,7 @@ function FormPanel({
         />
       </Field>
       {idProblem && <p className="-mt-2 text-micro text-red-600 dark:text-red-400">{t(`formsEditor.idProblem.${idProblem}`)}</p>}
+      <Messages problems={messages.problems} hints={messages.hints} />
 
       <PanelSection icon={SlidersHorizontal} title={t('formsEditor.parts.general')}>
         <Field label={t('formsEditor.template')} hint={t(Array.isArray(def.fields) && template ? 'formsEditor.templateOwnFieldsHint' : 'formsEditor.templateHint')}>
@@ -815,6 +838,7 @@ function FormPanel({
           languages={languages}
           lang={lang}
           anonymous={anonymous}
+          fieldMessages={messages.problems.filter((m) => m.field !== undefined)}
           onFields={(next) => setKey('fields', next)}
         />
       </PanelSection>
@@ -1080,6 +1104,7 @@ function InheritedBlock({
 }
 
 function SectionPanel({
+  messages,
   id,
   options,
   schema,
@@ -1101,6 +1126,7 @@ function SectionPanel({
   onOptions: (next: Options | undefined) => void
   onPosition: (position: LayoutPosition) => void
   onOpenOnStage: () => void
+  messages: { problems: PlacedMessage[]; hints: PlacedMessage[] }
 }): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
@@ -1135,6 +1161,7 @@ function SectionPanel({
           <SavesImmediately saved={saved} />
         </div>
       </div>
+      <Messages problems={messages.problems} hints={messages.hints} />
 
       {id === 'layout' && (
         <>
@@ -1195,5 +1222,71 @@ function SectionPanel({
         <PluginOptionsForm schema={schema} values={options} onChange={onOptions} explicitEmpty languages={languages} projectPath={project.path} pick={pick} freeKeys={false} root={root} />
       )}
     </Card>
+  )
+}
+
+/**
+ * What quartz-forms says about a form or a section: its problems, which stop the build, and its
+ * hints. The sentences are the plugin's own (English, as its build log prints them), shown with the
+ * path the place already names taken off.
+ */
+function Messages({ problems, hints }: { problems: PlacedMessage[]; hints: PlacedMessage[] }): JSX.Element | null {
+  const { t } = useTranslation()
+  if (problems.length === 0 && hints.length === 0) return null
+  return (
+    <div className="flex flex-col gap-1.5 rounded-md border border-ink/10 p-2.5 dark:border-ink/10">
+      {problems.length > 0 && (
+        <>
+          <p className="text-micro font-semibold text-red-600 dark:text-red-400">{t('formsEditor.check.problems', { count: problems.length })}</p>
+          <ul className="flex flex-col gap-0.5">
+            {problems.map((m, i) => (
+              <li key={i} className="break-words font-mono text-micro text-red-600 dark:text-red-400">
+                {m.rest || m.text}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {hints.length > 0 && (
+        <>
+          <p className="text-micro font-semibold text-text-secondary">{t('formsEditor.check.hints', { count: hints.length })}</p>
+          <ul className="flex flex-col gap-0.5">
+            {hints.map((m, i) => (
+              <li key={i} className="break-words font-mono text-micro text-text-muted">
+                {m.rest || m.text}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** One line above the list: whether the plugin's own check passes, and what it says outside a form or section. */
+function CheckSummary({
+  check,
+  checking,
+  error,
+  unplaced
+}: {
+  check: FormsCheckResult | null
+  checking: boolean
+  error: string | null
+  unplaced: PlacedMessage[]
+}): JSX.Element | null {
+  const { t } = useTranslation()
+  if (error) return <p className="text-ui text-amber-700 dark:text-amber-400">{t('formsEditor.check.unavailable', { reason: error })}</p>
+  if (!check) return checking ? <p className="text-micro text-text-muted">{t('formsEditor.check.checking')}</p> : null
+  if (check.state === 'unavailable') return <p className="text-ui text-amber-700 dark:text-amber-400">{t('formsEditor.check.unavailable', { reason: check.reason })}</p>
+  const n = check.problems.length
+  return (
+    <div className="flex flex-col gap-1">
+      <p aria-live="polite" className={`text-ui ${n ? 'text-red-600 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
+        {n ? t('formsEditor.check.summaryProblems', { count: n }) : t('formsEditor.check.summaryOk')}
+        {checking && <span className="ml-2 text-micro text-text-muted">{t('formsEditor.check.checking')}</span>}
+      </p>
+      {unplaced.length > 0 && <Messages problems={unplaced} hints={[]} />}
+    </div>
   )
 }

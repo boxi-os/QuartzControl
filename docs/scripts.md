@@ -173,7 +173,7 @@ Wörtlich aus `CLAUDE.md` hierher gezogen am 2026-10-16, damit `CLAUDE.md` nicht
   Wegwerf-Projekt auf und exportiert sie als `.qtpl`. Treibt dafür die **gebaute App** über
   Playwright und schreibt alles über `window.quartzGui.*`, also durch dieselben IPC-Pfade wie ein
   Klick — kein zweiter Frame-Codegen, kein zweiter SCSS-Writer. Phasen einzeln über
-  `--only 3,4,5`, die WCAG-Messung allein über `--check-contrast` (93 Paare, braucht weder App noch
+  `--only 3,4,5`, die WCAG-Messung allein über `--check-contrast` (107 Paare, braucht weder App noch
   Projekt). **Vier Varianten** (`--variant example|basic|doku|plugin`), deren Stammdaten als
   Tabelle in `example-template/variants.mjs` stehen und deren Gestaltungsentscheidungen als Aufsatz
   daneben (`doku.mjs`, `basic.mjs`) — ein Zwei-Wege-Schalter beantwortete für die vierte jede Frage

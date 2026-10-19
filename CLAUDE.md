@@ -80,8 +80,8 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Stand und Reviews
 
-Neunundvierzig Review-Runden sind abgearbeitet (die letzte am 2026-10-19 auf `feat/1.2`, über
-den Reiter „Formulare“ und quartz-forms 0.4.0; die achtundvierzigste und die neunundvierzigste von
+Fünfzig Review-Runden sind abgearbeitet (die letzte am 2026-10-20 auf `feat/1.2`, über
+quartz-forms 0.4.1 bis 0.5.4 und sein Handbuch; die achtundvierzigste bis fünfzigste von
 einem anderen Modell geschrieben). Veröffentlicht ist `1.1.0` (2026-10-18). Was aus jeder Runde wurde und was noch
 ungelesen ist, steht in [`docs/reviews.md`](docs/reviews.md); die früheren Stand-Absätze dieser
 Datei (Releases, Alpha-Test, Gruppe D, offene Punkte) wörtlich in [`docs/stand.md`](docs/stand.md).

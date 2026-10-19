@@ -2738,3 +2738,46 @@ QuartzControl `2a1bb7a5` — `FORMS_READ_AGAINST` 0.4.1, `check:plugin-copies` 4
 Hinweis „kennt 0.4.0, installiert ist 0.4.1“ im Reiter vorher da, nachher nicht.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+**Das fünfzigste Review** ([`REVIEW-2026-10-25.md`](REVIEW-2026-10-25.md), Auftrag
+[`REVIEW-2026-10-25-auftrag.md`](REVIEW-2026-10-25-auftrag.md), Block A quartz-forms
+`e79aaa6..f5b6f94` (0.4.1 bis 0.5.4), Block B `review-2026-10-24..review-2026-10-25`, Block C das
+Handbuch zu quartz-forms): **von einem anderen Modell** (Claude Fable 5.1), als Subagent gestartet.
+0 Hoch, 3 Mittel, 6 Niedrig; Urteil „veröffentlichbar nach M1, M2 und M3“. Vorher, auf Wunsch des
+Nutzers, die vier Nebenbei-Punkte der Handbuch-Arbeit als quartz-forms 0.5.4 (`40ad8b2`
+`config.php` 0600 in beiden Zweigen, `1989365` „Seite:“/„Öffentlicher Schlüssel des Absenders:“
+als Textschlüssel, `ad07128` du im README, `e5c38ef` Außenabstände in `guard.scss`).
+
+Abgearbeitet am 2026-10-20, ein Befund je Commit, im Plugin jeweils `npm run check` mit der
+Relay-Suite und Gegenprobe (der neue Test scheitert am alten Code):
+
+- **M1** `1c0c0aa` — die Prüfung beim Verlassen eines Felds wartet, solange ein Zeiger im
+  Formular gedrückt ist. Die Messung des Reviews (14 px) drückte außerhalb des Fensters (Button
+  bei y = 986 in 900 px, der Druck traf `<html>`); neu gemessen bei scrollY 0 in 1200×1300: vorher
+  rutschte der Button 28 px und der Klick ging auch mittig verloren, nachher nichts. Bei
+  gescrollter Seite gleicht Chromes Scroll Anchoring die Verschiebung in beiden Fassungen aus.
+- **M2** Vault `fab3ad8` — neues Demo-Schlüsselpaar aus gpg (ed25519/cv25519), Fingerabdruck in
+  1.3 und 6.2; der private Schlüssel aus der gebauten Seite 6.2 entschlüsselt in gpg 2.5.22 die
+  Ausgabe des Demo-Formulars aus Chrome. Plugin `8931309` — Hinweis (`notice`, hält den Bau nicht
+  an) für X25519/X448 in der Form von RFC 9580; gemessen: OpenPGP.js-6-Schlüssel `curve25519` und
+  `curve448` entschlüsselt gpg nicht, P-256 und RSA schon. QuartzControl `a9d33958` — der Reiter
+  zeigt den Hinweis unter dem Schlüssel (gebaute App, vorher nichts, nachher der deutsche Satz).
+- **M3** `97e5065` — kein Captcha bei `demo`; Chrome mit globalem Turnstile-Testschlüssel:
+  vorher Container und Anfragen an challenges.cloudflare.com, nachher keine fremde Anfrage.
+- **N1** `379b426` — eine Demo sagt immer „Nichts wurde gesendet“, `success.text` bekommt
+  `demoNoEffect`.
+- **N2** `0c7114a` — die Wiederholung nach abgelehntem Stempel rechnet den Beweis zur neuen
+  Aufgabe; mit dem Messgeschirr des Reviews (Relay unter `php -S`, Geheimnis gewechselt): vorher
+  „Die Prüfung vor dem Senden ist fehlgeschlagen.“, nachher beim ersten Klick gesendet.
+- **N3** `6ae2f6a` — bei Diensten bleibt die Seite im Chiffrat (`_page` nur bei Klartext); README
+  und 6.2 sagen, was neben dem Chiffrat reist.
+- **N4** `b49142c` — ein Abschnitt zum Aussehen in beiden READMEs, ein Satz in 7.2 (Vault
+  `8cdafa0`). **Offen, Entscheidung des Nutzers:** ob Button-Farben und Feldrand mit in den
+  Wächter gehören.
+- **N5** Vault `5c6e3de` — 5.2: QuartzControl schreibt `config.php` bei jedem Hochladen neu.
+- **N6** `f221fb3` — `success` ohne `mode` ist `inline`.
+
+Dazu **quartz-forms 0.5.5** (`777b758`) und QuartzControl `23ebb860` (`FORMS_READ_AGAINST` 0.5.5,
+`check:plugin-copies` gegen eine Kopie des Handbuch-Projekts mit dem Checkout: keine Abweichung).
+Die Nebenbei-Liste des Reviews ist nicht abgearbeitet. **Keinen dieser Fixes hat ein Review
+gelesen.**

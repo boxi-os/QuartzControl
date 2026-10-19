@@ -114,7 +114,8 @@ Wörtlich aus `CLAUDE.md` hierher gezogen am 2026-10-16, damit `CLAUDE.md` nicht
   beide gemeldet. Seit quartz-forms 0.4.0 dazu die Feldtypen gegen die Varianten im Schema,
   `CONTROLLER_TYPES` und `showIfOf` gegen `src/conditions.ts` und jeder Wert, den der
   Bedingungs-Editor anbietet, gegen die Prüfung des Plugins (48 Fälle, alle gleich; Gegenprobe:
-  drei Abweichungen). Was das Plugin über eine Definition urteilt, steht hier nicht: Das fragt der
+  drei Abweichungen). Seit 0.5.0 auch `TRANSPORT_KINDS` gegen die Versandwege im Schema, global
+  und je Formular (50 Fälle, alle gleich; Gegenprobe ohne `demo`: zwei Abweichungen). Was das Plugin über eine Definition urteilt, steht hier nicht: Das fragt der
   Reiter das Plugin selbst (`dist/cli.js check`).
 - `npm run check:inline-svg -- [projektpfad]` — der SVG-Bereiniger (`src/utils/inlineSvg.ts`, „Als Code einfügen“
   im Snippet-Editor) gegen 38 böse Eingaben, ein gewöhnliches Icon, zwei Icons mit denselben Ids auf einer Seite und (seit dem vierundvierzigsten Review) vier Schreibweisen eines Verweises, die das Präfix der Ids mitziehen muss: jedes Ergebnis in Chrome als

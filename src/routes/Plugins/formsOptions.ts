@@ -1,7 +1,7 @@
 import { quartzPluginName } from '@shared/quartzPluginName'
 import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 
-// What the Formulare editor needs to know about quartz-forms 0.4.0, read from its source rather
+// What the Formulare editor needs to know about quartz-forms 0.5.0, read from its source rather
 // than its README: the id and field-name rules and the reserved names (src/validate.ts), the four
 // templates (src/templates/index.ts), how a form is laid over its template and the global
 // transport (resolveForm in src/options.ts), the field types (the schema in package.json) and
@@ -12,7 +12,7 @@ import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } f
 
 export const FORMS_PLUGIN = 'quartz-forms'
 /** The version whose source the copies below are read from. */
-export const FORMS_READ_AGAINST = '0.4.1'
+export const FORMS_READ_AGAINST = '0.5.0'
 /**
  * Widths, the arrangement of options, conditions and page breaks came with this version. An older
  * plugin builds `width`, `layout` and `showIf` without effect and without a word, and refuses a
@@ -140,7 +140,7 @@ export const TEMPLATES: Record<FormTemplate, FormDef> = {
   }
 }
 
-export const TRANSPORT_KINDS = ['relay', 'endpoint', 'formspree', 'web3forms', 'mailto'] as const
+export const TRANSPORT_KINDS = ['relay', 'endpoint', 'formspree', 'web3forms', 'mailto', 'demo'] as const
 export type TransportKind = (typeof TRANSPORT_KINDS)[number]
 export const ENCRYPTION_MODES = ['required', 'optional', 'off'] as const
 export type EncryptionMode = (typeof ENCRYPTION_MODES)[number]

@@ -1202,7 +1202,8 @@ export default {
       endpoint: 'Endpunkt',
       formspree: 'Formspree',
       web3forms: 'Web3Forms',
-      mailto: 'E-Mail-Programm'
+      mailto: 'E-Mail-Programm',
+      demo: 'Vorführung'
     },
     encryptionModes: {
       required: 'verschlüsselt',
@@ -1293,11 +1294,13 @@ export default {
     recipient: {
       relay: 'Empfänger (Name)',
       mailto: 'Empfänger (E-Mail-Adresse)',
+      demo: 'Empfänger',
       none: 'Empfänger'
     },
     recipientHint: {
       relay: 'Ein Name, dem das Relay eine Adresse zuordnet. Die Adresse steht nur auf dem Server.',
       mailto: 'Die Adresse, an die das E-Mail-Programm des Besuchers schreibt.',
+      demo: 'Wirkt nicht: Die Vorführung sendet nichts und zeigt nur, was gesendet worden wäre.',
       none: 'Wirkt nicht: Dieser Versandweg kennt keinen Empfänger, der Dienst stellt selbst zu.'
     },
     subject: 'Betreff',

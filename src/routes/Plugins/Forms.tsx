@@ -850,7 +850,7 @@ function FormPanel({
 
   const { copy, copied } = useCopyToClipboard()
   const snippets = embedSnippets(id, options)
-  const recipientRole = kind === 'relay' ? 'relay' : kind === 'mailto' ? 'mailto' : 'none'
+  const recipientRole = kind === 'relay' ? 'relay' : kind === 'mailto' ? 'mailto' : kind === 'demo' ? 'demo' : 'none'
 
   return (
     <Card className="flex flex-col gap-4">
@@ -947,7 +947,7 @@ function FormPanel({
             onSaveAddress={relayRecipients.saveAddress}
           />
         ) : (
-          <Field label={t(`formsEditor.recipient.${recipientRole}`)} hint={t(`formsEditor.recipientHint.${recipientRole}`)} muted={recipientRole === 'none'}>
+          <Field label={t(`formsEditor.recipient.${recipientRole}`)} hint={t(`formsEditor.recipientHint.${recipientRole}`)} muted={recipientRole === 'none' || recipientRole === 'demo'}>
             <DraftInput
               value={typeof def.recipient === 'string' ? def.recipient : ''}
               placeholder={recipientRole === 'mailto' ? 'name@example.org' : undefined}

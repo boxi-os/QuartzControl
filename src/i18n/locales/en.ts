@@ -1197,7 +1197,8 @@ export default {
       endpoint: 'Endpoint',
       formspree: 'Formspree',
       web3forms: 'Web3Forms',
-      mailto: 'Mail program'
+      mailto: 'Mail program',
+      demo: 'Demo'
     },
     encryptionModes: {
       required: 'encrypted',
@@ -1288,11 +1289,13 @@ export default {
     recipient: {
       relay: 'Recipient (name)',
       mailto: 'Recipient (e-mail address)',
+      demo: 'Recipient',
       none: 'Recipient'
     },
     recipientHint: {
       relay: 'A name the relay maps to an address. The address stays on the server.',
       mailto: 'The address the visitor’s mail program writes to.',
+      demo: 'Has no effect: the demo sends nothing and only shows what would have been sent.',
       none: 'Has no effect: this way of sending knows no recipient, the service delivers itself.'
     },
     subject: 'Subject',

@@ -597,8 +597,14 @@ function tally(label, cases, diffs) {
       })
       const ourTypes = Object.values(copy.FIELD_GROUPS).flat()
       const diffs = []
-      let cases = 2
+      let cases = 4
       if (show([...ourTypes].sort()) !== show([...theirTypes].sort())) diffs.push(`Feldtypen: App ${show(ourTypes)}, Plugin ${show(theirTypes)}`)
+      // Die Versandwege, global und je Formular. Bis 0.5.0 verglich sie niemand, und `demo` wäre
+      // in der Abschrift still gefehlt.
+      for (const def of ['transport', 'transportOverride']) {
+        const theirKinds = defs[def].properties.kind.enum
+        if (show([...copy.TRANSPORT_KINDS].sort()) !== show([...theirKinds].sort())) diffs.push(`Versandwege (${def}): App ${show(copy.TRANSPORT_KINDS)}, Plugin ${show(theirKinds)}`)
+      }
       if (show(copy.CONTROLLER_TYPES) !== show(conditions.CONTROLLER_TYPES)) diffs.push(`CONTROLLER_TYPES: App ${show(copy.CONTROLLER_TYPES)}, Plugin ${show(conditions.CONTROLLER_TYPES)}`)
       const probes = [undefined, null, 'x', [], {}, { field: 'a' }, { field: 'a', equals: 'x' }, { field: 'a', equals: ['x', '', 3, 'y'] }, { field: '', equals: 'x' }, { field: 3, equals: 'x' }, { field: 'a', equals: [] }, { field: 'a', equals: ' x ' }]
       for (const showIf of probes) {
@@ -628,7 +634,7 @@ function tally(label, cases, diffs) {
           if (refused === offered.includes(v)) diffs.push(`${c.type} ${show(v)}: App ${offered.includes(v) ? 'bietet an' : 'bietet nicht an'}, Plugin ${refused ? 'weist ab' : 'nimmt an'}`)
         }
       }
-      tally('Feldtypen und Bedingungen (FIELD_GROUPS, CONTROLLER_TYPES, showIfOf, controllerValues)', cases, diffs)
+      tally('Feldtypen, Versandwege und Bedingungen (FIELD_GROUPS, TRANSPORT_KINDS, CONTROLLER_TYPES, showIfOf, controllerValues)', cases, diffs)
     }
   }
 

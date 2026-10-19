@@ -679,7 +679,8 @@ export const formsRelaySaveSecretsArgs = z.looseObject({
   projectId: uuid,
   recipients: z.record(recipientName, z.string().max(320).nullable()).optional(),
   captchaSecret: z.string().max(512).nullable().optional(),
-  captchaSecrets: z.record(z.string().max(200), z.string().max(512).nullable()).optional()
+  captchaSecrets: z.record(z.string().max(200), z.string().max(512).nullable()).optional(),
+  moveCaptchaSecret: z.object({ from: z.string().min(1).max(200), to: z.string().min(1).max(200) }).optional()
 })
 export const formsRelayUploadArgs = formsRelayStateArgs.extend({ fresh: z.boolean() })
 export const formsRelayExportArgs = formsRelayStateArgs.extend({ dir: absolutePath })

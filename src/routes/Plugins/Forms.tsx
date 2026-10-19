@@ -207,7 +207,8 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
   const configRef = useRef(config)
   configRef.current = config
   const writes = useRef<Promise<unknown>>(Promise.resolve())
-  async function write(next: QuartzConfig, said?: string): Promise<void> {
+  /** False when the file could not be written (the page then says why and shows what is there). */
+  async function write(next: QuartzConfig, said?: string): Promise<boolean> {
     configRef.current = next
     setConfig(next)
     const pending = writes.current.then(() => window.quartzGui.config.save(project.path, next))
@@ -217,7 +218,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
     } catch (err) {
       await reload()
       setMessage(formatIpcError(err))
-      return
+      return false
     }
     setMessage(null)
     setSavedFlash(true)
@@ -228,21 +229,22 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
       await reload()
       recheck()
     }
+    return true
   }
 
   // Against the newest state, like every write here: two changes in quick succession must not
   // undo each other.
-  function updatePlugins(change: (plugins: PluginEntry[], index: number) => PluginEntry[], said?: string): void {
+  function updatePlugins(change: (plugins: PluginEntry[], index: number) => PluginEntry[], said?: string): Promise<boolean> {
     const base = configRef.current
     const current = formsEntries(base)[0]
-    if (!base || !current) return
-    void write({ ...base, plugins: change(base.plugins, current.index) }, said)
+    if (!base || !current) return Promise.resolve(false)
+    return write({ ...base, plugins: change(base.plugins, current.index) }, said)
   }
-  function updateEntry(change: (p: PluginEntry) => PluginEntry, said?: string): void {
-    updatePlugins((plugins, index) => plugins.map((p, i) => (i === index ? change(p) : p)), said)
+  function updateEntry(change: (p: PluginEntry) => PluginEntry, said?: string): Promise<boolean> {
+    return updatePlugins((plugins, index) => plugins.map((p, i) => (i === index ? change(p) : p)), said)
   }
-  function updateOptions(change: (options: Options) => Options | undefined, said?: string): void {
-    updateEntry((p) => {
+  function updateOptions(change: (options: Options) => Options | undefined, said?: string): Promise<boolean> {
+    return updateEntry((p) => {
       const next = { ...p }
       const options = change(p.options ?? {})
       if (options && Object.keys(options).length) next.options = options
@@ -326,7 +328,15 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
         : t('formsEditor.renameConfirm', { from, to })
     if (text && !(await confirmDialog({ text, confirmLabel: t('formsEditor.renameSubmit') }))) return
     setSelected(`form:${to}`)
-    updateOptions((o) => renameForm(o, from, to), t('formsEditor.renamedAnnounce', { from, to }))
+    if (!(await updateOptions((o) => renameForm(o, from, to), t('formsEditor.renamedAnnounce', { from, to })))) return
+    // A captcha secret of the form's own is stored under its id; it goes along once the new id is
+    // in the file (Main does nothing when there is none).
+    try {
+      await window.quartzGui.forms.relaySaveSecrets({ projectId: project.id, moveCaptchaSecret: { from, to } })
+      setRelayRound((n) => n + 1)
+    } catch (err) {
+      setMessage(formatIpcError(err))
+    }
   }
 
   function openOnStage(): void {

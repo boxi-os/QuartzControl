@@ -458,16 +458,27 @@ export async function getRelaySecrets(projectId: string): Promise<RelaySecrets |
 
 /**
  * Merges a change into a project's relay secrets: an address of `null` removes that recipient, a
- * captcha secret of `null` removes it, a string sets it. The signing secret is made once, the first
+ * captcha secret of `null` removes it, a string sets it. `moveCaptchaSecret` carries a form's own
+ * captcha secret to its new id after a rename (before the other changes); without one under
+ * `from` it does nothing. The signing secret is made once, the first
  * time anything is stored, and kept: the relay's stamps are signed with it, and a new one would
  * turn every open page's stamp away. Throws rather than store anything in plain text.
  */
 export async function saveRelaySecrets(
   projectId: string,
-  change: { recipients?: Record<string, string | null>; captchaSecret?: string | null; captchaSecrets?: Record<string, string | null> }
+  change: {
+    recipients?: Record<string, string | null>
+    captchaSecret?: string | null
+    captchaSecrets?: Record<string, string | null>
+    moveCaptchaSecret?: { from: string; to: string }
+  }
 ): Promise<void> {
-  if (!safeStorage.isEncryptionAvailable()) throw new Error(storageUnavailableMessage('secretStorageUnavailable'))
   const all = await readRelayStore()
+  // A rename asks after every form; the stored names answer without a decrypt (and without the
+  // keychain's question on macOS) when there is nothing to carry.
+  const { moveCaptchaSecret: move, ...rest } = change
+  if (move && Object.values(rest).every((v) => v === undefined) && !all[projectId]?.captchaSecrets?.includes(move.from)) return
+  if (!safeStorage.isEncryptionAvailable()) throw new Error(storageUnavailableMessage('secretStorageUnavailable'))
   const current: RelaySecrets = (await getRelaySecrets(projectId)) ?? { secret: randomBytes(32).toString('base64url'), recipients: {} }
   const recipients = { ...current.recipients }
   for (const [name, address] of Object.entries(change.recipients ?? {})) {
@@ -475,6 +486,10 @@ export async function saveRelaySecrets(
     else recipients[name] = address.trim()
   }
   const captchaSecrets = { ...(current.captchaSecrets ?? {}) }
+  if (move && move.from !== move.to && captchaSecrets[move.from] !== undefined) {
+    captchaSecrets[move.to] = captchaSecrets[move.from]!
+    delete captchaSecrets[move.from]
+  }
   for (const [form, value] of Object.entries(change.captchaSecrets ?? {})) {
     if (value === null || !value.trim()) delete captchaSecrets[form]
     else captchaSecrets[form] = value.trim()

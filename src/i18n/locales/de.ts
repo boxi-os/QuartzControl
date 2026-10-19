@@ -1327,7 +1327,8 @@ export default {
     fieldGroups: {
       text: 'Eingabe',
       choice: 'Auswahl',
-      other: 'Sonstiges'
+      other: 'Sonstiges',
+      structure: 'Aufbau'
     },
     fieldTypes: {
       text: 'Textzeile',
@@ -1344,7 +1345,8 @@ export default {
       scale: 'Skala',
       consent: 'Einwilligung',
       pgpKey: 'Schlüssel des Besuchers',
-      hidden: 'Verborgener Wert'
+      hidden: 'Verborgener Wert',
+      pageBreak: 'Seitenumbruch'
     },
     fieldTypeHints: {
       text: 'Eine Zeile, etwa ein Name',
@@ -1361,7 +1363,8 @@ export default {
       scale: 'Eine Bewertung, etwa 1 bis 5',
       consent: 'Ein Häkchen, ohne das nichts gesendet wird',
       pgpKey: 'Der öffentliche Schlüssel des Besuchers, für eine verschlüsselte Antwort',
-      hidden: 'Ein fester Wert, der mitgeht und nicht zu sehen ist'
+      hidden: 'Ein fester Wert, der mitgeht und nicht zu sehen ist',
+      pageBreak: 'Beginnt einen neuen Schritt; Besucher gehen mit „Weiter“ dorthin'
     },
     fieldNames: {
       text: 'text',
@@ -1437,6 +1440,14 @@ export default {
     conditionSentenceTicked: 'Nur zu sehen, wenn „{{field}}“ angehakt ist.',
     quoted: '„{{text}}“',
     orWord: ' oder ',
+    stepLabel: 'Schritt {{n}}',
+    stepCount: '{{steps}} Schritte',
+    stepTitle: 'Titel des Schritts',
+    stepTitleHint: 'Steht über dem Schritt und neben „Schritt 2 von 4“.',
+    showIfStepHint: 'Gilt die Bedingung nicht, überspringt das Formular den Schritt. Ohne JavaScript stehen alle Schritte untereinander.',
+    removeBreakConfirm: 'Seitenumbruch „{{name}}“ entfernen?\n\nSeine Felder gehören dann zum Schritt davor.',
+    breakAddedAnnounce: 'Seitenumbruch hinzugefügt, „{{name}}“ beginnt hier.',
+    breakRemovedAnnounce: 'Seitenumbruch „{{name}}“ entfernt.',
     andMore: '{{list}} und {{count}} weitere',
     removeConfirmUsed_one: '„{{name}}“ entfernen?\n\nEine Seite bindet „{{id}}“ ein ({{pages}}). Sie baut danach nicht mehr, bis die Kennung dort entfernt ist.',
     removeConfirmUsed_other: '„{{name}}“ entfernen?\n\n{{count}} Seiten binden „{{id}}“ ein ({{pages}}). Sie bauen danach nicht mehr, bis die Kennung dort entfernt ist.',

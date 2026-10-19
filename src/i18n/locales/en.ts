@@ -1322,7 +1322,8 @@ export default {
     fieldGroups: {
       text: 'Input',
       choice: 'Choice',
-      other: 'Other'
+      other: 'Other',
+      structure: 'Structure'
     },
     fieldTypes: {
       text: 'Text line',
@@ -1339,7 +1340,8 @@ export default {
       scale: 'Scale',
       consent: 'Consent',
       pgpKey: 'Visitor’s key',
-      hidden: 'Hidden value'
+      hidden: 'Hidden value',
+      pageBreak: 'Page break'
     },
     fieldTypeHints: {
       text: 'One line, such as a name',
@@ -1356,7 +1358,8 @@ export default {
       scale: 'A rating, such as 1 to 5',
       consent: 'A tick without which nothing is sent',
       pgpKey: 'The visitor’s public key, for an encrypted reply',
-      hidden: 'A fixed value that goes along unseen'
+      hidden: 'A fixed value that goes along unseen',
+      pageBreak: 'Starts a new step; visitors get there with “Next”'
     },
     fieldNames: {
       text: 'text',
@@ -1432,6 +1435,14 @@ export default {
     conditionSentenceTicked: 'Only shown if “{{field}}” is ticked.',
     quoted: '“{{text}}”',
     orWord: ' or ',
+    stepLabel: 'Step {{n}}',
+    stepCount: '{{steps}} steps',
+    stepTitle: 'Title of the step',
+    stepTitleHint: 'Shown above the step and beside “Step 2 of 4”.',
+    showIfStepHint: 'Where the condition does not hold, the form skips the step. Without JavaScript all steps show one after the other.',
+    removeBreakConfirm: 'Remove the page break “{{name}}”?\n\nIts fields then belong to the step before.',
+    breakAddedAnnounce: 'Page break added, “{{name}}” begins here.',
+    breakRemovedAnnounce: 'Page break “{{name}}” removed.',
     andMore: '{{list}} and {{count}} more',
     removeConfirmUsed_one: 'Remove “{{name}}”?\n\nOne page embeds “{{id}}” ({{pages}}). It no longer builds until the id is removed there.',
     removeConfirmUsed_other: 'Remove “{{name}}”?\n\n{{count}} pages embed “{{id}}” ({{pages}}). They no longer build until the id is removed there.',

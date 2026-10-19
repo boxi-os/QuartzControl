@@ -348,7 +348,9 @@ export function embedSnippets(id: string, options: Options | undefined): { codeB
 export const FIELD_GROUPS = {
   text: ['text', 'textarea', 'email', 'tel', 'url', 'number', 'date'],
   choice: ['select', 'radio', 'checkboxes', 'checkbox', 'scale'],
-  other: ['consent', 'pgpKey', 'hidden']
+  other: ['consent', 'pgpKey', 'hidden'],
+  // quartz-forms 0.4.0: not a field but where a step begins; it has no name and no value.
+  structure: ['pageBreak']
 } as const
 export type FieldType = (typeof FIELD_GROUPS)[keyof typeof FIELD_GROUPS][number]
 
@@ -471,8 +473,18 @@ export function renameInConditions(fields: FieldDef[], from: string, to: string)
   return fields.map((f) => (isObject(f.showIf) && f.showIf.field === from ? { ...f, showIf: { ...f.showIf, field: to } } : f))
 }
 
-/** What a field shows as its name in a list: its label, the consent text, else its name. */
+export function isPageBreak(field: FieldDef): boolean {
+  return field.type === 'pageBreak'
+}
+
+/** The number of steps: one more than page breaks (the plugin's stepsOf). */
+export function stepCount(fields: FieldDef[]): number {
+  return fields.filter(isPageBreak).length + 1
+}
+
+/** What a field shows as its name in a list: its label, the consent text, else its name; a page break its title. */
 export function fieldLabel(field: FieldDef, lang: string): string {
+  if (isPageBreak(field)) return textIn(field.title, lang)
   return textIn(field.label, lang) || textIn(field.text, lang) || field.name
 }
 

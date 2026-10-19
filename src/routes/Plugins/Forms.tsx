@@ -50,6 +50,8 @@ import {
   TEMPLATE_NAMES,
   duplicateForm,
   effectiveForm,
+  isPageBreak,
+  stepCount,
   embedSnippets,
   encryptionModeOf,
   formIdProblem,
@@ -346,7 +348,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
     const eff = effectiveForm(def)
     const fieldsPart = usesTemplateFields(def)
       ? t('formsEditor.fromTemplate', { template: t(`formsEditor.templates.${String(def.template)}`) })
-      : t('formsEditor.fieldCount', { count: eff.fields.length })
+      : [stepCount(eff.fields) > 1 ? t('formsEditor.stepCount', { steps: stepCount(eff.fields) }) : null, t('formsEditor.fieldCount', { count: eff.fields.filter((f) => !isPageBreak(f)).length })].filter(Boolean).join(' · ')
     const where = (id: string): string | null => {
       if (!usages) return null
       const n = pagesOf(id).length

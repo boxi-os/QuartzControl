@@ -21,6 +21,7 @@ import {
   ListChecks,
   Phone,
   Plus,
+  SeparatorHorizontal,
   ShieldCheck,
   SlidersHorizontal,
   Trash2,
@@ -48,6 +49,7 @@ import {
   freeFieldName,
   isController,
   isObject,
+  isPageBreak,
   isPersonalField,
   isTemplate,
   renameInConditions,
@@ -76,7 +78,8 @@ const TYPE_ICONS: Record<FieldType, LucideIcon> = {
   scale: SlidersHorizontal,
   consent: ShieldCheck,
   pgpKey: KeyRound,
-  hidden: EyeOff
+  hidden: EyeOff,
+  pageBreak: SeparatorHorizontal
 }
 
 // The keys the editor shows with its own controls; the rest of a type's keys go through the
@@ -119,9 +122,18 @@ export function FormFieldsEditor({
   const [adding, setAdding] = useState(false)
   const listRef = useRef<HTMLUListElement>(null)
   const fromTemplate = isTemplate(def.template) && !Array.isArray(def.fields)
-  // Sortable ids must be unique; a name written twice by hand gets its place appended.
-  const ids = fields.map((f, i) => (fields.findIndex((g) => g.name === f.name) === i ? f.name : `${f.name}#${i}`))
-  const names = useMemo(() => new Map(ids.map((id, i) => [id, fieldLabel(fields[i], lang)])), [ids, fields, lang])
+  // Sortable ids must be unique; a name written twice by hand gets its place appended. A page
+  // break has no name: it is `page:<n>`, n counting the breaks, which a title edit leaves alone.
+  const breaksBefore = (i: number): number => fields.slice(0, i).filter(isPageBreak).length
+  const ids = fields.map((f, i) => (isPageBreak(f) ? `page:${breaksBefore(i) + 1}` : fields.findIndex((g) => g.name === f.name) === i ? f.name : `${f.name}#${i}`))
+  // A page break is called by the step it begins: "Schritt 2 · Details".
+  const rowLabel = (f: FieldDef, i: number): string => {
+    if (!isPageBreak(f)) return fieldLabel(f, lang)
+    const step = t('formsEditor.stepLabel', { n: breaksBefore(i) + 2 })
+    const title = fieldLabel(f, lang)
+    return title ? `${step} · ${title}` : step
+  }
+  const names = useMemo(() => new Map(ids.map((id, i) => [id, rowLabel(fields[i], i)])), [ids, fields, lang])
   const { announcements, screenReaderInstructions } = useDndAccessibility(t, (id) => names.get(id) ?? '')
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }))
 
@@ -132,7 +144,7 @@ export function FormFieldsEditor({
     const [item] = next.splice(from, 1)
     next.splice(to, 0, item)
     onFields(next)
-    if (said) announce(t('formsEditor.fieldMovedAnnounce', { name: fieldLabel(item, lang), n: to + 1, count: fields.length }))
+    if (said) announce(t('formsEditor.fieldMovedAnnounce', { name: rowLabel(item, from), n: to + 1, count: fields.length }))
   }
   const update = (index: number, next: FieldDef): void => {
     const before = fields[index]
@@ -154,14 +166,25 @@ export function FormFieldsEditor({
   }
 
   async function remove(index: number): Promise<void> {
-    const name = fieldLabel(fields[index], lang)
-    if (!(await confirmDialog({ text: t('formsEditor.removeFieldConfirm', { name }), confirmLabel: t('common.remove'), danger: true }))) return
+    const name = rowLabel(fields[index], index)
+    const pageBreak = isPageBreak(fields[index])
+    const text = t(pageBreak ? 'formsEditor.removeBreakConfirm' : 'formsEditor.removeFieldConfirm', { name })
+    if (!(await confirmDialog({ text, confirmLabel: t('common.remove'), danger: true }))) return
     onFields(fields.filter((_, i) => i !== index))
-    announce(t('formsEditor.fieldRemovedAnnounce', { name }))
+    announce(t(pageBreak ? 'formsEditor.breakRemovedAnnounce' : 'formsEditor.fieldRemovedAnnounce', { name }))
     focusRowAt(listRef.current, index)
   }
 
   function add(type: FieldType): void {
+    if (type === 'pageBreak') {
+      // At the end, where the next fields will go; until one follows, the plugin says it may not stand last.
+      const n = fields.filter(isPageBreak).length + 1
+      onFields([...fields, { type } as FieldDef])
+      setAdding(false)
+      setOpen(`page:${n}`)
+      announce(t('formsEditor.breakAddedAnnounce', { name: t('formsEditor.stepLabel', { n: n + 1 }) }))
+      return
+    }
     const taken = fields.map((f) => f.name)
     const name = freeFieldName(t(`formsEditor.fieldNames.${type}`, type), taken)
     const label = typeName(type)
@@ -233,29 +256,33 @@ export function FormFieldsEditor({
                 field={f}
                 index={i}
                 count={fields.length}
-                isOpen={open === f.name}
-                label={fieldLabel(f, lang)}
+                isOpen={open === ids[i]}
+                label={rowLabel(f, i)}
                 typeName={typeName(f.type)}
                 optionalByAnonymous={anonymous && f.required === true && isPersonalField(f)}
                 condition={conditionText(f)}
                 problems={fieldMessages.filter((m) => m.field === i)}
-                onToggle={() => setOpen(open === f.name ? null : f.name)}
+                onToggle={() => setOpen(open === ids[i] ? null : ids[i])}
                 onMove={(by) => move(i, i + by)}
                 onRemove={() => void remove(i)}
               >
-                <FieldEditor
-                  field={f}
-                  others={fields.filter((_, j) => j !== i).map((g) => g.name)}
-                  controllers={fields.slice(0, i).filter(isController)}
-                  lang={lang}
-                  schema={schema}
-                  languages={languages}
-                  hasPgpKey={hasPgpKey}
-                  onField={(next) => {
-                    if (next.name !== f.name && open === f.name) setOpen(next.name)
-                    update(i, next)
-                  }}
-                />
+                {isPageBreak(f) ? (
+                  <PageBreakEditor field={f} controllers={fields.slice(0, i).filter(isController)} lang={lang} languages={languages} onField={(next) => update(i, next)} />
+                ) : (
+                  <FieldEditor
+                    field={f}
+                    others={fields.filter((_, j) => j !== i).map((g) => g.name)}
+                    controllers={fields.slice(0, i).filter(isController)}
+                    lang={lang}
+                    schema={schema}
+                    languages={languages}
+                    hasPgpKey={hasPgpKey}
+                    onField={(next) => {
+                      if (next.name !== f.name && open === ids[i]) setOpen(next.name)
+                      update(i, next)
+                    }}
+                  />
+                )}
               </SortableField>
             ))}
           </ul>
@@ -315,12 +342,14 @@ function SortableField({
   const { t } = useTranslation()
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id })
   const required = field.type === 'consent' || field.required === true
+  // A page break reads as a divider between the steps rather than as one more field.
+  const divider = isPageBreak(field)
   return (
     <li
       ref={setNodeRef}
       data-selectable
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={`flex flex-col rounded-md border border-ink/10 bg-surface dark:border-ink/10 ${isDragging ? 'opacity-40' : ''}`}
+      className={`flex flex-col rounded-md border ${divider ? 'mt-2 border-dashed border-ink/20 bg-ink/[0.03] dark:border-ink/20' : 'border-ink/10 bg-surface dark:border-ink/10'} ${isDragging ? 'opacity-40' : ''}`}
     >
       <div className="flex items-center gap-2 px-2 py-1.5">
         <button
@@ -337,7 +366,7 @@ function SortableField({
         <button type="button" aria-pressed={isOpen} aria-expanded={isOpen} onClick={onToggle} className="flex min-w-0 flex-1 items-center gap-2 text-left">
           {isOpen ? <ChevronDown size={14} aria-hidden className="shrink-0 text-text-muted" /> : <ChevronRight size={14} aria-hidden className="shrink-0 text-text-muted" />}
           <TypeIcon type={field.type} />
-          <span className="min-w-0 flex-1 truncate text-ui text-text">{label}</span>
+          <span className={`min-w-0 flex-1 truncate text-ui ${divider ? 'font-medium text-text-secondary' : 'text-text'}`}>{label}</span>
           {(field.width === 'half' || field.width === 'third') && (
             <span className="shrink-0 text-micro text-text-muted" title={t(`formsEditor.widthBadge.${field.width}`)}>
               <span aria-hidden>{field.width === 'half' ? '½' : '⅓'}</span>
@@ -556,13 +585,55 @@ function FieldEditor({
   )
 }
 
+/** A page break, open: the title of the step it begins and that step's condition. */
+function PageBreakEditor({
+  field,
+  controllers,
+  lang,
+  languages,
+  onField
+}: {
+  field: FieldDef
+  controllers: FieldDef[]
+  lang: string
+  languages: string[]
+  onField: (next: FieldDef) => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const set = (key: string, value: unknown): void => {
+    const next: FieldDef = { ...field }
+    if (value === undefined) delete next[key]
+    else next[key] = value
+    onField(next)
+  }
+  return (
+    <>
+      <TextEditor label={t('formsEditor.stepTitle')} hint={t('formsEditor.stepTitleHint')} value={field.title} languages={languages} onValue={(v) => set('title', v)} />
+      <ConditionEditor value={field.showIf} controllers={controllers} lang={lang} hint={t('formsEditor.showIfStepHint')} onValue={(v) => set('showIf', v)} />
+    </>
+  )
+}
+
 /**
  * "Only show if …": a field before this one (choices, checkboxes and scales, CONTROLLER_TYPES)
  * and the values it must have, at least one. A condition the plugin would refuse - a field no
  * longer before this one, a value it can no longer have - stays visible here so it can be changed;
  * the plugin's check says what is wrong at the row.
  */
-export function ConditionEditor({ value, controllers, lang, onValue }: { value: unknown; controllers: FieldDef[]; lang: string; onValue: (next: unknown) => void }): JSX.Element {
+export function ConditionEditor({
+  value,
+  controllers,
+  lang,
+  hint,
+  onValue
+}: {
+  value: unknown
+  controllers: FieldDef[]
+  lang: string
+  /** What the condition does where it stands; a field's by default. */
+  hint?: string
+  onValue: (next: unknown) => void
+}): JSX.Element {
   const { t } = useTranslation()
   const named = isObject(value) && typeof value.field === 'string' ? value.field : ''
   const chosen = showIfOf({ showIf: value })?.equals ?? []
@@ -603,7 +674,7 @@ export function ConditionEditor({ value, controllers, lang, onValue }: { value: 
           </div>
         </>
       )}
-      <span className="text-micro text-text-muted">{t('formsEditor.showIfHint')}</span>
+      <span className="text-micro text-text-muted">{hint ?? t('formsEditor.showIfHint')}</span>
     </FieldGroup>
   )
 }

@@ -2884,3 +2884,53 @@ Die Nebenbei-Liste, ebenfalls am 2026-10-20, ein Punkt je Commit:
 Dazu **quartz-forms 0.5.7** (`fd9c411`) und QuartzControl `44c6e004` (`FORMS_READ_AGAINST` 0.5.7,
 `check:plugin-copies` gegen die gui-test-Kopie mit dem Checkout: keine Abweichung). Keinen der
 Fixes von 0.5.7 hat ein Review gelesen.
+
+**Das zweiundfünfzigste Review** ([`REVIEW-2026-10-27.md`](REVIEW-2026-10-27.md), Auftrag
+[`REVIEW-2026-10-27-auftrag.md`](REVIEW-2026-10-27-auftrag.md), Block A quartz-forms
+`78c3244..fd9c411` (0.5.7), Block B `review-2026-10-26..feat/1.2`, Block C das Handbuch
+`dafb9d6..840c415`): **von einem anderen Modell** (Claude Fable 5.1), als Subagent gestartet.
+0 Hoch, 0 Mittel, 3 Niedrig; Urteil „so veröffentlichbar“, 0.5.7 kein neues Glied der
+Regressionskette; vorher zwingend nur, das Handbuch-Projekt von 0.5.6 zu heben. Nachgemessen und
+bestätigt: N1–N4 der vorigen Runde, im Reiter an der laufenden App (v6-Hinweis in der Zeile des
+Schlüssels, beim Demo-Formular zwei Hinweise und kein Site-Key), `d044ae4` samt Nachladen im
+Dev-Server, `check:plugin-copies` gegen eine Kopie des Handbuch-Projekts.
+
+Abgearbeitet am 2026-10-20, ein Punkt je Commit, im Plugin jeweils `npm run check` mit der
+Relay-Suite und Gegenprobe (der neue Test scheitert am alten Code):
+
+- **N1** `27c91d7` — ein Druck endet auch mit `blur` des Fensters und `visibilitychange` auf
+  `hidden`. Gemessen in Chrome headless an der Handbuch-Kopie des Reviews (`review/review-52`,
+  `rv-relay`): Druck auf die Überschrift, Tab aus „bad“, `blur` des Fensters; altes Skript ohne
+  Fehler bis zum Loslassen, neues sofort mit Fehler. Das `blur` ist **von Hand ausgelöst**:
+  Playwrights Chrome verliert den Fokus nie (Fokus-Emulation; weder eine zweite Seite noch ein
+  Wechsel zum Finder per `osascript` kam an). Ein echter Fensterwechsel ist nicht am OS gemessen.
+- **N2** `225f3c8` — vierter Mail-Fall: Beschriftungen als `{en, de}`, deutsche Seite, ein Feld
+  `detail`, dessen Bedingung nicht hält (gepostet und vom Relay gestrichen), und `pgpKey`. Alle
+  drei Wege schreiben dieselbe Mail; mit falschem Text im Katalog scheitern beide Suiten.
+- **N3** ohne Änderung, **kein Issue bei Quartz** (Entscheidung des Nutzers). Die sechs Vaults
+  unter `~/Obsidian/QuartzProjekte` enthalten keinen Wiki- oder Markdown-Link auf einen Ordner
+  ohne Schrägstrich (Python-Scan, Gegenprobe mit einem gepflanzten `[[8-rezepte]]` und
+  `[x](../8-rezepte)`: beide gefunden). Der Satz oben ist ergänzt (`1cf0599e`).
+
+Die Nebenbei-Liste:
+
+- `transport.url`/`extra` bei `demo` unter globalem Relay: Plugin `1e05c46`, gesagt wird nur, was
+  das Formular schreibt oder ein globaler `demo`-Versand hat (auch die `extra`-Hinweise von
+  `relay` und `mailto` folgen der Regel). `resolveOptions`: vorher zwei Hinweise an Formular `b`,
+  nachher keiner. Vault `c5f8a13` (9.2).
+- Notiz zu einem unbekannten Formular im Dev-Server ohne Stylesheet: Plugin `3b3707f`, mit
+  `--serve` liefert das Plugin Stylesheet und Skript auch bei leerem `forms`. Gemessen mit
+  `quartz build --serve`: vorher `border: none 0px`, Farbe `rgb(51, 51, 51)`, nachher `dashed 2px`,
+  `rgb(176, 32, 32)`; ein Bau ohne `--serve` (gui-test, `forms: {}`) verlinkt weiterhin keine der
+  drei Ressourcen.
+- README-Statuszeilen: Plugin `a34e63c` (sechs Reviews).
+- `pressed` je Formular: **ohne Änderung.** Jedes Formular braucht ohnehin seine eigene
+  Warteliste; ein Handler je Formular und Druck ist der Preis dafür (Geschmack, sagt das Review
+  selbst).
+- Website auf 0.5.6, GNUPGHOMEs, nicht am OS Gemessenes: siehe unten bzw. nichts zu tun.
+
+Dazu **quartz-forms 0.5.8** (`34d77d5`) und QuartzControl `c1e27d9a` (`FORMS_READ_AGAINST` 0.5.8,
+`check:plugin-copies` gegen die Kopie des Handbuch-Projekts mit dem Checkout: keine Abweichung).
+Keinen der Fixes von 0.5.8 hat ein Review gelesen. **Offen:** Das Handbuch-Projekt hängt auf
+`78c3244` (0.5.6) und bezieht das Plugin über `github:boxi-os/quartz-forms`; heben, bauen,
+veröffentlichen geht erst nach dem Push von 0.5.8.

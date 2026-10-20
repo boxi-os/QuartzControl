@@ -1060,6 +1060,7 @@ export default {
     markNoClass_one: '“{{name}}” has no CSS class. Every entry of this plugin is marked, one on this page.',
     markNoClass_other: '“{{name}}” has no CSS class. Every entry of this plugin is marked, {{count}} on this page.',
     markNotFound: '“{{name}}” does not appear on this page.',
+    jumped: 'The preview now shows {{page}}, a page with “{{name}}”.',
     markHidden: '“{{name}}” is on this page but cannot be seen in this view (hidden, say, or inside a drawer).'
   },
   extraContent: {
@@ -1268,7 +1269,7 @@ export default {
     panelLabel: 'Edit form',
     panelEmptyTitle: 'Forms',
     panelEmptyText: 'Choose a form or a setting on the left.',
-    previewHint: 'A form appears on pages that embed it, and on every page as the layout form.',
+    previewHint: 'A form appears on pages that embed it, and on every page as the layout form. When the page shown lacks it, the preview goes to a page that embeds it.',
     parts: {
       general: 'General',
       fields: 'Fields',

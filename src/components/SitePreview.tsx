@@ -71,12 +71,27 @@ export default function SitePreview({
   const [loads, setLoads] = useState(0)
   const [report, setReport] = useState<SitePreviewReport | null>(null)
   const selector = highlight?.selector ?? null
+  // The first report since the selection changed decides whether the frame goes to a page that
+  // has the entry (`highlight.pages`); later ones do not, so a page opened by hand, or a link
+  // followed inside the site, stays. The report is read from a ref that the highlight effect
+  // clears in the same commit, so a report about the previous selection never decides.
+  const decided = useRef(false)
+  const lastReport = useRef<SitePreviewReport | null>(null)
+  const [jumpedTo, setJumpedTo] = useState<string | null>(null)
+  const pages = highlight?.pages ?? null
+  const pagesKey = pages ? JSON.stringify(pages) : null
 
   useEffect(() => {
     if (!goTo) return
     setPage(goTo.page)
     setDraft(goTo.page)
+    setJumpedTo(null)
   }, [goTo, setPage])
+
+  useEffect(() => {
+    decided.current = false
+    setJumpedTo(null)
+  }, [selector])
 
   useEffect(() => {
     void window.quartzGui.server.status(projectId).then(setStatus)
@@ -103,7 +118,9 @@ export default function SitePreview({
       // Only the frame itself; anything the site's scripts post is checked field by field.
       if (!frameRef.current || e.source !== frameRef.current.contentWindow) return
       const parsed = parsePreviewReport(e.data)
-      if (parsed) setReport(parsed)
+      if (!parsed) return
+      lastReport.current = parsed
+      setReport(parsed)
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
@@ -111,9 +128,22 @@ export default function SitePreview({
 
   useEffect(() => {
     setReport(null)
+    lastReport.current = null
     if (loads === 0) return
     void window.quartzGui.sitePreview.highlight({ projectId, selector, focus: zoom })
   }, [projectId, selector, zoom, loads])
+
+  useEffect(() => {
+    const r = lastReport.current
+    if (decided.current || !r || !selector || pagesKey === null) return
+    decided.current = true
+    const list = JSON.parse(pagesKey) as string[]
+    const trim = (p: string): string => p.replace(/^\/+|\/+$/g, '')
+    if (r.found > 0 || list.length === 0 || list.some((p) => trim(p) === trim(page))) return
+    setPage(list[0])
+    setDraft(list[0])
+    setJumpedTo(list[0])
+  }, [report, pagesKey, selector, page, setPage])
 
   async function start(): Promise<void> {
     setStarting(true)
@@ -146,7 +176,9 @@ export default function SitePreview({
   const error = serverErrorText(status, t)
 
   function commitPage(): void {
-    if (draft !== page) setPage(draft)
+    if (draft === page) return
+    setPage(draft)
+    setJumpedTo(null)
   }
 
   return (
@@ -253,7 +285,9 @@ export default function SitePreview({
               {/* Rendered empty, so the sentence is announced when it appears (conventions.md). The
                   button stays outside: it changes because the selection did, not on its own. */}
               <p role="status" className="text-micro text-text-secondary">
-                {highlight && report ? markSentence(report, highlight, t) : null}
+                {highlight && report
+                  ? `${jumpedTo !== null ? `${t('sitePreview.jumped', { page: `/${jumpedTo}`, name: highlight.name })} ` : ''}${markSentence(report, highlight, t)}`
+                  : null}
               </p>
               {highlight && highlight.matches > 1 && highlight.onAssignClass && (
                 <Button variant="ghost" onClick={highlight.onAssignClass}>
@@ -282,6 +316,13 @@ export interface PreviewHighlight {
    * it has none; a page without the option leaves it out.
    */
   onAssignClass?: () => void
+  /**
+   * The pages that show the entry (paths as the page field takes them), when the editor knows
+   * them; null while it does not. When the page shown does not have the entry, the preview goes
+   * to the first of them once per selection (user, 2026-10-20: a marked form on another page
+   * showed nothing).
+   */
+  pages?: string[] | null
 }
 
 function markSentence(report: SitePreviewReport, highlight: PreviewHighlight, t: TFunction): string {

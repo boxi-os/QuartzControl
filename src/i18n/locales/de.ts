@@ -1065,6 +1065,7 @@ export default {
     markNoClass_one: '„{{name}}“ hat keine CSS-Klasse. Markiert ist jeder Eintrag dieses Plugins, auf dieser Seite einer.',
     markNoClass_other: '„{{name}}“ hat keine CSS-Klasse. Markiert ist jeder Eintrag dieses Plugins, auf dieser Seite {{count}}.',
     markNotFound: '„{{name}}“ kommt auf dieser Seite nicht vor.',
+    jumped: 'Die Vorschau zeigt jetzt {{page}}, eine Seite mit „{{name}}“.',
     markHidden: '„{{name}}“ steht auf dieser Seite, ist in dieser Ansicht aber nicht zu sehen (etwa ausgeblendet oder in einer Schublade).'
   },
   extraContent: {
@@ -1273,7 +1274,7 @@ export default {
     panelLabel: 'Formular bearbeiten',
     panelEmptyTitle: 'Formulare',
     panelEmptyText: 'Wähle links ein Formular oder eine Einstellung.',
-    previewHint: 'Ein Formular erscheint auf Seiten, die es einbinden, und als Layout-Formular auf jeder Seite.',
+    previewHint: 'Ein Formular erscheint auf Seiten, die es einbinden, und als Layout-Formular auf jeder Seite. Fehlt es auf der gezeigten Seite, wechselt die Vorschau zu einer Seite, die es einbindet.',
     parts: {
       general: 'Allgemein',
       fields: 'Felder',

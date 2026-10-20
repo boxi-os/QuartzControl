@@ -661,7 +661,13 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
         goTo={previewGoTo}
         highlight={
           selectedForm
-            ? { selector: `form.quartz-form[data-form="${selectedForm[0]}"]`, name: titleOf(selectedForm[0], selectedForm[1]), matches: 1, ownClass: true }
+            ? {
+                selector: `form.quartz-form[data-form="${selectedForm[0]}"]`,
+                name: titleOf(selectedForm[0], selectedForm[1]),
+                matches: 1,
+                ownClass: true,
+                pages: usages ? pagesOf(selectedForm[0]).map((p) => slugPath(p.slug)) : null
+              }
             : null
         }
       />

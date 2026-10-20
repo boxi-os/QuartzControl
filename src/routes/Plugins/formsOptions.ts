@@ -530,6 +530,23 @@ export function placeMessage(text: string): PlacedMessage {
   return { text, ...(section ? { section: section[1] } : {}), rest: text }
 }
 
+/** The parts of the panel of one form, in their order. */
+export type FormPartId = 'general' | 'fields' | 'sending' | 'privacy' | 'spam' | 'embed' | 'more'
+
+const PART_OF: [RegExp, FormPartId][] = [
+  [/^fields(?=[.:[\s]|$)/, 'fields'],
+  [/^(transport|recipient|subject)(?=[.:[\s]|$)/, 'sending'],
+  [/^(encryption|anonymous|pageContext)(?=[.:[\s]|$)/, 'privacy'],
+  [/^spam(?=[.:[\s]|$)/, 'spam']
+]
+
+/** The part of the form panel a message of a form belongs to, by the key its path starts with;
+ *  what names no key of its own (`title`, `success`, a sentence about the form) is Allgemein. */
+export function partOf(m: PlacedMessage): FormPartId {
+  if (m.field !== undefined) return 'fields'
+  return PART_OF.find(([re]) => re.test(m.rest))?.[1] ?? 'general'
+}
+
 // ── which captcha secrets the relay needs ───────────────────────────────────────────────────────
 
 export interface CaptchaNeeds {

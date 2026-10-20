@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import type { FormsCheckResult, FormUsagePage, LayoutPosition, NormalizedOptionSchema, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 import { slugPath } from '@shared/formUsages'
-import { Badge, Button, Card, CardHeading, Combobox, DetailLayout, Field, FieldGroup, IconButton, InfoNote, PanelSection, SegmentedControl, Select, SelectableRow, TextInput, Toggle, focusRowAt, useCopyToClipboard } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, Combobox, DetailLayout, Field, FieldGroup, FoldBox, IconButton, InfoNote, SegmentedControl, Select, SelectableRow, TextInput, Toggle, focusRowAt, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { ObjectBlock, type FormContext } from '../../components/PluginOptionsForm/editors'
@@ -73,10 +73,12 @@ import {
   textIn,
   transportKindOf,
   usesTemplateFields,
+  partOf,
   placeMessage,
   captchaNeeds,
   withForm,
   type EncryptionMode,
+  type FormPartId,
   type PlacedMessage,
   type FormDef,
   type FormTemplate,
@@ -852,6 +854,14 @@ function FormPanel({
   const snippets = embedSnippets(id, options)
   const recipientRole = kind === 'relay' ? 'relay' : kind === 'mailto' ? 'mailto' : kind === 'demo' ? 'demo' : 'none'
 
+  // Which parts stand open holds for every form until a restart; Allgemein and Felder start open.
+  // One state for all parts: a sticky state per part would be seven writers of one key.
+  const [openParts, setOpenParts] = useStickyState<Partial<Record<FormPartId, boolean>>>('forms.parts', {})
+  const part = (pid: FormPartId): { open: boolean; problems: number; onToggle: () => void } => {
+    const open = openParts[pid] ?? (pid === 'general' || pid === 'fields')
+    return { open, problems: messages.problems.filter((m) => partOf(m) === pid).length, onToggle: () => setOpenParts((p) => ({ ...p, [pid]: !open })) }
+  }
+
   return (
     <Card className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -879,7 +889,7 @@ function FormPanel({
       {idProblem && <p className="-mt-2 text-micro text-red-600 dark:text-red-400">{t(`formsEditor.idProblem.${idProblem}`)}</p>}
       <Messages problems={messages.problems} hints={messages.hints} />
 
-      <PanelSection icon={SlidersHorizontal} title={t('formsEditor.parts.general')}>
+      <FormPart {...part('general')} icon={SlidersHorizontal} title={t('formsEditor.parts.general')}>
         <Field label={t('formsEditor.template')} hint={t(Array.isArray(def.fields) && template ? 'formsEditor.templateOwnFieldsHint' : 'formsEditor.templateHint')}>
           <Select value={isTemplate(def.template) ? def.template : ''} onChange={(e) => setTemplate(e.target.value)}>
             <option value="">{t('formsEditor.noTemplate')}</option>
@@ -919,9 +929,9 @@ function FormPanel({
             <DraftInput value={typeof def.className === 'string' ? def.className : ''} onCommit={(v) => setKey('className', v.trim() || undefined)} />
           </Field>
         </div>
-      </PanelSection>
+      </FormPart>
 
-      <PanelSection icon={ListChecks} title={t('formsEditor.parts.fields')}>
+      <FormPart {...part('fields')} icon={ListChecks} title={t('formsEditor.parts.fields')}>
         <FormFieldsEditor
           def={def}
           fields={eff.fields}
@@ -933,9 +943,9 @@ function FormPanel({
           olderPlugin={olderPlugin}
           onFields={(next) => setKey('fields', next)}
         />
-      </PanelSection>
+      </FormPart>
 
-      <PanelSection icon={Send} title={t('formsEditor.parts.sending')}>
+      <FormPart {...part('sending')} icon={Send} title={t('formsEditor.parts.sending')}>
         <p className="text-micro text-text-secondary">{t('formsEditor.sendsVia', { kind: t(`formsEditor.transportKinds.${kind}`, kind) })}</p>
         {recipientRole === 'relay' ? (
           <RelayRecipientField
@@ -973,9 +983,9 @@ function FormPanel({
           lang={lang}
           onValues={(next) => setKey('transport', next)}
         />
-      </PanelSection>
+      </FormPart>
 
-      <PanelSection icon={Lock} title={t('formsEditor.parts.privacy')}>
+      <FormPart {...part('privacy')} icon={Lock} title={t('formsEditor.parts.privacy')}>
         <FieldGroup label={t('formsEditor.encryption')}>
           <SegmentedControl
             label={t('formsEditor.encryption')}
@@ -1036,9 +1046,9 @@ function FormPanel({
           />
           {anonymous && <NoEffect reason={t('formsEditor.pageContextAnonymous')} />}
         </div>
-      </PanelSection>
+      </FormPart>
 
-      <PanelSection icon={ShieldCheck} title={t('formsEditor.parts.spam')}>
+      <FormPart {...part('spam')} icon={ShieldCheck} title={t('formsEditor.parts.spam')}>
         <InheritedBlock
           hint={t('formsEditor.ownSpamHint')}
           schema={objectSchema(schema, 'spam')}
@@ -1048,9 +1058,9 @@ function FormPanel({
           lang={lang}
           onValues={(next) => setKey('spam', next)}
         />
-      </PanelSection>
+      </FormPart>
 
-      <PanelSection icon={Code} title={t('formsEditor.parts.embed')}>
+      <FormPart {...part('embed')} icon={Code} title={t('formsEditor.parts.embed')}>
         <p className="text-micro text-text-muted">{t('formsEditor.embedHint')}</p>
         {(
           [
@@ -1102,14 +1112,54 @@ function FormPanel({
           <span className="text-micro text-text-muted">{t('formsEditor.usedOnHint')}</span>
         </div>
         <Toggle label={t('formsEditor.useAsLayoutForm')} hint={t('formsEditor.useAsLayoutFormHint')} checked={isLayoutForm} onChange={onLayoutForm} />
-      </PanelSection>
+      </FormPart>
 
       {hasUnknown && (
-        <PanelSection icon={Wrench} title={t('pluginOptions.moreKeys')}>
+        <FormPart {...part('more')} icon={Wrench} title={t('pluginOptions.moreKeys')}>
           <PluginOptionsForm schema={form} values={def} onChange={(next) => onDef(next ?? {})} explicitEmpty languages={languages} projectPath={project.path} pick={unknownKeys} freeKeys={false} root={flat} />
-        </PanelSection>
+        </FormPart>
       )}
     </Card>
+  )
+}
+
+/**
+ * A part of the panel of one form: a box that folds, as the option groups of Navigationen and
+ * Zusätzliche Inhalte do. Six parts separated by a line each were one long column in which a
+ * heading was easy to miss (user, 2026-10-20). The plugin's problems with a part stand on its
+ * band, so a folded part does not hide them; all of them stand above the parts as well.
+ */
+function FormPart({
+  icon: Icon,
+  title,
+  open,
+  problems,
+  onToggle,
+  children
+}: {
+  icon: typeof Send
+  title: string
+  open: boolean
+  problems: number
+  onToggle: () => void
+  children: ReactNode
+}): JSX.Element {
+  const { t } = useTranslation()
+  return (
+    <FoldBox
+      title={
+        <span className="flex items-center gap-1.5">
+          <Icon size={13} aria-hidden className="shrink-0" />
+          {title}
+        </span>
+      }
+      aside={problems > 0 ? <Badge tone="red">{t('formsEditor.check.problemBadge', { count: problems })}</Badge> : null}
+      open={open}
+      onToggle={onToggle}
+      bodyClassName="gap-3"
+    >
+      {children}
+    </FoldBox>
   )
 }
 

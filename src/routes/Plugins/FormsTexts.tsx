@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PluginSource } from '@shared/ipc-contract'
-import { Field, SegmentedControl, TextInput } from '../../components/ui'
+import { Button, Field, SegmentedControl, TextInput } from '../../components/ui'
 import { useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
 import { DraftInput } from './DraftInput'
@@ -91,11 +91,13 @@ export function FormsTexts({
   }
   if (!plugin) return <p className="text-micro text-text-muted">{t('formsEditor.textList.reading')}</p>
 
-  const setText = (name: string, value: string): void => {
+  // Written as typed: the plugin takes any string, and some of its own carry the spaces at their
+  // edges (orWord " oder "), which a trim took away - and an emptied own text is an empty text,
+  // not the plugin's (review 2026-10-28, N4). `undefined` takes the own text back.
+  const setText = (name: string, value: string | undefined): void => {
     const all: Options = { ...texts }
     const entry: Options = { ...own }
-    const v = value.trim()
-    if (v) entry[name] = v
+    if (value !== undefined) entry[name] = value
     else delete entry[name]
     if (Object.keys(entry).length) all[key] = entry
     else delete all[key]
@@ -129,9 +131,20 @@ export function FormsTexts({
         <div className="flex flex-col gap-3">
           {shown.map((name) => (
             <div key={`${key}:${name}`} className="flex flex-col gap-1">
-              <Field label={name} configKey>
-                <DraftInput value={typeof own[name] === 'string' ? (own[name] as string) : ''} placeholder={plugin.wording[name]} onCommit={(v) => setText(name, v)} />
-              </Field>
+              <div className="flex items-end gap-2">
+                <Field label={name} configKey className="min-w-0 flex-1">
+                  <DraftInput
+                    value={typeof own[name] === 'string' ? (own[name] as string) : ''}
+                    placeholder={own[name] === '' ? t('formsEditor.textList.empty') : plugin.wording[name]}
+                    onCommit={(v) => setText(name, v)}
+                  />
+                </Field>
+                {name in own && (
+                  <Button variant="ghost" onClick={() => setText(name, undefined)} title={t('formsEditor.textList.resetHint', { name })}>
+                    {t('formsEditor.textList.reset')}
+                  </Button>
+                )}
+              </div>
               {!(name in plugin.wording) && <NoEffect reason={t('formsEditor.textList.unknown')} />}
             </div>
           ))}

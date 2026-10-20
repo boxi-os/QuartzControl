@@ -1263,7 +1263,10 @@ export default {
     pluginTexts: 'Texte des Plugins',
     textList: {
       language: 'Sprache',
-      hint: 'Grau steht der Wortlaut des Plugins; was du einträgst, ersetzt ihn. Platzhalter wie {max} füllt das Plugin.',
+      hint: 'Grau steht der Wortlaut des Plugins; was du einträgst, ersetzt ihn genau so, mit Leerzeichen am Rand und auch leer. Platzhalter wie {max} füllt das Plugin.',
+      empty: 'Leer: Auf der Website steht hier nichts.',
+      reset: 'Plugin-Wortlaut',
+      resetHint: 'Den eigenen Text für „{{name}}“ entfernen; dann gilt wieder der Wortlaut des Plugins.',
       fallbackLocale: 'Für „{{code}}“ hat quartz-forms keinen eigenen Wortlaut; grau steht der aus „{{locale}}“.',
       search: 'Texte durchsuchen',
       noMatch: 'Kein Text passt zur Suche.',

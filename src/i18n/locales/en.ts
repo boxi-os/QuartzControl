@@ -1258,7 +1258,10 @@ export default {
     pluginTexts: 'The plugin’s texts',
     textList: {
       language: 'Language',
-      hint: 'The plugin’s wording stands in grey; what you enter replaces it. The plugin fills in placeholders like {max}.',
+      hint: 'The plugin’s wording stands in grey; what you enter replaces it exactly, with spaces at the edges and even empty. The plugin fills in placeholders like {max}.',
+      empty: 'Empty: nothing stands here on the site.',
+      reset: 'Plugin wording',
+      resetHint: 'Remove your own text for “{{name}}”; the plugin’s wording applies again.',
       fallbackLocale: 'quartz-forms has no wording of its own for “{{code}}”; the grey one is from “{{locale}}”.',
       search: 'Search texts',
       noMatch: 'No text matches the search.',

@@ -80,9 +80,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Stand und Reviews
 
-Zweiundfünfzig Review-Runden sind abgearbeitet (die letzte am 2026-10-20 auf `feat/1.2`, über
-quartz-forms 0.5.7 und sein Handbuch; die achtundvierzigste bis zweiundfünfzigste von einem
-anderen Modell geschrieben). Veröffentlicht ist `1.1.0` (2026-10-18). Was aus jeder Runde wurde und was noch
+Dreiundfünfzig Review-Runden sind abgearbeitet (die letzte am 2026-10-21 auf `feat/1.2`, über
+den Reiter „Formulare“, quartz-forms 0.5.8/0.5.9 und beide Handbücher; die achtundvierzigste bis
+dreiundfünfzigste von einem anderen Modell geschrieben). Veröffentlicht ist `1.1.0` (2026-10-18). Was aus jeder Runde wurde und was noch
 ungelesen ist, steht in [`docs/reviews.md`](docs/reviews.md); die früheren Stand-Absätze dieser
 Datei (Releases, Alpha-Test, Gruppe D, offene Punkte) wörtlich in [`docs/stand.md`](docs/stand.md).
 Was aus einer Runde dauerhaft gilt, steht als Regel in `docs/conventions.md`, nicht in der Chronik.

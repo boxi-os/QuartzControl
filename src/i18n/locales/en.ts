@@ -1633,7 +1633,11 @@ export default {
       addressHint: 'Stored encrypted and written only into the relay’s config.php. Leave it empty to enter it later in the “Relay” section.',
       add: 'Take over'
     },
-    templateFieldsNote: 'The fields come from the template “{{template}}”. The first change makes them the form’s own fields.',
+    templateFieldsNote: 'The fields come from the template “{{template}}”. The first change makes them the form’s own fields; the button below the list then leads back to the template.',
+    templateFieldsBack: 'Use the fields of the template “{{template}}”',
+    templateFieldsBackConfirm: 'Use the fields of the template “{{template}}”?\n\nThis form’s own fields are lost.',
+    templateFieldsBackSubmit: 'Use the template’s fields',
+    templateFieldsBackAnnounce: 'The form has the fields of the template “{{template}}” again.',
     ownTransport: 'Sending for this form',
     ownTransportHint: 'What is not set here applies as under “Sending” for all forms.',
     ownSpamHint: 'What is not set here applies as under “Spam protection” for all forms.',

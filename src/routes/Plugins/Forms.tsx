@@ -830,6 +830,13 @@ function FormPanel({
     else next[key] = value
     onDef(next)
   }
+  const templateName = template ? t(`formsEditor.templates.${String(def.template)}`) : ''
+  async function takeTemplateFields(): Promise<void> {
+    const text = t('formsEditor.templateFieldsBackConfirm', { template: templateName })
+    if (!(await confirmDialog({ text, confirmLabel: t('formsEditor.templateFieldsBackSubmit'), danger: true }))) return
+    setKey('fields', undefined)
+    announce(t('formsEditor.templateFieldsBackAnnounce', { template: templateName }))
+  }
   const setEncryption = (change: Record<string, unknown>): void => {
     const next: Record<string, unknown> = { ...encryption, ...change }
     for (const [k, v] of Object.entries(next)) if (v === undefined) delete next[k]
@@ -953,6 +960,13 @@ function FormPanel({
           olderPlugin={olderPlugin}
           onFields={(next) => setKey('fields', next)}
         />
+        {/* The way back once the template's fields became the form's own: before, only taking
+            `fields:` out of the YAML by hand (review 2026-10-28, N9). */}
+        {template && Array.isArray(def.fields) && (
+          <Button variant="ghost" className="self-start" onClick={() => void takeTemplateFields()}>
+            {t('formsEditor.templateFieldsBack', { template: templateName })}
+          </Button>
+        )}
       </FormPart>
 
       <FormPart {...part('sending')} icon={Send} title={t('formsEditor.parts.sending')}>

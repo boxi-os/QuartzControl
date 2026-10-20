@@ -1638,7 +1638,11 @@ export default {
       addressHint: 'Wird verschlüsselt gespeichert und nur in die config.php des Relays geschrieben. Leer lassen, um sie später im Abschnitt „Relay“ einzutragen.',
       add: 'Übernehmen'
     },
-    templateFieldsNote: 'Die Felder kommen aus der Vorlage „{{template}}“. Die erste Änderung macht sie zu eigenen Feldern des Formulars.',
+    templateFieldsNote: 'Die Felder kommen aus der Vorlage „{{template}}“. Die erste Änderung macht sie zu eigenen Feldern des Formulars; zur Vorlage zurück geht es dann über den Button unter der Liste.',
+    templateFieldsBack: 'Felder der Vorlage „{{template}}“ nehmen',
+    templateFieldsBackConfirm: 'Die Felder der Vorlage „{{template}}“ nehmen?\n\nDie eigenen Felder dieses Formulars gehen verloren.',
+    templateFieldsBackSubmit: 'Felder der Vorlage nehmen',
+    templateFieldsBackAnnounce: 'Das Formular hat wieder die Felder der Vorlage „{{template}}“.',
     ownTransport: 'Versandweg für dieses Formular',
     ownTransportHint: 'Was hier nicht gesetzt ist, gilt wie unter „Versand“ für alle Formulare.',
     ownSpamHint: 'Was hier nicht gesetzt ist, gilt wie unter „Spamschutz“ für alle Formulare.',

@@ -1260,6 +1260,7 @@ export default {
       language: 'Language',
       hint: 'The plugin’s wording stands in grey; what you enter replaces it exactly, with spaces at the edges and even empty. The plugin fills in placeholders like {max}.',
       empty: 'Empty: nothing stands here on the site.',
+      relayOwnWords: 'Not in a mail the relay writes itself (every unencrypted message through the relay): that always has the plugin’s sentence.',
       severalEntries: '“texts” holds several entries for this language ({{keys}}); this edits “{{key}}”. A page lays the entry that matches its language exactly over the others.',
       reset: 'Plugin wording',
       resetHint: 'Remove your own text for “{{name}}”; the plugin’s wording applies again.',

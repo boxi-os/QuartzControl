@@ -13,6 +13,12 @@ type Options = Record<string, unknown>
 
 const primary = (code: string): string => code.toLowerCase().split(/[-_]/)[0]
 
+// The two lines of the message the relay writes itself for every unencrypted post, with or without
+// JavaScript, in its own words (send.php `qf_serialize`/`qf_words`; the head of `qf_words` says a
+// site's `texts` do not reach it) - so their own texts work everywhere but there (review
+// 2026-10-28, N6).
+const RELAY_OWN_WORDS = new Set(['messagePage', 'messageKey'])
+
 /**
  * The entry of `texts` a site language writes to: the one named exactly as the language, else one
  * of its primary subtag (`de-DE` for `de`), else a new one under the language's code. The plugin
@@ -140,7 +146,7 @@ export function FormsTexts({
           {shown.map((name) => (
             <div key={`${key}:${name}`} className="flex flex-col gap-1">
               <div className="flex items-end gap-2">
-                <Field label={name} configKey className="min-w-0 flex-1">
+                <Field label={name} configKey hint={RELAY_OWN_WORDS.has(name) ? t('formsEditor.textList.relayOwnWords') : undefined} className="min-w-0 flex-1">
                   <DraftInput
                     value={typeof own[name] === 'string' ? (own[name] as string) : ''}
                     placeholder={own[name] === '' ? t('formsEditor.textList.empty') : plugin.wording[name]}

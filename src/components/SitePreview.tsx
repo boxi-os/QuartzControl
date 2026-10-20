@@ -148,8 +148,7 @@ export default function SitePreview({
     if (!deciding || !current) return
     setDecidedFor(selector)
     const list = JSON.parse(pagesKey) as string[]
-    const trim = (p: string): string => p.replace(/^\/+|\/+$/g, '')
-    if (current.found > 0 || list.length === 0 || list.some((p) => trim(p) === trim(page))) return
+    if (current.found > 0 || list.length === 0 || list.some((p) => samePage(p, page))) return
     setPage(list[0])
     setDraft(list[0])
     // Said once, not in the status line below: the jump is news, the mark is a state - and the
@@ -292,7 +291,7 @@ export default function SitePreview({
               {/* Rendered empty, so the sentence is announced when it appears (conventions.md). The
                   button stays outside: it changes because the selection did, not on its own. */}
               <p role="status" className="text-micro text-text-secondary">
-                {highlight && current && !deciding ? markSentence(current, highlight, t) : null}
+                {highlight && current && !deciding ? markSentence(current, highlight, page, t) : null}
               </p>
               {highlight && highlight.matches > 1 && highlight.onAssignClass && (
                 <Button variant="ghost" onClick={highlight.onAssignClass}>
@@ -330,8 +329,15 @@ export interface PreviewHighlight {
   pages?: string[] | null
 }
 
-function markSentence(report: SitePreviewReport, highlight: PreviewHighlight, t: TFunction): string {
-  if (report.found === 0) return t('sitePreview.markNotFound', { name: highlight.name })
+const samePage = (a: string, b: string): boolean => a.replace(/^\/+|\/+$/g, '') === b.replace(/^\/+|\/+$/g, '')
+
+function markSentence(report: SitePreviewReport, highlight: PreviewHighlight, page: string, t: TFunction): string {
+  if (report.found === 0) {
+    // The editor's list says this page has it, the page does not: the list is older than the page
+    // (review 2026-10-28, N1 - after a jump the line said "eine Seite mit X. X kommt nicht vor").
+    const listed = highlight.pages?.some((p) => samePage(p, page)) ?? false
+    return t(listed ? 'sitePreview.markStale' : 'sitePreview.markNotFound', { name: highlight.name })
+  }
   if (report.visible === 0) return t('sitePreview.markHidden', { name: highlight.name })
   // Whether it can be told apart comes from the config; how many marks there are, from the page.
   if (highlight.matches > 1) {

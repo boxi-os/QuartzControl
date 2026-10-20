@@ -1066,6 +1066,7 @@ export default {
     markNoClass_other: '„{{name}}“ hat keine CSS-Klasse. Markiert ist jeder Eintrag dieses Plugins, auf dieser Seite {{count}}.',
     markNotFound: '„{{name}}“ kommt auf dieser Seite nicht vor.',
     jumped: 'Die Vorschau zeigt jetzt {{page}}, eine Seite mit „{{name}}“.',
+    markStale: '„{{name}}“ kommt auf dieser Seite nicht mehr vor. „Neu suchen“ liest die Seiten erneut.',
     markHidden: '„{{name}}“ steht auf dieser Seite, ist in dieser Ansicht aber nicht zu sehen (etwa ausgeblendet oder in einer Schublade).'
   },
   extraContent: {
@@ -1486,6 +1487,10 @@ export default {
     onNoPageLayout: 'Keine Seite bindet es ein. Als Layout-Formular steht es auf jeder Seite.',
     onNoPageHint: 'Noch keine Seite bindet es ein. Füge eine der Zeilen oben in eine Seite ein.',
     showInPreview: 'Zeigen',
+    unbuilt: {
+      draft: 'Entwurf, wird nicht gebaut',
+      unpublished: 'ohne „publish: true“, wird nicht gebaut'
+    },
     usedOnHint: 'Gesucht in den Seiten, die Quartz baut. Ein Formular, das gerade erst eingefügt wurde, findet „Neu suchen“.',
     successSlugUnknown: 'Keine Seite der Website hat diesen Slug. Der Build bricht dann ab.',
     noSuchPage: 'Keine passende Seite',

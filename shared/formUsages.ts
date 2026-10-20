@@ -56,6 +56,10 @@ export interface PageFormUse {
   hidesLayout: boolean
   /** The frontmatter's title, when it has one. */
   title?: string
+  /** `draft` and `publish` the way Quartz's two filters read them (remove-draft, explicit-publish:
+   *  `true` or `"true"`); whether either keeps the page off the site depends on which is on. */
+  draft: boolean
+  publish: boolean
 }
 
 const PLACEHOLDER = /\{\{\s*form:([A-Za-z0-9-]+)\s*\}\}|%7B%7Bform:([A-Za-z0-9-]+)%7D%7D/gi
@@ -74,6 +78,8 @@ export function pageFormUse(text: string, codeBlockLang: string, frontmatterKey:
   let body = text
   let hidesLayout = false
   let title: string | undefined
+  let draft = false
+  let publish = false
 
   const fm = /^---\r?\n([\s\S]*?)\r?\n(?:---|\.\.\.)\s*(?:\r?\n|$)/.exec(text)
   if (fm) {
@@ -91,6 +97,8 @@ export function pageFormUse(text: string, codeBlockLang: string, frontmatterKey:
       else if (typeof value === 'string') add(value)
       else if (Array.isArray(value)) for (const v of value) if (typeof v === 'string') add(v)
       if (typeof record.title === 'string' && record.title.trim()) title = record.title.trim()
+      draft = record.draft === true || record.draft === 'true'
+      publish = record.publish === true || record.publish === 'true'
     }
   }
 
@@ -120,5 +128,5 @@ export function pageFormUse(text: string, codeBlockLang: string, frontmatterKey:
   const prose = outside.join('\n').replace(/(`+)[\s\S]*?\1/g, '')
   for (const m of prose.matchAll(PLACEHOLDER)) add(m[1] ?? m[2])
 
-  return { forms: ids, hidesLayout, ...(title ? { title } : {}) }
+  return { forms: ids, hidesLayout, ...(title ? { title } : {}), draft, publish }
 }

@@ -698,6 +698,10 @@ export interface FormUsagePage {
   title?: string
   forms: string[]
   hidesLayout: boolean
+  /** Set when a filter that is on keeps the page off the site: `draft: true` with remove-draft,
+   *  no `publish: true` with explicit-publish. The page still names the form, so it still counts
+   *  for a rename; the preview does not go there (review 2026-10-28, N1). */
+  unbuilt?: 'draft' | 'unpublished'
 }
 
 export interface FormUsages {

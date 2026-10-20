@@ -308,9 +308,16 @@ export async function formUsages(projectPath: string, codeBlockLang: string, fro
   const status = await getContentStatus(projectPath)
   if (!status.exists || (status.isSymlink && !status.targetExists)) return { pages: [], slugs: [], listSource: 'quartz', unreadable: 0, noContent: true }
   let patterns: string[] = []
+  // The two filters of Quartz that leave a page out by its frontmatter, when they are on.
+  let removeDraft = false
+  let explicitPublish = false
   try {
-    const ignore = (await readConfig(projectPath)).configuration.ignorePatterns
+    const config = await readConfig(projectPath)
+    const ignore = config.configuration.ignorePatterns
     if (Array.isArray(ignore)) patterns = ignore.filter((p): p is string => typeof p === 'string')
+    const on = (name: string): boolean => config.plugins.some((p) => p.enabled && p.name === name)
+    removeDraft = on('remove-draft')
+    explicitPublish = on('explicit-publish')
   } catch {
     // An unreadable config still leaves hidden entries out.
   }
@@ -330,8 +337,10 @@ export async function formUsages(projectPath: string, codeBlockLang: string, fro
           unreadable++
           return
         }
-        const use = pageFormUse(text, codeBlockLang || 'quartz-form', frontmatterKey || 'form', (yaml) => parseYaml(yaml))
-        if (use.forms.length > 0 || use.hidesLayout) pages.push({ file, slug: quartzSlug(file), ...use })
+        const { draft, publish, ...use } = pageFormUse(text, codeBlockLang || 'quartz-form', frontmatterKey || 'form', (yaml) => parseYaml(yaml))
+        if (use.forms.length === 0 && !use.hidesLayout) return
+        const unbuilt = removeDraft && draft ? 'draft' : explicitPublish && !publish ? 'unpublished' : undefined
+        pages.push({ file, slug: quartzSlug(file), ...use, ...(unbuilt ? { unbuilt } : {}) })
       })
     )
   }

@@ -1061,6 +1061,7 @@ export default {
     markNoClass_other: '“{{name}}” has no CSS class. Every entry of this plugin is marked, {{count}} on this page.',
     markNotFound: '“{{name}}” does not appear on this page.',
     jumped: 'The preview now shows {{page}}, a page with “{{name}}”.',
+    markStale: '“{{name}}” is no longer on this page. “Search again” reads the pages again.',
     markHidden: '“{{name}}” is on this page but cannot be seen in this view (hidden, say, or inside a drawer).'
   },
   extraContent: {
@@ -1481,6 +1482,10 @@ export default {
     onNoPageLayout: 'No page embeds it. As the layout form it stands on every page.',
     onNoPageHint: 'No page embeds it yet. Put one of the lines above into a page.',
     showInPreview: 'Show',
+    unbuilt: {
+      draft: 'Draft, not built',
+      unpublished: 'without “publish: true”, not built'
+    },
     usedOnHint: 'Searched in the pages Quartz builds. “Search again” finds a form that was just put in.',
     successSlugUnknown: 'No page of the site has this slug. The build then stops.',
     noSuchPage: 'No matching page',

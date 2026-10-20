@@ -666,7 +666,8 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
                 name: titleOf(selectedForm[0], selectedForm[1]),
                 matches: 1,
                 ownClass: true,
-                pages: usages ? pagesOf(selectedForm[0]).map((p) => slugPath(p.slug)) : null
+                // A page a filter leaves out is no page to go to: the dev server answers 404 there.
+                pages: usages ? pagesOf(selectedForm[0]).filter((p) => !p.unbuilt).map((p) => slugPath(p.slug)) : null
               }
             : null
         }
@@ -1111,9 +1112,13 @@ function FormPanel({
                     {p.title ?? p.file}
                     {p.title && <span className="ml-1.5 text-micro text-text-muted">{p.file}</span>}
                   </span>
-                  <Button variant="ghost" onClick={() => onShowPage(p.slug)}>
-                    {t('formsEditor.showInPreview')}
-                  </Button>
+                  {p.unbuilt ? (
+                    <span className="text-micro text-text-muted">{t(`formsEditor.unbuilt.${p.unbuilt}`)}</span>
+                  ) : (
+                    <Button variant="ghost" onClick={() => onShowPage(p.slug)}>
+                      {t('formsEditor.showInPreview')}
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>

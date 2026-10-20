@@ -2812,3 +2812,40 @@ Die Nebenbei-Liste, ebenfalls am 2026-10-20, ein Punkt je Commit:
 Dazu **quartz-forms 0.5.6** (`78c3244`) und QuartzControl (`FORMS_READ_AGAINST` 0.5.6,
 `check:plugin-copies` gegen die Kopie des Handbuch-Projekts: keine Abweichung). Auch diese Fixes
 hat kein Review gelesen.
+
+**Das einundfünfzigste Review** ([`REVIEW-2026-10-26.md`](REVIEW-2026-10-26.md), Auftrag
+[`REVIEW-2026-10-26-auftrag.md`](REVIEW-2026-10-26-auftrag.md), Block A quartz-forms
+`f5b6f94..78c3244` (0.5.5 und 0.5.6), Block B `review-2026-10-25..review-2026-10-26`, Block C das
+Handbuch zu quartz-forms `0c98b97..dafb9d6`): **von einem anderen Modell** (Claude Fable 5.1),
+als Subagent gestartet. 0 Hoch, 0 Mittel, 4 Niedrig; Urteil „so veröffentlichbar“, 0.5.5 und
+0.5.6 kein neues Glied der Regressionskette. Die Fixes des fünfzigsten Reviews hat es nachgemessen
+und bestätigt (M1 in acht Lagen, M2 mit jeder verschlüsselnden Demo in gpg, M3 ohne fremde
+Anfrage, `72af084` eine Kopie je Stylesheet und Skript, Mail von Skript und Plain-Post in fünf
+Paaren wortgleich).
+
+Abgearbeitet am 2026-10-20, ein Befund je Commit, im Plugin jeweils `npm run check` mit der
+Relay-Suite und Gegenprobe (der neue Test scheitert am alten Code):
+
+- **N1** `06fb52d` — die Prüfung beim Verlassen eines Felds wartet bei einem Druck irgendwo auf
+  der Seite, nicht nur im eigenen Formular (`pointerdown` am Dokument, alle drei in der
+  Capture-Phase). Gemessen mit `measure-m1c.mjs` des Reviews (Chrome, 1200×1300, zwei
+  Relay-Formulare): vorher rutschte der Button von B 475 → 503 px und B blieb still, nachher
+  475 px, B sendet, A zeigt den Fehler nach dem Loslassen; die M1-Messung im selben Formular
+  unverändert.
+- **N2** `f179fd9` — eigener Hinweis `pgpVersion6` für jeden Schlüssel der Version 6, vor dem des
+  Algorithmus. Selbst nachgemessen: gpg 2.5.22 lehnt v6 P-256 und v6 RSA aus OpenPGP.js 6.3.2 ab
+  („Ungültiger Schlüsselbund“), v4 P-256 importiert es; `cli key` über acht Schlüssel: vorher v6
+  P-256/RSA ohne Hinweis, nachher alle drei v6 mit, v4 unverändert. Vault `4e56be1` (9.2).
+- **N3** `0daf53d` — bei `demo` kein `siteKeyNeeded` und kein `encryptionCaptcha`, ein
+  geschriebenes `minSeconds` bekommt `demoNoEffect`. `cli check --lang de` an `site-democap` des
+  Reviews: vorher „turnstile braucht den Site-Key“ und der Satz vom Skript, das die Seite liest,
+  nachher keins von beiden und „forms.b.spam.minSeconds: wirkt nicht bei demo“. Der Reiter legt
+  den Satz ans Formular wie die bestehenden `pow`-Hinweise (gelesen, nicht an der App gemessen).
+  Vault `009ae4d` (9.2).
+- **N4** Vault `18d033c` — 5.1 und 6.3: die Tabellen geben der Demo keine Zeitfalle mehr, beide
+  Sprachen.
+
+`check:plugin-copies` gegen die Kopie des Handbuch-Projekts mit diesem Stand: keine Abweichung.
+Die Fixes liegen in quartz-forms unter `[Unreleased]`; das Handbuch nennt sie „ab 0.5.7“.
+**Keinen dieser Fixes hat ein Review gelesen.** Die Nebenbei-Liste des Reviews ist nicht
+abgearbeitet.

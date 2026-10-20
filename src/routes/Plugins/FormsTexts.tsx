@@ -63,6 +63,11 @@ export function FormsTexts({
 
   const texts = isObject(options.texts) ? options.texts : {}
   const key = entryKey(texts, code)
+  // Two entries of one language (`de` and `de-DE`, only by hand): the plugin lays the one named
+  // exactly as a page's language over the other, and a page's language is its `lang`, else the
+  // site's locale - so which one a page shows is not this tab's to know, and it says so instead
+  // (review 2026-10-28, N5: the section wrote `de`, the site showed `de-DE`).
+  const sameLanguage = Object.keys(texts).filter((k) => primary(k) === primary(code))
   const own = isObject(texts[key]) ? (texts[key] as Options) : {}
   const result = query.data
 
@@ -124,6 +129,9 @@ export function FormsTexts({
         {t('formsEditor.textList.hint')} {ownCount ? t('formsEditor.ownTexts', { count: ownCount }) : ''}
       </p>
       {!plugin.own && <p className="text-micro text-text-muted">{t('formsEditor.textList.fallbackLocale', { code, locale: plugin.locale })}</p>}
+      {sameLanguage.length > 1 && (
+        <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.textList.severalEntries', { keys: sameLanguage.join(', '), key })}</p>
+      )}
       <TextInput type="search" value={search} placeholder={t('formsEditor.textList.search')} aria-label={t('formsEditor.textList.search')} onChange={(e) => setSearch(e.target.value)} />
       {shown.length === 0 ? (
         <p className="text-micro text-text-muted">{t('formsEditor.textList.noMatch')}</p>

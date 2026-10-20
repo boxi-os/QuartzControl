@@ -1265,6 +1265,7 @@ export default {
       language: 'Sprache',
       hint: 'Grau steht der Wortlaut des Plugins; was du einträgst, ersetzt ihn genau so, mit Leerzeichen am Rand und auch leer. Platzhalter wie {max} füllt das Plugin.',
       empty: 'Leer: Auf der Website steht hier nichts.',
+      severalEntries: 'In „texts“ stehen für diese Sprache mehrere Einträge ({{keys}}); hier steht „{{key}}“. Eine Seite legt den Eintrag, der genau ihrer Sprache entspricht, über die anderen.',
       reset: 'Plugin-Wortlaut',
       resetHint: 'Den eigenen Text für „{{name}}“ entfernen; dann gilt wieder der Wortlaut des Plugins.',
       fallbackLocale: 'Für „{{code}}“ hat quartz-forms keinen eigenen Wortlaut; grau steht der aus „{{locale}}“.',

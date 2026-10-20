@@ -2873,7 +2873,9 @@ Die Nebenbei-Liste, ebenfalls am 2026-10-20, ein Punkt je Commit:
   `spaNavigate('/quartz-forms/tags')` ohne Schrägstrich am Ende. `tags/index.html` lädt mit
   `../`, und Quartz rechnet die Pfade gegen die angefragte URL um (`normalizeRelativeURLs(html,
   url)` in `spa.inline.ts`). Mit `/tags/`, über einen Klick auf `../2-felder/` und beim Laden
-  keiner. Im Bau verweist kein Link ohne Schrägstrich auf eine Ordnerseite.
+  keiner. Im Bau verweist kein Link ohne Schrägstrich auf eine Ordnerseite; ein Wikilink
+  `[[ordner]]` oder `[x](../ordner)` erzeugte einen (52. Review, N3), und nach dem Klick darauf
+  zeigt jeder Link der Seite ohne `/quartz-forms`.
 - Die zwei `GNUPGHOME`s `gpg51` und `gpg51m2` sind gelöscht (`gpg51` hielt nur den
   veröffentlichten Demo-Schlüssel `3EEC…D91B`).
 - Ohne Änderung: `test/keys.ts` (bewusst), `docs-check.mjs` (Heuristik), `encryptionCaptcha`

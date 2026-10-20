@@ -2849,5 +2849,36 @@ Relay-Suite und Gegenprobe (der neue Test scheitert am alten Code):
 
 `check:plugin-copies` gegen die Kopie des Handbuch-Projekts mit diesem Stand: keine Abweichung.
 Die Fixes liegen in quartz-forms unter `[Unreleased]`; das Handbuch nennt sie „ab 0.5.7“.
-**Keinen dieser Fixes hat ein Review gelesen.** Die Nebenbei-Liste des Reviews ist nicht
-abgearbeitet.
+**Keinen dieser Fixes hat ein Review gelesen.**
+
+Die Nebenbei-Liste, ebenfalls am 2026-10-20, ein Punkt je Commit:
+
+- M1-Satz oben in dieser Datei: `2b774c1a`. Scroll Anchoring gleicht nur aus, wenn die
+  Fehlerzeile über dem Fensterrand liegt (m1b), sonst rutscht der Button auch bei gescrollter
+  Seite (m1c).
+- Ohne Formulare 26 kB: Plugin `d044ae4`, `externalResources()` liefert bei leerem `forms`
+  nichts. Gemessen an einer Kopie von gui-test (`forms: {}`, Plugin aus dem Checkout): vorher
+  verlinkte `index.html` `resource-after-1e45c622.js` (20 132 B) und zwei Stylesheets (6356 B und
+  173 B), 465 Dateien; nachher keine der drei, 462 Dateien, die übrigen sechs Ressourcen gleich.
+- Parität der Mail im Katalog: Plugin `eff79eb`, `mailCases` in `test/parity-cases.ts` (zwei
+  Themen und zwei Zeilen Text, ein Thema als String im Plain-Post, nichts gefüllt, jeweils mit
+  Seite und Kästchen). Die Client-Suite schreibt die Mail über `qfSerialize` (mailto), die
+  Relay-Suite aus dem JSON-Post und aus dem Plain-Post. Gegenprobe: mit zurückgedrehtem
+  `a97a0b7` scheitert der Relay-Fall des Plain-Posts in den beiden Fällen mit leerem Kästchen.
+- 7.1 und 9.1: Vault `840c415`, bei `demo` zeigt `success` den Satz der Vorführung und leitet nicht
+  um, beide Sprachen.
+- README-Statuszeile: Plugin `f1d562b` (fünf unabhängige Reviews).
+- 404 ohne `/quartz-forms`: **nicht das Plugin, keine Änderung.** Gemessen mit dem `serve.mjs`
+  des Reviews an seinem Bau (Chrome headless): Die 404er kommen nur von
+  `spaNavigate('/quartz-forms/tags')` ohne Schrägstrich am Ende. `tags/index.html` lädt mit
+  `../`, und Quartz rechnet die Pfade gegen die angefragte URL um (`normalizeRelativeURLs(html,
+  url)` in `spa.inline.ts`). Mit `/tags/`, über einen Klick auf `../2-felder/` und beim Laden
+  keiner. Im Bau verweist kein Link ohne Schrägstrich auf eine Ordnerseite.
+- Die zwei `GNUPGHOME`s `gpg51` und `gpg51m2` sind gelöscht (`gpg51` hielt nur den
+  veröffentlichten Demo-Schlüssel `3EEC…D91B`).
+- Ohne Änderung: `test/keys.ts` (bewusst), `docs-check.mjs` (Heuristik), `encryptionCaptcha`
+  und `minSeconds` bei `demo` (in N3).
+
+Dazu **quartz-forms 0.5.7** (`fd9c411`) und QuartzControl `44c6e004` (`FORMS_READ_AGAINST` 0.5.7,
+`check:plugin-copies` gegen die gui-test-Kopie mit dem Checkout: keine Abweichung). Keinen der
+Fixes von 0.5.7 hat ein Review gelesen.

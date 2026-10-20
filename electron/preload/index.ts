@@ -302,6 +302,7 @@ const api: QuartzGuiApi = {
   },
   forms: {
     check: (args: { projectPath: string; source: PluginSource }) => ipcRenderer.invoke(IPC.formsCheck, args),
+    texts: (args: { projectPath: string; source: PluginSource }) => ipcRenderer.invoke(IPC.formsTexts, args),
     inspectKey: (args: { projectPath: string; source: PluginSource; armored: string }) => ipcRenderer.invoke(IPC.formsInspectKey, args),
     importKey: (args: { projectPath: string; sourcePath: string; name: string; overwrite: boolean }) => ipcRenderer.invoke(IPC.formsImportKey, args),
     relayState: (args: { projectId: string; projectPath: string; source: PluginSource }) => ipcRenderer.invoke(IPC.formsRelayState, args),

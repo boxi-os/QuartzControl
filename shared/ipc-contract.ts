@@ -633,6 +633,9 @@ export type FormsCheckResult =
   | { state: 'checked'; problems: string[]; hints: string[]; keys: FormsKeyReport[] }
   | { state: 'unavailable'; reason: string }
 
+/** forms.texts: quartz-forms' own wording of every text, by locale (`texts`), or why there is none. */
+export type FormsTextsResult = { state: 'read'; locales: Record<string, Record<string, string>> } | { state: 'unavailable'; reason: string }
+
 /** The quartz-forms relay's settings that are not secret (.quartz-gui/forms-relay.json). */
 export interface RelaySettings {
   /** A publish target of type sftp, ftp or folder. */
@@ -1651,6 +1654,7 @@ export const IPC = {
   pluginRemove: 'plugin:remove',
   pluginOptionSchema: 'plugin:optionSchema',
   formsCheck: 'forms:check',
+  formsTexts: 'forms:texts',
   formsInspectKey: 'forms:inspectKey',
   formsImportKey: 'forms:importKey',
   formsRelayState: 'forms:relayState',
@@ -2356,6 +2360,8 @@ export interface QuartzGuiApi {
   forms: {
     /** quartz-forms' own problems, hints and key reports for the options in quartz.config.yaml. */
     check(args: { projectPath: string; source: PluginSource }): Promise<FormsCheckResult>
+    /** quartz-forms' own wording of every text, by locale: what `options.texts` lays its entries over. */
+    texts(args: { projectPath: string; source: PluginSource }): Promise<FormsTextsResult>
     /** What a pasted key is; `armored` is its public key block alone, the text to store. */
     inspectKey(args: { projectPath: string; source: PluginSource; armored: string }): Promise<{ key: FormsKeyReport; armored?: string } | { unavailable: string }>
     /** Copies a public key file to quartz-forms/keys/<name>.asc; a private key is refused unwritten. */

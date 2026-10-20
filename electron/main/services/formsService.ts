@@ -2,7 +2,7 @@ import { existsSync, readFileSync, rmSync } from 'fs'
 import { mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import { join, posix, relative, sep } from 'path'
-import type { FormsCheckResult, FormsKeyImport, FormsKeyReport, PluginSource, PublishTarget, RelayConflict, RelayLastUpload, RelaySettings, RelayState, RelayUploadResult } from '@shared/ipc-contract'
+import type { FormsCheckResult, FormsKeyImport, FormsTextsResult, FormsKeyReport, PluginSource, PublishTarget, RelayConflict, RelayLastUpload, RelaySettings, RelayState, RelayUploadResult } from '@shared/ipc-contract'
 import * as connectionsService from './connectionsService'
 import { runDirectoryUpload } from './deploy'
 import { readJsonFile, writeJsonFile } from './jsonStore'
@@ -91,6 +91,25 @@ export async function check(projectPath: string, source: PluginSource): Promise<
     hints: strings(r.json.hints),
     keys: Array.isArray(r.json.keys) ? r.json.keys.map(keyReport) : []
   }
+}
+
+/**
+ * The plugin's own wording of every text, by locale (`texts`, the command after 0.5.8): what the
+ * Texte section shows beside the site's own wording. An answer without one locale of strings is
+ * not the answer asked for, and says so.
+ */
+export async function texts(projectPath: string, source: PluginSource): Promise<FormsTextsResult> {
+  const r = await runCli(projectPath, source, ['texts'])
+  if (!r.ok) return { state: 'unavailable', reason: r.reason }
+  const locales: Record<string, Record<string, string>> = {}
+  const raw = r.json.locales && typeof r.json.locales === 'object' ? (r.json.locales as Record<string, unknown>) : {}
+  for (const [locale, entries] of Object.entries(raw)) {
+    if (!entries || typeof entries !== 'object') continue
+    const own = Object.entries(entries as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === 'string')
+    if (own.length) locales[locale] = Object.fromEntries(own)
+  }
+  if (!Object.keys(locales).length) return { state: 'unavailable', reason: mainT('formsCliOutput', { output: JSON.stringify(r.json).slice(0, 400) }) }
+  return { state: 'read', locales }
 }
 
 /** What a pasted key is, and the public key block alone to store (never the text around it). */

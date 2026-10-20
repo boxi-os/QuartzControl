@@ -26,7 +26,7 @@ import {
   Vote,
   Wrench
 } from 'lucide-react'
-import type { FormsCheckResult, FormUsagePage, LayoutPosition, NormalizedOptionSchema, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
+import type { FormsCheckResult, FormUsagePage, LayoutPosition, NormalizedOptionSchema, PluginEntry, PluginSource, QuartzConfig } from '@shared/ipc-contract'
 import { slugPath } from '@shared/formUsages'
 import { Badge, Button, Card, CardHeading, Combobox, DetailLayout, Field, FieldGroup, FoldBox, IconButton, InfoNote, SegmentedControl, Select, SelectableRow, TextInput, Toggle, focusRowAt, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
@@ -87,6 +87,7 @@ import {
 } from './formsOptions'
 import { DraftInput } from './DraftInput'
 import { TextEditor } from './FormText'
+import { FormsTexts } from './FormsTexts'
 import { FormFieldsEditor } from './FormFieldsEditor'
 import { KeysSection } from './FormsKeys'
 import { RelayRecipientField, RelaySection } from './FormsRelay'
@@ -529,6 +530,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
             saved={savedFlash}
             ids={ids}
             placement={getLayout(entry.plugin)}
+            source={entry.plugin.source}
             onOptions={(next) => updateOptions(() => next)}
             onPosition={setPosition}
             onOpenOnStage={openOnStage}
@@ -1251,11 +1253,13 @@ function SectionPanel({
   saved,
   ids,
   placement,
+  source,
   onOptions,
   onPosition,
   onOpenOnStage
 }: {
   id: SectionId
+  source: PluginSource
   options: Options
   schema: NormalizedOptionSchema | null
   languages: string[]
@@ -1356,6 +1360,15 @@ function SectionPanel({
           projectPath={project.path}
           freeKeys={false}
           root={root}
+        />
+      ) : id === 'texts' ? (
+        <FormsTexts
+          projectPath={project.path}
+          source={source}
+          options={options}
+          languages={languages}
+          onOptions={onOptions}
+          fallback={<PluginOptionsForm schema={schema} values={options} onChange={onOptions} explicitEmpty languages={languages} projectPath={project.path} pick={pick} freeKeys={false} root={root} />}
         />
       ) : (
         <PluginOptionsForm schema={schema} values={options} onChange={onOptions} explicitEmpty languages={languages} projectPath={project.path} pick={pick} freeKeys={false} root={root} />

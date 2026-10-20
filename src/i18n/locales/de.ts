@@ -1259,6 +1259,16 @@ export default {
     ownTexts_one: 'Ein eigener Text',
     ownTexts_other: '{{count}} eigene Texte',
     pluginTexts: 'Texte des Plugins',
+    textList: {
+      language: 'Sprache',
+      hint: 'Grau steht der Wortlaut des Plugins; was du einträgst, ersetzt ihn. Platzhalter wie {max} füllt das Plugin.',
+      fallbackLocale: 'Für „{{code}}“ hat quartz-forms keinen eigenen Wortlaut; grau steht der aus „{{locale}}“.',
+      search: 'Texte durchsuchen',
+      noMatch: 'Kein Text passt zur Suche.',
+      unknown: 'quartz-forms kennt diesen Text nicht.',
+      reading: 'Die Texte werden bei quartz-forms gelesen …',
+      unavailable: 'Die Texte von quartz-forms konnten nicht gelesen werden: {{reason}}'
+    },
     panelLabel: 'Formular bearbeiten',
     panelEmptyTitle: 'Formulare',
     panelEmptyText: 'Wähle links ein Formular oder eine Einstellung.',

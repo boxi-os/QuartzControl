@@ -226,6 +226,7 @@ export function registerIpcHandlers(): void {
     pluginService.removePlugin(projectPath, name)
   )
   handle(IPC.formsCheck, t([s.formsCheckArgs]), ({ projectPath, source }) => formsService.check(projectPath, source as PluginSource))
+  handle(IPC.formsTexts, t([s.formsTextsArgs]), ({ projectPath, source }) => formsService.texts(projectPath, source as PluginSource))
   handle(IPC.formsInspectKey, t([s.formsInspectKeyArgs]), ({ projectPath, source, armored }) => formsService.inspectKey(projectPath, source as PluginSource, armored))
   handle(IPC.formsImportKey, t([s.formsImportKeyArgs]), ({ projectPath, sourcePath, name, overwrite }) => formsService.importKeyFile(projectPath, sourcePath, name, overwrite))
   handle(IPC.formsRelayState, t([s.formsRelayStateArgs]), ({ projectId, projectPath, source }) => formsService.relayState(projectId, projectPath, source as PluginSource))

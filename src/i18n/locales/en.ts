@@ -1254,6 +1254,16 @@ export default {
     ownTexts_one: 'One own text',
     ownTexts_other: '{{count}} own texts',
     pluginTexts: 'The plugin’s texts',
+    textList: {
+      language: 'Language',
+      hint: 'The plugin’s wording stands in grey; what you enter replaces it. The plugin fills in placeholders like {max}.',
+      fallbackLocale: 'quartz-forms has no wording of its own for “{{code}}”; the grey one is from “{{locale}}”.',
+      search: 'Search texts',
+      noMatch: 'No text matches the search.',
+      unknown: 'quartz-forms does not know this text.',
+      reading: 'Reading the texts from quartz-forms …',
+      unavailable: 'The texts of quartz-forms could not be read: {{reason}}'
+    },
     panelLabel: 'Edit form',
     panelEmptyTitle: 'Forms',
     panelEmptyText: 'Choose a form or a setting on the left.',

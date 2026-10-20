@@ -656,6 +656,7 @@ export const dialogFileFilters = z
   .max(20)
 
 export const formsCheckArgs = pluginOptionSchemaArgs
+export const formsTextsArgs = pluginOptionSchemaArgs
 export const formsInspectKeyArgs = pluginOptionSchemaArgs.extend({ armored: z.string().min(1).max(256 * 1024) })
 
 // The relay (formsService). Secrets travel once, renderer to main, and only into the encrypted

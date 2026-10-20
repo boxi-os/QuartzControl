@@ -1853,9 +1853,12 @@ export interface SitePreviewHighlightInput {
  * installed, after Quartz's SPA navigation, after a resize. `rect` is the union of the visible
  * matches in the frame's viewport, in CSS pixels of the site; null when none is visible.
  * Comes from a frame the site's own scripts share, so the page checks every field before use.
+ * `selector` is the one the script was looking for, so a report about the previous selection is
+ * not read as one about the current (review 2026-10-28, M1).
  */
 export interface SitePreviewReport {
   source: 'quartzcontrol-preview'
+  selector: string | null
   found: number
   visible: number
   rect: { x: number; y: number; width: number; height: number } | null

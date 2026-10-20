@@ -149,6 +149,7 @@ function previewScript(selector: string | null, focus: boolean): void {
     parent.postMessage(
       {
         source: 'quartzcontrol-preview',
+        selector: state.selector,
         found: state.elements.length,
         visible: rects.length,
         rect,

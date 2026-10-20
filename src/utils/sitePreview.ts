@@ -41,6 +41,7 @@ export function parsePreviewReport(data: unknown): SitePreviewReport | null {
   if (typeof data !== 'object' || data === null) return null
   const d = data as Record<string, unknown>
   if (d.source !== 'quartzcontrol-preview') return null
+  if (d.selector !== null && typeof d.selector !== 'string') return null
   const count = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < 10_000
   const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
   if (!count(d.found) || !count(d.visible) || d.visible > d.found) return null
@@ -53,7 +54,7 @@ export function parsePreviewReport(data: unknown): SitePreviewReport | null {
     if (r.width <= 0 || r.height <= 0) return null
     rect = { x: r.x, y: r.y, width: r.width, height: r.height }
   }
-  return { source: 'quartzcontrol-preview', found: d.found, visible: d.visible, rect, viewport: { width: vp.width, height: vp.height } }
+  return { source: 'quartzcontrol-preview', selector: d.selector, found: d.found, visible: d.visible, rect, viewport: { width: vp.width, height: vp.height } }
 }
 
 type Size = { width: number; height: number }

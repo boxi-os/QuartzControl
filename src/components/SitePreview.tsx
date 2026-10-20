@@ -6,6 +6,7 @@ import type { FrameBreakpoint, FrameBreakpointWidths, ServerOptions, ServerStatu
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS } from '@shared/gridFrameCss'
 import { Button, Card, CardHeading, SegmentedControl, TextInput, Toggle } from './ui'
 import { useStickyState, peekStickyState } from '../state/uiState'
+import { announce } from '../state/announcer'
 import { serverErrorText } from '../utils/serverStatus'
 import { DEFAULT_SERVER_OPTIONS, parsePreviewReport, previewWidthPx, urlFor, zoomOnto } from '../utils/sitePreview'
 
@@ -69,15 +70,18 @@ export default function SitePreview({
   // Counts loads of the frame, so the marks are installed again after every reload - Quartz's own
   // live reload included, which the page hears of only through this event.
   const [loads, setLoads] = useState(0)
-  const [report, setReport] = useState<SitePreviewReport | null>(null)
+  // The last report, with the frame it came from. It counts only while both it and its selector
+  // are the ones shown: a report outlives the commit that changes either, and the sentence below
+  // was built from the previous form's report for a moment, and the jump decided on it (review
+  // 2026-10-28, M1). Kept across a reload of the same frame, so the sentence does not go blank and
+  // come back - and get announced again - each time the dev server rebuilds.
+  const [report, setReport] = useState<(SitePreviewReport & { frame: string }) | null>(null)
   const selector = highlight?.selector ?? null
   // The first report since the selection changed decides whether the frame goes to a page that
   // has the entry (`highlight.pages`); later ones do not, so a page opened by hand, or a link
-  // followed inside the site, stays. The report is read from a ref that the highlight effect
-  // clears in the same commit, so a report about the previous selection never decides.
-  const decided = useRef(false)
-  const lastReport = useRef<SitePreviewReport | null>(null)
-  const [jumpedTo, setJumpedTo] = useState<string | null>(null)
+  // followed inside the site, stays. State, not a ref: until it is decided, the status line has
+  // nothing to say - the old page's "kommt nicht vor" stood there in the commit of the jump.
+  const [decidedFor, setDecidedFor] = useState<string | null>(null)
   const pages = highlight?.pages ?? null
   const pagesKey = pages ? JSON.stringify(pages) : null
 
@@ -85,12 +89,11 @@ export default function SitePreview({
     if (!goTo) return
     setPage(goTo.page)
     setDraft(goTo.page)
-    setJumpedTo(null)
   }, [goTo, setPage])
 
+  // Nothing selected forgets the decision, so selecting the same entry again decides again.
   useEffect(() => {
-    decided.current = false
-    setJumpedTo(null)
+    if (selector === null) setDecidedFor(null)
   }, [selector])
 
   useEffect(() => {
@@ -116,34 +119,43 @@ export default function SitePreview({
   useEffect(() => {
     function onMessage(e: MessageEvent): void {
       // Only the frame itself; anything the site's scripts post is checked field by field.
-      if (!frameRef.current || e.source !== frameRef.current.contentWindow) return
+      const frame = frameRef.current
+      if (!frame || e.source !== frame.contentWindow) return
       const parsed = parsePreviewReport(e.data)
       if (!parsed) return
-      lastReport.current = parsed
-      setReport(parsed)
+      setReport({ ...parsed, frame: frame.dataset.frame ?? '' })
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
   useEffect(() => {
-    setReport(null)
-    lastReport.current = null
     if (loads === 0) return
     void window.quartzGui.sitePreview.highlight({ projectId, selector, focus: zoom })
   }, [projectId, selector, zoom, loads])
 
+  const running = status.state === 'running'
+  const options = status.options ?? DEFAULT_SERVER_OPTIONS
+  const remote = running && !!options.host
+  const path = page.replace(/^\/+/, '')
+  const url = `${urlFor(options)}/${path}`
+  const frameKey = `${url}#${nonce}`
+  const current = report && report.frame === frameKey && report.selector === selector ? report : null
+  const name = highlight?.name ?? ''
+  const deciding = selector !== null && pagesKey !== null && decidedFor !== selector
+
   useEffect(() => {
-    const r = lastReport.current
-    if (decided.current || !r || !selector || pagesKey === null) return
-    decided.current = true
+    if (!deciding || !current) return
+    setDecidedFor(selector)
     const list = JSON.parse(pagesKey) as string[]
     const trim = (p: string): string => p.replace(/^\/+|\/+$/g, '')
-    if (r.found > 0 || list.length === 0 || list.some((p) => trim(p) === trim(page))) return
+    if (current.found > 0 || list.length === 0 || list.some((p) => trim(p) === trim(page))) return
     setPage(list[0])
     setDraft(list[0])
-    setJumpedTo(list[0])
-  }, [report, pagesKey, selector, page, setPage])
+    // Said once, not in the status line below: the jump is news, the mark is a state - and the
+    // line is said again after every reload of the frame (M1).
+    announce(t('sitePreview.jumped', { page: `/${list[0]}`, name }))
+  }, [deciding, current, pagesKey, selector, name, page, setPage, t])
 
   async function start(): Promise<void> {
     setStarting(true)
@@ -155,11 +167,6 @@ export default function SitePreview({
     }
   }
 
-  const running = status.state === 'running'
-  const options = status.options ?? DEFAULT_SERVER_OPTIONS
-  const remote = running && !!options.host
-  const path = page.replace(/^\/+/, '')
-  const url = `${urlFor(options)}/${path}`
   // Beside an editor the column is about half the window, and at 100% the site would see that as
   // its viewport - with a 900px mobile breakpoint a "desktop" preview showed the burger menu. So the
   // frame gets a real device width (desktop: above the tablet band, at least 1280) and is scaled
@@ -169,8 +176,8 @@ export default function SitePreview({
   const scale = boxWidth > 0 ? Math.min(1, boxWidth / width) : 1
   const frameHeight = FRAME_HEIGHT / scale
   const zoomed =
-    zoom && selector && report?.rect && boxWidth > 0
-      ? zoomOnto(report.rect, { width, height: frameHeight }, { width: boxWidth, height: FRAME_HEIGHT }, scale)
+    zoom && selector && current?.rect && boxWidth > 0
+      ? zoomOnto(current.rect, { width, height: frameHeight }, { width: boxWidth, height: FRAME_HEIGHT }, scale)
       : null
   const shownScale = zoomed?.scale ?? scale
   const error = serverErrorText(status, t)
@@ -178,7 +185,6 @@ export default function SitePreview({
   function commitPage(): void {
     if (draft === page) return
     setPage(draft)
-    setJumpedTo(null)
   }
 
   return (
@@ -260,7 +266,8 @@ export default function SitePreview({
           >
             <iframe
               ref={frameRef}
-              key={`${url}#${nonce}`}
+              key={frameKey}
+              data-frame={frameKey}
               src={url}
               title={t('sitePreview.title')}
               sandbox="allow-scripts allow-same-origin allow-forms"
@@ -285,9 +292,7 @@ export default function SitePreview({
               {/* Rendered empty, so the sentence is announced when it appears (conventions.md). The
                   button stays outside: it changes because the selection did, not on its own. */}
               <p role="status" className="text-micro text-text-secondary">
-                {highlight && report
-                  ? `${jumpedTo !== null ? `${t('sitePreview.jumped', { page: `/${jumpedTo}`, name: highlight.name })} ` : ''}${markSentence(report, highlight, t)}`
-                  : null}
+                {highlight && current && !deciding ? markSentence(current, highlight, t) : null}
               </p>
               {highlight && highlight.matches > 1 && highlight.onAssignClass && (
                 <Button variant="ghost" onClick={highlight.onAssignClass}>

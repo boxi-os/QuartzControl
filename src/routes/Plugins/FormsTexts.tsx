@@ -6,7 +6,8 @@ import { useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
 import { DraftInput } from './DraftInput'
 import { NoEffect } from './NoEffect'
-import { isObject } from './formsOptions'
+import { isNewerVersion } from '@shared/semver'
+import { FORMS_TEXTS_SINCE, isObject } from './formsOptions'
 
 type Options = Record<string, unknown>
 
@@ -35,11 +36,14 @@ export function FormsTexts({
   source,
   options,
   languages,
+  installed,
   onOptions,
   fallback
 }: {
   projectPath: string
   source: PluginSource
+  /** The installed quartz-forms (its package.json); undefined while unknown. */
+  installed: string | undefined
   options: Options
   /** The site's language codes (siteLanguages). */
   languages: string[]
@@ -48,7 +52,10 @@ export function FormsTexts({
 }): JSX.Element {
   const { t, i18n } = useTranslation()
   const sourceKey = JSON.stringify(source)
-  const query = useIpcQuery(() => window.quartzGui.forms.texts({ projectPath, source }), [projectPath, sourceKey])
+  // A plugin before the command is not asked: it would answer "unbekannter Befehl", and the
+  // section says which version brings the texts instead.
+  const older = installed !== undefined && isNewerVersion(FORMS_TEXTS_SINCE, installed)
+  const query = useIpcQuery(() => (older ? Promise.resolve(null) : window.quartzGui.forms.texts({ projectPath, source })), [projectPath, sourceKey, older])
   const codes = languages.length ? languages : [i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'de']
   const [picked, setPicked] = useStickyState<string>('forms.textsLanguage', codes[0])
   const code = codes.includes(picked) ? picked : codes[0]
@@ -66,6 +73,14 @@ export function FormsTexts({
     return { locale, wording: result.locales[locale] ?? Object.values(result.locales)[0] ?? {}, own: Object.keys(result.locales).some((l) => primary(l) === primary(code)) }
   }, [result, code])
 
+  if (older) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-ui text-amber-700 dark:text-amber-400">{t('formsEditor.textList.older', { since: FORMS_TEXTS_SINCE, installed })}</p>
+        {fallback}
+      </div>
+    )
+  }
   if (query.error || result?.state === 'unavailable') {
     return (
       <div className="flex flex-col gap-3">

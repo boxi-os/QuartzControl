@@ -531,6 +531,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
             ids={ids}
             placement={getLayout(entry.plugin)}
             source={entry.plugin.source}
+            installed={installedVersion}
             onOptions={(next) => updateOptions(() => next)}
             onPosition={setPosition}
             onOpenOnStage={openOnStage}
@@ -1254,12 +1255,14 @@ function SectionPanel({
   ids,
   placement,
   source,
+  installed,
   onOptions,
   onPosition,
   onOpenOnStage
 }: {
   id: SectionId
   source: PluginSource
+  installed: string | undefined
   options: Options
   schema: NormalizedOptionSchema | null
   languages: string[]
@@ -1367,6 +1370,7 @@ function SectionPanel({
           source={source}
           options={options}
           languages={languages}
+          installed={installed}
           onOptions={onOptions}
           fallback={<PluginOptionsForm schema={schema} values={options} onChange={onOptions} explicitEmpty languages={languages} projectPath={project.path} pick={pick} freeKeys={false} root={root} />}
         />

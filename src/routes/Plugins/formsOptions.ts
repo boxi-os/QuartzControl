@@ -19,6 +19,8 @@ export const FORMS_READ_AGAINST = '0.5.8'
  * `pageBreak` as an unknown type (forty-ninth review, Niedrig 10).
  */
 export const FORMS_LAYOUT_SINCE = '0.4.0'
+/** `dist/cli.js texts`, the plugin's wording of every text, came with this version. */
+export const FORMS_TEXTS_SINCE = '0.5.9'
 
 type Options = Record<string, unknown>
 export type FormDef = Record<string, unknown>

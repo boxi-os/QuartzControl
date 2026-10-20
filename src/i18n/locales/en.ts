@@ -1262,7 +1262,8 @@ export default {
       noMatch: 'No text matches the search.',
       unknown: 'quartz-forms does not know this text.',
       reading: 'Reading the texts from quartz-forms …',
-      unavailable: 'The texts of quartz-forms could not be read: {{reason}}'
+      unavailable: 'The texts of quartz-forms could not be read: {{reason}}',
+      older: 'Every text with its wording is listed here from quartz-forms {{since}}; {{installed}} is installed. Until then you enter your own texts by language and key.'
     },
     panelLabel: 'Edit form',
     panelEmptyTitle: 'Forms',

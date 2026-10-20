@@ -1267,7 +1267,8 @@ export default {
       noMatch: 'Kein Text passt zur Suche.',
       unknown: 'quartz-forms kennt diesen Text nicht.',
       reading: 'Die Texte werden bei quartz-forms gelesen …',
-      unavailable: 'Die Texte von quartz-forms konnten nicht gelesen werden: {{reason}}'
+      unavailable: 'Die Texte von quartz-forms konnten nicht gelesen werden: {{reason}}',
+      older: 'Alle Texte mit ihrem Wortlaut stehen hier ab quartz-forms {{since}}; installiert ist {{installed}}. Bis dahin trägst du eigene Texte nach Sprache und Schlüssel ein.'
     },
     panelLabel: 'Formular bearbeiten',
     panelEmptyTitle: 'Formulare',

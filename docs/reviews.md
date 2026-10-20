@@ -2931,6 +2931,11 @@ Die Nebenbei-Liste:
 
 Dazu **quartz-forms 0.5.8** (`34d77d5`) und QuartzControl `c1e27d9a` (`FORMS_READ_AGAINST` 0.5.8,
 `check:plugin-copies` gegen die Kopie des Handbuch-Projekts mit dem Checkout: keine Abweichung).
-Keinen der Fixes von 0.5.8 hat ein Review gelesen. **Offen:** Das Handbuch-Projekt hängt auf
-`78c3244` (0.5.6) und bezieht das Plugin über `github:boxi-os/quartz-forms`; heben, bauen,
-veröffentlichen geht erst nach dem Push von 0.5.8.
+Keinen der Fixes von 0.5.8 hat ein Review gelesen.
+
+Nach dem Push (2026-10-20) das Handbuch-Projekt mit `npx quartz plugin install --latest
+quartz-forms` von `78c3244` (0.5.6) auf `34d77d5` (0.5.8) gehoben und über die gebaute App mit
+Wegwerf-Profil gebaut (`build.run`, Exit 0, 270 Dateien, keine Warnung). In Chrome jede der 30
+Seiten mit Formular geöffnet: 30 Formulare gebunden, keine Konsolenfehler. **Veröffentlicht ist
+die Website nicht**: Das Projekt hat noch kein Veröffentlichungsziel (`publish-targets.json`
+fehlt, `boxi-os.github.io/quartz-forms` antwortet 404); das gehört zum Release von 1.2.

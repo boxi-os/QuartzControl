@@ -80,8 +80,13 @@ export default function SitePreview({
   // The first report since the selection changed decides whether the frame goes to a page that
   // has the entry (`highlight.pages`); later ones do not, so a page opened by hand, or a link
   // followed inside the site, stays. State, not a ref: until it is decided, the status line has
-  // nothing to say - the old page's "kommt nicht vor" stood there in the commit of the jump.
-  const [decidedFor, setDecidedFor] = useState<string | null>(null)
+  // nothing to say - the old page's "kommt nicht vor" stood there in the commit of the jump. Sticky
+  // like the page it decides about: a page typed by hand was replaced by the jump again after
+  // every visit to another area (review 2026-10-28, N2).
+  const [decidedFor, setDecidedFor] = useStickyState<string | null>(`${stickyPrefix}.previewDecided`, null)
+  // Whether this mount has had a selection: the editor beside it has none while it reads the
+  // config, and that is no letting go of the one it had.
+  const hadSelection = useRef(false)
   const pages = highlight?.pages ?? null
   const pagesKey = pages ? JSON.stringify(pages) : null
 
@@ -93,8 +98,9 @@ export default function SitePreview({
 
   // Nothing selected forgets the decision, so selecting the same entry again decides again.
   useEffect(() => {
-    if (selector === null) setDecidedFor(null)
-  }, [selector])
+    if (selector !== null) hadSelection.current = true
+    else if (hadSelection.current) setDecidedFor(null)
+  }, [selector, setDecidedFor])
 
   useEffect(() => {
     void window.quartzGui.server.status(projectId).then(setStatus)
@@ -154,7 +160,7 @@ export default function SitePreview({
     // Said once, not in the status line below: the jump is news, the mark is a state - and the
     // line is said again after every reload of the frame (M1).
     announce(t('sitePreview.jumped', { page: `/${list[0]}`, name }))
-  }, [deciding, current, pagesKey, selector, name, page, setPage, t])
+  }, [deciding, current, pagesKey, selector, name, page, setPage, setDecidedFor, t])
 
   async function start(): Promise<void> {
     setStarting(true)

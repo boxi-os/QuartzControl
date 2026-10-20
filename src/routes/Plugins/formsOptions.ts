@@ -544,8 +544,14 @@ const PART_OF: [RegExp, FormPartId][] = [
 
 /** The part of the form panel a message of a form belongs to, by the key its path starts with;
  *  what names no key of its own (`title`, `success`, a sentence about the form) is Allgemein. */
+// "no fields" is said on the form's own path (`forms.<id>: no fields …`, validate.ts `noFields`,
+// messages/en.ts and de.ts), not under `fields`, so its badge stood on Allgemein (review
+// 2026-10-28, N8). Read by its words in both languages the CLI answers in.
+const NO_FIELDS = /^(no fields|keine Felder)\b/
+
 export function partOf(m: PlacedMessage): FormPartId {
   if (m.field !== undefined) return 'fields'
+  if (m.form !== undefined && NO_FIELDS.test(m.rest)) return 'fields'
   return PART_OF.find(([re]) => re.test(m.rest))?.[1] ?? 'general'
 }
 

@@ -2939,3 +2939,58 @@ Wegwerf-Profil gebaut (`build.run`, Exit 0, 270 Dateien, keine Warnung). In Chro
 Seiten mit Formular geöffnet: 30 Formulare gebunden, keine Konsolenfehler. **Veröffentlicht ist
 die Website nicht**: Das Projekt hat noch kein Veröffentlichungsziel (`publish-targets.json`
 fehlt, `boxi-os.github.io/quartz-forms` antwortet 404); das gehört zum Release von 1.2.
+
+**Das dreiundfünfzigste Review** ([`REVIEW-2026-10-28.md`](REVIEW-2026-10-28.md), Auftrag
+[`REVIEW-2026-10-28-auftrag.md`](REVIEW-2026-10-28-auftrag.md), Block A quartz-forms
+`fd9c411..f8d46a7` (0.5.8 und 0.5.9), Block B `review-2026-10-27..feat/1.2` (die vier Änderungen
+am Reiter „Formulare“), Block C das Handbuch von quartz-forms `840c415..c5f8a13`, Block D der
+nicht committete Abschnitt im QuartzControl-Handbuch): **von einem anderen Modell** (Claude Fable
+5.1), als Subagent gestartet. 0 Hoch, 1 Mittel, 9 Niedrig; Urteil „mit 1.2 veröffentlichbar“,
+vorher M1 (mit N3), N7 und N6. Gemessen an der gebauten App mit Wegwerf-Profil gegen Kopien von
+gui-test und dem Handbuch-Projekt; im Plugin 233 Tests grün.
+
+Abgearbeitet am 2026-10-21, ein Punkt je Commit, jeweils mit dem Messgeschirr des Reviews
+(`driver53.mjs`, auf dieses Repo und ein eigenes Profil umgebogen) vorher und nachher:
+
+- **M1** `2823f8e0` — der Bericht des Markierungsskripts trägt seinen Selektor, die Seite stempelt
+  ihn mit dem Frame; er zählt nur, solange beide die gezeigten sind. Der Sprung wird einmal über
+  `announce()` gesagt, die Statuszeile behält die Markierung, ein Reload desselben Frames leert sie
+  nicht mehr. Die Entscheidung über den Sprung ist State je Selektor, die Zeile schweigt bis dahin.
+  Vorher je Wechsel fünf Änderungen, zwei falsch, zwei Rebuilds sagten den Doppelsatz dreimal;
+  nachher leer → Ansage des Sprungs → „Markiert: …“, zwei Rebuilds (4 Berichte) ändern die Zeile
+  nicht. Nimmt **N3** mit (ein Bericht des alten Selektors entscheidet nicht mehr; nur gelesen,
+  das Review traf das Fenster in 25 Versuchen nicht).
+- **N1** `97afbbbc` — `pageFormUse` liest `draft`/`publish` wie remove-draft und explicit-publish;
+  eine Seite, die ein eingeschalteter Filter auslässt, steht unter „Einbinden“ mit dem Grund statt
+  „Zeigen“ und ist kein Sprungziel. Nennt die Liste die gezeigte Seite und fehlt das Formular dort,
+  sagt die Zeile „… kommt auf dieser Seite nicht mehr vor. „Neu suchen“ liest die Seiten erneut.“
+  explicit-publish nur gelesen.
+- **N2** `759f040e` — die Entscheidung über den Sprung ist Sticky-State neben der Seite; eine
+  eingetippte Seite übersteht den Weg über die Übersicht. Abwählen vergisst sie, aber erst, wenn
+  dieser Mount eine Auswahl hatte (beim Lesen der Config ist keine da). M1-Szenen wiederholt.
+- **N4** `d3b393b8` — ein Text wird geschrieben, wie er getippt ist, auch leer; „Plugin-Wortlaut“
+  nimmt einen eigenen Text zurück. Vorher `" oder "` → `oder`, Leeren löschte; nachher
+  `" oder "` bleibt, Leeren schreibt `""`. Dass das Plugin beides so zeigt, ist gelesen
+  (`wording()`).
+- **N5** `f6f7876b` — **zweiter Vorschlag des Reviews:** Welcher von `de` und `de-DE` oben liegt,
+  entscheidet die Sprache der einzelnen Seite (`lang`, sonst der Locale der Website); der Abschnitt
+  sagt bei mehreren Einträgen einer Sprache, welchen er bearbeitet.
+- **N6** `2ce2467b` — Zeile unter `messagePage`/`messageKey`: das Relay schreibt jede
+  unverschlüsselte Nachricht selbst, auch mit JavaScript (im Plugin nachgelesen:
+  `encrypted: false, fields`, `qf_serialize`). Handbuch von quartz-forms 9.3 de/en `fd5c196`.
+- **N7** Handbuch-Vault `2952547` (beide Sprachen: Teile zum Aufklappen, Vorlagenfelder, Texte ab
+  0.5.9, die springende Vorschau, Entwürfe unter „Einbinden“) und `a3a4cb9` (Rückweg aus N9).
+  Keine Änderung in diesem Repo.
+- **N8** `0838f07e` — „keine Felder“ kommt auf dem Pfad des Formulars; `partOf()` liest diese eine
+  Meldung an ihren Worten (de/en) und gibt sie „Felder“. Gemessen mit Skript 061 des Reviews,
+  nur die deutschen Meldungen.
+- **N9** `5ab36338` — „Felder der Vorlage „…“ nehmen“ unter der Liste eines Formulars mit Vorlage
+  und eigenen Feldern, mit Rückfrage; der Hinweis über der Liste nennt den Weg. Abbrechen nur
+  gelesen.
+
+Aus der Nebenbei-Liste miterledigt, weil derselbe Code: „Zeigen“ bei Entwürfen (N1) und die
+Wiederholung von „Markiert: …“ nach jedem Reload (M1). Offen und dem Nutzer genannt: der Sprung in
+die andere Sprache (`list[0]`), der Neu-Lesen-Cache für `texts`, `FORMS_TEXTS_SINCE` gegen einen
+Git-Checkout, eine Platzhalter-Prüfung im Plugin, `partOf` ohne `'more'`, die README-Statuszeilen
+des Plugins, dazu aus dieser Runde: `check:plugin-copies` sieht `entryKey`, `PART_OF`, `NO_FIELDS`
+und `RELAY_OWN_WORDS` nicht, und das Plugin könnte „keine Felder“ unter `forms.<id>.fields` melden.

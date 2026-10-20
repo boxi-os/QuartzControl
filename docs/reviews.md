@@ -2754,8 +2754,10 @@ Relay-Suite und Gegenprobe (der neue Test scheitert am alten Code):
 - **M1** `1c0c0aa` — die Prüfung beim Verlassen eines Felds wartet, solange ein Zeiger im
   Formular gedrückt ist. Die Messung des Reviews (14 px) drückte außerhalb des Fensters (Button
   bei y = 986 in 900 px, der Druck traf `<html>`); neu gemessen bei scrollY 0 in 1200×1300: vorher
-  rutschte der Button 28 px und der Klick ging auch mittig verloren, nachher nichts. Bei
-  gescrollter Seite gleicht Chromes Scroll Anchoring die Verschiebung in beiden Fassungen aus.
+  rutschte der Button 28 px und der Klick ging auch mittig verloren, nachher nichts. Chromes
+  Scroll Anchoring gleicht die Verschiebung nur aus, wenn die Fehlerzeile über dem Fensterrand
+  liegt (51. Review, m1b: 802 → 802 px); liegen Feld und Button beide im Fenster, wählt Chrome
+  einen Anker oberhalb, und der Button rutscht auch bei gescrollter Seite (m1c: 475 → 503 px).
 - **M2** Vault `fab3ad8` — neues Demo-Schlüsselpaar aus gpg (ed25519/cv25519), Fingerabdruck in
   1.3 und 6.2; der private Schlüssel aus der gebauten Seite 6.2 entschlüsselt in gpg 2.5.22 die
   Ausgabe des Demo-Formulars aus Chrome. Plugin `8931309` — Hinweis (`notice`, hält den Bau nicht

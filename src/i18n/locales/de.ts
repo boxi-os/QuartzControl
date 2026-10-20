@@ -1392,7 +1392,6 @@ export default {
     },
     addField: 'Feld hinzufügen',
     noFields: 'Das Formular hat keine Felder. Ohne Feld bricht der Build ab.',
-    takeTemplateFields: 'Felder übernehmen und bearbeiten',
     dragField: '{{name}} verschieben',
     requiredBadge: 'Pflicht',
     optionalByAnonymousBadge: 'optional, weil anonym',
@@ -1617,7 +1616,7 @@ export default {
       addressHint: 'Wird verschlüsselt gespeichert und nur in die config.php des Relays geschrieben. Leer lassen, um sie später im Abschnitt „Relay“ einzutragen.',
       add: 'Übernehmen'
     },
-    templateFieldsNote: 'Das Formular nimmt die Felder seiner Vorlage. Eigene Felder ersetzen sie ganz.',
+    templateFieldsNote: 'Die Felder kommen aus der Vorlage „{{template}}“. Die erste Änderung macht sie zu eigenen Feldern des Formulars.',
     ownTransport: 'Versandweg für dieses Formular',
     ownTransportHint: 'Was hier nicht gesetzt ist, gilt wie unter „Versand“ für alle Formulare.',
     ownSpamHint: 'Was hier nicht gesetzt ist, gilt wie unter „Spamschutz“ für alle Formulare.',

@@ -1387,7 +1387,6 @@ export default {
     },
     addField: 'Add field',
     noFields: 'The form has no fields. Without one the build stops.',
-    takeTemplateFields: 'Take over the fields and edit them',
     dragField: 'Move {{name}}',
     requiredBadge: 'required',
     optionalByAnonymousBadge: 'optional, anonymous',
@@ -1612,7 +1611,7 @@ export default {
       addressHint: 'Stored encrypted and written only into the relay’s config.php. Leave it empty to enter it later in the “Relay” section.',
       add: 'Take over'
     },
-    templateFieldsNote: 'The form takes the fields of its template. Own fields replace them entirely.',
+    templateFieldsNote: 'The fields come from the template “{{template}}”. The first change makes them the form’s own fields.',
     ownTransport: 'Sending for this form',
     ownTransportHint: 'What is not set here applies as under “Sending” for all forms.',
     ownSpamHint: 'What is not set here applies as under “Spam protection” for all forms.',

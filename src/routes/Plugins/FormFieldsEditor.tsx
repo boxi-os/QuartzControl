@@ -42,7 +42,6 @@ import {
   FORMS_LAYOUT_SINCE,
   INPUT_KEYS,
   SAME_SHAPE,
-  TEMPLATES,
   controllerValues,
   fieldLabel,
   fieldNameProblem,
@@ -126,7 +125,13 @@ export function FormFieldsEditor({
   const [open, setOpen] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const listRef = useRef<HTMLUListElement>(null)
+  // While the form takes its template's fields, `fields` are the template's, shown as editable as
+  // own ones: the first change writes the whole list as the form's own. A button "Felder übernehmen
+  // und bearbeiten" in front of a read-only list was a click before every first edit (user,
+  // 2026-10-20). Opening a row writes nothing, so a look leaves the form on its template. The copy
+  // is deep: the list holds the template's own objects.
   const fromTemplate = isTemplate(def.template) && !Array.isArray(def.fields)
+  const write = (next: FieldDef[]): void => onFields(fromTemplate ? structuredClone(next) : next)
   // Sortable ids must be unique; a name written twice by hand gets its place appended. A page
   // break has no name: it is `page:<n>`, n counting the breaks, which a title edit leaves alone.
   const breaksBefore = (i: number): number => fields.slice(0, i).filter(isPageBreak).length
@@ -161,14 +166,14 @@ export function FormFieldsEditor({
     const [item] = next.splice(from, 1)
     next.splice(to, 0, item)
     keepOpen(next)
-    onFields(next)
+    write(next)
     if (said) announce(t('formsEditor.fieldMovedAnnounce', { name: rowLabel(item, from), n: to + 1, count: fields.length }))
   }
   const update = (index: number, next: FieldDef): void => {
     const before = fields[index]
     const list = fields.map((f, i) => (i === index ? next : f))
     // A condition names its field by name: a rename takes the conditions along.
-    onFields(before.name !== next.name && typeof before.name === 'string' ? renameInConditions(list, before.name, next.name) : list)
+    write(before.name !== next.name && typeof before.name === 'string' ? renameInConditions(list, before.name, next.name) : list)
   }
 
   // "Only shown if …" for the row, in the words visitors see (labels, not values).
@@ -190,7 +195,7 @@ export function FormFieldsEditor({
     if (!(await confirmDialog({ text, confirmLabel: t('common.remove'), danger: true }))) return
     const next = fields.filter((_, i) => i !== index)
     keepOpen(next)
-    onFields(next)
+    write(next)
     announce(t(pageBreak ? 'formsEditor.breakRemovedAnnounce' : 'formsEditor.fieldRemovedAnnounce', { name }))
     focusRowAt(listRef.current, index)
   }
@@ -199,7 +204,7 @@ export function FormFieldsEditor({
     if (type === 'pageBreak') {
       // At the end, where the next fields will go; until one follows, the plugin says it may not stand last.
       const n = fields.filter(isPageBreak).length + 1
-      onFields([...fields, { type } as FieldDef])
+      write([...fields, { type } as FieldDef])
       setAdding(false)
       setOpen(`page:${n}`)
       announce(t('formsEditor.breakAddedAnnounce', { name: t('formsEditor.stepLabel', { n: n + 1 }) }))
@@ -226,7 +231,7 @@ export function FormFieldsEditor({
                   ]
                 }
               : { type, name, label }
-    onFields([...fields, field])
+    write([...fields, field])
     setAdding(false)
     setOpen(name)
     announce(t('formsEditor.fieldAddedAnnounce', { name: label }))
@@ -238,33 +243,12 @@ export function FormFieldsEditor({
     move(ids.indexOf(String(active.id)), ids.indexOf(String(over.id)), false)
   }
 
-  if (fromTemplate) {
-    const template = TEMPLATES[def.template as keyof typeof TEMPLATES]
-    const own = (template.fields as FieldDef[]) ?? []
-    return (
-      <div className="flex flex-col gap-2">
-        <p className="text-micro text-text-muted">{t('formsEditor.templateFieldsNote')}</p>
-        <ul className="flex flex-col gap-1">
-          {own.map((f) => (
-            <li key={f.name} className="flex items-center gap-2 rounded-md border border-ink/10 px-2.5 py-1.5 text-ui dark:border-ink/10">
-              <TypeIcon type={f.type} />
-              <span className="min-w-0 flex-1 truncate">{fieldLabel(f, lang)}</span>
-              <span className="text-micro text-text-muted">{typeName(f.type)}</span>
-            </li>
-          ))}
-        </ul>
-        <div>
-          <Button variant="ghost" onClick={() => onFields(structuredClone(own))}>
-            {t('formsEditor.takeTemplateFields')}
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
   const hasPgpKey = fields.some((f) => f.type === 'pgpKey')
   return (
     <div className="flex flex-col gap-2">
+      {fromTemplate && (
+        <p className="text-micro text-text-muted">{t('formsEditor.templateFieldsNote', { template: t(`formsEditor.templates.${String(def.template)}`) })}</p>
+      )}
       {olderPlugin && <NoEffect reason={t('formsEditor.olderPlugin', { since: FORMS_LAYOUT_SINCE, installed: olderPlugin })} />}
       {fields.length === 0 && <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.noFields')}</p>}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} accessibility={{ announcements, screenReaderInstructions }}>

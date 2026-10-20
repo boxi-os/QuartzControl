@@ -2772,12 +2772,43 @@ Relay-Suite und Gegenprobe (der neue Test scheitert am alten Code):
 - **N3** `6ae2f6a` — bei Diensten bleibt die Seite im Chiffrat (`_page` nur bei Klartext); README
   und 6.2 sagen, was neben dem Chiffrat reist.
 - **N4** `b49142c` — ein Abschnitt zum Aussehen in beiden READMEs, ein Satz in 7.2 (Vault
-  `8cdafa0`). **Offen, Entscheidung des Nutzers:** ob Button-Farben und Feldrand mit in den
-  Wächter gehören.
+  `8cdafa0`). Button-Farben und Feldrand bleiben außerhalb des Wächters (Entscheidung des
+  Nutzers, 2026-10-20): Eine Website soll sie in `custom.scss` ohne spezifischere Selektoren
+  ändern können.
 - **N5** Vault `5c6e3de` — 5.2: QuartzControl schreibt `config.php` bei jedem Hochladen neu.
 - **N6** `f221fb3` — `success` ohne `mode` ist `inline`.
 
 Dazu **quartz-forms 0.5.5** (`777b758`) und QuartzControl `23ebb860` (`FORMS_READ_AGAINST` 0.5.5,
 `check:plugin-copies` gegen eine Kopie des Handbuch-Projekts mit dem Checkout: keine Abweichung).
-Die Nebenbei-Liste des Reviews ist nicht abgearbeitet. **Keinen dieser Fixes hat ein Review
-gelesen.**
+**Keinen dieser Fixes hat ein Review gelesen.**
+
+Die Nebenbei-Liste, ebenfalls am 2026-10-20, ein Punkt je Commit:
+
+- Zeitfalle bei `demo`: Plugin `d140f35` (`minSeconds` 0 in der Render-Config, wie das
+  Captcha), Vault `ec277d0` (6.3).
+- `<noscript>` der Demo: Plugin `053b855`, neuer Textschlüssel `demoNoScript` (auch bei
+  verschlüsselnder Demo), Vault `5afb87d` (4.3, 9.1).
+- 8.3 `yes` in Anführungszeichen: Vault `31e2b8e`, Begründung richtig (Quartz liest YAML 1.2,
+  `yaml` 2.9.1 im Handbuch-Projekt gemessen: `yes` bleibt ein String).
+- 9.2, acht fehlende Meldungen: Vault `5e66a5b`; `pgpPrivate` gemessen (privater Schlüssel unter
+  `PUBLIC KEY BLOCK` liest OpenPGP.js 6 mit `isPrivate()` true).
+- 6.3 `noScript` wirkt mit jedem Weg: Vault `2120350`.
+- 2.1 `date`: Vault `dafb9d6`, `autocomplete`; in Chrome gemessen: kein Platzhalter
+  („tt.mm.jjjj“), `maxlength` ohne Wirkung.
+- Plain-Post gegen Skript: zwei Commits, `a97a0b7` (nicht angehaktes Kästchen als `[ ]` auch im
+  Plain-Post) und `3dc2d33` (`qf_trim` statt `trim()` in `qf_serialize`); je ein Relay-Test, der am
+  alten `send.php` scheitert.
+- Drei Kopien von `forms.scss`: gemessen zwei gleiche Dateien (`component-…css` und
+  `resource-style-…css`, je 6356 B; `index.css` trägt nur die Regeln der Vorlage) und **auch das
+  Skript zweimal** (20 kB). `72af084`: `FormBox` ohne eigenes CSS und Skript, der Transformer
+  bringt beides auf jede Seite (Quartz instanziiert jede Kategorie eines aktivierten Plugins).
+  Gemessen an einem Bau des Handbuchs mit `layoutForm`: nachher je eine Datei, das
+  Seitenformular hat 44 px, Raster, ist gebunden, sendet seine Demo, auch nach SPA-Navigation.
+- `send.php`, Doc-Kommentar von `qf_parse_form`: `d704e37`.
+- Ohne Änderung: 44 px gilt nicht für Kästchen, Radios und Skalen-Stufen (WCAG 2.5.8 über die
+  Abstandsausnahme, 7.2 verspricht nur Felder und Buttons); `palette.mjs`, Abwägungen 3, 7 und 8,
+  Plain-Post ohne JavaScript, Block B: nichts zu tun.
+
+Dazu **quartz-forms 0.5.6** (`78c3244`) und QuartzControl (`FORMS_READ_AGAINST` 0.5.6,
+`check:plugin-copies` gegen die Kopie des Handbuch-Projekts: keine Abweichung). Auch diese Fixes
+hat kein Review gelesen.

@@ -1621,7 +1621,7 @@ export default {
       checkNoPhp: 'PHP does not run at {{url}}: the server hands out send.php as text. Upload the relay to a folder where PHP runs.',
       configOpen: 'config.php can be read by anyone at {{url}} as well, secret and recipient addresses included. Delete it from the server and make a new secret under “Rarely needed”.',
       checkRedirectNoRelay: 'At {{url}} the server redirects to {{to}}, where no relay answers. Are the target, the folder and the send.php address right?',
-      checkRedirectLocal: "At {{url}} the server redirects to {{to}}, an address on this computer or in the local network. QuartzControl does not ask there, and visitors' forms do not arrive there. Are the target, the folder and the send.php address right?",
+      checkRedirectLocal: "At {{url}} the server redirects to {{to}}, an address on this computer or in the local network, where visitors' forms do not arrive. Are the target, the folder and the send.php address right?",
       checkRedirect: "At {{url}} the server redirects to {{to}}, where the forms' requests arrive without the site's origin. Enter the address after the redirect as the send.php address.",
       checkOtherRelay: 'A relay answers at {{url}}, but not the one just uploaded. Do the target and the folder match the send.php address?',
       checkHttp: 'No relay answers at {{url}} (HTTP {{status}}). Are the target, the folder and the send.php address right?',

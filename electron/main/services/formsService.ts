@@ -519,7 +519,7 @@ async function countersServed(url: string): Promise<string | null> {
   return probe ?? htaccess
 }
 
-export async function relayUpload(projectId: string, projectPath: string, source: PluginSource, url?: string): Promise<RelayUploadResult> {
+export async function relayUpload(projectId: string, projectPath: string, source: PluginSource, url?: string, form?: string): Promise<RelayUploadResult> {
   const file = await readRelayFile(projectPath)
   const settings: RelaySettings = { ...DEFAULT_RELAY, ...(file.settings ?? {}) }
   if (!settings.targetId) return { success: false, output: mainT('relayNoTarget') }
@@ -542,7 +542,11 @@ export async function relayUpload(projectId: string, projectPath: string, source
     const warnings = strings(generated.json.warnings)
     const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)
     const generation = typeof generated.json.generation === 'string' ? generated.json.generation : undefined
-    const check = result.success ? await checkRelay(url, origin, strings(generated.json.forms)[0], generation) : undefined
+    // The form whose address `url` is, when the relay has it: a form with its own transport.url was
+    // asked under the global one, or not at all (review 2026-10-29, nebenbei).
+    const forms = strings(generated.json.forms)
+    const probeForm = form && forms.includes(form) ? form : forms[0]
+    const check = result.success ? await checkRelay(url, origin, probeForm, generation) : undefined
     // Not after `unreachable`: a server that kept silent once kept the upload waiting a second
     // time, 20.9 s for a port that accepts and never answers (review 2026-10-29, N3).
     const countersOpen = check && check.kind !== 'noUrl' && check.kind !== 'unreachable' && !settings.counterDir.trim() ? await countersServed(check.url) : null

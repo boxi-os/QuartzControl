@@ -25,6 +25,7 @@ export function RelaySection({
   error,
   source,
   transportUrl,
+  probe,
   siteBase,
   neededRecipients,
   captcha,
@@ -36,6 +37,8 @@ export function RelaySection({
   error: string | null
   source: PluginSource
   transportUrl: string
+  /** The relay form the upload asks for a stamp, with its address (relayProbe). */
+  probe: { form: string; url: string } | null
   /** The site's address with its base path (`configuration.baseUrl`), for the suggested relay URL. */
   siteBase: string | null
   /** The recipient names the relay forms use, read from the config: the plugin names them only
@@ -108,7 +111,7 @@ export function RelaySection({
     setBusy('upload')
     setResult(null)
     try {
-      const r = await window.quartzGui.forms.relayUpload({ projectId: project.id, projectPath: project.path, source, url: transportUrl || undefined })
+      const r = await window.quartzGui.forms.relayUpload({ projectId: project.id, projectPath: project.path, source, url: probe?.url, form: probe?.form })
       setResult(r)
       announce(r.success ? t('formsEditor.relay.uploadedAnnounce') : t('formsEditor.relay.uploadFailedAnnounce'))
       onChanged()

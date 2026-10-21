@@ -2414,8 +2414,8 @@ export interface QuartzGuiApi {
     relaySaveSettings(args: { projectPath: string; settings: RelaySettings }): Promise<void>
     /** An address or captcha secret of null removes it; the values never come back to the renderer. */
     relaySaveSecrets(args: { projectId: string; recipients?: Record<string, string | null>; captchaSecret?: string | null; captchaSecrets?: Record<string, string | null>; moveCaptchaSecret?: { from: string; to: string } }): Promise<void>
-    /** `url`: the send.php address the section shows, asked once the upload went through. */
-    relayUpload(args: { projectId: string; projectPath: string; source: PluginSource; url?: string }): Promise<RelayUploadResult>
+    /** `url`: the send.php address of `form`, a relay form, asked once the upload went through. */
+    relayUpload(args: { projectId: string; projectPath: string; source: PluginSource; url?: string; form?: string }): Promise<RelayUploadResult>
     relayExport(args: { projectId: string; projectPath: string; source: PluginSource; dir: string }): Promise<RelayUploadResult>
     relayExcludeFromSite(args: { projectPath: string; targetId: string; path: string }): Promise<void>
   }

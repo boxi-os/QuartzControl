@@ -485,6 +485,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
               error={relayQuery.error}
               source={entry.plugin.source}
               transportUrl={isObject(options.transport) && typeof options.transport.url === 'string' ? options.transport.url : ''}
+              probe={relayProbe(forms, options)}
               siteBase={siteBaseOf(config)}
               captcha={captchaNeeds(options, resolvedGlobal(schema, options, 'spam'))}
               neededRecipients={[
@@ -1451,6 +1452,21 @@ function CheckSummary({
       {unplaced.length > 0 && <Messages problems={unplaced} hints={[]} />}
     </div>
   )
+}
+
+/**
+ * The first relay form with an address, its own `transport.url` before the global one: the upload
+ * asks the relay for that form's stamp at that address. Asking the global address alone said it
+ * was missing when only a form had one (review 2026-10-29, nebenbei).
+ */
+function relayProbe(forms: [string, FormDef][], options: Options): { form: string; url: string } | null {
+  const global = isObject(options.transport) && typeof options.transport.url === 'string' ? options.transport.url.trim() : ''
+  for (const [id, def] of forms) {
+    if (transportKindOf(def, options) !== 'relay') continue
+    const own = isObject(def.transport) && typeof def.transport.url === 'string' ? def.transport.url.trim() : ''
+    if (own || global) return { form: id, url: own || global }
+  }
+  return null
 }
 
 /** `configuration.baseUrl` as an https address without a trailing slash, or null. */

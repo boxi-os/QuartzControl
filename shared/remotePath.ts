@@ -27,10 +27,26 @@ export function remotePathProblem(path: string, deleteRemoved: boolean): RemoteP
   // "/" and "." both name the root of what this login can see; so does "./" and "/.". So do "~"
   // and "~user", which the remote shell expands for rsync: an rsync target "~" with deletion
   // listed the whole home of the account for deletion in its preview, .ssh/ included (debian-vm,
-  // review 2026-10-30, nebenbei). OpenSSH's sftp-server and vsftpd take "~" for a folder of that
-  // name, never needed; ProFTPD and Pure-FTPd expand it themselves (read, not measured, review
-  // 2026-10-31, nebenbei), where it is the login directory and the refusal is right.
+  // review 2026-10-30, nebenbei). Over SFTP and FTP the adapters resolve it the same way
+  // (fromLoginDir below), so it is the login directory on every way.
   const below = /^~[^/]*$/.test(segments[0] ?? '') ? segments.slice(1) : segments
   if (below.length === 0 && deleteRemoved) return 'whole-root'
   return null
+}
+
+/**
+ * A target's path with a leading "~" or "~<the login's own account>" as the folder the login starts
+ * in, which the SFTP and FTP adapters ask the server for; any other path as it is. null for "~" of
+ * another account, which neither can name. rsync's remote shell expands "~" itself; over SFTP and
+ * FTP it meant something else on each server: OpenSSH made a folder "~", vsftpd expanded "~/" and
+ * made a folder "~qchost", ProFTPD expanded "~/" and broke the data connection on "~qchost/", with
+ * chroot answered 550, Pure-FTPd answered 553 to both (debian-vm, support matrix, 2026-10-21).
+ */
+export function fromLoginDir(path: string, loginDir: string, account: string): string | null {
+  const tilde = /^~([^/]*)(?:\/+|$)/.exec(path)
+  if (!tilde) return path
+  if (tilde[1] !== '' && tilde[1] !== account) return null
+  const rest = path.slice(tilde[0].length)
+  const base = loginDir.replace(/\/+$/, '')
+  return rest ? `${base}/${rest}` : base || '/'
 }

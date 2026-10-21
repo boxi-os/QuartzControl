@@ -1,6 +1,7 @@
 import { join, posix } from 'path'
 import { Client as FtpClient, FTPError } from 'basic-ftp'
 import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
+import { fromLoginDir } from '@shared/remotePath'
 import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, partitionDiff } from './manifest'
 import * as connectionsService from '../connectionsService'
@@ -38,12 +39,14 @@ export const ftpAdapter: DeployAdapter = {
       // root, and a target "review57-rel" failed at its first file with "553 Could not create file"
       // (debian-vm, since 1.1.0, review 2026-10-31).
       const start = await client.pwd()
+      const root = fromLoginDir(destination.remotePath, start, connection.username)
+      if (root === null) return { success: false, output: mainT('deployTildeOtherAccount', { path: destination.remotePath }) }
       const total = toUpload.length + toDelete.length
       let processed = 0
       const ensuredDirs = new Set<string>()
 
       for (const relPath of toUpload) {
-        const remotePath = posix.join(destination.remotePath, relPath)
+        const remotePath = posix.join(root, relPath)
         const remoteDir = posix.dirname(remotePath)
         if (!ensuredDirs.has(remoteDir)) {
           await client.ensureDir(remoteDir)
@@ -59,7 +62,7 @@ export const ftpAdapter: DeployAdapter = {
       // What was not deleted stays in the manifest, so the next upload offers it again (sftp.ts, run).
       const kept: string[] = []
       for (const relPath of toDelete) {
-        const remotePath = posix.join(destination.remotePath, relPath)
+        const remotePath = posix.join(root, relPath)
         try {
           await client.remove(remotePath)
           output += `✗ ${relPath}\n`

@@ -2,6 +2,7 @@ import { readFile } from 'fs/promises'
 import { join, posix } from 'path'
 import SftpClient from 'ssh2-sftp-client'
 import type { DeployDiffEntry, DeployResult, SshConnection } from '@shared/ipc-contract'
+import { fromLoginDir } from '@shared/remotePath'
 import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, modesSettled, partitionDiff, readManifest, settleModes } from './manifest'
 import { makeHostVerifier } from './hostVerifier'
@@ -115,6 +116,8 @@ export const sftpAdapter: DeployAdapter = {
         keepaliveCountMax: SSH_KEEPALIVE_COUNT,
         ...(await sshAuthOptions(connection, ctx.secret))
       })
+      const root = fromLoginDir(destination.remotePath, await client.cwd(), connection.username)
+      if (root === null) return { success: false, output: mainT('deployTildeOtherAccount', { path: destination.remotePath }) }
 
       // The one-time pass below, counted in from the start: its paths are known now, and the
       // progress stood still through it, 6.6 s for 475 files on debian-vm (review 2026-10-30,
@@ -127,7 +130,7 @@ export const sftpAdapter: DeployAdapter = {
       const ensuredDirs = new Set<string>()
 
       for (const relPath of toUpload) {
-        const remotePath = posix.join(destination.remotePath, relPath)
+        const remotePath = posix.join(root, relPath)
         const remoteDir = posix.dirname(remotePath)
         if (!ensuredDirs.has(remoteDir)) {
           await client.mkdir(remoteDir, true)
@@ -147,7 +150,7 @@ export const sftpAdapter: DeployAdapter = {
       const kept: string[] = []
       for (const relPath of toDelete) {
         try {
-          await client.delete(posix.join(destination.remotePath, relPath))
+          await client.delete(posix.join(root, relPath))
           output += `✗ ${relPath}\n`
         } catch (err) {
           // Only the server saying the file is missing (status 2) means it is gone. Every error was
@@ -179,7 +182,7 @@ export const sftpAdapter: DeployAdapter = {
         await Promise.all(
           Array.from({ length: Math.min(CHMOD_CONCURRENCY, earlier.length) }, async () => {
             for (let i = next++; i < earlier.length; i = next++) {
-              const remotePath = posix.join(destination.remotePath, earlier[i])
+              const remotePath = posix.join(root, earlier[i])
               try {
                 // Only what 1.1.0 left behind: a regular file at exactly 0666. chmod is SETSTAT on
                 // the path and follows a symlink; measured on debian-vm, the pass made a 0600 file

@@ -394,6 +394,7 @@ const STRINGS = {
 
     // Publishing - dispatcher
     deployWholeRoot: 'Der Pfad „{{path}}“ dieses Ziels ist das Anmeldeverzeichnis selbst, das mit aktiviertem Löschen geleert würde. Trage unter „Veröffentlichen“ den Unterordner ein, in dem die Website liegt, oder schalte dort das Löschen aus.',
+    deployTildeOtherAccount: 'Der Pfad „{{path}}“ beginnt mit dem Anmeldeverzeichnis eines anderen Kontos, das es über SFTP und FTP nicht gibt. Gib unter „Veröffentlichen“ den Pfad ab deinem eigenen Anmeldeverzeichnis an, mit „~/“ oder ohne.',
     deployTargetMissing: 'Es gibt kein Veröffentlichungsziel mit der ID {{id}}.',
     deployNoAdapter: 'Für den Zieltyp „{{type}}“ gibt es noch keinen Adapter.',
     deployNoBuild:
@@ -765,6 +766,7 @@ const STRINGS = {
     zipFileMissing: 'The file does not exist.',
 
     deployWholeRoot: 'The path “{{path}}” of this target is the login directory itself, which deletion would empty. Under “Publish”, enter the subfolder the site lives in, or switch deletion off there.',
+    deployTildeOtherAccount: 'The path “{{path}}” starts with another account’s login directory, which SFTP and FTP do not know. Under “Publish”, enter the path from your own login directory, with “~/” or without.',
     deployTargetMissing: 'There is no publish target with the id {{id}}.',
     deployNoAdapter: 'There is no adapter for the target type “{{type}}” yet.',
     deployNoBuild:

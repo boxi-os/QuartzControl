@@ -10,7 +10,7 @@ export interface DeployContext {
   /**
    * The modes of the files and folders in `buildDir` are the ones wanted on the server, and an
    * upload sets them, on files that are already there too (sftp, ftp, rsync; the folder adapter
-   * copies a file's mode with it and leaves folders alone). Only the relay's upload asks for this
+   * copies a file's mode with it and sets each folder it writes into). Only the relay's upload asks for this
    * (formsService). A site gets 0644 over SFTP; over FTP the server's umask decides, over rsync a
    * new file gets its local mode less that umask and an existing one keeps its own.
    */

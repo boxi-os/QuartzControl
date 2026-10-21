@@ -73,8 +73,8 @@ Begründung.
   SFTP: `put` mit `writeStreamOptions.mode` (`0o644`), denn ssh2 setzt sonst 0666 per `fchmod`.
   Wer eigene Modi braucht (das Relay), setzt sie im lokalen Ordner und sagt `keepLocalModes`;
   SFTP, FTP und rsync setzen sie dann bei jedem Upload, auch auf vorhandene Dateien
-  (`runDirectoryUpload` vergisst vorher das Manifest; rsync `-p`, FTP `SITE CHMOD`). Ein Ordner-Ziel
-  übernimmt nur die Modi der Dateien. Was 1.0.0 bis 1.1.0 über SFTP mit 0666 hochgeladen hat,
+  (`runDirectoryUpload` vergisst vorher das Manifest; rsync `-p`, FTP `SITE CHMOD`), ein Ordner-Ziel
+  ebenso (die Dateien per `fs.cp`, die Ordner per `chmod`). Was 1.0.0 bis 1.1.0 über SFTP mit 0666 hochgeladen hat,
   setzt der Adapter einmal je Ziel auf 0644 (`deploy-manifest-<id>.modes.json`). Die Abfrage nach
   dem Upload fragt per `generation`, ob das eben hochgeladene Relay antwortet.
   Lehnt der Server einen Modus ab, läuft der Upload weiter und sagt, was der Server hält. Was auf

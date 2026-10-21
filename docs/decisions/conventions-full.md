@@ -290,6 +290,10 @@ Projektwurzel.
   `generation` im Ticket (N1: nach einem Upload in einen anderen Unterordner antwortete das alte
   Relay unter der alten Adresse „ok“, und der Hash der Formulare war für beide derselbe).
   Messungen in [`publishing-and-credentials.md`](publishing-and-credentials.md).
+  Nachtrag vom selben Tag (54. Review, nebenbei): Das Ordner-Ziel setzt mit `keepLocalModes` jetzt
+  auch die Modi der Ordner, in die es schreibt, wie der SFTP-Adapter; den Ordner des Ziels selbst
+  nicht (gemessen: `forms` 0700 und `counters` 0777 wurden 0755, das Ziel mit 0750 blieb 0750).
+  Die kurze Regel sagt es seitdem so.
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

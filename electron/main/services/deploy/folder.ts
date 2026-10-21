@@ -1,5 +1,5 @@
 import { randomBytes } from 'crypto'
-import { cp, mkdir, rename, rm } from 'fs/promises'
+import { chmod, cp, mkdir, rename, rm, stat } from 'fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'path'
 import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
@@ -53,10 +53,21 @@ export const folderAdapter: DeployAdapter = {
     try {
       const total = toUpload.length + toDelete.length
       let processed = 0
+      const ensuredDirs = new Set<string>()
 
       for (const relPath of toUpload) {
         const target = join(dest, relPath)
         await mkdir(dirname(target), { recursive: true })
+        // The relay's folders get their modes as over SFTP: cp carries a file's mode, and a folder
+        // that was there kept its own, 0700 and 0777 after an upload (review 2026-10-29, N7 and
+        // nebenbei). `dest` is the relay's folder below the target's (runDirectoryUpload).
+        if (ctx.keepLocalModes && !ensuredDirs.has(dirname(target))) {
+          ensuredDirs.add(dirname(target))
+          const wanted = (await stat(join(ctx.buildDir, dirname(relPath)))).mode & 0o7777
+          await chmod(dirname(target), wanted).catch(() => undefined)
+          const actual = (await stat(dirname(target))).mode & 0o7777
+          if (actual !== wanted) output += `${mainT('folderModeNotSet', { mode: wanted.toString(8), actual: actual.toString(8), path: dirname(target) })}\n`
+        }
         // Written under a scratch name and renamed into place, because the whole point of a folder
         // target is that something else is watching the folder - a cloud client, a web server. A
         // direct copy is observable half-written; a rename within the same directory is not.

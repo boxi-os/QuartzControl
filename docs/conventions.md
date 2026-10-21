@@ -74,7 +74,9 @@ Begründung.
   Wer eigene Modi braucht (das Relay), setzt sie im lokalen Ordner und sagt `keepLocalModes`;
   SFTP, FTP und rsync setzen sie dann bei jedem Upload, auch auf vorhandene Dateien
   (`runDirectoryUpload` vergisst vorher das Manifest; rsync `-p`, FTP `SITE CHMOD`). Ein Ordner-Ziel
-  übernimmt nur die Modi der Dateien.
+  übernimmt nur die Modi der Dateien. Was 1.0.0 bis 1.1.0 über SFTP mit 0666 hochgeladen hat,
+  setzt der Adapter einmal je Ziel auf 0644 (`deploy-manifest-<id>.modes.json`). Die Abfrage nach
+  dem Upload fragt per `generation`, ob das eben hochgeladene Relay antwortet.
   Lehnt der Server einen Modus ab, läuft der Upload weiter und sagt, was der Server hält. Was auf
   dem Server laufen soll, fragt die App nach dem Hochladen einmal ab, mit `net.request`: `net.fetch`
   macht aus einer fremden Origin CORS und aus jedem 500 ein `ERR_FAILED`. Gemessen wird auf einem

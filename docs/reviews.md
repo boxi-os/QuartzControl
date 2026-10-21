@@ -3020,3 +3020,51 @@ gebauten App mit dem Messgeschirr des Reviews):
 Die Plugin-Änderungen sind unveröffentlicht (nach 0.5.9). Nicht angefasst, weil nicht genannt:
 die Felder-Liste beim Zuklappen und `extra` unter globalem `demo` aus der Nebenbei-Liste des
 Reviews.
+
+**Das vierundfünfzigste Review** ([`REVIEW-2026-10-29.md`](REVIEW-2026-10-29.md), Auftrag
+[`REVIEW-2026-10-29-auftrag.md`](REVIEW-2026-10-29-auftrag.md), `feat/1.2` `e6c385b8..afe5b90a`
+und `fix/1.1.x` `6ff44e45`: Modi beim Hochladen, die Abfrage des Relays nach dem Upload,
+`countersServed`): von Claude Opus 5.5 als frisch gestarteter Subagent, ohne den Verlauf der
+Sitzung. 1 Hoch, 6 Mittel, 8 Niedrig; Urteil: `6ff44e45` kann mit dem nächsten 1.1.x raus, die
+übrigen Commits nicht ohne H1 und M1 bis M5. Gemessen an der gebauten App in einem Klon, mit
+`debian-vm` als Hoster und einer Attrappe auf 127.0.0.1.
+
+Abgearbeitet am 2026-10-21, ein Befund je Commit, gemessen an der gebauten App (Wegwerf-Profil,
+`app.mjs`/`h1.mjs`/`m6.mjs`/`attrappe.mjs` im Scratchpad) gegen `debian-vm`, vorher und nachher:
+
+- **H1** `922c3adf` — Unterordner „.“, „..“ und leer werden abgewiesen (`relaySubdir`, Schema,
+  Feld, `runDirectoryUpload`); vorher setzten alle drei Wege den Zielordner 2750 auf 755.
+- **M1** quartz-forms `88352a8`, `59b77701` — das Ticket sagt `counters`; unter mod_php mit
+  `counters/` des Accounts sagt die Seite in Amber, dass das Relay nichts zählt.
+- **M2** `3d1bd55d` — `runDirectoryUpload` vergisst das Manifest des Relays vor jedem Lauf; alle
+  drei Wege setzen die Modi jedes Mal (Entscheidung des Nutzers: QuartzControl setzt immer).
+- **M3** quartz-forms `df007c1`, `9600308e` — gefragt wird `counters/qf-probe.count`, nicht die
+  `.htaccess`, die Apache und nginx auch dort ablehnen, wo die Zähler offen liegen.
+- **M4** `ab046463` — Satz und Button nach der Abfrage richten sich nach dem hochgeladenen Modus;
+  der Schalter allein heißt nicht mehr „aktuell“, der Button lädt gleich neu hoch.
+- **M5** `72f74b2a` — `noPhp`, wenn send.php als Text kommt, und dann die Frage nach `config.php`.
+- **M6** `5dcfb3f6` auf `fix/1.1.x`, gemergt in `172e61ba` — einmal je SFTP-Ziel `chmod 0644`
+  für früher hochgeladene Dateien (474 von 475 standen auf 0666), 3,9 s mit acht Anfragen
+  zugleich; „seit 1.0.0“. Das Relay bleibt auf `feat/1.2` davon ausgenommen.
+- **N1** quartz-forms `606a31c`, `aa11091a` — `generation` je Lauf im Ticket; eine Adresse, unter
+  der ein anderes Relay antwortet, heißt `otherRelay` statt „antwortet“.
+- **N2** `68f0dc8f` — 403, 502 bis 504 und eine 500 mit eigener Seite je ein Satz; der Button nur
+  noch bei der leeren 500.
+- **N3** `153d5ec7` — nach `unreachable` keine Zähler-Abfrage (22,0 s → 12,5 s).
+- **N4** `572611ee` — Abbruch bei 64 KiB; eine begonnene, langsame Antwort heißt nicht „keine
+  Antwort“.
+- **N5** `0dfb85e6` — `net::ERR_CERT_…` als Satz über das Zertifikat.
+- **N6** `ae20e646` — eine Weiterleitung auf eine andere Origin nennt ihr Ziel.
+- **N7** `5afd124d` — Doku: Nachtrag in der Langfassung, Absatz in `publishing-and-credentials.md`,
+  kurze Regel (das Ordner-Ziel setzt keine Ordnermodi, gemessen), Kommentar in `deploy/types.ts`.
+- **N8** `43e800d1` — `modeNote` vergleicht mit `0o7777` und nennt das ganze Oktal; über FTP
+  bleiben Sonderbits unsichtbar (basic-ftp liest sie nicht).
+
+Unveröffentlicht: quartz-forms `88352a8`, `df007c1`, `606a31c` (nach 0.5.10; `FORMS_READ_AGAINST`
+steht noch auf 0.5.10). Nicht gepusht. Offen und dem Nutzer genannt: die Nebenbei-Liste des
+Reviews (rsync und verschachtelte Unterordner, Formulare mit eigener `transport.url`, englische
+Meldung des Relays im deutschen Satz, doppelte Ansage, `modeNote` wirft bei gescheitertem `stat`,
+Pool-Benutzer ≠ Upload-Benutzer, Kommentar „caught above“) und aus dieser Runde: der Status-Hash
+ohne die Einstellungen des Betreibers, kein Weg, das Secret des Relays neu zu erzeugen, PHP mit
+`display_errors=1` (200 statt 500), andere Chromium-Codes roh, Weiterleitungen innerhalb der
+Origin und das Ordner-Ziel ohne Ordnermodi.

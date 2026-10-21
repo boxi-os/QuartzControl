@@ -284,7 +284,12 @@ Projektwurzel.
   schickte; seit M2 vergisst `runDirectoryUpload` das Manifest vor jedem Lauf, und das gilt für
   SFTP, FTP und rsync. Ein Ordner-Ziel kopiert den Modus jeder Datei mit (`fs.cp`) und lässt die
   Modi der Ordner, wie sie sind (gemessen: `forms` 0700 und `counters` 0777 blieben,
-  `config.php` 0640 wurde 0600). Die kurze Regel sagt es seitdem so.
+  `config.php` 0640 wurde 0600). Die kurze Regel sagt es seitdem so. Ebenfalls aus dieser Runde
+  in die kurze Regel: der einmalige chmod-Durchgang je SFTP-Ziel (M6: 474 von 475 Dateien blieben
+  nach dem Fix 0666, weil das Manifest unveränderte Dateien nicht noch einmal schickt) und die
+  `generation` im Ticket (N1: nach einem Upload in einen anderen Unterordner antwortete das alte
+  Relay unter der alten Adresse „ok“, und der Hash der Formulare war für beide derselbe).
+  Messungen in [`publishing-and-credentials.md`](publishing-and-credentials.md).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

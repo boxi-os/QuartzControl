@@ -565,9 +565,10 @@ export const PART_OF: [RegExp, FormPartId][] = [
 
 /** The part of the form panel a message of a form belongs to, by the key its path starts with;
  *  what names no key of its own (`title`, `success`, a sentence about the form) is Allgemein. */
-// "no fields" is said on the form's own path (`forms.<id>: no fields …`, validate.ts `noFields`,
-// messages/en.ts and de.ts), not under `fields`, so its badge stood on Allgemein (review
-// 2026-10-28, N8). Read by its words in both languages the CLI answers in.
+// "no fields" is said on the form's own path up to quartz-forms 0.5.9 (`forms.<id>: no fields …`,
+// validate.ts `noFields`, messages/en.ts and de.ts), not under `fields`, so its badge stood on
+// Allgemein (review 2026-10-28, N8). Read by its words in both languages the CLI answers in; the
+// plugin after 0.5.9 says it under `forms.<id>.fields`, which PART_OF places without this.
 export const NO_FIELDS = /^(no fields|keine Felder)\b/
 
 // A key the panel does not know stands under "Unbekannte Schlüssel", and so does what the plugin

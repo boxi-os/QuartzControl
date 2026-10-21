@@ -2,6 +2,7 @@ import { createHash } from 'crypto'
 import { existsSync, readFileSync, rmSync } from 'fs'
 import { chmod, mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { net } from 'electron'
+import { isIPv4, isIPv6 } from 'net'
 import { tmpdir } from 'os'
 import { join, posix, relative, sep } from 'path'
 import type { FormsCheckResult, FormsKeyImport, FormsTextsResult, FormsKeyReport, PluginSource, PublishTarget, RelayCheck, RelayConflict, RelayLastUpload, RelaySettings, RelayState, RelayUploadResult } from '@shared/ipc-contract'
@@ -408,6 +409,21 @@ function unreachableReason(code: string): string {
 }
 
 /**
+ * This machine and its network by the host's literal: loopback, private, link-local, unique-local,
+ * `localhost`. A name is resolved by Chromium and not judged here.
+ */
+function localHost(hostname: string): boolean {
+  const host = hostname.replace(/^\[|\]$/g, '').toLowerCase()
+  if (host === 'localhost' || host.endsWith('.localhost')) return true
+  const v4 = isIPv4(host) ? host : /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(host)?.[1]
+  if (v4 && isIPv4(v4)) {
+    const [a, b] = v4.split('.').map(Number)
+    return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)
+  }
+  return isIPv6(host) && (host === '::' || host === '::1' || /^f[cd]/.test(host) || /^fe[89ab]/.test(host))
+}
+
+/**
  * One GET through Chromium's stack (the machine's proxy and certificates, as builtinTemplateService
  * says), answering with whatever status came back. `net.request`, not `net.fetch`: fetch treats an
  * Origin that is not the URL's as a CORS request and turns every answer without
@@ -415,7 +431,7 @@ function unreachableReason(code: string): string {
  * (404) never has one. Measured with the relay on another origin than the site, the common case:
  * fetch said ERR_FAILED for both, request said 500 and 404, and 200 for the relay's own JSON.
  */
-type Answer = { status: number; body: string; redirectedTo?: string; postDropped?: number }
+type Answer = { status: number; body: string; redirectedTo?: string; postDropped?: number; local?: true }
 
 function getWithOrigin(url: string, origin: string | null): Promise<Answer | { error: string }> {
   return new Promise((resolve) => {
@@ -445,6 +461,13 @@ function getWithOrigin(url: string, origin: string | null): Promise<Answer | { e
     req.on('redirect', (status, _method, to) => {
       redirectedTo = to
       if (status === 301 || status === 302 || status === 303) postDropped ??= status
+      // Not from a server out there into this machine or its network: a redirect from debian-vm to
+      // 127.0.0.1 was followed, a service there answering like the relay was taken for one, and its
+      // address was recommended for send.php (review 2026-10-30, nebenbei). The place is the answer.
+      if (localHost(new URL(to).hostname) && !localHost(new URL(url).hostname)) {
+        req.abort()
+        finish({ status, body: '', redirectedTo, postDropped, local: true })
+      }
     })
     req.on('response', (res) => {
       status = res.statusCode
@@ -519,7 +542,7 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   const relayAnswered = json?.ok === true ? typeof json.stamp === 'string' : json?.ok === false && typeof json.error === 'string'
   if (to && (to.origin !== new URL(url).origin || res.postDropped) && !relayAnswered) {
     to.search = ''
-    return { kind: 'redirectNoRelay', url, to: to.toString() }
+    return { kind: 'redirectNoRelay', url, to: to.toString(), ...(res.local ? { local: true as const } : {}) }
   }
   if (to && to.origin !== new URL(url).origin) {
     to.search = ''
@@ -545,7 +568,9 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   // `form` is one of the relay just generated, so a relay that does not know it is another one.
   if (json?.error === 'unknown_form') return { kind: 'otherRelay', url }
   if (json && typeof json.error === 'string') {
-    return { kind: 'relayError', url, status: res.status, error: json.error, message: typeof json.message === 'string' ? json.message : '' }
+    // The server's own words, cut as phpMessage cuts PHP's: 65 065 characters of a 64 KiB answer
+    // stood in the status region (review 2026-10-30, nebenbei).
+    return { kind: 'relayError', url, status: res.status, error: json.error.slice(0, 80), message: typeof json.message === 'string' ? json.message.slice(0, 300) : '' }
   }
   // PHP that stops (config.php unreadable, display_errors off) answers 500 with nothing: under
   // mod_php even an ErrorDocument 500 left it empty (debian-vm). A 500 with a page is the host's,

@@ -446,20 +446,27 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
 }
 
 /**
- * Whether the server hands out counters/.htaccess: Apache reads the file and answers 403, nginx
- * reads no .htaccess and serves it (measured on debian-vm: 403 under Apache, 200 under nginx for
- * the file and for `limit-<hour>.count`, whose name anyone can guess). Asked by its content, not
- * its status: a site that answers every unknown path with 200 and its start page is not open.
+ * Whether the server hands out the counters, whose names anyone can guess (`limit-<hour>.count`).
+ * Asked for counters/qf-probe.count, which quartz-forms ships from 0.5.11 on with the counters'
+ * ending: asking for the .htaccess said nothing where Apache ignores it (AllowOverride None) or
+ * nginx denies `\.ht`, both 403 for it and 200 for a count (measured on debian-vm, review
+ * 2026-10-29, M3). The .htaccess is still asked for a relay from an older quartz-forms, which
+ * nginx without that rule serves. Asked by content, not status: a site that answers every
+ * unknown path with 200 and its start page is not open.
  */
 async function countersServed(url: string): Promise<string | null> {
-  let probe: URL
-  try {
-    probe = new URL('counters/.htaccess', url)
-  } catch {
-    return null
+  const ask = async (path: string, starts: string): Promise<string | null> => {
+    let probe: URL
+    try {
+      probe = new URL(path, url)
+    } catch {
+      return null
+    }
+    const res = await getWithOrigin(probe.toString(), null)
+    return 'status' in res && res.status === 200 && res.body.startsWith(starts) ? probe.toString() : null
   }
-  const res = await getWithOrigin(probe.toString(), null)
-  return 'status' in res && res.status === 200 && res.body.startsWith('# quartz-forms relay') ? probe.toString() : null
+  const [probe, htaccess] = await Promise.all([ask('counters/qf-probe.count', 'quartz-forms relay probe'), ask('counters/.htaccess', '# quartz-forms relay')])
+  return probe ?? htaccess
 }
 
 export async function relayUpload(projectId: string, projectPath: string, source: PluginSource, url?: string): Promise<RelayUploadResult> {

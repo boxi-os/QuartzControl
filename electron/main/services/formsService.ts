@@ -390,6 +390,21 @@ const CHECK_RELAY_TIMEOUT_MS = 10_000
 const CHECK_RELAY_MAX_BYTES = 64 * 1024
 
 /**
+ * Chromium's code alone ("net::ERR_CERT_AUTHORITY_INVALID") was the sentence (review 2026-10-29,
+ * N5, and nebenbei for the rest); each code here was met through the built app, the name through
+ * `--host-resolver-rules` so that no lookup left the machine. Any other code stays as it is.
+ */
+function unreachableReason(code: string): string {
+  // Visitors' browsers refuse the same certificate, so that is said with it.
+  if (/^net::ERR_CERT_/.test(code)) return mainT('relayCheckCertificate', { code })
+  if (code === 'net::ERR_NAME_NOT_RESOLVED') return mainT('relayCheckNoName', { code })
+  if (code === 'net::ERR_CONNECTION_REFUSED') return mainT('relayCheckRefused', { code })
+  if (code === 'net::ERR_EMPTY_RESPONSE' || code === 'net::ERR_CONNECTION_RESET') return mainT('relayCheckDropped', { code })
+  if (code === 'net::ERR_SSL_PROTOCOL_ERROR') return mainT('relayCheckNoTls', { code })
+  return code
+}
+
+/**
  * One GET through Chromium's stack (the machine's proxy and certificates, as builtinTemplateService
  * says), answering with whatever status came back. `net.request`, not `net.fetch`: fetch treats an
  * Origin that is not the URL's as a CORS request and turns every answer without
@@ -434,9 +449,7 @@ function getWithOrigin(url: string, origin: string | null): Promise<{ status: nu
       res.on('end', () => finish({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf-8'), redirectedTo }))
       res.on('error', (err: Error) => finish({ error: err.message }))
     })
-    // Chromium's code alone ("net::ERR_CERT_AUTHORITY_INVALID") was the sentence (review
-    // 2026-10-29, N5); visitors' browsers refuse the same certificate, so that is said with it.
-    req.on('error', (err) => finish({ error: /^net::ERR_CERT_/.test(err.message) ? mainT('relayCheckCertificate', { code: err.message }) : err.message }))
+    req.on('error', (err) => finish({ error: unreachableReason(err.message) }))
     req.end()
   })
 }

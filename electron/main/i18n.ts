@@ -393,7 +393,7 @@ const STRINGS = {
     zipFileMissing: 'Die Datei gibt es nicht.',
 
     // Publishing - dispatcher
-    deployWholeRoot: 'Der Pfad „{{path}}“ dieses Ziels ist das Anmeldeverzeichnis selbst, das mit aktiviertem Löschen geleert würde. Trage unter „Veröffentlichen“ den Unterordner ein, in dem die Website liegt.',
+    deployWholeRoot: 'Der Pfad „{{path}}“ dieses Ziels ist das Anmeldeverzeichnis selbst, das mit aktiviertem Löschen geleert würde. Trage unter „Veröffentlichen“ den Unterordner ein, in dem die Website liegt, oder schalte dort das Löschen aus.',
     deployTargetMissing: 'Es gibt kein Veröffentlichungsziel mit der ID {{id}}.',
     deployNoAdapter: 'Für den Zieltyp „{{type}}“ gibt es noch keinen Adapter.',
     deployNoBuild:
@@ -764,7 +764,7 @@ const STRINGS = {
     zipNotAPackage: 'The file is not a readable package (no ZIP directory found).',
     zipFileMissing: 'The file does not exist.',
 
-    deployWholeRoot: 'The path “{{path}}” of this target is the login directory itself, which deletion would empty. Under “Publish”, enter the subfolder the site lives in.',
+    deployWholeRoot: 'The path “{{path}}” of this target is the login directory itself, which deletion would empty. Under “Publish”, enter the subfolder the site lives in, or switch deletion off there.',
     deployTargetMissing: 'There is no publish target with the id {{id}}.',
     deployNoAdapter: 'There is no adapter for the target type “{{type}}” yet.',
     deployNoBuild:

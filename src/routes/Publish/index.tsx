@@ -414,7 +414,7 @@ export default function Publish(): JSX.Element {
   // refusals, and they are said here in words instead.
   const remotePathIssue =
     targetDraft && 'remotePath' in targetDraft.destination
-      ? remotePathProblem(targetDraft.destination.remotePath)
+      ? remotePathProblem(targetDraft.destination.remotePath, targetDraft.destination.deleteRemoved)
       : null
 
   const targetReady = (() => {

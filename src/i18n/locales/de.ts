@@ -2339,7 +2339,7 @@ export default {
         'Der Ordner auf dem Server, in den die Website kommt. Ohne führenden Schrägstrich zählt er ab dem Anmeldeverzeichnis; bei einem Webspace ist das der Normalfall.',
       remotePathError: {
         empty: 'Ohne Zielordner kann nichts veröffentlicht werden.',
-        'whole-root': 'Das Anmeldeverzeichnis selbst geht nicht, weil es mit aktiviertem Löschen geleert würde. Gib den Unterordner an, in dem die Website liegt.',
+        'whole-root': 'Mit aktiviertem Löschen würde das Anmeldeverzeichnis selbst geleert. Gib den Unterordner an, in dem die Website liegt, oder schalte das Löschen aus.',
         traversal: 'Ein Pfad mit „..“ ist nicht erlaubt.'
       },
       transfer: 'Übertragung',

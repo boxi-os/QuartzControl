@@ -691,7 +691,8 @@ export interface RelayState {
 
 /** What send.php answered right after an upload (`GET ?challenge=<form>` with the site's origin). */
 export type RelayCheck =
-  | { kind: 'ok'; url: string }
+  /** `counters`: whether PHP may write the counter directory, from quartz-forms 0.5.11 on (absent before). */
+  | { kind: 'ok'; url: string; counters?: boolean }
   /** A status of 500 without the relay's own JSON: PHP stopped before send.php could answer. */
   | { kind: 'phpError'; url: string }
   /** The relay's own refusal, e.g. `origin` or `mbstring_config`. */

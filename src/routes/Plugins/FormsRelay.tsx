@@ -373,7 +373,20 @@ export function RelaySection({
         <div role="status" className="flex flex-col items-start gap-1.5">
           {result?.check && (
             <>
-              <p className={`text-micro ${result.check.kind === 'ok' ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{checkText(result.check, s.configReadable, t)}</p>
+              <p
+                className={`text-micro ${
+                  result.check.kind !== 'ok'
+                    ? 'text-red-600 dark:text-red-400'
+                    : result.check.counters === false
+                      ? 'text-amber-700 dark:text-amber-400'
+                      : 'text-green-700 dark:text-green-400'
+                }`}
+              >
+                {checkText(result.check, s.configReadable, t)}
+              </p>
+              {result.check.kind === 'ok' && result.check.counters === false && (
+                <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.relay.countersNotWritable')}</p>
+              )}
               {result.check.kind === 'phpError' && !s.configReadable && (
                 <Button variant="ghost" onClick={() => void save({ configReadable: true })}>
                   {t('formsEditor.relay.makeReadable')}

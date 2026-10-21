@@ -429,13 +429,16 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   probe.searchParams.set('challenge', form)
   const res = await getWithOrigin(probe.toString(), origin)
   if ('error' in res) return { kind: 'unreachable', url, reason: res.error }
-  let json: { ok?: unknown; error?: unknown; message?: unknown } | null
+  let json: { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown } | null
   try {
-    json = JSON.parse(res.body) as { ok?: unknown; error?: unknown; message?: unknown } | null
+    json = JSON.parse(res.body) as { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown } | null
   } catch {
     json = null
   }
-  if (res.status === 200 && json?.ok === true) return { kind: 'ok', url }
+  // An answer is not a relay that works: under mod_php (www-data) with counters/ uploaded 0755 by
+  // the account, the probe said ok while a form limited to 2 an hour sent three mails of three
+  // (review 2026-10-29, M1). The ticket says so from quartz-forms 0.5.11 on.
+  if (res.status === 200 && json?.ok === true) return { kind: 'ok', url, ...(typeof json.counters === 'boolean' ? { counters: json.counters } : {}) }
   if (json && typeof json.error === 'string') {
     return { kind: 'relayError', url, status: res.status, error: json.error, message: typeof json.message === 'string' ? json.message : '' }
   }

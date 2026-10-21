@@ -373,7 +373,8 @@ async function setRelayModes(dir: string, configReadable: boolean): Promise<void
 }
 
 const CHECK_RELAY_TIMEOUT_MS = 10_000
-/** The relay's answer is a line of JSON; a host's error page is a few KiB. Nothing more is read. */
+/** The relay's answer is a line of JSON; a host's error page is a few KiB. Nothing more is read:
+ *  the request stops there and is judged by what came (review 2026-10-29, N4). */
 const CHECK_RELAY_MAX_BYTES = 64 * 1024
 
 /**
@@ -394,17 +395,26 @@ function getWithOrigin(url: string, origin: string | null): Promise<{ status: nu
       resolve(value)
     }
     const req = net.request({ url, method: 'GET', redirect: 'follow' })
+    // A server that answered and then did not finish is not one that never answered: a body of
+    // 16 KiB every 20 ms and the relay's JSON spread over 12 s both said "no answer" before.
+    let status: number | null = null
     const timer = setTimeout(() => {
       req.abort()
-      finish({ error: mainT('relayCheckTimeout', { seconds: CHECK_RELAY_TIMEOUT_MS / 1000 }) })
+      const seconds = CHECK_RELAY_TIMEOUT_MS / 1000
+      finish({ error: status === null ? mainT('relayCheckTimeout', { seconds }) : mainT('relayCheckIncomplete', { seconds, status }) })
     }, CHECK_RELAY_TIMEOUT_MS)
     if (origin) req.setHeader('Origin', origin)
     req.on('response', (res) => {
+      status = res.statusCode
       const chunks: Buffer[] = []
       let size = 0
       res.on('data', (chunk: Buffer) => {
+        if (done) return
+        chunks.push(chunk)
         size += chunk.length
-        if (size <= CHECK_RELAY_MAX_BYTES) chunks.push(chunk)
+        if (size < CHECK_RELAY_MAX_BYTES) return
+        req.abort()
+        finish({ status: res.statusCode, body: Buffer.concat(chunks).subarray(0, CHECK_RELAY_MAX_BYTES).toString('utf-8') })
       })
       res.on('end', () => finish({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf-8') }))
       res.on('error', (err: Error) => finish({ error: err.message }))

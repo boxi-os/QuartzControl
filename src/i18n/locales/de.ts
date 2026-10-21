@@ -1617,6 +1617,7 @@ export default {
       checkRelayError: 'Das Relay lehnt die Probe ab (HTTP {{status}}, „{{error}}“): {{message}}',
       checkNoPhp: 'Unter {{url}} läuft kein PHP: Der Server liefert send.php als Text aus. Lade das Relay in einen Ordner, in dem PHP läuft.',
       configOpen: 'Auch die config.php ist unter {{url}} für jeden lesbar, mit Secret und Empfängeradressen. Lösche sie vom Server.',
+      checkRedirect: 'Unter {{url}} leitet der Server auf {{to}} weiter, und dort kommen die Anfragen der Formulare ohne die Origin der Website an. Trage die Adresse nach der Weiterleitung als Adresse von send.php ein.',
       checkOtherRelay: 'Unter {{url}} antwortet ein anderes Relay als das eben hochgeladene. Stimmen Ziel und Unterordner zur Adresse von send.php?',
       checkHttp: 'Unter {{url}} antwortet kein Relay (HTTP {{status}}). Stimmen Ziel, Unterordner und Adresse von send.php?',
       checkHttpDenied: 'Der Server verweigert den Zugriff auf {{url}} (HTTP 403). Meist liegt das an den Rechten des Ordners oder an einer Firewall des Hosters.',

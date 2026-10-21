@@ -385,10 +385,10 @@ const CHECK_RELAY_MAX_BYTES = 64 * 1024
  * (404) never has one. Measured with the relay on another origin than the site, the common case:
  * fetch said ERR_FAILED for both, request said 500 and 404, and 200 for the relay's own JSON.
  */
-function getWithOrigin(url: string, origin: string | null): Promise<{ status: number; body: string } | { error: string }> {
+function getWithOrigin(url: string, origin: string | null): Promise<{ status: number; body: string; redirectedTo?: string } | { error: string }> {
   return new Promise((resolve) => {
     let done = false
-    const finish = (value: { status: number; body: string } | { error: string }): void => {
+    const finish = (value: { status: number; body: string; redirectedTo?: string } | { error: string }): void => {
       if (done) return
       done = true
       clearTimeout(timer)
@@ -398,12 +398,15 @@ function getWithOrigin(url: string, origin: string | null): Promise<{ status: nu
     // A server that answered and then did not finish is not one that never answered: a body of
     // 16 KiB every 20 ms and the relay's JSON spread over 12 s both said "no answer" before.
     let status: number | null = null
+    let redirectedTo: string | undefined
     const timer = setTimeout(() => {
       req.abort()
       const seconds = CHECK_RELAY_TIMEOUT_MS / 1000
       finish({ error: status === null ? mainT('relayCheckTimeout', { seconds }) : mainT('relayCheckIncomplete', { seconds, status }) })
     }, CHECK_RELAY_TIMEOUT_MS)
     if (origin) req.setHeader('Origin', origin)
+    // Followed all the same ('follow'); only where it went is noted.
+    req.on('redirect', (_status, _method, to) => (redirectedTo = to))
     req.on('response', (res) => {
       status = res.statusCode
       const chunks: Buffer[] = []
@@ -414,9 +417,9 @@ function getWithOrigin(url: string, origin: string | null): Promise<{ status: nu
         size += chunk.length
         if (size < CHECK_RELAY_MAX_BYTES) return
         req.abort()
-        finish({ status: res.statusCode, body: Buffer.concat(chunks).subarray(0, CHECK_RELAY_MAX_BYTES).toString('utf-8') })
+        finish({ status: res.statusCode, body: Buffer.concat(chunks).subarray(0, CHECK_RELAY_MAX_BYTES).toString('utf-8'), redirectedTo })
       })
-      res.on('end', () => finish({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf-8') }))
+      res.on('end', () => finish({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf-8'), redirectedTo }))
       res.on('error', (err: Error) => finish({ error: err.message }))
     })
     // Chromium's code alone ("net::ERR_CERT_AUTHORITY_INVALID") was the sentence (review
@@ -443,6 +446,15 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   probe.searchParams.set('challenge', form)
   const res = await getWithOrigin(probe.toString(), origin)
   if ('error' in res) return { kind: 'unreachable', url, reason: res.error }
+  // A redirect to another origin (http:// to https://, the common case) arrived with `Origin:
+  // null`, as Chromium sends it then, and the relay's refusal ("origin") named the wrong cause
+  // (review 2026-10-29, N6). A visitor's browser does the same, so the place it went is the
+  // answer. A redirect within the origin keeps the Origin and is judged by what answered.
+  const to = res.redirectedTo ? new URL(res.redirectedTo) : null
+  if (to && to.origin !== new URL(url).origin) {
+    to.search = ''
+    return { kind: 'redirect', url, to: to.toString() }
+  }
   let json: { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown; generation?: unknown } | null
   try {
     json = JSON.parse(res.body) as { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown; generation?: unknown } | null

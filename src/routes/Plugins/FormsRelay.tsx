@@ -424,6 +424,8 @@ function checkText(check: RelayCheck, configReadable: boolean, t: TFunction): st
       return t('formsEditor.relay.checkRelayError', { status: check.status, error: check.error, message: check.message })
     case 'noPhp':
       return t('formsEditor.relay.checkNoPhp', { url: check.url })
+    case 'redirect':
+      return t('formsEditor.relay.checkRedirect', { url: check.url, to: check.to })
     case 'otherRelay':
       return t('formsEditor.relay.checkOtherRelay', { url: check.url })
     case 'http':

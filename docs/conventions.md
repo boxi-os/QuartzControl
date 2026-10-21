@@ -75,8 +75,13 @@ Begründung.
   SFTP, FTP und rsync setzen sie dann bei jedem Upload, auch auf vorhandene Dateien
   (`runDirectoryUpload` vergisst vorher das Manifest; rsync `-p`, FTP `SITE CHMOD`), ein Ordner-Ziel
   ebenso (die Dateien per `fs.cp`, die Ordner per `chmod`). Was 1.0.0 bis 1.1.0 über SFTP mit 0666 hochgeladen hat,
-  setzt der Adapter einmal je Ziel auf 0644 (`deploy-manifest-<id>.modes.json`). Die Abfrage nach
-  dem Upload fragt per `generation`, ob das eben hochgeladene Relay antwortet.
+  setzt der Adapter einmal je Ziel auf 0644 (`deploy-manifest-<id>.modes.json`): nur reguläre
+  Dateien mit genau 0666 (`lstat`), und erledigt ist das Ziel erst, wenn der Server zu jeder Datei
+  geantwortet hat. Die Abfrage nach dem Upload nennt die `generation` und erfährt so, ob das eben
+  hochgeladene Relay antwortet (das Relay liest seine Config an OPcache vorbei und sagt
+  `counters` nur dann); eine Weiterleitung empfiehlt sie nur, wo dort ein Relay antwortet. Fehlende
+  Ordner über einem rsync-Ziel legt nur das Relay an; was rsync nicht übertragen kann
+  (`rsyncUnsafeChar`), sagt schon das Formular.
   Lehnt der Server einen Modus ab, läuft der Upload weiter und sagt, was der Server hält. Was auf
   dem Server laufen soll, fragt die App nach dem Hochladen einmal ab, mit `net.request`: `net.fetch`
   macht aus einer fremden Origin CORS und aus jedem 500 ein `ERR_FAILED`. Gemessen wird auf einem

@@ -3119,3 +3119,41 @@ Am selben Tag, auf Wunsch des Nutzers, die offenen und die neuen Punkte:
   Die Website, `forms`, `forms-*` und nginx `:8445`/`:8446` bleiben als Messgeschirr.
 - **Langsamer Smoke-Lauf** — nicht wieder aufgetreten (gut 20 Läufe, je etwa 124 s), Ursache
   unbekannt.
+
+**Das fünfundfünfzigste Review** ([`REVIEW-2026-10-30.md`](REVIEW-2026-10-30.md), Auftrag
+[`REVIEW-2026-10-30-auftrag.md`](REVIEW-2026-10-30-auftrag.md), `feat/1.2` bis `2dc10a52`,
+`fix/1.1.x` `5dcfb3f6`, quartz-forms `v0.5.10..v0.5.11`: die Fixes des 54. Reviews, der
+einmalige chmod, rsyncs abgelehnte Zeichen): von Claude Opus 5.5 als frisch gestarteter
+Subagent, ohne den Verlauf der Sitzung. 0 Hoch, 3 Mittel, 7 Niedrig; Urteil: `5dcfb3f6` nicht
+ohne M1 und M2 mit 1.1.x, der Rest mit 1.2 nach dem Merge und M3. Gemessen an der gebauten App in
+zwei Klonen, mit `debian-vm` als Hoster, einer Attrappe auf 127.0.0.1 und Chrome als Besucher.
+
+Abgearbeitet am 2026-10-21, ein Befund je Commit, gemessen an der gebauten App (Wegwerf-Profil,
+`h.mjs`, `attrappe55.mjs`, `n5form.mjs`, `renew2.mjs` im Scratchpad `review-55`) gegen
+`debian-vm`, vorher und nachher:
+
+- **M1** `5ff41a5c` auf `fix/1.1.x` — der Durchgang zählt nur Antworten des Servers; bricht die
+  Verbindung ab, bleibt das Ziel offen und die Zeile nennt den Rest.
+- **M2** `4dc57dcc` auf `fix/1.1.x` — nur reguläre Dateien mit genau 0666, per `lstat`; Symlink,
+  Ordner und von Hand gesetzte Modi bleiben. Beide gemergt in `03642926`.
+- **M3** quartz-forms `3b9de40` (0.5.12, `8326fad`), `4aedb726` — das Relay fragt OPcache vor dem
+  Laden nach den Zeitstempeln seiner Config; mit Besucher 8 von 16 → 0 von 16 `otherRelay`.
+- **N1** `e4809fee` — eine Weiterleitung ist nur dann die Adresse, wenn dort ein Relay antwortet;
+  sonst `redirectNoRelay`.
+- **N2** quartz-forms `992dbc4` (0.5.13, `7ea6b76`), `26f64b44` — `counters` und `generation`
+  nur für den, der die `generation` nennt; die Abfrage nennt sie.
+- **N3** `0698c0a1` — Kommentare und Doku: das Quoten hält nur unter rsync 3.x, unter openrsync
+  schützt die Ablehnung. Kein Code.
+- **N4** `bb10c942` — der zweite rsync-Lauf mit `mkdir -p` nur für das Relay; scheitert er auch,
+  steht die erste Meldung davor (`rrsync` von Hand gemessen, nicht über die App).
+- **N5** `a20034f8` — `rsyncUnsafeChar` in `shared/remotePath.ts`; das Zielformular sperrt
+  Speichern mit Satz, der Relay-Abschnitt und der Upload nennen den Unterordner.
+- **N6** `73492ed3` — der Dialog zu „Neues Secret erzeugen“ sagt, was passiert: einmal die
+  Zeitfalle länger (3,1 s statt 0,1 s in Chrome gemessen).
+- **N7** `3ec468f2` — `phpMessage` nur bei PHPs HTML-Form oder Text ohne Seitengerüst; Doku „ohne
+  Datei und Zeile am Ende“.
+
+quartz-forms 0.5.12 und 0.5.13 sind versioniert, nicht getaggt und nicht gepusht. Die
+Nebenbei-Liste des Reviews ist nicht abgearbeitet.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

@@ -294,6 +294,24 @@ Projektwurzel.
   auch die Modi der Ordner, in die es schreibt, wie der SFTP-Adapter; den Ordner des Ziels selbst
   nicht (gemessen: `forms` 0700 und `counters` 0777 wurden 0755, das Ziel mit 0750 blieb 0750).
   Die kurze Regel sagt es seitdem so.
+  Nachtrag aus dem 55. Review (2026-10-21), ohne den Text darüber zu ändern: Der einmalige
+  Durchgang hielt ein Ziel für erledigt, auch wenn die Verbindung mitten darin abbrach (M1: 403
+  Dateien blieben 0666, und kein Lauf fragte wieder), und er setzte jeden Pfad des Manifests, auch
+  das Ziel eines Symlinks außerhalb der Website, einen Ordner und eine von Hand gesetzte 0600 (M2).
+  Jetzt zählt er nur Antworten des Servers und setzt nur, was 1.1.0 hinterlassen hat: eine
+  reguläre Datei mit genau 0666, gefragt mit `lstat`, das keinem Symlink folgt; von 0666 auf 0644
+  kann nur enger werden. Die `generation` war die richtige Frage, aber das Relay antwortete bis zu
+  zwei Sekunden lang aus OPcache mit der alten (M3, 8 von 16 Uploads mit einem Besucher); behoben
+  im Relay, das vor dem Laden nach den Zeitstempeln fragt (quartz-forms 0.5.12), weil es mit der
+  alten Config auch arbeitete. Und sie wurde zum Ausweis: `counters: false` nannte jedem, welche
+  Relays kein Ratenlimit haben (N2), deshalb sagt das Relay beides ab 0.5.13 nur dem, der die
+  `generation` nennt. Eine Weiterleitung auf eine Startseite oder einen Login wurde als Adresse
+  empfohlen (N1). Der zweite rsync-Lauf mit `mkdir -p` machte aus einem vertippten Website-Pfad
+  einen neuen Ordnerbaum, wo 1.1.0 ablehnte (N4), und die Zeichen, die rsync nicht übertragen
+  kann, sagte erst die Vorschau (N5); die Regel steht seitdem einmal in `shared/remotePath.ts`.
+  Ihr Quoten hält nur unter rsync 3.x; unter openrsync schützt allein die Ablehnung (N3). Die
+  kurze Regel sagt es seitdem so. Messungen in
+  [`publishing-and-credentials.md`](publishing-and-credentials.md).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

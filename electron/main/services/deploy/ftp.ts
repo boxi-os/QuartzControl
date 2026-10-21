@@ -1,5 +1,5 @@
 import { join, posix } from 'path'
-import { Client as FtpClient } from 'basic-ftp'
+import { Client as FtpClient, FTPError } from 'basic-ftp'
 import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, partitionDiff } from './manifest'
@@ -51,18 +51,28 @@ export const ftpAdapter: DeployAdapter = {
         output += `↑ ${relPath}\n`
       }
 
+      // What was not deleted stays in the manifest, so the next upload offers it again (sftp.ts, run).
+      const kept: string[] = []
       for (const relPath of toDelete) {
         try {
           await client.remove(posix.join(destination.remotePath, relPath))
-        } catch {
-          // already absent remotely
+          output += `✗ ${relPath}\n`
+        } catch (err) {
+          // Only a reply of the server counts, and 550 is the one for a missing file (vsftpd gives it
+          // for a refused one too). With vsftpd frozen, the run said success and left 47 of 178 files
+          // online, all of them gone from the manifest (review 2026-10-31, M1).
+          if (!(err instanceof FTPError)) throw err
+          if (err.code === 550) output += `✗ ${relPath}\n`
+          else {
+            kept.push(relPath)
+            output += mainT('deployDeleteRefused', { path: relPath, reason: err.message })
+          }
         }
         processed++
         ctx.emitProgress(processed, total, relPath)
-        output += `✗ ${relPath}\n`
       }
 
-      await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, manifestExcludes)
+      await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, [...manifestExcludes, ...kept])
       return { success: true, output }
     } catch (err) {
       return { success: false, output: `${output}\n${String(err)}` }

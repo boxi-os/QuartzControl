@@ -15,6 +15,11 @@ export interface DeployContext {
    * new file gets its local mode less that umask and an existing one keeps its own.
    */
   keepLocalModes?: boolean
+  /**
+   * The relay's folders below the target's own, top first, ending with the one it goes into: none
+   * of them may be a symlink on the server (sftp, ftp, rsync).
+   */
+  relayFolders?: string[]
   emitProgress(processed: number, total: number, currentFile?: string): void
 }
 

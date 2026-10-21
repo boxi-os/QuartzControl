@@ -169,6 +169,11 @@ export async function runDirectoryUpload(
       buildDir: localDir,
       secret,
       keepLocalModes: true,
+      // Every one, not only the last: a link "lnk -> /srv/qc/www" in the target and the subdir
+      // "lnk/review56-other" put the relay into another site's folder and set it from 2750 to 755,
+      // over SFTP, FTP and rsync alike (debian-vm, review 2026-10-31, N3).
+      relayFolders:
+        d.type === 'folder' ? undefined : subdir.split('/').map((_, i, segments) => posix.join(d.remotePath, ...segments.slice(0, i + 1))),
       emitProgress(processed, total, currentFile) {
         const event: DeployProgressEvent = { targetId: manifestKey, processed, total, currentFile }
         deployEvents.emit('progress', event)

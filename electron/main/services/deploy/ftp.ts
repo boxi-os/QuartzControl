@@ -98,9 +98,11 @@ export const ftpAdapter: DeployAdapter = {
 
       // The relay's folder must not be a symlink on the server (sftp.ts, run).
       if (ctx.keepLocalModes) {
-        const listing = await client.list(posix.dirname(destination.remotePath)).catch(() => [])
-        if (listing.find((f) => f.name === posix.basename(destination.remotePath))?.isSymbolicLink) {
-          return { success: false, output: mainT('relayDirSymlink', { path: destination.remotePath }) }
+        for (const folder of ctx.relayFolders ?? [destination.remotePath]) {
+          const listing = await client.list(posix.dirname(folder)).catch(() => [])
+          const entry = listing.find((f) => f.name === posix.basename(folder))
+          if (entry?.isSymbolicLink) return { success: false, output: mainT('relayDirSymlink', { path: folder }) }
+          if (!entry) break
         }
       }
 

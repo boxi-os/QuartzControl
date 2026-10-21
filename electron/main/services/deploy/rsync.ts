@@ -315,9 +315,13 @@ export const rsyncAdapter: DeployAdapter = {
       // The relay's folder must not be a symlink on the server (sftp.ts, run). Asked with rsync
       // itself, which an account limited to rsync allows: without the trailing slash --list-only
       // names the entry, "lrwxrwxrwx … nb9" for a symlink, under openrsync too.
+      // One run per folder below the target (relayFolders), down to the first that is not there.
       if (ctx.keepLocalModes) {
-        const listed = await runRsync(['--list-only', '--no-motd', '-e', env.rshCommand, remoteSpec(connection, destination.remotePath).replace(/\/+$/, '')])
-        if (/^l/m.test(listed.output)) return { success: false, output: mainT('relayDirSymlink', { path: destination.remotePath }) }
+        for (const folder of ctx.relayFolders ?? [destination.remotePath]) {
+          const listed = await runRsync(['--list-only', '--no-motd', '-e', env.rshCommand, remoteSpec(connection, folder).replace(/\/+$/, '')])
+          if (/^l/m.test(listed.output)) return { success: false, output: mainT('relayDirSymlink', { path: folder }) }
+          if (listed.code !== 0) break
+        }
       }
       // A dry run first, purely to know the total: without it the progress bar has no denominator,
       // and rsync itself reports none until it is finished.

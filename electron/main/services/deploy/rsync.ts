@@ -254,9 +254,9 @@ async function buildArgs(
   makeParents = false
 ): Promise<string[]> {
   const args = ['-rlt', '--itemize-changes', '--no-motd', '-e', env.rshCommand]
-  // Only as a second attempt after MISSING_PARENT: an account limited to rsync (rrsync in
-  // authorized_keys) refuses any remote command that does not start with rsync, so asking for
-  // mkdir on every run would break uploads that work today.
+  // Only as a second attempt after MISSING_PARENT, and only for the relay (run): an account
+  // limited to rsync (rrsync in authorized_keys) refuses any remote command that does not start
+  // with rsync, so asking for mkdir on every run would break uploads that work today.
   if (makeParents) args.push(`--rsync-path=mkdir -p -- ${remoteShellPath(remotePath)} && rsync`)
   // Deliberately -rlt rather than -a: -a also carries permissions, owner and group, which on a
   // web host means pushing this machine's uid/gid and umask onto the live site.
@@ -330,17 +330,27 @@ export const rsyncAdapter: DeployAdapter = {
           }
         )
       let result = await send(false)
-      if (result.code !== 0 && MISSING_PARENT.test(result.output)) result = await send(true)
+      let firstFailure = ''
+      // Only for the relay, whose folder below the target is QuartzControl's to make, as SFTP and FTP
+      // do. For a site the missing folder was the one sign of a mistyped path: a target "…/tpyo/
+      // htdocs" got 475 files in a new tree and success, where 1.1.0 refused (review 2026-10-30, N4).
+      if (ctx.keepLocalModes && result.code !== 0 && MISSING_PARENT.test(result.output)) {
+        firstFailure = failureMessage(result.output, connection, result.code)
+        result = await send(true)
+      }
 
       const summary = result.entries
         .map((entry) => `${entry.status === 'removed' ? '✗' : '↑'} ${entry.path}`)
         .join('\n')
       return {
         success: result.code === 0,
+        // The first answer as well when the second attempt fails too: behind rrsync, which runs
+        // nothing but rsync, the second said only "SSH_ORIGINAL_COMMAND does not run rsync"
+        // (debian-vm, rrsync 3.5.0, review 2026-10-30, N4).
         output:
           result.code === 0
             ? summary ? `${summary}\n` : mainT('deployNothingToDo')
-            : failureMessage(result.output, connection, result.code)
+            : [firstFailure, failureMessage(result.output, connection, result.code)].filter(Boolean).join('\n')
       }
     } finally {
       await env.cleanup()

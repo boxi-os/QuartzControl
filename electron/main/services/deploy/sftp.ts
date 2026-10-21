@@ -54,7 +54,7 @@ const CHMOD_CONCURRENCY = 8
 /**
  * A server may refuse to change a mode (internal-sftp -P setstat,fsetstat, ProFTPD's mod_sftp).
  * For a file ssh2 swallows that and keeps the mode it opened the file with, which the umask cut
- * (a new file) or which was there before (an existing one); a folder's chmod is caught above. The
+ * (a new file) or which was there before (an existing one); a folder's chmod is caught in `run`. The
  * upload goes on either way, so what the server holds is asked and said when it differs. Measured
  * with such an account on debian-vm: the relay upload stopped at the folder with "_chmod:
  * Permission denied" and uploaded nothing. Compared with the special bits: a folder at 2750 was

@@ -1623,6 +1623,7 @@ export default {
       checkRelayMbstring: 'PHP hat unter {{url}} die Erweiterung mbstring nicht, ohne die das Relay keine Nachricht annimmt. Bitte den Hoster, sie einzuschalten.',
       checkNoPhp: 'Unter {{url}} läuft kein PHP: Der Server liefert send.php als Text aus. Lade das Relay in einen Ordner, in dem PHP läuft.',
       configOpen: 'Auch die config.php ist unter {{url}} für jeden lesbar, mit Secret und Empfängeradressen. Lösche sie vom Server und erzeuge unter „Selten gebraucht“ ein neues Secret.',
+      checkRedirectNoRelay: 'Unter {{url}} leitet der Server auf {{to}} weiter, und dort antwortet kein Relay. Stimmen Ziel, Unterordner und Adresse von send.php?',
       checkRedirect: 'Unter {{url}} leitet der Server auf {{to}} weiter, und dort kommen die Anfragen der Formulare ohne die Origin der Website an. Trage die Adresse nach der Weiterleitung als Adresse von send.php ein.',
       checkOtherRelay: 'Unter {{url}} antwortet ein anderes Relay als das eben hochgeladene. Stimmen Ziel und Unterordner zur Adresse von send.php?',
       checkHttp: 'Unter {{url}} antwortet kein Relay (HTTP {{status}}). Stimmen Ziel, Unterordner und Adresse von send.php?',

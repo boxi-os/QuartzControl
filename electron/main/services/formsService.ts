@@ -496,11 +496,24 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   probe.searchParams.set('challenge', form)
   const res = await getWithOrigin(probe.toString(), origin)
   if ('error' in res) return { kind: 'unreachable', url, reason: res.error }
+  let json: { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown; generation?: unknown; stamp?: unknown } | null
+  try {
+    json = JSON.parse(res.body) as { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown; generation?: unknown; stamp?: unknown } | null
+  } catch {
+    json = null
+  }
   // A redirect to another origin (http:// to https://, the common case) arrived with `Origin:
   // null`, as Chromium sends it then, and the relay's refusal ("origin") named the wrong cause
   // (review 2026-10-29, N6). A visitor's browser does the same, so the place it went is the
   // answer. A redirect within the origin keeps the Origin and is judged by what answered.
+  // The place is only an address for send.php where a relay answered there: a server that sends a
+  // missing send.php home or to its login had both recommended (review 2026-10-30, N1).
   const to = res.redirectedTo ? new URL(res.redirectedTo) : null
+  const relayAnswered = json?.ok === true ? typeof json.stamp === 'string' : json?.ok === false && typeof json.error === 'string'
+  if (to && (to.origin !== new URL(url).origin || res.postDropped) && !relayAnswered) {
+    to.search = ''
+    return { kind: 'redirectNoRelay', url, to: to.toString() }
+  }
   if (to && to.origin !== new URL(url).origin) {
     to.search = ''
     return { kind: 'redirect', url, to: to.toString() }
@@ -509,12 +522,6 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   if (to && res.postDropped) {
     to.search = ''
     return { kind: 'postRedirect', url, to: to.toString(), status: res.postDropped }
-  }
-  let json: { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown; generation?: unknown } | null
-  try {
-    json = JSON.parse(res.body) as { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown; generation?: unknown } | null
-  } catch {
-    json = null
   }
   // An answer is not a relay that works: under mod_php (www-data) with counters/ uploaded 0755 by
   // the account, the probe said ok while a form limited to 2 an hour sent three mails of three

@@ -522,6 +522,10 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   // Nor is it the relay just uploaded: with the folder changed and the address not, the probe
   // asked the relay left at the old one and said ok (review 2026-10-29, N1). A relay without a
   // generation is older than the one uploaded, so another one too.
+  // Up to quartz-forms 0.5.11 the relay itself answered the old generation for up to
+  // revalidate_freq seconds, from OPcache: 3 of 6 uploads on debian-vm said so with a visitor
+  // asking every 0.2 s (review 2026-10-30, M3). 0.5.12 asks OPcache first; fixed there, where the
+  // relay worked with the old config too, not by asking again here.
   if (res.status === 200 && json?.ok === true && generation && json.generation !== generation) return { kind: 'otherRelay', url }
   if (res.status === 200 && json?.ok === true) return { kind: 'ok', url, ...(typeof json.counters === 'boolean' ? { counters: json.counters } : {}) }
   // `form` is one of the relay just generated, so a relay that does not know it is another one.

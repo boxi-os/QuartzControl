@@ -312,6 +312,17 @@ Projektwurzel.
   Ihr Quoten hält nur unter rsync 3.x; unter openrsync schützt allein die Ablehnung (N3). Die
   kurze Regel sagt es seitdem so. Messungen in
   [`publishing-and-credentials.md`](publishing-and-credentials.md).
+  Nachtrag aus der Nebenbei-Liste derselben Runde (2026-10-21): SFTP und FTP legten einen
+  vertippten Website-Pfad weiter still an, wo rsync seit N4 ablehnte; jetzt legt kein Weg Ordner
+  über dem eines Ziels an, nur das Relay unter seinem. Ein rsync-Ziel „~“ mit Löschen listete in
+  der Vorschau das ganze Home des Accounts zum Löschen, `.ssh/` eingeschlossen, weil die Regel
+  gegen das Anmeldeverzeichnis „~“ nicht kannte. Ein Relay-Ordner, der auf dem Server ein Symlink
+  auf „.“ war, ließ rsync und FTP den Ordner des Ziels von 2750 auf 755 setzen. Eine Verbindung,
+  die schweigt (eine eingefrorene `sshd-session`), ließ SFTP und rsync nach 150 s noch warten,
+  weil weder ssh2 noch ssh ohne Auftrag Keepalives schicken. Und die Abfrage folgte einer
+  Weiterleitung von `debian-vm` auf `127.0.0.1`, hielt einen Dienst dort für ein Relay und
+  empfahl dessen Adresse für send.php; den Text des Servers zeigte sie mit 65 065 Zeichen. Die
+  kurze Regel sagt es seitdem so.
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

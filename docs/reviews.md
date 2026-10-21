@@ -3157,3 +3157,37 @@ quartz-forms 0.5.12 und 0.5.13 sind versioniert, nicht getaggt und nicht gepusht
 Nebenbei-Liste des Reviews ist nicht abgearbeitet.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+Nachtrag vom selben Tag: 0.5.12 und 0.5.13 sind gepusht und getaggt, `feat/1.2` und `fix/1.1.x`
+ebenso. Danach die Nebenbei-Liste und was beim Abarbeiten neu auffiel, je ein Commit, gemessen wie
+oben (`nbui.mjs` mit echten Klicks, `nb4-scene.sh`, `nb9-scene.sh`):
+
+- **401, 429, CDN** `f1f0e46b` — je ein eigener Satz statt „kein Relay … Stimmen Ziel …?“.
+- **Fortschritt im chmod-Durchgang** `b08e2ddc` auf `fix/1.1.x` — zählt in `total` mit, „Rechte
+  von …“; vorher 6,6 s ohne Ereignis.
+- **SFTP hängt** `aecbb8a8` auf `fix/1.1.x` — ein beendetes `sftp-server` beendet den Lauf
+  heute schon; was hing, war eine stumme Leitung (SFTP und rsync nach 150 s noch offen). Jetzt
+  Keepalives, Ende nach 45 s mit Satz.
+- **Länge und Weiterleitung ins LAN** `b4941b47` — `relayError` gekürzt (65 065 → 445 Zeichen);
+  eine Weiterleitung von draußen auf eine lokale Adresse wird nicht gefolgt, sie hatte einen
+  Dienst auf `127.0.0.1` als Relay empfohlen.
+- **Button in der Live-Region** `d6df466f` — der Button steht nach der Region, ein Fehlschlag
+  in einer Zeile wird mit Grund angesagt.
+- **`~user/…` und `-`** `8a9061ac` auf `fix/1.1.x` und `b83d4a99` — „~“ zählte nicht als
+  Anmeldeverzeichnis: ein rsync-Ziel „~“ mit Löschen listete das ganze Home samt `.ssh/`. Ein
+  führendes „-“ geht als „./-…“, „~user/“ bleibt beim `mkdir` außerhalb der Anführungszeichen.
+- **Symlink im Relay-Ordner** `b99ca7b2` — jeder Weg fragt vorher; rsync und FTP hatten den Ordner
+  des Ziels von 2750 auf 755 gesetzt.
+- **`checkRelaySecret`** `1706a3eb` — „Das Relay unter … findet in seiner config.php …“.
+- Neu: **307/308 in der Origin** `b908f8fc` — mit Ziel genannt. **Vertippter Pfad über SFTP und
+  FTP** `bd023df3` — wie rsync abgelehnt. **OPcache in den Relay-Tests** quartz-forms `90cdc53`.
+  **Zweiter Versuch ohne Zeitfalle** quartz-forms `da3dfb0` (0.5.14, `e0ca971`), `e19385bf` —
+  nur in den Client-Tests gemessen, nicht im Browser.
+
+Gelassen, weil sie nur ältere, nie veröffentlichte Fassungen des Plugins betreffen: ein Relay vor
+0.5.11 ohne Wort zu den Zählern, liegengebliebene Dateien einer älteren Relay-Fassung,
+`validate_timestamps=0` vor 0.5.12, ein Projekt mit 0.5.11. Neu aufgefallen und offen: Ein
+relativer Pfad über FTP scheitert an einem Server, der das Login nicht einsperrt, mit „553“, weil
+der Adapter nach jedem neuen Ordner nach `/` wechselt (gilt schon für 1.1).
+
+**Auch diese Fixes hat kein Review gelesen.**

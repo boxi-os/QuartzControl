@@ -81,7 +81,10 @@ Begründung.
   hochgeladene Relay antwortet (das Relay liest seine Config an OPcache vorbei und sagt
   `counters` nur dann); eine Weiterleitung empfiehlt sie nur, wo dort ein Relay antwortet. Fehlende
   Ordner über dem Ordner eines Ziels legt nur das Relay an, über jeden Weg; was rsync nicht
-  übertragen kann (`rsyncUnsafeChar`), sagt schon das Formular.
+  übertragen kann (`rsyncUnsafeChar`), sagt schon das Formular. „~“ ist das Anmeldeverzeichnis
+  selbst. Ist der Ordner des Relays auf dem Server ein Symlink, lädt kein Weg hindurch. Eine
+  SSH-Verbindung, die schweigt, endet nach 45 s (Keepalives in ssh2 und ssh). Die Abfrage folgt
+  keiner Weiterleitung von draußen auf diesen Rechner oder ins LAN und kürzt den Text des Servers.
   Lehnt der Server einen Modus ab, läuft der Upload weiter und sagt, was der Server hält. Was auf
   dem Server laufen soll, fragt die App nach dem Hochladen einmal ab, mit `net.request`: `net.fetch`
   macht aus einer fremden Origin CORS und aus jedem 500 ein `ERR_FAILED`. Gemessen wird auf einem

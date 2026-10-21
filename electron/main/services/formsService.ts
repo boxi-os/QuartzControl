@@ -410,12 +410,17 @@ function unreachableReason(code: string): string {
 
 /**
  * This machine and its network by the host's literal: loopback, private, link-local, unique-local,
- * `localhost`. A name is resolved by Chromium and not judged here.
+ * `localhost`. A name is resolved by Chromium and not judged here. The hostname is the URL
+ * parser's: it writes an IPv4-mapped address in hex ("[::ffff:127.0.0.1]" is "[::ffff:7f00:1]")
+ * and keeps a final dot ("localhost."); both were followed and offered as send.php's address
+ * (review 2026-10-31, N1).
  */
 function localHost(hostname: string): boolean {
-  const host = hostname.replace(/^\[|\]$/g, '').toLowerCase()
+  const host = hostname.replace(/^\[|\]$/g, '').toLowerCase().replace(/\.$/, '')
   if (host === 'localhost' || host.endsWith('.localhost')) return true
-  const v4 = isIPv4(host) ? host : /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(host)?.[1]
+  const hex = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(host)
+  const mapped = hex ? [parseInt(hex[1], 16) >> 8, parseInt(hex[1], 16) & 255, parseInt(hex[2], 16) >> 8, parseInt(hex[2], 16) & 255].join('.') : undefined
+  const v4 = isIPv4(host) ? host : (mapped ?? /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(host)?.[1])
   if (v4 && isIPv4(v4)) {
     const [a, b] = v4.split('.').map(Number)
     return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)

@@ -79,7 +79,7 @@ Begründung.
   Dateien mit genau 0666 (`lstat`), und erledigt ist das Ziel erst, wenn der Server zu jeder Datei
   geantwortet hat. Als gelöscht zählt nur die Antwort des Servers, dass die Datei fehlt; ein Fehler
   der Leitung lässt den Lauf scheitern, und das Manifest bleibt. Die Abfrage nach dem Upload nennt
-  die `generation` und erfährt so, ob das eben hochgeladene Relay antwortet (das Relay liest seine
+  die `generation` (nur innerhalb der Origin) und erfährt so, ob das eben hochgeladene Relay antwortet (das Relay liest seine
   Config an OPcache vorbei und sagt `counters` nur dann; eine fremde `generation` fragt sie nach 3 s
   noch einmal); eine Weiterleitung empfiehlt sie nur, wo dort ein Relay antwortet. Fehlende
   Ordner über dem Ordner eines Ziels legt nur das Relay an, über jeden Weg; was rsync nicht

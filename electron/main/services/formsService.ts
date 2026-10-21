@@ -456,6 +456,7 @@ function getWithOrigin(url: string, origin: string | null): Promise<Answer | { e
     // Chromium from a page of the origin, a 301 to the relay arrived as GET and was answered
     // "no such form", a 308 arrived as POST (debian-vm, review 2026-10-29, nebenbei).
     let postDropped: number | undefined
+    let handedOn = false
     const timer = setTimeout(() => {
       req.abort()
       const seconds = CHECK_RELAY_TIMEOUT_MS / 1000
@@ -472,9 +473,24 @@ function getWithOrigin(url: string, origin: string | null): Promise<Answer | { e
       if (localHost(new URL(to).hostname) && !localHost(new URL(url).hostname)) {
         req.abort()
         finish({ status, body: '', redirectedTo, postDropped, local: true })
+        return
+      }
+      // Not the generation to another origin, which Apache's Redirect hands on with the query: a
+      // service behind it got "?challenge=kontakt&generation=…", and with it `counters` (review
+      // 2026-10-31, nebenbei). What answers there is judged by the redirect, not the generation,
+      // so the place is asked without it, with the `Origin: null` Chromium sends after one.
+      const next = new URL(to)
+      if (next.origin !== new URL(url).origin && next.searchParams.has('generation')) {
+        handedOn = true
+        req.abort()
+        next.searchParams.delete('generation')
+        void getWithOrigin(next.toString(), 'null').then((answer) =>
+          finish('error' in answer ? answer : { ...answer, redirectedTo: answer.redirectedTo ?? next.toString(), postDropped: postDropped ?? answer.postDropped })
+        )
       }
     })
     req.on('response', (res) => {
+      if (handedOn) return
       status = res.statusCode
       const chunks: Buffer[] = []
       let size = 0
@@ -489,7 +505,9 @@ function getWithOrigin(url: string, origin: string | null): Promise<Answer | { e
       res.on('end', () => finish({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf-8'), redirectedTo, postDropped }))
       res.on('error', (err: Error) => finish({ error: err.message }))
     })
-    req.on('error', (err) => finish({ error: unreachableReason(err.message) }))
+    req.on('error', (err) => {
+      if (!handedOn) finish({ error: unreachableReason(err.message) })
+    })
     req.end()
   })
 }

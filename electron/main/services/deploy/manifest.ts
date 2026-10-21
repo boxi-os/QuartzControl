@@ -84,6 +84,21 @@ export async function forgetManifest(projectPath: string, targetId: string): Pro
   await rm(manifestPath(projectPath, targetId), { force: true })
 }
 
+// Whether the files this app sent to one target before 1.1.1 have had their mode set to 0644 (the
+// SFTP adapter's one-time pass). Beside the manifest and named like it, so snapshots and project
+// copies leave it out for the same reasons. Read path, like the manifest.
+function modesMarkerPath(projectPath: string, targetId: string): string {
+  return quartzGuiPath(projectPath, `deploy-manifest-${targetId}.modes.json`)
+}
+
+export function modesSettled(projectPath: string, targetId: string): boolean {
+  return existsSync(modesMarkerPath(projectPath, targetId))
+}
+
+export async function settleModes(projectPath: string, targetId: string): Promise<void> {
+  await writeFile(join(quartzGuiDir(projectPath), `deploy-manifest-${targetId}.modes.json`), JSON.stringify({ mode: '0644', at: new Date().toISOString() }, null, 2), 'utf-8')
+}
+
 export async function buildCurrentManifest(buildDir: string): Promise<Manifest> {
   const files = await walkFiles(buildDir)
   const manifest: Manifest = {}

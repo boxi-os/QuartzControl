@@ -72,6 +72,14 @@ async function modeNote(client: SftpClient, remotePath: string, wanted: number):
   return actual === wanted ? '' : `${mainT('modeNotSet', { mode: wanted.toString(8), actual: actual.toString(8), path: remotePath })}\n`
 }
 
+// The server's answer to a request is an SFTP status, which ssh2 hands on as a number (measured: 2 for
+// a missing file, 3 for a chmod qcsftp may not make); ssh2-sftp-client makes 2 and 4 of a stat
+// 'ENOENT'. A dropped connection comes as ERR_NOT_CONNECTED or without a code.
+function serverAnswered(err: unknown): boolean {
+  const code = (err as { code?: unknown }).code
+  return typeof code === 'number' || code === 'ENOENT'
+}
+
 export const sftpAdapter: DeployAdapter = {
   async preview(ctx): Promise<DeployDiffEntry[]> {
     return diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)
@@ -160,24 +168,49 @@ export const sftpAdapter: DeployAdapter = {
         const skip = new Set([...toUpload, ...toDelete, ...excludePaths])
         const earlier = Object.keys(await readManifest(ctx.projectPath, ctx.target.id)).filter((path) => !skip.has(path))
         let set = 0
+        let refused = 0
+        let answered = 0
         let next = 0
         await Promise.all(
           Array.from({ length: Math.min(CHMOD_CONCURRENCY, earlier.length) }, async () => {
             for (let i = next++; i < earlier.length; i = next++) {
+              const remotePath = posix.join(destination.remotePath, earlier[i])
               try {
-                await client.chmod(posix.join(destination.remotePath, earlier[i]), 0o644)
-                set++
-              } catch {
-                // removed on the server by hand, or chmod refused: nothing this pass can fix
+                // Only what 1.1.0 left behind: a regular file at exactly 0666. chmod is SETSTAT on
+                // the path and follows a symlink; measured on debian-vm, the pass made a 0600 file
+                // outside the site readable over the web through one, set a folder to 0644 (403 for
+                // everything in it) and widened a file set to 0600 by hand (review 2026-10-30, M2).
+                // lstat does not follow, and taking 0666 to 0644 can only narrow.
+                const stats = await (client as SftpClient & { lstat(path: string): Promise<SftpClient.FileStats> }).lstat(remotePath)
+                if (stats.isFile && (stats.mode & 0o7777) === 0o666) {
+                  try {
+                    await client.chmod(remotePath, 0o644)
+                    set++
+                  } catch (err) {
+                    if (!serverAnswered(err)) throw err
+                    refused++
+                  }
+                }
+                answered++
+              } catch (err) {
+                // Anything the server did not answer is the connection, and every call after it fails
+                // at once: measured on debian-vm with the session ended at the 64th mode, the pass
+                // said 72 of 475 and settled the target with 403 files left at 0666 (review
+                // 2026-10-30, M1). So the rest is left for the next upload.
+                if (serverAnswered(err)) answered++
+                else next = earlier.length
               }
             }
           })
         )
-        // A server that refused every chmod refused ssh2's fchmod too, so its files never were 0666:
-        // said apart, measured with sftp-server -P setstat,fsetstat,lsetstat on debian-vm.
-        if (set) output += mainT('sftpModesSettled', { count: set, total: earlier.length })
-        else if (earlier.length) output += mainT('sftpModesRefused', { total: earlier.length })
-        await settleModes(ctx.projectPath, ctx.target.id)
+        const left = earlier.length - answered
+        if (left) output += mainT('sftpModesUnfinished', { count: set, total: earlier.length, left })
+        else if (set) output += mainT('sftpModesSettled', { count: set, total: earlier.length })
+        // A server that refused every chmod refused ssh2's fchmod too, so its files never were 0666
+        // and nothing is left to say (sftp-server -P setstat,fsetstat,lsetstat on debian-vm). One
+        // that refuses now what it allowed then (another owner, say) leaves them writable.
+        if (refused) output += mainT('sftpModesRefused', { count: refused, total: earlier.length })
+        if (!left) await settleModes(ctx.projectPath, ctx.target.id)
       }
 
       await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, manifestExcludes)

@@ -419,7 +419,9 @@ function getWithOrigin(url: string, origin: string | null): Promise<{ status: nu
       res.on('end', () => finish({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf-8') }))
       res.on('error', (err: Error) => finish({ error: err.message }))
     })
-    req.on('error', (err) => finish({ error: err.message }))
+    // Chromium's code alone ("net::ERR_CERT_AUTHORITY_INVALID") was the sentence (review
+    // 2026-10-29, N5); visitors' browsers refuse the same certificate, so that is said with it.
+    req.on('error', (err) => finish({ error: /^net::ERR_CERT_/.test(err.message) ? mainT('relayCheckCertificate', { code: err.message }) : err.message }))
     req.end()
   })
 }

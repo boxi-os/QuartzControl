@@ -513,6 +513,9 @@ function phpMessage(body: string): string | null {
 
 const RELAY_ASK_AGAIN_MS = 3000
 
+/** What the relay answers a `GET ?challenge=` with when it refuses (send.php). */
+const RELAY_GET_ERRORS = ['unknown_form', 'origin', 'secret_config', 'mbstring_config']
+
 /**
  * Asks the uploaded relay for a stamp (`GET ?challenge=<form>`), as a form does when its page
  * opens, so a relay that cannot run is found by the upload and not by the first visitor. The
@@ -546,7 +549,10 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   // The place is only an address for send.php where a relay answered there: a server that sends a
   // missing send.php home or to its login had both recommended (review 2026-10-30, N1).
   const to = res.redirectedTo ? new URL(res.redirectedTo) : null
-  const relayAnswered = json?.ok === true ? typeof json.stamp === 'string' : json?.ok === false && typeof json.error === 'string'
+  // A refusal is the relay's only with a code its GET says (send.php, and FormsRelay.tsx reads
+  // them): any JSON API's {"ok":false,"error":"not_found"} behind a redirect had its address
+  // recommended for send.php (review 2026-10-31, nebenbei).
+  const relayAnswered = json?.ok === true ? typeof json.stamp === 'string' : json?.ok === false && RELAY_GET_ERRORS.includes(json.error as string)
   if (to && (to.origin !== new URL(url).origin || res.postDropped) && !relayAnswered) {
     to.search = ''
     return { kind: 'redirectNoRelay', url, to: to.toString(), ...(res.local ? { local: true as const } : {}) }

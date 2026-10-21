@@ -473,6 +473,10 @@ function getWithOrigin(url: string, origin: string | null): Promise<Answer | { e
  * 2026-10-29, nebenbei). A warning before the relay's JSON breaks the forms just as well.
  */
 function phpMessage(body: string): string | null {
+  // Only what PHP wrote: its HTML form (html_errors, "<b>Warning</b>:") or text with no page
+  // around it. A host's 404 page with a line "Warning: Diese Seite gibt es nicht mehr …" was said
+  // as a PHP error (review 2026-10-30, N7).
+  if (!/<b>(?:Fatal error|Parse error|Warning|Deprecated|Notice)<\/b>:/.test(body) && /<(?:!doctype|html|body)\b/i.test(body)) return null
   const text = body.replace(/<[^>]+>/g, '')
   const line = (kinds: string): string | null =>
     new RegExp(`^\\s*(?:PHP )?(?:${kinds}):\\s+(.+?)(?:\\s+in\\s+\\/\\S+?(?: on line \\d+|:\\d+))?\\s*$`, 'm').exec(text)?.[1]?.slice(0, 300) ?? null

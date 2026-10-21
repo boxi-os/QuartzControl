@@ -224,7 +224,10 @@ async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
 // whatever rsyncUnsafeChar (shared/remotePath.ts) finds before this runs.
 function remoteShellPath(path: string): string {
   const quote = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`
-  const home = /^~[A-Za-z0-9._-]*\//.exec(path)?.[0] ?? ''
+  // The whole tilde prefix, as the shell reads it up to the first "/": "~+/a" quoted made a folder
+  // "~+" in the login directory, where rsync 3.x sends to $PWD/a (qchost's bash on debian-vm,
+  // review 2026-10-31, nebenbei). "+" and "@" mean nothing to bash or zsh there.
+  const home = /^~[A-Za-z0-9._+@-]*\//.exec(path)?.[0] ?? ''
   return `${home}${quote(path.slice(home.length))}`
 }
 

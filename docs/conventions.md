@@ -80,8 +80,8 @@ Begründung.
   geantwortet hat. Die Abfrage nach dem Upload nennt die `generation` und erfährt so, ob das eben
   hochgeladene Relay antwortet (das Relay liest seine Config an OPcache vorbei und sagt
   `counters` nur dann); eine Weiterleitung empfiehlt sie nur, wo dort ein Relay antwortet. Fehlende
-  Ordner über einem rsync-Ziel legt nur das Relay an; was rsync nicht übertragen kann
-  (`rsyncUnsafeChar`), sagt schon das Formular.
+  Ordner über dem Ordner eines Ziels legt nur das Relay an, über jeden Weg; was rsync nicht
+  übertragen kann (`rsyncUnsafeChar`), sagt schon das Formular.
   Lehnt der Server einen Modus ab, läuft der Upload weiter und sagt, was der Server hält. Was auf
   dem Server laufen soll, fragt die App nach dem Hochladen einmal ab, mit `net.request`: `net.fetch`
   macht aus einer fremden Origin CORS und aus jedem 500 ein `ERR_FAILED`. Gemessen wird auf einem

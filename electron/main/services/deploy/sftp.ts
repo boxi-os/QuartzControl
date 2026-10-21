@@ -126,6 +126,14 @@ export const sftpAdapter: DeployAdapter = {
         ...(await sshAuthOptions(connection, ctx.secret))
       })
 
+      // A site's folder is made, the folders above it are not, as rsync's receiver does: a target
+      // ".../tpyo/htdocs" got 475 files in a new tree over SFTP and FTP, where rsync refused (review
+      // 2026-10-30, after N4). The relay's folders below a target are QuartzControl's to make.
+      if (!ctx.keepLocalModes && toUpload.length > 0) {
+        const parent = posix.dirname(destination.remotePath.replace(/\/+$/, ''))
+        if (!(await client.exists(parent))) return { success: false, output: mainT('deployParentMissing', { path: parent }) }
+      }
+
       // The relay's folder, when the server has a symlink there: SFTP stopped at "Bad path … already
       // exists as a file", rsync and FTP uploaded through one to "." and set the target's folder from
       // 2750 to 755 (debian-vm, review 2026-10-30, nebenbei). Each adapter asks before it uploads.

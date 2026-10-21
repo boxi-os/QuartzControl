@@ -83,6 +83,19 @@ export const ftpAdapter: DeployAdapter = {
         secure: connection.secure
       })
 
+      // The folders above a site's folder are not made (sftp.ts, run).
+      if (!ctx.keepLocalModes && toUpload.length > 0) {
+        const parent = posix.dirname(destination.remotePath.replace(/\/+$/, ''))
+        // Back to where the login started, against which a relative path is meant.
+        const start = await client.pwd()
+        const found = await client.cd(parent).then(
+          () => true,
+          () => false
+        )
+        await client.cd(start)
+        if (!found) return { success: false, output: mainT('deployParentMissing', { path: parent }) }
+      }
+
       // The relay's folder must not be a symlink on the server (sftp.ts, run).
       if (ctx.keepLocalModes) {
         const listing = await client.list(posix.dirname(destination.remotePath)).catch(() => [])

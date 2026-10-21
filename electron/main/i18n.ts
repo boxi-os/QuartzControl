@@ -421,6 +421,7 @@ const STRINGS = {
     zipFileMissing: 'Die Datei gibt es nicht.',
 
     // Publishing - dispatcher
+    deployParentMissing: 'Den Ordner „{{path}}“ gibt es auf dem Server nicht. QuartzControl legt den Ordner der Website an, aber keine Ordner darüber: Prüfe den Pfad des Ziels, oder lege den Ordner auf dem Server an.',
     deployWholeRoot: 'Der Pfad „{{path}}“ dieses Ziels ist das Anmeldeverzeichnis selbst, das mit aktiviertem Löschen geleert würde. Trage unter „Veröffentlichen“ den Unterordner ein, in dem die Website liegt.',
     deployTargetMissing: 'Es gibt kein Veröffentlichungsziel mit der ID {{id}}.',
     deployNoAdapter: 'Für den Zieltyp „{{type}}“ gibt es noch keinen Adapter.',
@@ -821,6 +822,7 @@ const STRINGS = {
     zipNotAPackage: 'The file is not a readable package (no ZIP directory found).',
     zipFileMissing: 'The file does not exist.',
 
+    deployParentMissing: 'The folder “{{path}}” does not exist on the server. QuartzControl makes the site’s folder but no folders above it: check the target’s path, or make the folder on the server.',
     deployWholeRoot: 'The path “{{path}}” of this target is the login directory itself, which deletion would empty. Under “Publish”, enter the subfolder the site lives in.',
     deployTargetMissing: 'There is no publish target with the id {{id}}.',
     deployNoAdapter: 'There is no adapter for the target type “{{type}}” yet.',

@@ -214,15 +214,18 @@ async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
   return connection
 }
 
-// Single quotes for the remote shell; a leading "~/" stays outside them so it still expands there,
-// as it does in remoteSpec's path. They hold only under rsync 3.x, which hands --rsync-path on as
+// Single quotes for the remote shell; a leading "~/" or "~user/" stays outside them so it still
+// expands there, as it does in remoteSpec's path: quoted, bash made a folder "~qchost" in the
+// login directory while rsync sent the files to /home/qchost (debian-vm, review 2026-10-30,
+// nebenbei). They hold only under rsync 3.x, which hands --rsync-path on as
 // it is. openrsync (macOS's /usr/bin/rsync) splits the value like a shell itself and drops the
 // quotes, and ssh joins the words with spaces: ".../sp ace" became two folders "sp" and "ace" on
 // debian-vm (review 2026-10-30, N3). What keeps the mkdir safe there is remoteSpec refusing
 // whatever rsyncUnsafeChar (shared/remotePath.ts) finds before this runs.
 function remoteShellPath(path: string): string {
   const quote = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`
-  return path.startsWith('~/') ? `~/${quote(path.slice(2))}` : quote(path)
+  const home = /^~[A-Za-z0-9._-]*\//.exec(path)?.[0] ?? ''
+  return `${home}${quote(path.slice(home.length))}`
 }
 
 // The receiver creates only the last folder of the path: measured on debian-vm (rsync 3.5.0), a
@@ -241,7 +244,9 @@ function remoteSpec(connection: SshConnection, remotePath: string): string {
   const unsafe = rsyncUnsafeChar(remotePath)
   if (unsafe) throw new Error(/\s/.test(unsafe) ? mainT('rsyncPathWithSpace') : mainT('rsyncPathWithSpecial', { char: unsafe }))
   const withSlash = remotePath.endsWith('/') ? remotePath : `${remotePath}/`
-  return `${connection.username}@${connection.host}:${withSlash}`
+  // The server's rsync reads a path that starts with "-" as an option: "-nb8dash" failed with
+  // "-nb8dash/: unknown option" (debian-vm, review 2026-10-30, nebenbei). "./" names the same folder.
+  return `${connection.username}@${connection.host}:${withSlash.startsWith('-') ? `./${withSlash}` : withSlash}`
 }
 
 async function buildArgs(

@@ -30,9 +30,10 @@ export function remotePathProblem(path: string): RemotePathProblem | null {
   return null
 }
 
-// "~" is left out on purpose: a leading "~/" is meant to expand there. Loosening it (for rsync
-// 3.2.4 and later, which escape the path themselves) opens the mkdir of the second attempt to the
-// remote shell under openrsync: remoteShellPath's quotes do not survive there (deploy/rsync.ts).
+// "~" is left out on purpose: a leading "~/" or "~user/" is meant to expand there. Loosening it
+// (for rsync 3.2.4 and later, which escape the path themselves) opens the mkdir of the second
+// attempt to the remote shell under openrsync: remoteShellPath's quotes do not survive there
+// (deploy/rsync.ts).
 const SHELL_SPECIAL = /['"\\$`;&|<>(){}[\]*?!#]/
 
 /**

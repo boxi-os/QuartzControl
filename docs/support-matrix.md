@@ -38,9 +38,9 @@ dahin gilt der Fall als geduldet.
 | rsync über SSH, Server rsync 3.x, Client openrsync (macOS) | unterstützt | gemessen |
 | rsync über SSH, Client rsync 3.x (Linux-App) | unterstützt | Messung ausstehend; bisher nur der `mkdir`-Befehl in der Shell |
 | Konten, die per `rrsync` auf rsync beschränkt sind | geduldet | ohne App gemessen |
-| FTP gegen vsftpd | unterstützt | gemessen (`debian-vm`, ohne chroot) |
-| FTP gegen ProFTPD | unterstützt | Messung ausstehend (auf `debian-vm` aufsetzen) |
-| FTP gegen Pure-FTPd | unterstützt | Messung ausstehend (auf `debian-vm` aufsetzen) |
+| FTP gegen vsftpd | unterstützt | gemessen (`debian-vm`, ohne chroot; Reihe `fix56/ftp-suite.sh`) |
+| FTP gegen ProFTPD | unterstützt | gemessen 2026-10-21 (1.3.8c aus Debian im Container auf `debian-vm`, mit und ohne chroot) |
+| FTP gegen Pure-FTPd | unterstützt | gemessen 2026-10-21 (1.0.50 aus Debian im Container auf `debian-vm`, mit und ohne chroot) |
 | FTPS (explizit, `secure: true`) | geduldet | nicht gemessen |
 | relativer Pfad über FTP ohne chroot | unterstützt | gemessen nach dem Fix `6f005a4e` (vorher „553“ bei der ersten Datei, seit 1.1.0) |
 | Ordner, Webhook, Git-Branch | unterstützt | gemessen |
@@ -51,7 +51,7 @@ dahin gilt der Fall als geduldet.
 |---|---|---|
 | Apache mit mod_php, Apache mit PHP-FPM, nginx mit PHP-FPM | unterstützt | gemessen auf `debian-vm` |
 | PHP 8.4 und 8.5 mit mbstring | unterstützt | gemessen (8.4 auf `debian-vm`, 8.5 lokal) |
-| PHP 8.1 bis 8.3 | unterstützt | Messung ausstehend (8.1 auf `debian-vm`: Relay-Tests und eine Sendung) |
+| PHP 8.1 bis 8.3 | unterstützt | 8.1.34 gemessen 2026-10-21 (alle 61 Relay-Tests; Apache im Container: Upload, Abfrage, Sendung aus Chrome); 8.2 und 8.3 dazwischen nicht einzeln |
 | PHP unter 8.1, PHP ohne mbstring | nicht unterstützt | das Relay sagt es selbst |
 | LiteSpeed und andere Webserver | geduldet | nicht gemessen |
 | OPcache mit Standardwerten | unterstützt | gemessen |
@@ -60,6 +60,16 @@ dahin gilt der Fall als geduldet.
 | SMTP | nicht unterstützt | nicht angeboten |
 | ein CDN vor dem Server | geduldet | an der Attrappe gemessen |
 | eine Weiterleitung an der Adresse von send.php | geduldet | an Attrappe und `debian-vm` gemessen; die Abfrage deutet fremde Antworten und kann irren |
+
+### Offen aus den Messungen vom 2026-10-21
+
+- **Eine abgelehnte Löschung über FTP zählt als gelöscht**, bei allen drei Servern: vsftpd, ProFTPD
+  und Pure-FTPd antworten auf ein abgelehntes `DELE` wie auf ein fehlendes mit 550. Die Datei bleibt
+  online, das Manifest vergisst sie. Unterstützt, also zu beheben (`SIZE` nach einer 550 trennt
+  beide Fälle bei allen dreien).
+- **„~/…“ heißt je Weg etwas anderes**: rsync und vsftpd lösen es zum Anmeldeverzeichnis auf,
+  ProFTPD ohne chroot auch; ProFTPD mit chroot scheitert („550 ~: No such file or directory“),
+  Pure-FTPd scheitert immer beim Hochladen (553), OpenSSH über SFTP legt einen Ordner „~“ an.
 
 ## Rechte und Pfade auf dem Server
 

@@ -73,8 +73,10 @@ Begründung.
   SFTP: `put` mit `writeStreamOptions.mode` (`0o644`), denn ssh2 setzt sonst 0666 per `fchmod`.
   Wer eigene Modi braucht (das Relay), setzt sie im lokalen Ordner und sagt `keepLocalModes`;
   jeder Adapter überträgt sie dann, auch auf vorhandene Dateien (rsync `-p`, FTP `SITE CHMOD`).
-  Was auf dem Server laufen soll, fragt die App nach dem Hochladen einmal ab. Gemessen wird auf
-  einem echten Server, nicht am Code der Bibliothek.
+  Lehnt der Server einen Modus ab, läuft der Upload weiter und sagt, was der Server hält. Was auf
+  dem Server laufen soll, fragt die App nach dem Hochladen einmal ab, mit `net.request`: `net.fetch`
+  macht aus einer fremden Origin CORS und aus jedem 500 ein `ERR_FAILED`. Gemessen wird auf einem
+  echten Server, nicht am Code der Bibliothek.
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Ausgabe in
   Dateien unter `.quartz-gui/logs/`, die Main tailt. Ein neues Verzeichnis unter `.quartz-gui/`
   muss `isSnapshotWorthy()` und `SKIP` in `duplicateService` lernen.

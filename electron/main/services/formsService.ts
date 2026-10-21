@@ -372,12 +372,51 @@ async function setRelayModes(dir: string, configReadable: boolean): Promise<stri
 }
 
 const CHECK_RELAY_TIMEOUT_MS = 10_000
+/** The relay's answer is a line of JSON; a host's error page is a few KiB. Nothing more is read. */
+const CHECK_RELAY_MAX_BYTES = 64 * 1024
+
+/**
+ * One GET through Chromium's stack (the machine's proxy and certificates, as builtinTemplateService
+ * says), answering with whatever status came back. `net.request`, not `net.fetch`: fetch treats an
+ * Origin that is not the URL's as a CORS request and turns every answer without
+ * Access-Control-Allow-Origin into net::ERR_FAILED - and a PHP error (500) or a missing send.php
+ * (404) never has one. Measured with the relay on another origin than the site, the common case:
+ * fetch said ERR_FAILED for both, request said 500 and 404, and 200 for the relay's own JSON.
+ */
+function getWithOrigin(url: string, origin: string | null): Promise<{ status: number; body: string } | { error: string }> {
+  return new Promise((resolve) => {
+    let done = false
+    const finish = (value: { status: number; body: string } | { error: string }): void => {
+      if (done) return
+      done = true
+      clearTimeout(timer)
+      resolve(value)
+    }
+    const req = net.request({ url, method: 'GET', redirect: 'follow' })
+    const timer = setTimeout(() => {
+      req.abort()
+      finish({ error: mainT('relayCheckTimeout', { seconds: CHECK_RELAY_TIMEOUT_MS / 1000 }) })
+    }, CHECK_RELAY_TIMEOUT_MS)
+    if (origin) req.setHeader('Origin', origin)
+    req.on('response', (res) => {
+      const chunks: Buffer[] = []
+      let size = 0
+      res.on('data', (chunk: Buffer) => {
+        size += chunk.length
+        if (size <= CHECK_RELAY_MAX_BYTES) chunks.push(chunk)
+      })
+      res.on('end', () => finish({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf-8') }))
+      res.on('error', (err: Error) => finish({ error: err.message }))
+    })
+    req.on('error', (err) => finish({ error: err.message }))
+    req.end()
+  })
+}
 
 /**
  * Asks the uploaded relay for a stamp (`GET ?challenge=<form>`), as a form does when its page
  * opens, so a relay that cannot run is found by the upload and not by the first visitor. The
- * origin is the site's, as the relay checks it. `net.fetch` for the machine's proxy and
- * certificates (builtinTemplateService).
+ * origin is the site's, as the relay checks it.
  */
 async function checkRelay(url: string | undefined, origin: string | null, form: string | undefined): Promise<RelayCheck> {
   if (!url || !/^https?:\/\//i.test(url) || !form) return { kind: 'noUrl' }
@@ -388,25 +427,20 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
     return { kind: 'noUrl' }
   }
   probe.searchParams.set('challenge', form)
+  const res = await getWithOrigin(probe.toString(), origin)
+  if ('error' in res) return { kind: 'unreachable', url, reason: res.error }
+  let json: { ok?: unknown; error?: unknown; message?: unknown } | null
   try {
-    const res = await net.fetch(probe.toString(), { headers: origin ? { Origin: origin } : {}, signal: AbortSignal.timeout(CHECK_RELAY_TIMEOUT_MS) })
-    const text = await res.text()
-    let json: { ok?: unknown; error?: unknown; message?: unknown } | null
-    try {
-      json = JSON.parse(text) as { ok?: unknown; error?: unknown; message?: unknown } | null
-    } catch {
-      json = null
-    }
-    if (res.ok && json?.ok === true) return { kind: 'ok', url }
-    if (json && typeof json.error === 'string') {
-      return { kind: 'relayError', url, status: res.status, error: json.error, message: typeof json.message === 'string' ? json.message : '' }
-    }
-    if (res.status === 500) return { kind: 'phpError', url }
-    return { kind: 'http', url, status: res.status }
-  } catch (err) {
-    const timedOut = err instanceof Error && err.name === 'TimeoutError'
-    return { kind: 'unreachable', url, reason: timedOut ? mainT('relayCheckTimeout', { seconds: CHECK_RELAY_TIMEOUT_MS / 1000 }) : err instanceof Error ? err.message : String(err) }
+    json = JSON.parse(res.body) as { ok?: unknown; error?: unknown; message?: unknown } | null
+  } catch {
+    json = null
   }
+  if (res.status === 200 && json?.ok === true) return { kind: 'ok', url }
+  if (json && typeof json.error === 'string') {
+    return { kind: 'relayError', url, status: res.status, error: json.error, message: typeof json.message === 'string' ? json.message : '' }
+  }
+  if (res.status === 500) return { kind: 'phpError', url }
+  return { kind: 'http', url, status: res.status }
 }
 
 export async function relayUpload(projectId: string, projectPath: string, source: PluginSource, fresh: boolean, url?: string): Promise<RelayUploadResult> {

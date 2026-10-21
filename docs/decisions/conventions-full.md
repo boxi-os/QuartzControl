@@ -271,7 +271,12 @@ Projektwurzel.
   überall geht, gibt es nicht: 0600 hält mod_php (läuft als `www-data`) mit 500 auf, 0644 lässt
   andere Accounts die Adressen lesen. Die Abfrage findet den ersten Fall und bietet den Schalter
   an ([`publishing-and-credentials.md`](publishing-and-credentials.md), „Das Relay bringt seine
-  Modi mit“).
+  Modi mit“). Zwei Nachträge vom selben Tag: Ein SFTP-Server, der `setstat` verbietet, brach den
+  Relay-Upload am ersten Ordner ab, statt ihn ohne Modus hochzuladen; jetzt läuft er weiter und
+  nennt je Datei und Ordner, was der Server hält. Und die Abfrage über `net.fetch` meldete bei
+  einem Relay auf einer anderen Origin als der Website (dem Normalfall) jedes 500 und 404 als
+  `net::ERR_FAILED`, weil fetch eine fremde Origin als CORS-Anfrage behandelt; `net.request` gibt
+  den Status, wie er kam („Ein Server, der keinen Modus setzen lässt“).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

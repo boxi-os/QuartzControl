@@ -129,6 +129,7 @@ export const sftpAdapter: DeployAdapter = {
         const skip = new Set([...toUpload, ...toDelete, ...excludePaths])
         const earlier = Object.keys(await readManifest(ctx.projectPath, ctx.target.id)).filter((path) => !skip.has(path))
         let set = 0
+        let answered = 0
         let next = 0
         await Promise.all(
           Array.from({ length: Math.min(CHMOD_CONCURRENCY, earlier.length) }, async () => {
@@ -136,17 +137,26 @@ export const sftpAdapter: DeployAdapter = {
               try {
                 await client.chmod(posix.join(destination.remotePath, earlier[i]), 0o644)
                 set++
-              } catch {
-                // removed on the server by hand, or chmod refused: nothing this pass can fix
+                answered++
+              } catch (err) {
+                // The server's answer is an SFTP status, a number: removed by hand or chmod refused,
+                // nothing this pass can fix. Anything else is the connection, and every call after
+                // it fails at once: measured on debian-vm with the session ended at the 64th mode,
+                // the pass said 72 of 475 and settled the target with 403 files left at 0666
+                // (review 2026-10-30, M1). So the rest is left for the next upload.
+                if (typeof (err as { code?: unknown }).code === 'number') answered++
+                else next = earlier.length
               }
             }
           })
         )
+        const left = earlier.length - answered
         // A server that refused every chmod refused ssh2's fchmod too, so its files never were 0666:
         // said apart, measured with sftp-server -P setstat,fsetstat,lsetstat on debian-vm.
-        if (set) output += mainT('sftpModesSettled', { count: set, total: earlier.length })
+        if (left) output += mainT('sftpModesUnfinished', { count: set, total: earlier.length, left })
+        else if (set) output += mainT('sftpModesSettled', { count: set, total: earlier.length })
         else if (earlier.length) output += mainT('sftpModesRefused', { total: earlier.length })
-        await settleModes(ctx.projectPath, ctx.target.id)
+        if (!left) await settleModes(ctx.projectPath, ctx.target.id)
       }
 
       await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, manifestExcludes)

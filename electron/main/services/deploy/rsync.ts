@@ -8,7 +8,7 @@ import type { DeployAdapter, DeployContext } from './types'
 import { rsyncBlockReason, type RsyncBlockReason } from '@shared/rsyncSupport'
 import { rsyncUnsafeChar } from '@shared/remotePath'
 import * as connectionsService from '../connectionsService'
-import { SSH_KEEPALIVE_COUNT, SSH_KEEPALIVE_MS } from './sftp'
+import { SSH_KEEPALIVE_COUNT, SSH_KEEPALIVE_MS, SSH_SILENT_SECONDS } from './sftp'
 import { findExecutable } from '../environmentService'
 import { mainT } from '../../i18n'
 
@@ -138,7 +138,7 @@ function translateSshFailure(output: string, connection: SshConnection): string 
   }
   // ssh's own line for ServerAliveCountMax ("Timeout, server … not responding."), raw underneath.
   if (/Timeout, server .* not responding/.test(output)) {
-    return `${mainT('sshSilent', { host: connection.host, seconds: (SSH_KEEPALIVE_MS * SSH_KEEPALIVE_COUNT) / 1000 })}\n\n${output.trim()}`
+    return `${mainT('sshSilent', { host: connection.host, seconds: SSH_SILENT_SECONDS })}\n\n${output.trim()}`
   }
   return null
 }

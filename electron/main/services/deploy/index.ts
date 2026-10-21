@@ -46,7 +46,7 @@ async function makeContext(projectPath: string, targetId: string, outputDir?: st
   if (!adapter) throw new Error(mainT('deployNoAdapter', { type: target.destination.type }))
   // The schema refuses such a path when a target is saved; one saved before the rule knew "~"
   // (shared/remotePath.ts) is refused here, before preview and upload.
-  if ('remotePath' in target.destination && remotePathProblem(target.destination.remotePath) === 'whole-root') {
+  if ('remotePath' in target.destination && remotePathProblem(target.destination.remotePath, target.destination.deleteRemoved) === 'whole-root') {
     throw new Error(mainT('deployWholeRoot', { path: target.destination.remotePath }))
   }
 

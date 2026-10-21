@@ -54,6 +54,11 @@ const HANDSHAKE_WITH_PROMPT_MS = 180_000
 // ssh gets the same through ServerAliveInterval.
 export const SSH_KEEPALIVE_MS = 15_000
 export const SSH_KEEPALIVE_COUNT = 3
+// Both give up at the fourth unanswered keepalive, 45 to 60 s after the last answer: measured 50
+// to 62 s after a SIGSTOP on debian-vm. ssh2 counts only answers to its keepalives, not data, so a
+// server that ignores them would end every SFTP upload after 60 s (a mock server, review
+// 2026-10-31, N5); OpenSSH answers them, and no server that does not was found.
+export const SSH_SILENT_SECONDS = (SSH_KEEPALIVE_MS * (SSH_KEEPALIVE_COUNT + 1)) / 1000
 
 // The one-time chmod pass below; ssh2-sftp-client adds listeners per call, and Node warns past ten.
 const CHMOD_CONCURRENCY = 8
@@ -106,6 +111,12 @@ export const sftpAdapter: DeployAdapter = {
     // failed"-style error, which would hide the real reason - so the verifier records it here and
     // the catch below prefers this message.
     let hostKeyRejection: string | null = null
+    // ssh2 says "Keepalive timeout" as an 'error' event. When the deadline falls between two calls,
+    // the next call only says "No SFTP connection available" (a mock server, review 2026-10-31, N5).
+    let wentSilent = false
+    client.on('error', (err: Error) => {
+      if (/Keepalive timeout/.test(String(err))) wentSilent = true
+    })
     try {
       await client.connect({
         host: connection.host,
@@ -178,15 +189,27 @@ export const sftpAdapter: DeployAdapter = {
         output += `↑ ${relPath}\n`
       }
 
+      // What was not deleted stays in the manifest, so the next upload offers it again.
+      const kept: string[] = []
       for (const relPath of toDelete) {
         try {
           await client.delete(posix.join(destination.remotePath, relPath))
-        } catch {
-          // already absent remotely - not an error for our purposes
+          output += `✗ ${relPath}\n`
+        } catch (err) {
+          // Only the server saying the file is missing (status 2) means it is gone. Every error was
+          // taken for that: measured on debian-vm with the session frozen at the 9th of 178
+          // deletions, the run said success, 168 files stayed online and the manifest forgot all of
+          // them (review 2026-10-31, M1). A dropped connection fails the run, and the manifest
+          // stays as it was.
+          if (!serverAnswered(err)) throw err
+          if ((err as { code?: unknown }).code === 2) output += `✗ ${relPath}\n`
+          else {
+            kept.push(relPath)
+            output += mainT('deployDeleteRefused', { path: relPath, reason: (err as Error).message })
+          }
         }
         processed++
         ctx.emitProgress(processed, total, relPath)
-        output += `✗ ${relPath}\n`
       }
 
       // Up to 1.1.0 every file went up as 0666 (above), and the manifest never sends an unchanged
@@ -244,11 +267,11 @@ export const sftpAdapter: DeployAdapter = {
         if (!left) await settleModes(ctx.projectPath, ctx.target.id)
       }
 
-      await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, manifestExcludes)
+      await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, [...manifestExcludes, ...kept])
       return { success: true, output }
     } catch (err) {
       // the host-key message explains what actually happened; ssh2's own error does not
-      const silent = /Keepalive timeout/.test(String(err)) ? `${mainT('sshSilent', { host: connection.host, seconds: (SSH_KEEPALIVE_MS * SSH_KEEPALIVE_COUNT) / 1000 })}\n\n` : ''
+      const silent = wentSilent || /Keepalive timeout/.test(String(err)) ? `${mainT('sshSilent', { host: connection.host, seconds: SSH_SILENT_SECONDS })}\n\n` : ''
       return { success: false, output: `${output}\n${hostKeyRejection ?? `${silent}${String(err)}`}` }
     } finally {
       client.end().catch(() => {})

@@ -422,13 +422,14 @@ const STRINGS = {
 
     // Publishing - dispatcher
     deployParentMissing: 'Den Ordner „{{path}}“ gibt es auf dem Server nicht. QuartzControl legt den Ordner der Website an, aber keine Ordner darüber: Prüfe den Pfad des Ziels, oder lege den Ordner auf dem Server an.',
-    deployWholeRoot: 'Der Pfad „{{path}}“ dieses Ziels ist das Anmeldeverzeichnis selbst, das mit aktiviertem Löschen geleert würde. Trage unter „Veröffentlichen“ den Unterordner ein, in dem die Website liegt.',
+    deployWholeRoot: 'Der Pfad „{{path}}“ dieses Ziels ist das Anmeldeverzeichnis selbst, das mit aktiviertem Löschen geleert würde. Trage unter „Veröffentlichen“ den Unterordner ein, in dem die Website liegt, oder schalte dort das Löschen aus.',
     deployTargetMissing: 'Es gibt kein Veröffentlichungsziel mit der ID {{id}}.',
     deployNoAdapter: 'Für den Zieltyp „{{type}}“ gibt es noch keinen Adapter.',
     deployNoBuild:
       'In „{{dir}}“ liegt noch kein Build. Bitte zuerst bauen oder unter Vorschau & Build einen anderen Ausgabeordner einstellen.',
     deployWrongType: 'Falscher Zieltyp für den {{adapter}}-Adapter.',
     deployNothingToDo: 'Nichts zu tun: Das Ziel ist bereits auf dem Stand des Builds.\n',
+    deployDeleteRefused: '{{path}} konnte auf dem Server nicht gelöscht werden ({{reason}}). Der nächste Upload versucht es wieder.\n',
     sftpModesProgress: 'Rechte von {{path}}',
     sftpModesSettled: 'Einmalig {{count}} von {{total}} früher hochgeladenen Dateien auf 0644 gesetzt: Bis 1.1.0 lud QuartzControl sie für jeden Account des Servers beschreibbar hoch.\n',
     sftpModesRefused: 'Der Server lehnt chmod ab: {{count}} von {{total}} früher hochgeladenen Dateien bleiben für jeden Account des Servers beschreibbar.\n',
@@ -449,7 +450,7 @@ const STRINGS = {
 
     // Publishing - SSH
     sshNoConnection: 'Für dieses Ziel ist kein SSH-Zugang hinterlegt.',
-    sshSilent: '{{host}} hat {{seconds}} s lang nicht geantwortet, deshalb wurde die Verbindung beendet. Versuche es noch einmal.',
+    sshSilent: '{{host}} hat rund {{seconds}} s lang nicht geantwortet, deshalb wurde die Verbindung beendet. Versuche es noch einmal.',
     sshNoAgent: 'Kein SSH-Agent gefunden (SSH_AUTH_SOCK ist nicht gesetzt).',
     sshNoPrivateKey: 'Für diesen Zugang ist kein privater Schlüssel hinterlegt.',
 
@@ -823,13 +824,14 @@ const STRINGS = {
     zipFileMissing: 'The file does not exist.',
 
     deployParentMissing: 'The folder “{{path}}” does not exist on the server. QuartzControl makes the site’s folder but no folders above it: check the target’s path, or make the folder on the server.',
-    deployWholeRoot: 'The path “{{path}}” of this target is the login directory itself, which deletion would empty. Under “Publish”, enter the subfolder the site lives in.',
+    deployWholeRoot: 'The path “{{path}}” of this target is the login directory itself, which deletion would empty. Under “Publish”, enter the subfolder the site lives in, or switch deletion off there.',
     deployTargetMissing: 'There is no publish target with the id {{id}}.',
     deployNoAdapter: 'There is no adapter for the target type “{{type}}” yet.',
     deployNoBuild:
       'There is no build in “{{dir}}” yet. Build first or pick a different output folder under Preview & build.',
     deployWrongType: 'Wrong destination type for the {{adapter}} adapter.',
     deployNothingToDo: 'Nothing to do: the target already matches the build.\n',
+    deployDeleteRefused: '{{path}} could not be deleted on the server ({{reason}}). The next upload tries again.\n',
     sftpModesProgress: 'permissions of {{path}}',
     sftpModesSettled: 'Set {{count}} of {{total}} files uploaded earlier to 0644, once: up to 1.1.0 QuartzControl uploaded them writable by every account on the server.\n',
     sftpModesRefused: 'The server refuses chmod: {{count}} of {{total}} files uploaded earlier stay writable by every account on the server.\n',
@@ -847,7 +849,7 @@ const STRINGS = {
     branchUnchanged: 'No changes against what is published, push skipped.',
 
     sshNoConnection: 'No SSH credential is set for this target.',
-    sshSilent: '{{host}} did not answer for {{seconds}} s, so the connection was ended. Try again.',
+    sshSilent: '{{host}} did not answer for about {{seconds}} s, so the connection was ended. Try again.',
     sshNoAgent: 'No SSH agent found (SSH_AUTH_SOCK is not set).',
     sshNoPrivateKey: 'No private key is stored for this credential.',
 

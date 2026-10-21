@@ -447,18 +447,17 @@ export const cssVariableOverride = z.object({
   lightOnly: z.literal(true).optional()
 })
 
-// A remote directory on the target server. Absolute, and never bare "/": a target whose path is
-// the server root plus deletion enabled would empty a directory that was never this app's to
-// manage - a mistake no confirmation dialog reliably catches.
+// A remote directory on the target server. Never the login's own root with deletion enabled (see
+// publishDestination below): that would empty a directory that was never this app's to manage - a
+// mistake no confirmation dialog reliably catches.
 export const remotePosixPath = z
   .string()
   .min(1)
   .max(4096)
   // The rule itself lives in shared/remotePath.ts, because the target form has to apply the same
   // one - see the note there. A relative path is deliberately allowed.
-  .refine((p) => remotePathProblem(p) !== 'traversal', 'must not contain ".." segments')
-  .refine((p) => remotePathProblem(p) !== 'whole-root', 'the login\'s own root directory is not allowed as a target')
-  .refine((p) => remotePathProblem(p) !== 'empty', 'must not be empty')
+  .refine((p) => remotePathProblem(p, false) !== 'traversal', 'must not contain ".." segments')
+  .refine((p) => remotePathProblem(p, false) !== 'empty', 'must not be empty')
 
 // Webhook URLs are credentials in URL form (a build hook's path *is* its token), so the scheme is
 // pinned to https - posting one over http would put it on the wire in the clear.
@@ -519,7 +518,10 @@ const publishDestination = z.discriminatedUnion('type', [
     branch: branchName,
     provider: z.enum(['github', 'gitlab', 'codeberg'])
   })
-])
+]).refine(
+  (d) => (d.type !== 'sftp' && d.type !== 'ftp') || remotePathProblem(d.remotePath, d.deleteRemoved) !== 'whole-root',
+  'the login\'s own root directory is not allowed as a target with deletion enabled'
+)
 
 // GitHub's own rule for a repository name: letters, digits, dot, dash and underscore. Kept tight
 // because this string goes straight into an API path.

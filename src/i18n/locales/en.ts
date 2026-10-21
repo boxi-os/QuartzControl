@@ -2879,7 +2879,7 @@ export default {
         'The folder on the server the site goes into. Without a leading slash it counts from the login directory; on a shared webspace that is the normal case.',
       remotePathError: {
         empty: 'Nothing can be published without a target folder.',
-        'whole-root': 'The login directory itself is not allowed, because with deletion enabled it would be emptied. Name the subfolder the site lives in.',
+        'whole-root': 'With deletion enabled, the login directory itself would be emptied. Name the subfolder the site lives in, or switch deletion off.',
         traversal: 'A path containing “..” is not allowed.'
       },
       rsyncPathChar: 'rsync cannot transfer a path containing “{{char}}” safely. Choose SFTP as the transfer, or a folder without it.',

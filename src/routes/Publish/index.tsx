@@ -414,7 +414,7 @@ export default function Publish(): JSX.Element {
   // refusals, and they are said here in words instead.
   const remotePathIssue =
     targetDraft && 'remotePath' in targetDraft.destination
-      ? remotePathProblem(targetDraft.destination.remotePath)
+      ? remotePathProblem(targetDraft.destination.remotePath, targetDraft.destination.deleteRemoved)
       : null
   // The rsync adapter refuses these at preview and upload; a target saved with one was useless
   // with rsync, and nothing said so until then (review 2026-10-30, N5).

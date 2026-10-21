@@ -10,12 +10,15 @@
  * own directory - which is how a shared webspace is normally addressed ("httpdocs"), and looking
  * up its absolute equivalent is work the provider's own panel often does not even show.
  *
- * Refused instead: nothing to deploy into, the whole login directory (a deploy with deletion
- * enabled would empty it), and any upward traversal, which no target legitimately needs.
+ * Refused instead: nothing to deploy into, the whole login directory when deletion is enabled (a
+ * deploy would empty it), and any upward traversal, which no target legitimately needs. Without
+ * deletion the login directory is where some hosts keep the site: 1.1.0 uploaded an rsync target
+ * "~" there, and refusing it left only the absolute path, which no sentence named (review
+ * 2026-10-31, N2).
  */
 export type RemotePathProblem = 'empty' | 'whole-root' | 'traversal'
 
-export function remotePathProblem(path: string): RemotePathProblem | null {
+export function remotePathProblem(path: string, deleteRemoved: boolean): RemotePathProblem | null {
   const trimmed = path.trim()
   if (trimmed === '') return 'empty'
 
@@ -26,7 +29,7 @@ export function remotePathProblem(path: string): RemotePathProblem | null {
   // listed the whole home of the account for deletion in its preview, .ssh/ included (debian-vm,
   // review 2026-10-30, nebenbei). Over SFTP and FTP "~" is a folder of that name, never needed.
   const below = /^~[^/]*$/.test(segments[0] ?? '') ? segments.slice(1) : segments
-  if (below.length === 0) return 'whole-root'
+  if (below.length === 0 && deleteRemoved) return 'whole-root'
   return null
 }
 

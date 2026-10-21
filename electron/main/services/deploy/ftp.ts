@@ -59,15 +59,28 @@ export const ftpAdapter: DeployAdapter = {
       // What was not deleted stays in the manifest, so the next upload offers it again (sftp.ts, run).
       const kept: string[] = []
       for (const relPath of toDelete) {
+        const remotePath = posix.join(destination.remotePath, relPath)
         try {
-          await client.remove(posix.join(destination.remotePath, relPath))
+          await client.remove(remotePath)
           output += `✗ ${relPath}\n`
         } catch (err) {
-          // Only a reply of the server counts, and 550 is the one for a missing file (vsftpd gives it
-          // for a refused one too). With vsftpd frozen, the run said success and left 47 of 178 files
-          // online, all of them gone from the manifest (review 2026-10-31, M1).
+          // Only a reply of the server counts. With vsftpd frozen, the run said success and left 47 of
+          // 178 files online, all of them gone from the manifest (review 2026-10-31, M1).
           if (!(err instanceof FTPError)) throw err
-          if (err.code === 550) output += `✗ ${relPath}\n`
+          // 550 is the answer for a missing file and for a refused one alike, on vsftpd, ProFTPD and
+          // Pure-FTPd: a file in a folder 555 was said deleted, stayed online and left the manifest,
+          // so no later run tried again (debian-vm, support matrix, 2026-10-21). SIZE tells them
+          // apart on all three; what it cannot answer is kept, to be asked again next time.
+          const gone =
+            err.code === 550 &&
+            (await client.size(remotePath).then(
+              () => false,
+              (sizeErr: unknown) => {
+                if (!(sizeErr instanceof FTPError)) throw sizeErr
+                return sizeErr.code === 550
+              }
+            ))
+          if (gone) output += `✗ ${relPath}\n`
           else {
             kept.push(relPath)
             output += mainT('deployDeleteRefused', { path: relPath, reason: err.message })

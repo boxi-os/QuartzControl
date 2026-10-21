@@ -205,6 +205,18 @@ async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
   return connection
 }
 
+// Single quotes for the remote shell; a leading "~/" stays outside them so it still expands there,
+// as it does in remoteSpec's path.
+function remoteShellPath(path: string): string {
+  const quote = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`
+  return path.startsWith('~/') ? `~/${quote(path.slice(2))}` : quote(path)
+}
+
+// The receiver creates only the last folder of the path: measured on debian-vm (rsync 3.5.0), a
+// relay sent to "nb1/a/b" where nb1 was missing failed with 'mkdir "…/nb1/a/b" failed: No such file
+// or directory', which SFTP and FTP create. The dry run does not create anything and passes.
+const MISSING_PARENT = /\bmkdir ".*" failed: No such file or directory/
+
 function remoteSpec(connection: SshConnection, remotePath: string): string {
   // openrsync has no --protect-args, so a remote path is expanded once more by the remote shell.
   // Whitespace there would silently split into two arguments; refused rather than guessed at.
@@ -222,9 +234,14 @@ async function buildArgs(
   deleteRemoved: boolean,
   excludePaths: string[],
   env: SshEnv,
-  dryRun: boolean
+  dryRun: boolean,
+  makeParents = false
 ): Promise<string[]> {
   const args = ['-rlt', '--itemize-changes', '--no-motd', '-e', env.rshCommand]
+  // Only as a second attempt after MISSING_PARENT: an account limited to rsync (rrsync in
+  // authorized_keys) refuses any remote command that does not start with rsync, so asking for
+  // mkdir on every run would break uploads that work today.
+  if (makeParents) args.push(`--rsync-path=mkdir -p -- ${remoteShellPath(remotePath)} && rsync`)
   // Deliberately -rlt rather than -a: -a also carries permissions, owner and group, which on a
   // web host means pushing this machine's uid/gid and umask onto the live site.
   // Except for an upload that asks for its own modes (the relay): without -p a new file or folder
@@ -288,11 +305,16 @@ export const rsyncAdapter: DeployAdapter = {
       if (total === 0 && !ctx.keepLocalModes) return { success: true, output: mainT('deployNothingToDo') }
 
       let processed = 0
-      const args = await buildArgs(ctx, connection, destination.remotePath, destination.deleteRemoved, excludePaths, env, false)
-      const result = await runRsync(args, (entry) => {
-        processed++
-        ctx.emitProgress(processed, total, entry.path)
-      })
+      const send = async (makeParents: boolean): Promise<RsyncRun> =>
+        runRsync(
+          await buildArgs(ctx, connection, destination.remotePath, destination.deleteRemoved, excludePaths, env, false, makeParents),
+          (entry) => {
+            processed++
+            ctx.emitProgress(processed, total, entry.path)
+          }
+        )
+      let result = await send(false)
+      if (result.code !== 0 && MISSING_PARENT.test(result.output)) result = await send(true)
 
       const summary = result.entries
         .map((entry) => `${entry.status === 'removed' ? '✗' : '↑'} ${entry.path}`)

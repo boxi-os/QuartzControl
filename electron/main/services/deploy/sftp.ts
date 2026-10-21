@@ -126,6 +126,14 @@ export const sftpAdapter: DeployAdapter = {
         ...(await sshAuthOptions(connection, ctx.secret))
       })
 
+      // The relay's folder, when the server has a symlink there: SFTP stopped at "Bad path … already
+      // exists as a file", rsync and FTP uploaded through one to "." and set the target's folder from
+      // 2750 to 755 (debian-vm, review 2026-10-30, nebenbei). Each adapter asks before it uploads.
+      if (ctx.keepLocalModes) {
+        const own = await (client as SftpClient & { lstat(path: string): Promise<SftpClient.FileStats> }).lstat(destination.remotePath).catch(() => null)
+        if (own?.isSymbolicLink) return { success: false, output: mainT('relayDirSymlink', { path: destination.remotePath }) }
+      }
+
       // The one-time pass below, counted in from the start: its paths are known now, and the
       // progress stood still through it, 6.6 s for 475 files on debian-vm (review 2026-10-30,
       // nebenbei).

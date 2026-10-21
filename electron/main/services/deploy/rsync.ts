@@ -312,6 +312,13 @@ export const rsyncAdapter: DeployAdapter = {
     const env = await prepareSshEnv(connection)
 
     try {
+      // The relay's folder must not be a symlink on the server (sftp.ts, run). Asked with rsync
+      // itself, which an account limited to rsync allows: without the trailing slash --list-only
+      // names the entry, "lrwxrwxrwx … nb9" for a symlink, under openrsync too.
+      if (ctx.keepLocalModes) {
+        const listed = await runRsync(['--list-only', '--no-motd', '-e', env.rshCommand, remoteSpec(connection, destination.remotePath).replace(/\/+$/, '')])
+        if (/^l/m.test(listed.output)) return { success: false, output: mainT('relayDirSymlink', { path: destination.remotePath }) }
+      }
       // A dry run first, purely to know the total: without it the progress bar has no denominator,
       // and rsync itself reports none until it is finished.
       const planArgs = await buildArgs(ctx, connection, destination.remotePath, destination.deleteRemoved, excludePaths, env, true)

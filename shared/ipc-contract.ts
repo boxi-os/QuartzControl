@@ -660,8 +660,6 @@ export interface RelayLastUpload {
   hash: string
   targetId: string
   location: string
-  /** The mode config.php was uploaded with ('600', '644'); a change uploads everything again. */
-  configMode?: string
 }
 
 export interface RelayConflict {
@@ -2400,7 +2398,7 @@ export interface QuartzGuiApi {
     /** An address or captcha secret of null removes it; the values never come back to the renderer. */
     relaySaveSecrets(args: { projectId: string; recipients?: Record<string, string | null>; captchaSecret?: string | null; captchaSecrets?: Record<string, string | null>; moveCaptchaSecret?: { from: string; to: string } }): Promise<void>
     /** `url`: the send.php address the section shows, asked once the upload went through. */
-    relayUpload(args: { projectId: string; projectPath: string; source: PluginSource; fresh: boolean; url?: string }): Promise<RelayUploadResult>
+    relayUpload(args: { projectId: string; projectPath: string; source: PluginSource; url?: string }): Promise<RelayUploadResult>
     relayExport(args: { projectId: string; projectPath: string; source: PluginSource; dir: string }): Promise<RelayUploadResult>
     relayExcludeFromSite(args: { projectPath: string; targetId: string; path: string }): Promise<void>
   }

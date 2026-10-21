@@ -102,11 +102,11 @@ export function RelaySection({
   const canUpload =
     !!s.targetId && !!s.from.trim() && missing.length === 0 && missingCaptcha.length === 0 && !state.conflict && state.secrets.storageAvailable && state.hashProblem === undefined
 
-  async function upload(fresh: boolean): Promise<void> {
+  async function upload(): Promise<void> {
     setBusy('upload')
     setResult(null)
     try {
-      const r = await window.quartzGui.forms.relayUpload({ projectId: project.id, projectPath: project.path, source, fresh, url: transportUrl || undefined })
+      const r = await window.quartzGui.forms.relayUpload({ projectId: project.id, projectPath: project.path, source, url: transportUrl || undefined })
       setResult(r)
       announce(r.success ? t('formsEditor.relay.uploadedAnnounce') : t('formsEditor.relay.uploadFailedAnnounce'))
       onChanged()
@@ -352,12 +352,9 @@ export function RelaySection({
 
       <div className="flex flex-col gap-2 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={() => void upload(false)} disabled={!canUpload || busy !== null}>
+          <Button onClick={() => void upload()} disabled={!canUpload || busy !== null}>
             <Upload size={14} aria-hidden />
             {busy === 'upload' ? t('formsEditor.relay.uploading') : t('formsEditor.relay.upload')}
-          </Button>
-          <Button variant="ghost" onClick={() => void upload(true)} disabled={!canUpload || busy !== null}>
-            {t('formsEditor.relay.uploadAll')}
           </Button>
           <Button variant="ghost" onClick={() => void exportTo()} disabled={busy !== null}>
             <FolderDown size={14} aria-hidden />

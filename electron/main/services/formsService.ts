@@ -357,7 +357,7 @@ async function secretsFor(projectId: string): Promise<connectionsService.RelaySe
  * as 0600 works where PHP runs as the account (PHP-FPM, suEXEC) and stops mod_php, which runs as
  * www-data, with a 500 - hence the setting, and the check after the upload that finds it.
  */
-async function setRelayModes(dir: string, configReadable: boolean): Promise<string> {
+async function setRelayModes(dir: string, configReadable: boolean): Promise<void> {
   const configMode = configReadable ? 0o644 : 0o600
   const walk = async (folder: string): Promise<void> => {
     await chmod(folder, 0o755)
@@ -368,7 +368,6 @@ async function setRelayModes(dir: string, configReadable: boolean): Promise<stri
     }
   }
   await walk(dir)
-  return configMode.toString(8)
 }
 
 const CHECK_RELAY_TIMEOUT_MS = 10_000
@@ -463,7 +462,7 @@ async function countersServed(url: string): Promise<string | null> {
   return 'status' in res && res.status === 200 && res.body.startsWith('# quartz-forms relay') ? probe.toString() : null
 }
 
-export async function relayUpload(projectId: string, projectPath: string, source: PluginSource, fresh: boolean, url?: string): Promise<RelayUploadResult> {
+export async function relayUpload(projectId: string, projectPath: string, source: PluginSource, url?: string): Promise<RelayUploadResult> {
   const file = await readRelayFile(projectPath)
   const settings: RelaySettings = { ...DEFAULT_RELAY, ...(file.settings ?? {}) }
   if (!settings.targetId) return { success: false, output: mainT('relayNoTarget') }
@@ -478,12 +477,10 @@ export async function relayUpload(projectId: string, projectPath: string, source
     const missing = strings(generated.json.missingRecipients)
     if (missing.length) return { success: false, output: mainT('relayMissingRecipients', { names: missing.join(', ') }) }
     const location = locationOf(target, settings.subdir)
-    const configMode = await setRelayModes(dir, settings.configReadable)
-    // A manifest sends what changed, and a mode is no change to a file's content.
-    const everything = fresh || file.lastUpload?.location !== location || file.lastUpload?.configMode !== configMode
-    const result = await runDirectoryUpload(projectPath, target.id, dir, settings.subdir, `relay-${target.id}`, everything)
+    await setRelayModes(dir, settings.configReadable)
+    const result = await runDirectoryUpload(projectPath, target.id, dir, settings.subdir, `relay-${target.id}`)
     if (result.success && typeof generated.json.hash === 'string') {
-      await writeRelayFile(projectPath, { ...file, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configMode } })
+      await writeRelayFile(projectPath, { ...file, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location } })
     }
     const warnings = strings(generated.json.warnings)
     const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)

@@ -119,17 +119,15 @@ export async function runDeploy(
  * - never `deleteRemoved`: the relay's directory also holds what the server writes (counters, used
  *   proofs of work), and a wrong path with deletion would empty a directory this app does not own;
  * - no `excludes` of the site's;
- * - sftp, ftp and folder only: a webhook or a branch has no path to put a directory below.
- *
- * `fresh` forgets the manifest first, for a relay that was removed on the server by hand.
+ * - sftp, ftp and folder only: a webhook or a branch has no path to put a directory below;
+ * - every file on every run, with its local mode (`keepLocalModes`), see below.
  */
 export async function runDirectoryUpload(
   projectPath: string,
   targetId: string,
   localDir: string,
   subdir: string,
-  manifestKey: string,
-  fresh: boolean
+  manifestKey: string
 ): Promise<DeployResult> {
   const target = await publishTargetsService.getTarget(projectPath, targetId)
   if (!target) return { success: false, output: mainT('deployTargetMissing', { id: targetId }) }
@@ -142,7 +140,12 @@ export async function runDirectoryUpload(
   if (!adapter) return { success: false, output: mainT('deployNoAdapter', { type: d.type }) }
   const destination: PublishTarget['destination'] =
     d.type === 'folder' ? { ...d, path: join(d.path, subdir), deleteRemoved: false } : { ...d, remotePath: posix.join(d.remotePath, subdir), deleteRemoved: false }
-  if (fresh) await forgetManifest(projectPath, manifestKey)
+  // What QuartzControl uploads gets its mode from QuartzControl, on every run and every way. A mode
+  // is no change a manifest sees, so the manifest is forgotten first: rsync's -p set the modes of
+  // all files on every run anyway, SFTP and FTP only with "Alles neu hochladen". Measured on
+  // debian-vm with counters/ 0777 and config.php 0640 set by hand and an ordinary upload: rsync
+  // 755/600, SFTP and FTP 777/640 (review 2026-10-29, M2). The relay is a few small files.
+  await forgetManifest(projectPath, manifestKey)
   // A manifest of its own from the first run: an unclaimed legacy deploy-manifest.json is adopted
   // by whichever id asks first (manifest.ts), and that must be the site's target, not this one.
   const own = quartzGuiDir(projectPath)

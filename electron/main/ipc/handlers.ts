@@ -232,7 +232,7 @@ export function registerIpcHandlers(): void {
   handle(IPC.formsRelayState, t([s.formsRelayStateArgs]), ({ projectId, projectPath, source }) => formsService.relayState(projectId, projectPath, source as PluginSource))
   handle(IPC.formsRelaySaveSettings, t([s.formsRelaySaveSettingsArgs]), ({ projectPath, settings }) => formsService.saveRelaySettings(projectPath, settings as RelaySettings))
   handle(IPC.formsRelaySaveSecrets, t([s.formsRelaySaveSecretsArgs]), ({ projectId, ...change }) => connectionsService.saveRelaySecrets(projectId, change))
-  handle(IPC.formsRelayUpload, t([s.formsRelayUploadArgs]), ({ projectId, projectPath, source, fresh, url }) => formsService.relayUpload(projectId, projectPath, source as PluginSource, fresh, url))
+  handle(IPC.formsRelayUpload, t([s.formsRelayUploadArgs]), ({ projectId, projectPath, source, url }) => formsService.relayUpload(projectId, projectPath, source as PluginSource, url))
   handle(IPC.formsRelayExport, t([s.formsRelayExportArgs]), ({ projectId, projectPath, source, dir }) => formsService.relayExport(projectId, projectPath, source as PluginSource, dir))
   handle(IPC.formsRelayExcludeFromSite, t([s.formsRelayExcludeArgs]), ({ projectPath, targetId, path }) => formsService.excludeFromSite(projectPath, targetId, path))
   handle(IPC.pluginOptionSchema, t([s.pluginOptionSchemaArgs]), ({ projectPath, source }) =>

@@ -49,7 +49,7 @@ export function RelaySection({
   const { t, i18n } = useTranslation()
   const project = useProject()
   const [busy, setBusy] = useState<null | 'upload' | 'export'>(null)
-  const [result, setResult] = useState<{ success: boolean; output: string; check?: RelayCheck; countersOpen?: string } | null>(null)
+  const [result, setResult] = useState<{ success: boolean; output: string; check?: RelayCheck; countersOpen?: string; configReadable?: boolean } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [subdirInvalid, setSubdirInvalid] = useState(false)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
@@ -57,13 +57,15 @@ export function RelaySection({
   if (error) return <p className="text-micro text-red-600 dark:text-red-400">{error}</p>
   if (!state) return <p className="text-micro text-text-muted">{loading ? t('formsEditor.relay.loading') : ''}</p>
   const s = state.settings
-  const save = async (change: Partial<RelaySettings>): Promise<void> => {
+  const save = async (change: Partial<RelaySettings>): Promise<boolean> => {
     try {
       await window.quartzGui.forms.relaySaveSettings({ projectPath: project.path, settings: { ...s, ...change } })
       setMessage(null)
       onChanged()
+      return true
     } catch (err) {
       setMessage(formatIpcError(err))
+      return false
     }
   }
   const saveSecrets = async (change: Parameters<typeof window.quartzGui.forms.relaySaveSecrets>[0], said: string): Promise<void> => {
@@ -92,7 +94,7 @@ export function RelaySection({
       ? { tone: 'red' as const, text: t('formsEditor.relay.statusBroken') }
       : state.moved
           ? { tone: 'amber' as const, text: t('formsEditor.relay.statusMoved', { date }) }
-          : state.currentHash !== state.lastUpload.hash
+          : state.configModeChanged || state.currentHash !== state.lastUpload.hash
             ? { tone: 'amber' as const, text: t('formsEditor.relay.statusChanged', { date }) }
             : { tone: 'green' as const, text: t('formsEditor.relay.statusCurrent', { date }) }
   const missingCaptcha = [
@@ -379,13 +381,24 @@ export function RelaySection({
                       : 'text-green-700 dark:text-green-400'
                 }`}
               >
-                {checkText(result.check, s.configReadable, t)}
+                {checkText(result.check, result.configReadable === true, t)}
               </p>
               {result.check.kind === 'ok' && result.check.counters === false && (
                 <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.relay.countersNotWritable')}</p>
               )}
-              {result.check.kind === 'phpError' && !s.configReadable && (
-                <Button variant="ghost" onClick={() => void save({ configReadable: true })}>
+              {/* The sentence and the button are about the mode this upload set, not the switch:
+                  the switch is saved at once, the server only learns it from the next upload
+                  (review 2026-10-29, M4) - hence the button does both. */}
+              {result.check.kind === 'phpError' && result.configReadable === false && (
+                <Button
+                  variant="ghost"
+                  disabled={!canUpload || busy !== null}
+                  onClick={() =>
+                    void save({ configReadable: true }).then(async (saved) => {
+                      if (saved) await upload()
+                    })
+                  }
+                >
                   {t('formsEditor.relay.makeReadable')}
                 </Button>
               )}

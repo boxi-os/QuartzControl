@@ -1613,7 +1613,7 @@ export default {
       checkOk: 'Das Relay antwortet unter {{url}}.',
       checkPhpError: 'Das Relay antwortet mit Fehler 500 ohne eigene Meldung. Meist kann PHP die config.php nicht lesen, weil es beim Hoster als Webserver-Benutzer läuft.',
       checkPhpErrorReadable: 'Das Relay antwortet mit Fehler 500 ohne eigene Meldung. Den Grund nennt das Fehlerprotokoll des Webservers.',
-      makeReadable: 'config.php für den Webserver lesbar machen',
+      makeReadable: 'config.php lesbar machen und neu hochladen',
       checkRelayError: 'Das Relay lehnt die Probe ab (HTTP {{status}}, „{{error}}“): {{message}}',
       checkHttp: 'Unter {{url}} antwortet kein Relay (HTTP {{status}}). Stimmen Ziel, Unterordner und Adresse von send.php?',
       checkUnreachable: 'Das Relay konnte nicht geprüft werden: {{reason}}',

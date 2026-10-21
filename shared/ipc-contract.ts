@@ -660,6 +660,8 @@ export interface RelayLastUpload {
   hash: string
   targetId: string
   location: string
+  /** Whether that upload left config.php readable by the web server; absent before 2026-10-21. */
+  configReadable?: boolean
 }
 
 export interface RelayConflict {
@@ -685,6 +687,8 @@ export interface RelayState {
   recipientNames: string[]
   /** The target or directory changed since the last upload. */
   moved?: boolean
+  /** "config.php für den Webserver lesbar" changed since the last upload: the server still holds the old mode. */
+  configModeChanged?: boolean
 }
 
 /** What send.php answered right after an upload (`GET ?challenge=<form>` with the site's origin). */
@@ -706,7 +710,8 @@ export type RelayCheck =
  * anyone can read how many messages a form got. Asked only while the counters lie next to
  * send.php (no `counterDir`).
  */
-export type RelayUploadResult = DeployResult & { check?: RelayCheck; countersOpen?: string }
+/** `configReadable`: the mode this upload gave config.php, which a `phpError` check is about. */
+export type RelayUploadResult = DeployResult & { check?: RelayCheck; countersOpen?: string; configReadable?: boolean }
 
 /** forms.importKey: the path written (relative to the site root), or the one that is already there. */
 export type FormsKeyImport = { file: string } | { exists: string }

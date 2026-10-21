@@ -1608,7 +1608,7 @@ export default {
       checkOk: 'The relay answers at {{url}}.',
       checkPhpError: "The relay answers with error 500 and no message of its own. Usually PHP cannot read config.php because the host runs it as the web server's user.",
       checkPhpErrorReadable: "The relay answers with error 500 and no message of its own. The web server's error log names the reason.",
-      makeReadable: 'Make config.php readable by the web server',
+      makeReadable: 'Make config.php readable and upload again',
       checkRelayError: 'The relay refuses the probe (HTTP {{status}}, “{{error}}”): {{message}}',
       checkHttp: 'No relay answers at {{url}} (HTTP {{status}}). Are the target, the folder and the send.php address right?',
       checkUnreachable: 'The relay could not be checked: {{reason}}',

@@ -323,7 +323,9 @@ export async function relayState(projectId: string, projectPath: string, source:
     ...(generated.ok
       ? { currentHash: typeof generated.json.hash === 'string' ? generated.json.hash : null, siteOrigin: typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : null, relayForms: strings(generated.json.forms), recipientNames: strings(generated.json.recipients) }
       : { currentHash: null, siteOrigin: null, relayForms: [], recipientNames: [], hashProblem: generated.reason }),
-    ...(target && file.lastUpload ? { moved: file.lastUpload.location !== locationOf(target, settings.subdir) } : {})
+    ...(target && file.lastUpload ? { moved: file.lastUpload.location !== locationOf(target, settings.subdir) } : {}),
+    // The switch is written at once, the mode only by the next upload (review 2026-10-29, M4).
+    ...(file.lastUpload?.configReadable !== undefined && file.lastUpload.configReadable !== settings.configReadable ? { configModeChanged: true } : {})
   }
 }
 
@@ -487,13 +489,13 @@ export async function relayUpload(projectId: string, projectPath: string, source
     await setRelayModes(dir, settings.configReadable)
     const result = await runDirectoryUpload(projectPath, target.id, dir, settings.subdir, `relay-${target.id}`)
     if (result.success && typeof generated.json.hash === 'string') {
-      await writeRelayFile(projectPath, { ...file, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location } })
+      await writeRelayFile(projectPath, { ...file, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configReadable: settings.configReadable } })
     }
     const warnings = strings(generated.json.warnings)
     const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)
     const check = result.success ? await checkRelay(url, origin, strings(generated.json.forms)[0]) : undefined
     const countersOpen = check && check.kind !== 'noUrl' && !settings.counterDir.trim() ? await countersServed(check.url) : null
-    return { ...result, output: [...warnings, result.output].filter(Boolean).join('\n'), ...(check ? { check } : {}), ...(countersOpen ? { countersOpen } : {}) }
+    return { ...result, output: [...warnings, result.output].filter(Boolean).join('\n'), configReadable: settings.configReadable, ...(check ? { check } : {}), ...(countersOpen ? { countersOpen } : {}) }
   })
 }
 

@@ -410,7 +410,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
         if (!r.lastUpload) return t('formsEditor.relay.statusNever')
         if (r.hashProblem !== undefined) return t('formsEditor.relay.statusBroken')
         const date = new Date(r.lastUpload.at).toLocaleDateString(i18n.resolvedLanguage)
-        return r.moved || r.currentHash !== r.lastUpload.hash ? t('formsEditor.relay.statusChanged', { date }) : t('formsEditor.relay.statusCurrent', { date })
+        return r.moved || r.configModeChanged || r.currentHash !== r.lastUpload.hash ? t('formsEditor.relay.statusChanged', { date }) : t('formsEditor.relay.statusCurrent', { date })
       }
       case 'texts': {
         const count = isObject(options.texts) ? Object.values(options.texts).reduce<number>((n, v) => n + (isObject(v) ? Object.keys(v).length : 0), 0) : 0

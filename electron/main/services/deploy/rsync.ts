@@ -206,7 +206,11 @@ async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
 }
 
 // Single quotes for the remote shell; a leading "~/" stays outside them so it still expands there,
-// as it does in remoteSpec's path.
+// as it does in remoteSpec's path. They hold only under rsync 3.x, which hands --rsync-path on as
+// it is. openrsync (macOS's /usr/bin/rsync) splits the value like a shell itself and drops the
+// quotes, and ssh joins the words with spaces: "/srv/a b" became two folders "a" and "b" on
+// debian-vm (review 2026-10-30, N3). What keeps the mkdir safe there is remoteSpec refusing
+// whitespace and SHELL_SPECIAL before this runs.
 function remoteShellPath(path: string): string {
   const quote = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`
   return path.startsWith('~/') ? `~/${quote(path.slice(2))}` : quote(path)
@@ -217,7 +221,9 @@ function remoteShellPath(path: string): string {
 // or directory', which SFTP and FTP create. The dry run does not create anything and passes.
 const MISSING_PARENT = /\bmkdir ".*" failed: No such file or directory/
 
-// "~" is left out on purpose: a leading "~/" is meant to expand there.
+// "~" is left out on purpose: a leading "~/" is meant to expand there. Loosening it (for rsync
+// 3.2.4 and later, which escape the path themselves) opens the mkdir of the second attempt to the
+// remote shell under openrsync: remoteShellPath's quotes do not survive there.
 const SHELL_SPECIAL = /['"\\$`;&|<>(){}[\]*?!#]/
 
 function remoteSpec(connection: SshConnection, remotePath: string): string {

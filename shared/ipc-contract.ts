@@ -699,6 +699,9 @@ export type RelayCheck =
   | { kind: 'phpError'; url: string }
   /** The relay's own refusal, e.g. `origin` or `mbstring_config`. */
   | { kind: 'relayError'; url: string; status: number; error: string; message: string }
+  /** send.php came back as its own source: PHP does not run there. `configOpen`: the address under
+   *  which config.php was served as well, secret and addresses included. */
+  | { kind: 'noPhp'; url: string; configOpen?: string }
   /** Something else answered: no relay at that address. */
   | { kind: 'http'; url: string; status: number }
   | { kind: 'unreachable'; url: string; reason: string }

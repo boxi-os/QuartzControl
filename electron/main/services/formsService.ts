@@ -444,6 +444,21 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
     return { kind: 'relayError', url, status: res.status, error: json.error, message: typeof json.message === 'string' ? json.message : '' }
   }
   if (res.status === 500) return { kind: 'phpError', url }
+  // Where PHP does not run, the server hands out send.php as text - and config.php with it, secret
+  // and addresses, when it was uploaded readable. Under Apache with `php_flag engine off` the probe
+  // said "no relay (HTTP 200)" for both, and config.php came back 200 with 0644, 403 with 0600
+  // (debian-vm, review 2026-10-29, M5). Asked by content, as countersServed does.
+  if (res.body.startsWith('<?php')) {
+    let config: URL | null = null
+    try {
+      config = new URL('config.php', url)
+    } catch {
+      config = null
+    }
+    const served = config ? await getWithOrigin(config.toString(), null) : null
+    const configOpen = served && 'status' in served && served.status === 200 && served.body.startsWith('<?php') ? config?.toString() : undefined
+    return { kind: 'noPhp', url, ...(configOpen ? { configOpen } : {}) }
+  }
   return { kind: 'http', url, status: res.status }
 }
 

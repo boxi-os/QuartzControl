@@ -383,6 +383,9 @@ export function RelaySection({
               >
                 {checkText(result.check, result.configReadable === true, t)}
               </p>
+              {result.check.kind === 'noPhp' && result.check.configOpen && (
+                <p className="text-micro text-red-600 dark:text-red-400">{t('formsEditor.relay.configOpen', { url: result.check.configOpen })}</p>
+              )}
               {result.check.kind === 'ok' && result.check.counters === false && (
                 <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.relay.countersNotWritable')}</p>
               )}
@@ -419,6 +422,8 @@ function checkText(check: RelayCheck, configReadable: boolean, t: TFunction): st
       return configReadable ? t('formsEditor.relay.checkPhpErrorReadable') : t('formsEditor.relay.checkPhpError')
     case 'relayError':
       return t('formsEditor.relay.checkRelayError', { status: check.status, error: check.error, message: check.message })
+    case 'noPhp':
+      return t('formsEditor.relay.checkNoPhp', { url: check.url })
     case 'http':
       return t('formsEditor.relay.checkHttp', { url: check.url, status: check.status })
     case 'unreachable':

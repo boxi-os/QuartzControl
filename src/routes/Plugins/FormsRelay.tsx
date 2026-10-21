@@ -475,6 +475,13 @@ function checkText(check: RelayCheck, configReadable: boolean, t: TFunction): st
       if (check.status === 403) return t('formsEditor.relay.checkHttpDenied', { url: check.url })
       if (check.status >= 502 && check.status <= 504) return t('formsEditor.relay.checkHttpNoPhp', { url: check.url, status: check.status })
       if (check.status === 500) return t('formsEditor.relay.checkHttpServerError', { url: check.url })
+      // Three more that are not the address, met with the mock host (review 2026-10-30, nebenbei):
+      // a staging site behind basic auth, whose visitors send their credentials along and whose
+      // relay may well work; a host's rate limit; a CDN that cannot reach the server behind it
+      // (Cloudflare's 520-527 and 530).
+      if (check.status === 401) return t('formsEditor.relay.checkHttpAuth', { url: check.url })
+      if (check.status === 429) return t('formsEditor.relay.checkHttpRate', { url: check.url })
+      if ((check.status >= 520 && check.status <= 527) || check.status === 530) return t('formsEditor.relay.checkHttpCdn', { url: check.url, status: check.status })
       return t('formsEditor.relay.checkHttp', { url: check.url, status: check.status })
     case 'unreachable':
       return t('formsEditor.relay.checkUnreachable', { reason: check.reason })

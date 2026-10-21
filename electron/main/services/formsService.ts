@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { existsSync, readFileSync, rmSync } from 'fs'
 import { mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
@@ -99,6 +100,30 @@ export async function check(projectPath: string, source: PluginSource): Promise<
  * not the answer asked for, and says so.
  */
 export async function texts(projectPath: string, source: PluginSource): Promise<FormsTextsResult> {
+  const cli = cliPath(projectPath, source)
+  const stamp = cli ? textsStamp(cli) : null
+  const cached = cli ? textsCache.get(cli) : undefined
+  if (cached && stamp && cached.stamp === stamp) return cached.result
+  const result = await readTexts(projectPath, source)
+  if (cli && stamp && result.state === 'read') textsCache.set(cli, { stamp, result })
+  return result
+}
+
+// The wording changes only with the plugin, and each open of the Texte section asked it again in
+// a child process (about 90 ms; review 2026-10-28, Nebenbei). Kept per command line and keyed by
+// its content, not its mtime: npm gives every file of a package the same one. The texts live in a
+// chunk that cli.js imports by a name holding the chunk's hash, so new texts are a new cli.js.
+const textsCache = new Map<string, { stamp: string; result: FormsTextsResult }>()
+
+function textsStamp(cli: string): string | null {
+  try {
+    return createHash('sha256').update(readFileSync(cli)).digest('hex')
+  } catch {
+    return null
+  }
+}
+
+async function readTexts(projectPath: string, source: PluginSource): Promise<FormsTextsResult> {
   const r = await runCli(projectPath, source, ['texts'])
   if (!r.ok) return { state: 'unavailable', reason: r.reason }
   const locales: Record<string, Record<string, string>> = {}

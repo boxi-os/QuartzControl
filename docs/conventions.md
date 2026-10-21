@@ -71,7 +71,10 @@ Begründung.
   **vor jeder Änderung am Core-Update dort lesen.** Prüfskript: `npm run check:core-update`.
 - **Was die App auf einen Server lädt, bekommt seinen Modus von der App, nicht vom Werkzeug.**
   SFTP: `put` mit `writeStreamOptions.mode` (`0o644`), denn ssh2 setzt sonst 0666 per `fchmod`.
-  Gemessen wird auf einem echten Server, nicht am Code der Bibliothek.
+  Wer eigene Modi braucht (das Relay), setzt sie im lokalen Ordner und sagt `keepLocalModes`;
+  jeder Adapter überträgt sie dann, auch auf vorhandene Dateien (rsync `-p`, FTP `SITE CHMOD`).
+  Was auf dem Server laufen soll, fragt die App nach dem Hochladen einmal ab. Gemessen wird auf
+  einem echten Server, nicht am Code der Bibliothek.
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Ausgabe in
   Dateien unter `.quartz-gui/logs/`, die Main tailt. Ein neues Verzeichnis unter `.quartz-gui/`
   muss `isSnapshotWorthy()` und `SKIP` in `duplicateService` lernen.

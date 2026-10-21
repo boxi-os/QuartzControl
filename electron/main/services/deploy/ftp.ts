@@ -1,3 +1,4 @@
+import { stat } from 'fs/promises'
 import { join, posix } from 'path'
 import { Client as FtpClient } from 'basic-ftp'
 import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
@@ -5,6 +6,22 @@ import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, partitionDiff } from './manifest'
 import * as connectionsService from '../connectionsService'
 import { mainT } from '../../i18n'
+
+/**
+ * FTP has no mode of its own: a file gets what the server's umask leaves (vsftpd's default is 077,
+ * most hosts 022). SITE CHMOD is an extension that a server may refuse; a refusal is said, not
+ * failed, since the file is there and the relay may well work with the server's mode.
+ */
+async function siteChmod(client: FtpClient, remotePath: string, localPath: string): Promise<string> {
+  const mode = ((await stat(localPath)).mode & 0o777).toString(8)
+  if (/[\r\n]/.test(remotePath)) return `${mainT('ftpChmodRefused', { mode, path: remotePath })}\n`
+  try {
+    await client.send(`SITE CHMOD ${mode} ${remotePath}`)
+    return ''
+  } catch {
+    return `${mainT('ftpChmodRefused', { mode, path: remotePath })}\n`
+  }
+}
 
 export const ftpAdapter: DeployAdapter = {
   async preview(ctx: DeployContext): Promise<DeployDiffEntry[]> {
@@ -44,8 +61,10 @@ export const ftpAdapter: DeployAdapter = {
           await client.ensureDir(remoteDir)
           await client.cd('/')
           ensuredDirs.add(remoteDir)
+          if (ctx.keepLocalModes) output += await siteChmod(client, remoteDir, join(ctx.buildDir, posix.dirname(relPath)))
         }
         await client.uploadFrom(join(ctx.buildDir, relPath), remotePath)
+        if (ctx.keepLocalModes) output += await siteChmod(client, remotePath, join(ctx.buildDir, relPath))
         processed++
         ctx.emitProgress(processed, total, relPath)
         output += `↑ ${relPath}\n`

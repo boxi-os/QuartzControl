@@ -1,9 +1,10 @@
 import { createHash } from 'crypto'
 import { existsSync, readFileSync, rmSync } from 'fs'
-import { mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
+import { chmod, mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
+import { net } from 'electron'
 import { tmpdir } from 'os'
 import { join, posix, relative, sep } from 'path'
-import type { FormsCheckResult, FormsKeyImport, FormsTextsResult, FormsKeyReport, PluginSource, PublishTarget, RelayConflict, RelayLastUpload, RelaySettings, RelayState, RelayUploadResult } from '@shared/ipc-contract'
+import type { FormsCheckResult, FormsKeyImport, FormsTextsResult, FormsKeyReport, PluginSource, PublishTarget, RelayCheck, RelayConflict, RelayLastUpload, RelaySettings, RelayState, RelayUploadResult } from '@shared/ipc-contract'
 import * as connectionsService from './connectionsService'
 import { runDirectoryUpload } from './deploy'
 import { readJsonFile, writeJsonFile } from './jsonStore'
@@ -188,7 +189,8 @@ const DEFAULT_RELAY: RelaySettings = {
   subjectPrefix: '',
   mailer: 'mail',
   sendmailPath: '/usr/sbin/sendmail -t -i',
-  counterDir: ''
+  counterDir: '',
+  configReadable: false
 }
 
 interface RelayFile {
@@ -347,7 +349,67 @@ async function secretsFor(projectId: string): Promise<connectionsService.RelaySe
   return (await connectionsService.getRelaySecrets(projectId)) as connectionsService.RelaySecrets
 }
 
-export async function relayUpload(projectId: string, projectPath: string, source: PluginSource, fresh: boolean): Promise<RelayUploadResult> {
+/**
+ * The modes the relay is uploaded with, set on the folder quartz-forms wrote and carried by the
+ * adapters (keepLocalModes). As written, the folder is mkdtemp()'s 0700 and config.php 0600: over
+ * rsync the relay's folder arrived as 0700 and Apache answered 403 under mod_php and PHP-FPM
+ * alike, and over SFTP everything arrived as 0666. Measured on debian-vm as a host: config.php
+ * as 0600 works where PHP runs as the account (PHP-FPM, suEXEC) and stops mod_php, which runs as
+ * www-data, with a 500 - hence the setting, and the check after the upload that finds it.
+ */
+async function setRelayModes(dir: string, configReadable: boolean): Promise<string> {
+  const configMode = configReadable ? 0o644 : 0o600
+  const walk = async (folder: string): Promise<void> => {
+    await chmod(folder, 0o755)
+    for (const entry of await readdir(folder, { withFileTypes: true })) {
+      const path = join(folder, entry.name)
+      if (entry.isDirectory()) await walk(path)
+      else await chmod(path, folder === dir && entry.name === 'config.php' ? configMode : 0o644)
+    }
+  }
+  await walk(dir)
+  return configMode.toString(8)
+}
+
+const CHECK_RELAY_TIMEOUT_MS = 10_000
+
+/**
+ * Asks the uploaded relay for a stamp (`GET ?challenge=<form>`), as a form does when its page
+ * opens, so a relay that cannot run is found by the upload and not by the first visitor. The
+ * origin is the site's, as the relay checks it. `net.fetch` for the machine's proxy and
+ * certificates (builtinTemplateService).
+ */
+async function checkRelay(url: string | undefined, origin: string | null, form: string | undefined): Promise<RelayCheck> {
+  if (!url || !/^https?:\/\//i.test(url) || !form) return { kind: 'noUrl' }
+  let probe: URL
+  try {
+    probe = new URL(url)
+  } catch {
+    return { kind: 'noUrl' }
+  }
+  probe.searchParams.set('challenge', form)
+  try {
+    const res = await net.fetch(probe.toString(), { headers: origin ? { Origin: origin } : {}, signal: AbortSignal.timeout(CHECK_RELAY_TIMEOUT_MS) })
+    const text = await res.text()
+    let json: { ok?: unknown; error?: unknown; message?: unknown } | null
+    try {
+      json = JSON.parse(text) as { ok?: unknown; error?: unknown; message?: unknown } | null
+    } catch {
+      json = null
+    }
+    if (res.ok && json?.ok === true) return { kind: 'ok', url }
+    if (json && typeof json.error === 'string') {
+      return { kind: 'relayError', url, status: res.status, error: json.error, message: typeof json.message === 'string' ? json.message : '' }
+    }
+    if (res.status === 500) return { kind: 'phpError', url }
+    return { kind: 'http', url, status: res.status }
+  } catch (err) {
+    const timedOut = err instanceof Error && err.name === 'TimeoutError'
+    return { kind: 'unreachable', url, reason: timedOut ? mainT('relayCheckTimeout', { seconds: CHECK_RELAY_TIMEOUT_MS / 1000 }) : err instanceof Error ? err.message : String(err) }
+  }
+}
+
+export async function relayUpload(projectId: string, projectPath: string, source: PluginSource, fresh: boolean, url?: string): Promise<RelayUploadResult> {
   const file = await readRelayFile(projectPath)
   const settings: RelaySettings = { ...DEFAULT_RELAY, ...(file.settings ?? {}) }
   if (!settings.targetId) return { success: false, output: mainT('relayNoTarget') }
@@ -362,12 +424,17 @@ export async function relayUpload(projectId: string, projectPath: string, source
     const missing = strings(generated.json.missingRecipients)
     if (missing.length) return { success: false, output: mainT('relayMissingRecipients', { names: missing.join(', ') }) }
     const location = locationOf(target, settings.subdir)
-    const result = await runDirectoryUpload(projectPath, target.id, dir, settings.subdir, `relay-${target.id}`, fresh || file.lastUpload?.location !== location)
+    const configMode = await setRelayModes(dir, settings.configReadable)
+    // A manifest sends what changed, and a mode is no change to a file's content.
+    const everything = fresh || file.lastUpload?.location !== location || file.lastUpload?.configMode !== configMode
+    const result = await runDirectoryUpload(projectPath, target.id, dir, settings.subdir, `relay-${target.id}`, everything)
     if (result.success && typeof generated.json.hash === 'string') {
-      await writeRelayFile(projectPath, { ...file, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location } })
+      await writeRelayFile(projectPath, { ...file, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configMode } })
     }
     const warnings = strings(generated.json.warnings)
-    return { ...result, output: [...warnings, result.output].filter(Boolean).join('\n') }
+    const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)
+    const check = result.success ? await checkRelay(url, origin, strings(generated.json.forms)[0]) : undefined
+    return { ...result, output: [...warnings, result.output].filter(Boolean).join('\n'), ...(check ? { check } : {}) }
   })
 }
 

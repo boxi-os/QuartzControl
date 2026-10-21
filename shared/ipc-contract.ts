@@ -650,6 +650,8 @@ export interface RelaySettings {
   sendmailPath: string
   /** An absolute path on the server; empty: counters/ next to send.php. */
   counterDir: string
+  /** config.php as 0644 instead of 0600, for a host whose PHP runs as the web server's user. */
+  configReadable: boolean
 }
 
 export interface RelayLastUpload {
@@ -658,6 +660,8 @@ export interface RelayLastUpload {
   hash: string
   targetId: string
   location: string
+  /** The mode config.php was uploaded with ('600', '644'); a change uploads everything again. */
+  configMode?: string
 }
 
 export interface RelayConflict {
@@ -685,7 +689,19 @@ export interface RelayState {
   moved?: boolean
 }
 
-export type RelayUploadResult = DeployResult
+/** What send.php answered right after an upload (`GET ?challenge=<form>` with the site's origin). */
+export type RelayCheck =
+  | { kind: 'ok'; url: string }
+  /** A status of 500 without the relay's own JSON: PHP stopped before send.php could answer. */
+  | { kind: 'phpError'; url: string }
+  /** The relay's own refusal, e.g. `origin` or `mbstring_config`. */
+  | { kind: 'relayError'; url: string; status: number; error: string; message: string }
+  /** Something else answered: no relay at that address. */
+  | { kind: 'http'; url: string; status: number }
+  | { kind: 'unreachable'; url: string; reason: string }
+  | { kind: 'noUrl' }
+
+export type RelayUploadResult = DeployResult & { check?: RelayCheck }
 
 /** forms.importKey: the path written (relative to the site root), or the one that is already there. */
 export type FormsKeyImport = { file: string } | { exists: string }
@@ -2377,7 +2393,8 @@ export interface QuartzGuiApi {
     relaySaveSettings(args: { projectPath: string; settings: RelaySettings }): Promise<void>
     /** An address or captcha secret of null removes it; the values never come back to the renderer. */
     relaySaveSecrets(args: { projectId: string; recipients?: Record<string, string | null>; captchaSecret?: string | null; captchaSecrets?: Record<string, string | null>; moveCaptchaSecret?: { from: string; to: string } }): Promise<void>
-    relayUpload(args: { projectId: string; projectPath: string; source: PluginSource; fresh: boolean }): Promise<RelayUploadResult>
+    /** `url`: the send.php address the section shows, asked once the upload went through. */
+    relayUpload(args: { projectId: string; projectPath: string; source: PluginSource; fresh: boolean; url?: string }): Promise<RelayUploadResult>
     relayExport(args: { projectId: string; projectPath: string; source: PluginSource; dir: string }): Promise<RelayUploadResult>
     relayExcludeFromSite(args: { projectPath: string; targetId: string; path: string }): Promise<void>
   }

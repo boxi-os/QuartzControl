@@ -151,6 +151,7 @@ export async function runDirectoryUpload(
       target: { ...target, id: manifestKey, destination, excludes: [] },
       buildDir: localDir,
       secret,
+      keepLocalModes: true,
       emitProgress(processed, total, currentFile) {
         const event: DeployProgressEvent = { targetId: manifestKey, processed, total, currentFile }
         deployEvents.emit('progress', event)

@@ -227,6 +227,10 @@ async function buildArgs(
   const args = ['-rlt', '--itemize-changes', '--no-motd', '-e', env.rshCommand]
   // Deliberately -rlt rather than -a: -a also carries permissions, owner and group, which on a
   // web host means pushing this machine's uid/gid and umask onto the live site.
+  // Except for an upload that asks for its own modes (the relay): without -p a new file or folder
+  // still gets the local mode, so the relay's folder arrived as 0700 from its mkdtemp() folder and
+  // Apache answered 403, while one that is already there keeps its mode whatever it should be.
+  if (ctx.keepLocalModes) args.push('-p')
   if (deleteRemoved) args.push('--delete')
   if (dryRun) args.push('--dry-run')
 
@@ -280,7 +284,8 @@ export const rsyncAdapter: DeployAdapter = {
         }
       }
       const total = plan.entries.length
-      if (total === 0) return { success: true, output: mainT('deployNothingToDo') }
+      // The plan counts files only, and a folder whose mode alone is wrong is no file to send.
+      if (total === 0 && !ctx.keepLocalModes) return { success: true, output: mainT('deployNothingToDo') }
 
       let processed = 0
       const args = await buildArgs(ctx, connection, destination.remotePath, destination.deleteRemoved, excludePaths, env, false)
@@ -296,7 +301,7 @@ export const rsyncAdapter: DeployAdapter = {
         success: result.code === 0,
         output:
           result.code === 0
-            ? `${summary}\n`
+            ? summary ? `${summary}\n` : mainT('deployNothingToDo')
             : failureMessage(result.output, connection, result.code)
       }
     } finally {

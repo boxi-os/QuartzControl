@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { FolderDown, Trash2, Upload } from 'lucide-react'
-import type { PluginSource, RelaySettings, RelayState } from '@shared/ipc-contract'
-import { Badge, Button, Field, FieldGroup, IconButton, Select, SegmentedControl, TextInput } from '../../components/ui'
+import type { PluginSource, RelayCheck, RelaySettings, RelayState } from '@shared/ipc-contract'
+import { Badge, Button, Field, FieldGroup, IconButton, Select, SegmentedControl, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { announce } from '../../state/announcer'
 import { confirmDialog } from '../../utils/confirm'
@@ -48,7 +48,7 @@ export function RelaySection({
   const { t, i18n } = useTranslation()
   const project = useProject()
   const [busy, setBusy] = useState<null | 'upload' | 'export'>(null)
-  const [result, setResult] = useState<{ success: boolean; output: string } | null>(null)
+  const [result, setResult] = useState<{ success: boolean; output: string; check?: RelayCheck } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
 
@@ -104,7 +104,7 @@ export function RelaySection({
     setBusy('upload')
     setResult(null)
     try {
-      const r = await window.quartzGui.forms.relayUpload({ projectId: project.id, projectPath: project.path, source, fresh })
+      const r = await window.quartzGui.forms.relayUpload({ projectId: project.id, projectPath: project.path, source, fresh, url: transportUrl || undefined })
       setResult(r)
       announce(r.success ? t('formsEditor.relay.uploadedAnnounce') : t('formsEditor.relay.uploadFailedAnnounce'))
       onChanged()
@@ -326,6 +326,12 @@ export function RelaySection({
         <Field label={t('formsEditor.relay.counterDir')} hint={t('formsEditor.relay.counterDirHint')}>
           <DraftInput value={s.counterDir} placeholder="/home/name/quartz-forms-counters" onCommit={(v) => void save({ counterDir: v.trim() })} />
         </Field>
+        <Toggle
+          label={t('formsEditor.relay.configReadable')}
+          hint={t('formsEditor.relay.configReadableHint')}
+          checked={s.configReadable}
+          onChange={(on) => void save({ configReadable: on })}
+        />
       </div>
 
       <div className="flex flex-col gap-2 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
@@ -348,9 +354,38 @@ export function RelaySection({
             {(result.success ? t('formsEditor.relay.done') + '\n' : '') + result.output}
           </pre>
         )}
+        <div role="status" className="flex flex-col items-start gap-1.5">
+          {result?.check && (
+            <>
+              <p className={`text-micro ${result.check.kind === 'ok' ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{checkText(result.check, s.configReadable, t)}</p>
+              {result.check.kind === 'phpError' && !s.configReadable && (
+                <Button variant="ghost" onClick={() => void save({ configReadable: true })}>
+                  {t('formsEditor.relay.makeReadable')}
+                </Button>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
+}
+
+function checkText(check: RelayCheck, configReadable: boolean, t: TFunction): string {
+  switch (check.kind) {
+    case 'ok':
+      return t('formsEditor.relay.checkOk', { url: check.url })
+    case 'phpError':
+      return configReadable ? t('formsEditor.relay.checkPhpErrorReadable') : t('formsEditor.relay.checkPhpError')
+    case 'relayError':
+      return t('formsEditor.relay.checkRelayError', { status: check.status, error: check.error, message: check.message })
+    case 'http':
+      return t('formsEditor.relay.checkHttp', { url: check.url, status: check.status })
+    case 'unreachable':
+      return t('formsEditor.relay.checkUnreachable', { reason: check.reason })
+    case 'noUrl':
+      return t('formsEditor.relay.checkNoUrl')
+  }
 }
 
 function blockers(state: RelayState, missing: string[], missingCaptcha: string[], t: TFunction): string[] {

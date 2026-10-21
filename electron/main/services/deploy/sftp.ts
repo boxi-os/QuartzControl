@@ -1,4 +1,4 @@
-import { readFile } from 'fs/promises'
+import { readFile, stat } from 'fs/promises'
 import { join, posix } from 'path'
 import SftpClient from 'ssh2-sftp-client'
 import type { DeployDiffEntry, DeployResult, SshConnection } from '@shared/ipc-contract'
@@ -94,13 +94,17 @@ export const sftpAdapter: DeployAdapter = {
         const remoteDir = posix.dirname(remotePath)
         if (!ensuredDirs.has(remoteDir)) {
           await client.mkdir(remoteDir, true)
+          // mkdir leaves a folder that is already there as it is, and one the relay's rsync upload
+          // had made 0700 kept Apache out of it (403) until its mode was set again.
+          if (ctx.keepLocalModes) await client.chmod(remoteDir, (await stat(join(ctx.buildDir, posix.dirname(relPath)))).mode & 0o777)
           ensuredDirs.add(remoteDir)
         }
         // ssh2 opens every file with mode 0666 and then sets that mode with fchmod, so the server's
         // umask never applies: measured on a Debian host (OpenSSH sftp-server), all 475 files of a
         // published site were writable by every account there, and a file that had been 0644
         // became 0666 when overwritten. An explicit mode is set the same way and wins.
-        await client.put(join(ctx.buildDir, relPath), remotePath, { writeStreamOptions: { mode: 0o644 } })
+        const mode = ctx.keepLocalModes ? (await stat(join(ctx.buildDir, relPath))).mode & 0o777 : 0o644
+        await client.put(join(ctx.buildDir, relPath), remotePath, { writeStreamOptions: { mode } })
         processed++
         ctx.emitProgress(processed, total, relPath)
         output += `↑ ${relPath}\n`

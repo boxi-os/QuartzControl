@@ -261,6 +261,17 @@ Projektwurzel.
   überträgt. Gegenprobe nach dem Fix: alle 475 Dateien 0644. Der Code der Bibliothek hätte es gesagt, aber erst der Server hat es gezeigt; deshalb
   wird so etwas auf einem Server gemessen
   ([`publishing-and-credentials.md`](publishing-and-credentials.md), „Ein Modus, den ssh2 setzt“).
+  Das Relay von quartz-forms braucht andere Modi als eine Website (`config.php` mit Adressen und
+  Secret), und dort war der Fehler ein anderer: Über rsync kam sein Ordner als 0700 an, mit den
+  Rechten des lokalen `mkdtemp()`-Ordners, und Apache antwortete 403, unter mod_php wie unter
+  PHP-FPM; QuartzControl meldete trotzdem „Fertig“ und „aktuell“. Deshalb setzt `formsService`
+  die Modi im lokalen Ordner (Ordner 0755, Dateien 0644, `config.php` 0600 oder per Schalter
+  0644), `keepLocalModes` lässt jeden Adapter sie übertragen, auch auf Dateien, die schon da sind,
+  und nach dem Upload fragt die App das Relay einmal ab (`GET ?challenge=`). Einen Modus, der
+  überall geht, gibt es nicht: 0600 hält mod_php (läuft als `www-data`) mit 500 auf, 0644 lässt
+  andere Accounts die Adressen lesen. Die Abfrage findet den ersten Fall und bietet den Schalter
+  an ([`publishing-and-credentials.md`](publishing-and-credentials.md), „Das Relay bringt seine
+  Modi mit“).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

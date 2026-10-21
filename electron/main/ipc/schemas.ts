@@ -672,7 +672,8 @@ export const relaySettings = z.looseObject({
   subjectPrefix: relayText,
   mailer: z.enum(['mail', 'sendmail']),
   sendmailPath: relayText,
-  counterDir: relayText
+  counterDir: relayText,
+  configReadable: z.boolean().optional()
 })
 export const formsRelayStateArgs = z.looseObject({ projectId: uuid, projectPath: absolutePath, source: pluginOptionSchemaArgs.shape.source })
 export const formsRelaySaveSettingsArgs = z.looseObject({ projectPath: absolutePath, settings: relaySettings })
@@ -683,6 +684,6 @@ export const formsRelaySaveSecretsArgs = z.looseObject({
   captchaSecrets: z.record(z.string().max(200), z.string().max(512).nullable()).optional(),
   moveCaptchaSecret: z.object({ from: z.string().min(1).max(200), to: z.string().min(1).max(200) }).optional()
 })
-export const formsRelayUploadArgs = formsRelayStateArgs.extend({ fresh: z.boolean() })
+export const formsRelayUploadArgs = formsRelayStateArgs.extend({ fresh: z.boolean(), url: z.string().max(2048).optional() })
 export const formsRelayExportArgs = formsRelayStateArgs.extend({ dir: absolutePath })
 export const formsRelayExcludeArgs = z.looseObject({ projectPath: absolutePath, targetId: z.string().min(1).max(200), path: z.string().min(1).max(512) })

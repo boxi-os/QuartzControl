@@ -7,6 +7,12 @@ export interface DeployContext {
   buildDir: string
   /** The connection's decrypted secret, or null when the target needs none. */
   secret: string | null
+  /**
+   * The modes of the files and folders in `buildDir` are the ones wanted on the server, and an
+   * upload sets them, on files that are already there too. Only the relay's upload asks for this
+   * (formsService); a site keeps 0644 and whatever the server gives a folder.
+   */
+  keepLocalModes?: boolean
   emitProgress(processed: number, total: number, currentFile?: string): void
 }
 

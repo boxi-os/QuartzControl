@@ -109,6 +109,12 @@ export function RelaySection({
   const canUpload =
     !!s.targetId && !!s.from.trim() && missing.length === 0 && missingCaptcha.length === 0 && !state.conflict && state.secrets.storageAvailable && state.hashProblem === undefined
 
+  // A refusal in one sentence is said with its reason: "Relay konnte nicht hochgeladen werden." alone
+  // left it to the <pre>, which is no live region (review 2026-10-30, nebenbei). An upload log that
+  // ended in an error is not read out whole.
+  const failedAnnounce = (output: string): string =>
+    output.trim() && !output.trim().includes('\n') ? `${t('formsEditor.relay.uploadFailedAnnounce')} ${output.trim()}` : t('formsEditor.relay.uploadFailedAnnounce')
+
   async function upload(): Promise<void> {
     setBusy('upload')
     setResult(null)
@@ -116,10 +122,10 @@ export function RelaySection({
       const r = await window.quartzGui.forms.relayUpload({ projectId: project.id, projectPath: project.path, source, url: probe?.url, form: probe?.form })
       // Said in the section's status region, in one go with the check's sentence below it: through
       // announce() the two arrived in two regions at once (review 2026-10-29, nebenbei).
-      setResult({ ...r, said: r.success ? t('formsEditor.relay.uploadedAnnounce') : t('formsEditor.relay.uploadFailedAnnounce') })
+      setResult({ ...r, said: r.success ? t('formsEditor.relay.uploadedAnnounce') : failedAnnounce(r.output) })
       onChanged()
     } catch (err) {
-      setResult({ success: false, output: formatIpcError(err), said: t('formsEditor.relay.uploadFailedAnnounce') })
+      setResult({ success: false, output: formatIpcError(err), said: failedAnnounce(formatIpcError(err)) })
     } finally {
       setBusy(null)
     }
@@ -416,27 +422,29 @@ export function RelaySection({
               {result.check.kind === 'ok' && result.check.counters === false && (
                 <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.relay.countersNotWritable')}</p>
               )}
-              {/* The sentence and the button are about the mode this upload set, not the switch:
-                  the switch is saved at once, the server only learns it from the next upload
-                  (review 2026-10-29, M4) - hence the button does both. */}
-              {(result.check.kind === 'phpError' || (result.check.kind === 'phpMessage' && result.check.message.includes('config.php'))) &&
-                result.configReadable === false && (
-                <Button
-                  variant="ghost"
-                  disabled={!canUpload || busy !== null}
-                  onClick={() =>
-                    void save({ configReadable: true }).then(async (saved) => {
-                      if (saved) await upload()
-                    })
-                  }
-                >
-                  {t('formsEditor.relay.makeReadable')}
-                </Button>
-              )}
             </>
           )}
           {result?.countersOpen && <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.relay.countersOpen')}</p>}
         </div>
+        {/* The sentence and the button are about the mode this upload set, not the switch:
+            the switch is saved at once, the server only learns it from the next upload
+            (review 2026-10-29, M4) - hence the button does both. Outside the region, which read
+            its label out with the sentence (review 2026-10-30, nebenbei). */}
+        {(result?.check?.kind === 'phpError' || (result?.check?.kind === 'phpMessage' && result.check.message.includes('config.php'))) &&
+          result.configReadable === false && (
+          <Button
+            variant="ghost"
+            className="self-start"
+            disabled={!canUpload || busy !== null}
+            onClick={() =>
+              void save({ configReadable: true }).then(async (saved) => {
+                if (saved) await upload()
+              })
+            }
+          >
+            {t('formsEditor.relay.makeReadable')}
+          </Button>
+        )}
       </div>
     </div>
   )

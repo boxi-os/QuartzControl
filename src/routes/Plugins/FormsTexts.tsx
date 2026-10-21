@@ -7,27 +7,9 @@ import { useIpcQuery } from '../../state/useIpcQuery'
 import { DraftInput } from './DraftInput'
 import { NoEffect } from './NoEffect'
 import { isNewerVersion } from '@shared/semver'
-import { FORMS_TEXTS_SINCE, isObject } from './formsOptions'
+import { FORMS_TEXTS_SINCE, RELAY_OWN_WORDS, entryKey, isObject, primary } from './formsOptions'
 
 type Options = Record<string, unknown>
-
-const primary = (code: string): string => code.toLowerCase().split(/[-_]/)[0]
-
-// The two lines of the message the relay writes itself for every unencrypted post, with or without
-// JavaScript, in its own words (send.php `qf_serialize`/`qf_words`; the head of `qf_words` says a
-// site's `texts` do not reach it) - so their own texts work everywhere but there (review
-// 2026-10-28, N6).
-const RELAY_OWN_WORDS = new Set(['messagePage', 'messageKey'])
-
-/**
- * The entry of `texts` a site language writes to: the one named exactly as the language, else one
- * of its primary subtag (`de-DE` for `de`), else a new one under the language's code. The plugin
- * reads both, the exact locale over the primary subtag (quartz-forms `wording()`).
- */
-function entryKey(texts: Options, code: string): string {
-  const keys = Object.keys(texts)
-  return keys.find((k) => k.toLowerCase() === code) ?? keys.find((k) => primary(k) === primary(code)) ?? code
-}
 
 /**
  * The Texte section: every text of quartz-forms in one site language, with the plugin's wording

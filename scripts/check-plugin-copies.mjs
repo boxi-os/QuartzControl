@@ -31,8 +31,11 @@
 //                         Namen, isPersonalField, das Zusammenlegen mit Vorlage und globalem
 //                         Versand (resolveOptions gegen effectiveForm), und die Erkennung einer
 //                         Einbindung (frontmatterForms, FORM_PLACEHOLDER gegen
-//                         shared/formUsages.ts); dazu Quartz' Slug-Regel aus dem Projekt
-//                         (@quartz-community/utils) gegen quartzSlug. Was das Plugin über eine
+//                         shared/formUsages.ts); wo eine Meldung des Plugins steht (FORM_KEYS,
+//                         PART_OF, NO_FIELDS), welchen Eintrag von `texts` der Abschnitt Texte
+//                         schreibt (entryKey gegen wording) und welche Texte das Relay selbst
+//                         schreibt (RELAY_OWN_WORDS gegen send.php); dazu Quartz' Slug-Regel aus
+//                         dem Projekt (@quartz-community/utils) gegen quartzSlug. Was das Plugin über eine
 //                         Definition urteilt, schreibt die App nicht ab: sie fragt es (dist/cli.js)
 //
 // Ein Plugin, das im Projekt fehlt, wird nicht geprüft, und das Skript sagt es („kann nicht prüfen“
@@ -635,6 +638,56 @@ function tally(label, cases, diffs) {
         }
       }
       tally('Feldtypen, Versandwege und Bedingungen (FIELD_GROUPS, TRANSPORT_KINDS, CONTROLLER_TYPES, showIfOf, controllerValues)', cases, diffs)
+    }
+
+    // Wo eine Meldung steht und welcher Eintrag von `texts` gilt (seit dem Review 2026-10-28, das
+    // diese Abschriften brachte): FORM_KEYS gegen `formDefinition` im Schema, jede Zeile von
+    // PART_OF trifft einen dieser Schlüssel, NO_FIELDS gegen den Satz jeder Meldung in jeder
+    // Sprache der Kommandozeile (nur `noFields` darf passen), entryKey gegen wording() je Eintrag
+    // und Seitensprache, RELAY_OWN_WORDS gegen die Wörter, die `qf_serialize` aus `qf_words`
+    // nimmt. send.php wird gelesen, nicht geladen: PHP läuft hier nicht.
+    {
+      const i18n = await load(path.join(dir, 'src/i18n/index.ts'), 'plugin-forms-i18n')
+      const messages = await load(path.join(dir, 'src/messages/index.ts'), 'plugin-forms-messages')
+      const catalog = (await load(path.join(dir, 'src/messages/en.ts'), 'plugin-forms-messages-en')).default
+      const formKeys = Object.keys(JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8')).quartz.configSchema.$defs.formDefinition.properties)
+      const diffs = []
+      let cases = 1
+      if (show([...copy.FORM_KEYS].sort()) !== show([...formKeys].sort())) diffs.push(`FORM_KEYS: App ${show([...copy.FORM_KEYS])}, Plugin ${show(formKeys)}`)
+      for (const [re, part] of copy.PART_OF) {
+        cases++
+        if (!formKeys.some((k) => re.test(k))) diffs.push(`PART_OF ${re} (${part}): trifft keinen Schlüssel des Plugins`)
+      }
+      for (const code of Object.keys(catalog))
+        for (const lang of messages.MESSAGE_LANGS) {
+          cases++
+          const text = messages.messageText(code, {}, lang)
+          if (copy.NO_FIELDS.test(text) !== (code === 'noFields')) diffs.push(`NO_FIELDS gegen ${code} (${lang}) ${show(text)}: App ${copy.NO_FIELDS.test(text)}`)
+        }
+      const own = { submit: 'Eigen' }
+      for (const entry of ['de', 'de-DE', 'DE', 'de-AT', 'de_CH', 'en', 'en-GB', 'fr', 'nl'])
+        for (const [code, region] of [['de', 'DE'], ['en', 'US'], ['fr', 'FR']])
+          for (const locale of [code, `${code}-${region}`]) {
+            cases++
+            const record = { [entry]: own }
+            const ours = copy.entryKey(record, code) === entry
+            const theirs = i18n.wording(locale, record).submit === own.submit
+            if (ours !== theirs) diffs.push(`texts ${show(Object.keys(record))}, Seite ${locale}: App ${ours ? 'schreibt' : 'schreibt nicht'} in ${entry}, Plugin ${theirs ? 'zeigt' : 'zeigt nicht'}`)
+          }
+      const php = path.join(dir, 'relay/php/send.php')
+      const body = fs.existsSync(php) ? /\nfunction qf_serialize\([\s\S]*?\n\}\n/.exec(fs.readFileSync(php, 'utf-8'))?.[0] : undefined
+      cases++
+      if (!body) diffs.push(`qf_serialize in relay/php/send.php nicht gefunden — RELAY_OWN_WORDS nicht geprüft`)
+      else {
+        const words = [...new Set([...body.matchAll(/\$words\['(\w+)'\]/g)].map((m) => m[1]))].sort()
+        if (show(words) !== show([...copy.RELAY_OWN_WORDS].sort())) diffs.push(`RELAY_OWN_WORDS: App ${show([...copy.RELAY_OWN_WORDS])}, Relay ${show(words)}`)
+      }
+      const keys = new Set(i18n.textKeys())
+      for (const w of copy.RELAY_OWN_WORDS) {
+        cases++
+        if (!keys.has(w)) diffs.push(`RELAY_OWN_WORDS: ${w} ist kein Textschlüssel des Plugins`)
+      }
+      tally('Teile der Meldungen und Texte (FORM_KEYS, PART_OF, NO_FIELDS, entryKey, RELAY_OWN_WORDS)', cases, diffs)
     }
   }
 

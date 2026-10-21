@@ -115,8 +115,15 @@ Wörtlich aus `CLAUDE.md` hierher gezogen am 2026-10-16, damit `CLAUDE.md` nicht
   `CONTROLLER_TYPES` und `showIfOf` gegen `src/conditions.ts` und jeder Wert, den der
   Bedingungs-Editor anbietet, gegen die Prüfung des Plugins (48 Fälle, alle gleich; Gegenprobe:
   drei Abweichungen). Seit 0.5.0 auch `TRANSPORT_KINDS` gegen die Versandwege im Schema, global
-  und je Formular (50 Fälle, alle gleich; Gegenprobe ohne `demo`: zwei Abweichungen). Was das Plugin über eine Definition urteilt, steht hier nicht: Das fragt der
-  Reiter das Plugin selbst (`dist/cli.js check`).
+  und je Formular (50 Fälle, alle gleich; Gegenprobe ohne `demo`: zwei Abweichungen). Seit dem
+  Review 2026-10-28 auch, wo eine Meldung des Plugins steht (`FORM_KEYS` gegen `formDefinition` im
+  Schema, jede Zeile von `PART_OF` trifft einen Schlüssel, `NO_FIELDS` passt in beiden Sprachen
+  nur auf `noFields`), welchen Eintrag von `texts` der Abschnitt Texte schreibt (`entryKey` gegen
+  `wording()`, je Eintrag und Seitensprache) und welche Texte das Relay selbst schreibt
+  (`RELAY_OWN_WORDS` gegen die `$words` in `qf_serialize`, `send.php` gelesen, nicht geladen):
+  326 Fälle, alle gleich; Gegenprobe mit fünf eingebauten Abweichungen, alle fünf gemeldet. Was
+  das Plugin über eine Definition urteilt, steht hier nicht: Das fragt der Reiter das Plugin selbst
+  (`dist/cli.js check`).
 - `npm run check:inline-svg -- [projektpfad]` — der SVG-Bereiniger (`src/utils/inlineSvg.ts`, „Als Code einfügen“
   im Snippet-Editor) gegen 38 böse Eingaben, ein gewöhnliches Icon, zwei Icons mit denselben Ids auf einer Seite und (seit dem vierundvierzigsten Review) vier Schreibweisen eines Verweises, die das Präfix der Ids mitziehen muss: jedes Ergebnis in Chrome als
   HTML in eine Box, wie die Website es rendert — und seit dem dreiundvierzigsten Review auch durch

@@ -23,6 +23,7 @@ export const FORMS_LAYOUT_SINCE = '0.4.0'
 export const FORMS_TEXTS_SINCE = '0.5.9'
 
 type Options = Record<string, unknown>
+
 export type FormDef = Record<string, unknown>
 export type FieldDef = Record<string, unknown> & { type: string; name: string }
 export type Text = string | Record<string, string>
@@ -555,7 +556,7 @@ export const FORM_KEYS = new Set([
 /** The parts of the panel of one form, in their order. */
 export type FormPartId = 'general' | 'fields' | 'sending' | 'privacy' | 'spam' | 'embed' | 'more'
 
-const PART_OF: [RegExp, FormPartId][] = [
+export const PART_OF: [RegExp, FormPartId][] = [
   [/^fields(?=[.:[\s]|$)/, 'fields'],
   [/^(transport|recipient|subject)(?=[.:[\s]|$)/, 'sending'],
   [/^(encryption|anonymous|pageContext)(?=[.:[\s]|$)/, 'privacy'],
@@ -567,7 +568,7 @@ const PART_OF: [RegExp, FormPartId][] = [
 // "no fields" is said on the form's own path (`forms.<id>: no fields …`, validate.ts `noFields`,
 // messages/en.ts and de.ts), not under `fields`, so its badge stood on Allgemein (review
 // 2026-10-28, N8). Read by its words in both languages the CLI answers in.
-const NO_FIELDS = /^(no fields|keine Felder)\b/
+export const NO_FIELDS = /^(no fields|keine Felder)\b/
 
 // A key the panel does not know stands under "Unbekannte Schlüssel", and so does what the plugin
 // says about it; it went to Allgemein (review 2026-10-28, Nebenbei). A sentence about the form
@@ -613,4 +614,24 @@ export function captchaNeeds(options: Options | undefined, globalSpam: Options):
     else own.push({ id, provider })
   }
   return { global: usesGlobal ? { provider: globalProvider } : null, forms: own }
+}
+
+// ── texts ──────────────────────────────────────────────────────────────────────────────────────
+
+export const primary = (code: string): string => code.toLowerCase().split(/[-_]/)[0]
+
+// The two lines of the message the relay writes itself for every unencrypted post, with or without
+// JavaScript, in its own words (send.php `qf_serialize`/`qf_words`; the head of `qf_words` says a
+// site's `texts` do not reach it) - so their own texts work everywhere but there (review
+// 2026-10-28, N6).
+export const RELAY_OWN_WORDS = new Set(['messagePage', 'messageKey'])
+
+/**
+ * The entry of `texts` a site language writes to: the one named exactly as the language, else one
+ * of its primary subtag (`de-DE` for `de`), else a new one under the language's code. The plugin
+ * reads both, the exact locale over the primary subtag (quartz-forms `wording()`).
+ */
+export function entryKey(texts: Options, code: string): string {
+  const keys = Object.keys(texts)
+  return keys.find((k) => k.toLowerCase() === code) ?? keys.find((k) => primary(k) === primary(code)) ?? code
 }

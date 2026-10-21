@@ -48,6 +48,13 @@ export async function sshAuthOptions(connection: SshConnection, secret: string |
 // Long enough for someone to open their provider's page and compare a SHA256 fingerprint by eye.
 const HANDSHAKE_WITH_PROMPT_MS = 180_000
 
+// A connection that goes silent (a frozen sshd-session on debian-vm, a NAT that forgets it) left
+// the upload waiting for good: still running after 150 s (review 2026-10-30, nebenbei). ssh2 sends
+// no keepalives unless asked, and the operating system's own probes start after two hours. rsync's
+// ssh gets the same through ServerAliveInterval.
+export const SSH_KEEPALIVE_MS = 15_000
+export const SSH_KEEPALIVE_COUNT = 3
+
 // The one-time chmod pass below; ssh2-sftp-client adds listeners per call, and Node warns past ten.
 const CHMOD_CONCURRENCY = 8
 
@@ -93,6 +100,8 @@ export const sftpAdapter: DeployAdapter = {
         // does mean an unreachable host.
         readyTimeout: connection.hostKey?.fingerprint ? undefined : HANDSHAKE_WITH_PROMPT_MS,
         hostVerifier: makeHostVerifier(connection, (message) => (hostKeyRejection = message)),
+        keepaliveInterval: SSH_KEEPALIVE_MS,
+        keepaliveCountMax: SSH_KEEPALIVE_COUNT,
         ...(await sshAuthOptions(connection, ctx.secret))
       })
 
@@ -192,7 +201,8 @@ export const sftpAdapter: DeployAdapter = {
       return { success: true, output }
     } catch (err) {
       // the host-key message explains what actually happened; ssh2's own error does not
-      return { success: false, output: `${output}\n${hostKeyRejection ?? String(err)}` }
+      const silent = /Keepalive timeout/.test(String(err)) ? `${mainT('sshSilent', { host: connection.host, seconds: (SSH_KEEPALIVE_MS * SSH_KEEPALIVE_COUNT) / 1000 })}\n\n` : ''
+      return { success: false, output: `${output}\n${hostKeyRejection ?? `${silent}${String(err)}`}` }
     } finally {
       client.end().catch(() => {})
     }

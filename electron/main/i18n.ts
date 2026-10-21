@@ -419,6 +419,7 @@ const STRINGS = {
 
     // Publishing - SSH
     sshNoConnection: 'Für dieses Ziel ist kein SSH-Zugang hinterlegt.',
+    sshSilent: '{{host}} hat {{seconds}} s lang nicht geantwortet, deshalb wurde die Verbindung beendet. Versuche es noch einmal.',
     sshNoAgent: 'Kein SSH-Agent gefunden (SSH_AUTH_SOCK ist nicht gesetzt).',
     sshNoPrivateKey: 'Für diesen Zugang ist kein privater Schlüssel hinterlegt.',
 
@@ -784,6 +785,7 @@ const STRINGS = {
     branchUnchanged: 'No changes against what is published, push skipped.',
 
     sshNoConnection: 'No SSH credential is set for this target.',
+    sshSilent: '{{host}} did not answer for {{seconds}} s, so the connection was ended. Try again.',
     sshNoAgent: 'No SSH agent found (SSH_AUTH_SOCK is not set).',
     sshNoPrivateKey: 'No private key is stored for this credential.',
 

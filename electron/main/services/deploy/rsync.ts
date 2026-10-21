@@ -7,6 +7,7 @@ import type { DeployDiffEntry, DeployResult, SshConnection } from '@shared/ipc-c
 import type { DeployAdapter, DeployContext } from './types'
 import { rsyncBlockReason, type RsyncBlockReason } from '@shared/rsyncSupport'
 import * as connectionsService from '../connectionsService'
+import { SSH_KEEPALIVE_COUNT, SSH_KEEPALIVE_MS } from './sftp'
 import { findExecutable } from '../environmentService'
 import { mainT } from '../../i18n'
 
@@ -71,6 +72,9 @@ async function prepareSshEnv(connection: SshConnection): Promise<SshEnv> {
     // No prompts of any kind: rsync runs unattended here, and a password or confirmation prompt
     // would hang forever behind a pipe nobody reads.
     '-o BatchMode=yes',
+    // A connection that goes silent ends instead of waiting for good, as in the SFTP adapter.
+    `-o ServerAliveInterval=${SSH_KEEPALIVE_MS / 1000}`,
+    `-o ServerAliveCountMax=${SSH_KEEPALIVE_COUNT}`,
     `-p ${connection.port}`
   ]
   if (connection.authMethod === 'privateKey' && connection.keyPath) {
@@ -130,6 +134,10 @@ function translateSshFailure(output: string, connection: SshConnection): string 
     // unlike the host-key wall of "@" above, and this is the message that turned out to point the
     // wrong way - a summary that replaces the evidence cannot be checked.
     return `${mainT('rsyncKeyRejected', { user: connection.username, host: connection.host, identity })}\n\n${output.trim()}`
+  }
+  // ssh's own line for ServerAliveCountMax ("Timeout, server … not responding."), raw underneath.
+  if (/Timeout, server .* not responding/.test(output)) {
+    return `${mainT('sshSilent', { host: connection.host, seconds: (SSH_KEEPALIVE_MS * SSH_KEEPALIVE_COUNT) / 1000 })}\n\n${output.trim()}`
   }
   return null
 }

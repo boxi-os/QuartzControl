@@ -417,9 +417,10 @@ function getWithOrigin(url: string, origin: string | null): Promise<{ status: nu
 /**
  * Asks the uploaded relay for a stamp (`GET ?challenge=<form>`), as a form does when its page
  * opens, so a relay that cannot run is found by the upload and not by the first visitor. The
- * origin is the site's, as the relay checks it.
+ * origin is the site's, as the relay checks it. `generation` is the one just uploaded, when the
+ * plugin has one (quartz-forms 0.5.11).
  */
-async function checkRelay(url: string | undefined, origin: string | null, form: string | undefined): Promise<RelayCheck> {
+async function checkRelay(url: string | undefined, origin: string | null, form: string | undefined, generation: string | undefined): Promise<RelayCheck> {
   if (!url || !/^https?:\/\//i.test(url) || !form) return { kind: 'noUrl' }
   let probe: URL
   try {
@@ -430,15 +431,19 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   probe.searchParams.set('challenge', form)
   const res = await getWithOrigin(probe.toString(), origin)
   if ('error' in res) return { kind: 'unreachable', url, reason: res.error }
-  let json: { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown } | null
+  let json: { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown; generation?: unknown } | null
   try {
-    json = JSON.parse(res.body) as { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown } | null
+    json = JSON.parse(res.body) as { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown; generation?: unknown } | null
   } catch {
     json = null
   }
   // An answer is not a relay that works: under mod_php (www-data) with counters/ uploaded 0755 by
   // the account, the probe said ok while a form limited to 2 an hour sent three mails of three
   // (review 2026-10-29, M1). The ticket says so from quartz-forms 0.5.11 on.
+  // Nor is it the relay just uploaded: with the folder changed and the address not, the probe
+  // asked the relay left at the old one and said ok (review 2026-10-29, N1). A relay without a
+  // generation is older than the one uploaded, so another one too.
+  if (res.status === 200 && json?.ok === true && generation && json.generation !== generation) return { kind: 'otherRelay', url }
   if (res.status === 200 && json?.ok === true) return { kind: 'ok', url, ...(typeof json.counters === 'boolean' ? { counters: json.counters } : {}) }
   if (json && typeof json.error === 'string') {
     return { kind: 'relayError', url, status: res.status, error: json.error, message: typeof json.message === 'string' ? json.message : '' }
@@ -508,7 +513,8 @@ export async function relayUpload(projectId: string, projectPath: string, source
     }
     const warnings = strings(generated.json.warnings)
     const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)
-    const check = result.success ? await checkRelay(url, origin, strings(generated.json.forms)[0]) : undefined
+    const generation = typeof generated.json.generation === 'string' ? generated.json.generation : undefined
+    const check = result.success ? await checkRelay(url, origin, strings(generated.json.forms)[0], generation) : undefined
     const countersOpen = check && check.kind !== 'noUrl' && !settings.counterDir.trim() ? await countersServed(check.url) : null
     return { ...result, output: [...warnings, result.output].filter(Boolean).join('\n'), configReadable: settings.configReadable, ...(check ? { check } : {}), ...(countersOpen ? { countersOpen } : {}) }
   })

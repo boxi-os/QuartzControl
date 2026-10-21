@@ -702,6 +702,9 @@ export type RelayCheck =
   /** send.php came back as its own source: PHP does not run there. `configOpen`: the address under
    *  which config.php was served as well, secret and addresses included. */
   | { kind: 'noPhp'; url: string; configOpen?: string }
+  /** A relay answered, but not the one just uploaded (another `generation`, from quartz-forms
+   *  0.5.11 on): the address still names an older place. */
+  | { kind: 'otherRelay'; url: string }
   /** Something else answered: no relay at that address. */
   | { kind: 'http'; url: string; status: number }
   | { kind: 'unreachable'; url: string; reason: string }

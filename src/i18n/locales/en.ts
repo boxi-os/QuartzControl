@@ -1612,6 +1612,7 @@ export default {
       checkRelayError: 'The relay refuses the probe (HTTP {{status}}, “{{error}}”): {{message}}',
       checkNoPhp: 'PHP does not run at {{url}}: the server hands out send.php as text. Upload the relay to a folder where PHP runs.',
       configOpen: 'config.php can be read by anyone at {{url}} as well, secret and recipient addresses included. Delete it from the server.',
+      checkOtherRelay: 'A relay answers at {{url}}, but not the one just uploaded. Do the target and the folder match the send.php address?',
       checkHttp: 'No relay answers at {{url}} (HTTP {{status}}). Are the target, the folder and the send.php address right?',
       checkUnreachable: 'The relay could not be checked: {{reason}}',
       checkNoUrl: 'The relay could not be checked because the send.php address is missing.',

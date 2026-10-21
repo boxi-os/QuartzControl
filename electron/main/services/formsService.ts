@@ -599,6 +599,13 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   // by a pool running as another account, behind Apache (:8442) and nginx (:8444) on debian-vm.
   // A missing send.php got the server's own 404 page on both (review 2026-10-29, nebenbei).
   if (res.status === 404 && res.body.trim() === 'File not found.') return { kind: 'phpCannotRead', url }
+  // What is left after a redirect within the origin with 307 or 308 (the others are postRedirect)
+  // is said by the place it went: a 307 home said "no relay (HTTP 200)" without naming it (review
+  // 2026-10-30, nebenbei).
+  if (to) {
+    to.search = ''
+    return { kind: 'redirectNoRelay', url, to: to.toString() }
+  }
   return { kind: 'http', url, status: res.status }
 }
 

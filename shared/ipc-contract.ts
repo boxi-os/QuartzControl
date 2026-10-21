@@ -716,9 +716,9 @@ export type RelayCheck =
   /** The address redirects within the origin with 301, 302 or 303 (`status`), which turns a form's
    *  POST into a GET without its body; the probe, a GET, got through to `to`. */
   | { kind: 'postRedirect'; url: string; to: string; status: number }
-  /** The address redirects (to another origin, or with 301 to 303) to `to`, where no relay answered:
-   *  a home page, a login, another server's 404. `local`: `to` is this machine or its network,
-   *  and the check did not go there. */
+  /** The address redirects to `to`, where no relay answered: a home page, a login, another
+   *  server's 404. To another origin, within it with 301 to 303, or with 307 or 308 to nothing
+   *  more specific. `local`: `to` is this machine or its network, and the check did not go there. */
   | { kind: 'redirectNoRelay'; url: string; to: string; local?: true }
   /** A relay answered, but not the one just uploaded (another `generation`, from quartz-forms
    *  0.5.11 on): the address still names an older place. */

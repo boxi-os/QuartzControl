@@ -74,6 +74,7 @@ import {
   transportKindOf,
   usesTemplateFields,
   partOf,
+  FORM_KEYS,
   placeMessage,
   captchaNeeds,
   withForm,
@@ -737,26 +738,6 @@ function AddFormForm({ ids, onAdd, onCancel }: { ids: string[]; onAdd: (id: stri
   )
 }
 
-// The keys of a form the panel shows with its own controls. A key it does not know (one a newer
-// plugin adds, a typo) stands under "Weitere Schlüssel" in the plugin's form, so nothing is out
-// of reach.
-const KNOWN_KEYS = new Set([
-  'template',
-  'title',
-  'description',
-  'submitLabel',
-  'fields',
-  'recipient',
-  'subject',
-  'transport',
-  'encryption',
-  'anonymous',
-  'pageContext',
-  'spam',
-  'success',
-  'className'
-])
-
 function FormPanel({
   id,
   def,
@@ -863,8 +844,8 @@ function FormPanel({
     onDef({ ...def, template: name })
   }
 
-  const unknownKeys = useCallback((key: string) => !KNOWN_KEYS.has(key), [])
-  const hasUnknown = Object.keys(def).some((k) => !KNOWN_KEYS.has(k)) || (form?.fields.some((f) => !KNOWN_KEYS.has(f.key)) ?? false)
+  const unknownKeys = useCallback((key: string) => !FORM_KEYS.has(key), [])
+  const hasUnknown = Object.keys(def).some((k) => !FORM_KEYS.has(k)) || (form?.fields.some((f) => !FORM_KEYS.has(f.key)) ?? false)
   const flat = useMemo(() => ({ flat: true }), [])
 
   const { copy, copied } = useCopyToClipboard()

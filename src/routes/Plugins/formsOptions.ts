@@ -532,6 +532,26 @@ export function placeMessage(text: string): PlacedMessage {
   return { text, ...(section ? { section: section[1] } : {}), rest: text }
 }
 
+// The keys of a form the panel shows with its own controls. A key it does not know (one a newer
+// plugin adds, a typo) stands under "Unbekannte Schlüssel" in the plugin's form, so nothing is out
+// of reach.
+export const FORM_KEYS = new Set([
+  'template',
+  'title',
+  'description',
+  'submitLabel',
+  'fields',
+  'recipient',
+  'subject',
+  'transport',
+  'encryption',
+  'anonymous',
+  'pageContext',
+  'spam',
+  'success',
+  'className'
+])
+
 /** The parts of the panel of one form, in their order. */
 export type FormPartId = 'general' | 'fields' | 'sending' | 'privacy' | 'spam' | 'embed' | 'more'
 
@@ -549,9 +569,16 @@ const PART_OF: [RegExp, FormPartId][] = [
 // 2026-10-28, N8). Read by its words in both languages the CLI answers in.
 const NO_FIELDS = /^(no fields|keine Felder)\b/
 
+// A key the panel does not know stands under "Unbekannte Schlüssel", and so does what the plugin
+// says about it; it went to Allgemein (review 2026-10-28, Nebenbei). A sentence about the form
+// names no key: its first word is not followed by `.`, `:` or `[`.
+const FIRST_KEY = /^([A-Za-z_$][\w$]*)(?=[.:[])/
+
 export function partOf(m: PlacedMessage): FormPartId {
   if (m.field !== undefined) return 'fields'
   if (m.form !== undefined && NO_FIELDS.test(m.rest)) return 'fields'
+  const key = m.form !== undefined ? FIRST_KEY.exec(m.rest)?.[1] : undefined
+  if (key !== undefined && !FORM_KEYS.has(key)) return 'more'
   return PART_OF.find(([re]) => re.test(m.rest))?.[1] ?? 'general'
 }
 

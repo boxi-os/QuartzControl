@@ -1612,6 +1612,7 @@ export default {
       checkHttp: 'No relay answers at {{url}} (HTTP {{status}}). Are the target, the folder and the send.php address right?',
       checkUnreachable: 'The relay could not be checked: {{reason}}',
       checkNoUrl: 'The relay could not be checked because the send.php address is missing.',
+      countersOpen: 'The “counters” folder can be read by anyone, because the server reads no .htaccess: anyone can see how many messages a form gets. Enter a path outside the web root under “Folder for counters”.',
       upload: 'Upload relay',
       uploading: 'Uploading …',
       uploadAll: 'Upload everything again',

@@ -1617,6 +1617,7 @@ export default {
       checkHttp: 'Unter {{url}} antwortet kein Relay (HTTP {{status}}). Stimmen Ziel, Unterordner und Adresse von send.php?',
       checkUnreachable: 'Das Relay konnte nicht geprüft werden: {{reason}}',
       checkNoUrl: 'Das Relay konnte nicht geprüft werden, weil die Adresse von send.php fehlt.',
+      countersOpen: 'Der Ordner „counters“ ist öffentlich lesbar, weil der Server keine .htaccess liest: Jeder kann sehen, wie viele Nachrichten ein Formular bekommt. Trage unter „Ordner für Zähler“ einen Pfad außerhalb des Web-Verzeichnisses ein.',
       upload: 'Relay hochladen',
       uploading: 'Wird hochgeladen …',
       uploadAll: 'Alles neu hochladen',

@@ -48,7 +48,7 @@ export function RelaySection({
   const { t, i18n } = useTranslation()
   const project = useProject()
   const [busy, setBusy] = useState<null | 'upload' | 'export'>(null)
-  const [result, setResult] = useState<{ success: boolean; output: string; check?: RelayCheck } | null>(null)
+  const [result, setResult] = useState<{ success: boolean; output: string; check?: RelayCheck; countersOpen?: string } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
 
@@ -365,6 +365,7 @@ export function RelaySection({
               )}
             </>
           )}
+          {result?.countersOpen && <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.relay.countersOpen')}</p>}
         </div>
       </div>
     </div>

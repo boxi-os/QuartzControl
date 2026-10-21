@@ -701,7 +701,12 @@ export type RelayCheck =
   | { kind: 'unreachable'; url: string; reason: string }
   | { kind: 'noUrl' }
 
-export type RelayUploadResult = DeployResult & { check?: RelayCheck }
+/**
+ * `countersOpen`: the address under which counters/.htaccess was served - the server reads no
+ * .htaccess (nginx), so anyone can read how many messages a form got. Asked only while the
+ * counters lie next to send.php (no `counterDir`).
+ */
+export type RelayUploadResult = DeployResult & { check?: RelayCheck; countersOpen?: string }
 
 /** forms.importKey: the path written (relative to the site root), or the one that is already there. */
 export type FormsKeyImport = { file: string } | { exists: string }

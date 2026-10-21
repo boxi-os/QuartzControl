@@ -443,6 +443,23 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   return { kind: 'http', url, status: res.status }
 }
 
+/**
+ * Whether the server hands out counters/.htaccess: Apache reads the file and answers 403, nginx
+ * reads no .htaccess and serves it (measured on debian-vm: 403 under Apache, 200 under nginx for
+ * the file and for `limit-<hour>.count`, whose name anyone can guess). Asked by its content, not
+ * its status: a site that answers every unknown path with 200 and its start page is not open.
+ */
+async function countersServed(url: string): Promise<string | null> {
+  let probe: URL
+  try {
+    probe = new URL('counters/.htaccess', url)
+  } catch {
+    return null
+  }
+  const res = await getWithOrigin(probe.toString(), null)
+  return 'status' in res && res.status === 200 && res.body.startsWith('# quartz-forms relay') ? probe.toString() : null
+}
+
 export async function relayUpload(projectId: string, projectPath: string, source: PluginSource, fresh: boolean, url?: string): Promise<RelayUploadResult> {
   const file = await readRelayFile(projectPath)
   const settings: RelaySettings = { ...DEFAULT_RELAY, ...(file.settings ?? {}) }
@@ -468,7 +485,8 @@ export async function relayUpload(projectId: string, projectPath: string, source
     const warnings = strings(generated.json.warnings)
     const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)
     const check = result.success ? await checkRelay(url, origin, strings(generated.json.forms)[0]) : undefined
-    return { ...result, output: [...warnings, result.output].filter(Boolean).join('\n'), ...(check ? { check } : {}) }
+    const countersOpen = check && check.kind !== 'noUrl' && !settings.counterDir.trim() ? await countersServed(check.url) : null
+    return { ...result, output: [...warnings, result.output].filter(Boolean).join('\n'), ...(check ? { check } : {}), ...(countersOpen ? { countersOpen } : {}) }
   })
 }
 

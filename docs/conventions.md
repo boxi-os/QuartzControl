@@ -64,6 +64,9 @@ Begründung.
   fasst die App nicht an. Die vielen Ränder (Stash, Notiz in `.quartz-gui/core-update.json` mit
   `wanted`/`putBack`, `-G`-Abfrage, Amend mit `--only`, `ls-files`) stehen in der Langfassung —
   **vor jeder Änderung am Core-Update dort lesen.** Prüfskript: `npm run check:core-update`.
+- **Was die App auf einen Server lädt, bekommt seinen Modus von der App, nicht vom Werkzeug.**
+  SFTP: `put` mit `writeStreamOptions.mode` (`0o644`), denn ssh2 setzt sonst 0666 per `fchmod`.
+  Gemessen wird auf einem echten Server, nicht am Code der Bibliothek.
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Ausgabe in
   Dateien unter `.quartz-gui/logs/`, die Main tailt. Ein neues Verzeichnis unter `.quartz-gui/`
   muss `isSnapshotWorthy()` und `SKIP` in `duplicateService` lernen.

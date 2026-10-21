@@ -96,7 +96,11 @@ export const sftpAdapter: DeployAdapter = {
           await client.mkdir(remoteDir, true)
           ensuredDirs.add(remoteDir)
         }
-        await client.put(join(ctx.buildDir, relPath), remotePath)
+        // ssh2 opens every file with mode 0666 and then sets that mode with fchmod, so the server's
+        // umask never applies: measured on a Debian host (OpenSSH sftp-server), all 475 files of a
+        // published site were writable by every account there, and a file that had been 0644
+        // became 0666 when overwritten. An explicit mode is set the same way and wins.
+        await client.put(join(ctx.buildDir, relPath), remotePath, { writeStreamOptions: { mode: 0o644 } })
         processed++
         ctx.emitProgress(processed, total, relPath)
         output += `↑ ${relPath}\n`

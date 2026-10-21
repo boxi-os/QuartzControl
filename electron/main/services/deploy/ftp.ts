@@ -2,6 +2,7 @@ import { stat } from 'fs/promises'
 import { join, posix } from 'path'
 import { Client as FtpClient, FTPError } from 'basic-ftp'
 import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
+import { fromLoginDir } from '@shared/remotePath'
 import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, partitionDiff } from './manifest'
 import * as connectionsService from '../connectionsService'
@@ -88,10 +89,12 @@ export const ftpAdapter: DeployAdapter = {
       // root, and a target "review57-rel" failed at its first file with "553 Could not create file"
       // (debian-vm, since 1.1.0, review 2026-10-31).
       const start = await client.pwd()
+      const root = fromLoginDir(destination.remotePath, start, connection.username)
+      if (root === null) return { success: false, output: mainT('deployTildeOtherAccount', { path: destination.remotePath }) }
 
       // The folders above a site's folder are not made (sftp.ts, run).
       if (!ctx.keepLocalModes && toUpload.length > 0) {
-        const parent = posix.dirname(destination.remotePath.replace(/\/+$/, ''))
+        const parent = posix.dirname(root.replace(/\/+$/, ''))
         const found = await client.cd(parent).then(
           () => true,
           () => false
@@ -102,7 +105,7 @@ export const ftpAdapter: DeployAdapter = {
 
       // The relay's folder must not be a symlink on the server (sftp.ts, run).
       if (ctx.keepLocalModes) {
-        for (const folder of ctx.relayFolders ?? [destination.remotePath]) {
+        for (const folder of (ctx.relayFolders ?? [destination.remotePath]).map((f) => fromLoginDir(f, start, connection.username) ?? f)) {
           const listing = await client.list(posix.dirname(folder)).catch((err: unknown) => {
             if (!(err instanceof FTPError)) throw err
             return []
@@ -137,7 +140,7 @@ export const ftpAdapter: DeployAdapter = {
       }
 
       for (const relPath of toUpload) {
-        const remotePath = posix.join(destination.remotePath, relPath)
+        const remotePath = posix.join(root, relPath)
         const remoteDir = posix.dirname(remotePath)
         if (!ensuredDirs.has(remoteDir)) {
           await client.ensureDir(remoteDir)
@@ -156,15 +159,28 @@ export const ftpAdapter: DeployAdapter = {
       // What was not deleted stays in the manifest, so the next upload offers it again (sftp.ts, run).
       const kept: string[] = []
       for (const relPath of toDelete) {
+        const remotePath = posix.join(root, relPath)
         try {
-          await client.remove(posix.join(destination.remotePath, relPath))
+          await client.remove(remotePath)
           output += `✗ ${relPath}\n`
         } catch (err) {
-          // Only a reply of the server counts, and 550 is the one for a missing file (vsftpd gives it
-          // for a refused one too). With vsftpd frozen, the run said success and left 47 of 178 files
-          // online, all of them gone from the manifest (review 2026-10-31, M1).
+          // Only a reply of the server counts. With vsftpd frozen, the run said success and left 47 of
+          // 178 files online, all of them gone from the manifest (review 2026-10-31, M1).
           if (!(err instanceof FTPError)) throw err
-          if (err.code === 550) output += `✗ ${relPath}\n`
+          // 550 is the answer for a missing file and for a refused one alike, on vsftpd, ProFTPD and
+          // Pure-FTPd: a file in a folder 555 was said deleted, stayed online and left the manifest,
+          // so no later run tried again (debian-vm, support matrix, 2026-10-21). SIZE tells them
+          // apart on all three; what it cannot answer is kept, to be asked again next time.
+          const gone =
+            err.code === 550 &&
+            (await client.size(remotePath).then(
+              () => false,
+              (sizeErr: unknown) => {
+                if (!(sizeErr instanceof FTPError)) throw sizeErr
+                return sizeErr.code === 550
+              }
+            ))
+          if (gone) output += `✗ ${relPath}\n`
           else {
             kept.push(relPath)
             output += mainT('deployDeleteRefused', { path: relPath, reason: err.message })

@@ -61,15 +61,12 @@ dahin gilt der Fall als geduldet.
 | ein CDN vor dem Server | geduldet | an der Attrappe gemessen |
 | eine Weiterleitung an der Adresse von send.php | geduldet | an Attrappe und `debian-vm` gemessen; die Abfrage deutet fremde Antworten und kann irren |
 
-### Offen aus den Messungen vom 2026-10-21
+### Behoben aus den Messungen vom 2026-10-21
 
-- **Eine abgelehnte Löschung über FTP zählt als gelöscht**, bei allen drei Servern: vsftpd, ProFTPD
-  und Pure-FTPd antworten auf ein abgelehntes `DELE` wie auf ein fehlendes mit 550. Die Datei bleibt
-  online, das Manifest vergisst sie. Unterstützt, also zu beheben (`SIZE` nach einer 550 trennt
-  beide Fälle bei allen dreien).
-- **„~/…“ heißt je Weg etwas anderes**: rsync und vsftpd lösen es zum Anmeldeverzeichnis auf,
-  ProFTPD ohne chroot auch; ProFTPD mit chroot scheitert („550 ~: No such file or directory“),
-  Pure-FTPd scheitert immer beim Hochladen (553), OpenSSH über SFTP legt einen Ordner „~“ an.
+- Eine abgelehnte Löschung über FTP zählte als gelöscht, bei allen drei Servern (550 für beides):
+  `466117a2` fragt danach `SIZE`.
+- „~/…“ hieß je Weg etwas anderes: `e41df35f` löst „~“ und „~<eigenes Konto>“ über SFTP und FTP
+  selbst zum Anmeldeverzeichnis auf, „~<anderes Konto>“ wird abgelehnt.
 
 ## Rechte und Pfade auf dem Server
 
@@ -77,8 +74,10 @@ dahin gilt der Fall als geduldet.
 |---|---|---|
 | Der Ordner des Ziels gehört dem Upload-Konto, übliche Rechte | unterstützt | gemessen |
 | „/“, „.“, „~“ als Ziel ohne Löschen | unterstützt | gemessen (N2 des 56.) |
+| „~/…“ und „~<eigenes Konto>/…“ | unterstützt | gemessen über SFTP, rsync und alle drei FTP-Server (`e41df35f`) |
+| „~<anderes Konto>/…“ über SFTP und FTP | nicht unterstützt | QuartzControl sagt es (`deployTildeOtherAccount`); über rsync löst die Shell es auf |
 | fremde Eigentümer, Ordner ohne Lese- oder Suchrecht, Symlinks auf dem Weg zum Relay | geduldet | sauber ablehnen, nicht weiter verfeinern |
-| Tilde-Formen außer `~` und `~user` (`~+`, `~-`) | geduldet | an der Shell gemessen |
+| Tilde-Formen außer `~` und `~user` (`~+`, `~-`) über rsync | geduldet | an der Shell gemessen |
 
 ## Was ein Review damit tut
 

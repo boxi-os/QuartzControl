@@ -83,8 +83,8 @@ Begründung.
   Config an OPcache vorbei und sagt `counters` nur dann; eine fremde `generation` fragt sie nach 3 s
   noch einmal); eine Weiterleitung empfiehlt sie nur, wo dort ein Relay antwortet. Fehlende
   Ordner über dem Ordner eines Ziels legt nur das Relay an, über jeden Weg; was rsync nicht
-  übertragen kann (`rsyncUnsafeChar`), sagt schon das Formular. „~“ ist das Anmeldeverzeichnis
-  selbst, und das ist nur mit Löschen abgelehnt. Ist ein Ordner auf dem Weg zum Relay auf dem
+  übertragen kann (`rsyncUnsafeChar`), sagt schon das Formular. „~“ ist auf jedem Weg das Anmeldeverzeichnis
+  selbst (SFTP und FTP lösen es selbst auf, `fromLoginDir`), und das ist nur mit Löschen abgelehnt. Ist ein Ordner auf dem Weg zum Relay auf dem
   Server ein Symlink, lädt kein Weg hindurch. Lässt sich das nicht
   prüfen, auch nicht. Eine SSH-Verbindung, die schweigt, endet nach rund
   60 s (Keepalives in ssh2 und ssh; ssh2 zählt nur Antworten darauf). Die Abfrage folgt keiner

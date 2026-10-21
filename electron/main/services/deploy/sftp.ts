@@ -2,6 +2,7 @@ import { readFile, stat } from 'fs/promises'
 import { join, posix } from 'path'
 import SftpClient from 'ssh2-sftp-client'
 import type { DeployDiffEntry, DeployResult, SshConnection } from '@shared/ipc-contract'
+import { fromLoginDir } from '@shared/remotePath'
 import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, modesSettled, partitionDiff, readManifest, settleModes } from './manifest'
 import { makeHostVerifier } from './hostVerifier'
@@ -136,12 +137,15 @@ export const sftpAdapter: DeployAdapter = {
         keepaliveCountMax: SSH_KEEPALIVE_COUNT,
         ...(await sshAuthOptions(connection, ctx.secret))
       })
+      const loginDir = await client.cwd()
+      const root = fromLoginDir(destination.remotePath, loginDir, connection.username)
+      if (root === null) return { success: false, output: mainT('deployTildeOtherAccount', { path: destination.remotePath }) }
 
       // A site's folder is made, the folders above it are not, as rsync's receiver does: a target
       // ".../tpyo/htdocs" got 475 files in a new tree over SFTP and FTP, where rsync refused (review
       // 2026-10-30, after N4). The relay's folders below a target are QuartzControl's to make.
       if (!ctx.keepLocalModes && toUpload.length > 0) {
-        const parent = posix.dirname(destination.remotePath.replace(/\/+$/, ''))
+        const parent = posix.dirname(root.replace(/\/+$/, ''))
         if (!(await client.exists(parent))) return { success: false, output: mainT('deployParentMissing', { path: parent }) }
       }
 
@@ -150,7 +154,7 @@ export const sftpAdapter: DeployAdapter = {
       // 2750 to 755 (debian-vm, review 2026-10-30, nebenbei). Each adapter asks before it uploads.
       // Each of its folders below the target, down to the first that is not there yet.
       if (ctx.keepLocalModes) {
-        for (const folder of ctx.relayFolders ?? [destination.remotePath]) {
+        for (const folder of (ctx.relayFolders ?? [destination.remotePath]).map((f) => fromLoginDir(f, loginDir, connection.username) ?? f)) {
           // Only "not there" ends the question; any other answer is one it could not ask, and the
           // upload behind it used to go on without a word (review 2026-10-31, nebenbei).
           const stats = await (client as SftpClient & { lstat(path: string): Promise<SftpClient.FileStats> }).lstat(folder).catch((err: unknown) => {
@@ -174,7 +178,7 @@ export const sftpAdapter: DeployAdapter = {
       const ensuredDirs = new Set<string>()
 
       for (const relPath of toUpload) {
-        const remotePath = posix.join(destination.remotePath, relPath)
+        const remotePath = posix.join(root, relPath)
         const remoteDir = posix.dirname(remotePath)
         if (!ensuredDirs.has(remoteDir)) {
           await client.mkdir(remoteDir, true)
@@ -203,7 +207,7 @@ export const sftpAdapter: DeployAdapter = {
       const kept: string[] = []
       for (const relPath of toDelete) {
         try {
-          await client.delete(posix.join(destination.remotePath, relPath))
+          await client.delete(posix.join(root, relPath))
           output += `✗ ${relPath}\n`
         } catch (err) {
           // Only the server saying the file is missing (status 2) means it is gone. Every error was
@@ -236,7 +240,7 @@ export const sftpAdapter: DeployAdapter = {
         await Promise.all(
           Array.from({ length: Math.min(CHMOD_CONCURRENCY, earlier.length) }, async () => {
             for (let i = next++; i < earlier.length; i = next++) {
-              const remotePath = posix.join(destination.remotePath, earlier[i])
+              const remotePath = posix.join(root, earlier[i])
               try {
                 // Only what 1.1.0 left behind: a regular file at exactly 0666. chmod is SETSTAT on
                 // the path and follows a symlink; measured on debian-vm, the pass made a 0600 file

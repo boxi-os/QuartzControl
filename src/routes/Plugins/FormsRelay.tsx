@@ -441,6 +441,8 @@ function checkText(check: RelayCheck, configReadable: boolean, t: TFunction): st
       return t('formsEditor.relay.checkRedirect', { url: check.url, to: check.to })
     case 'otherRelay':
       return t('formsEditor.relay.checkOtherRelay', { url: check.url })
+    case 'phpCannotRead':
+      return t('formsEditor.relay.checkPhpCannotRead', { url: check.url })
     case 'http':
       // A 403, a 5xx and a 404 have three different ways out; only the last is the address.
       if (check.status === 403) return t('formsEditor.relay.checkHttpDenied', { url: check.url })

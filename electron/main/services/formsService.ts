@@ -494,6 +494,11 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
     const configOpen = served && 'status' in served && served.status === 200 && served.body.startsWith('<?php') ? config?.toString() : undefined
     return { kind: 'noPhp', url, ...(configOpen ? { configOpen } : {}) }
   }
+  // PHP-FPM says this itself ("Primary script unknown" in the log) where the web server found the
+  // file and PHP could not open it: a folder 2750 of the upload account and group www-data, read
+  // by a pool running as another account, behind Apache (:8442) and nginx (:8444) on debian-vm.
+  // A missing send.php got the server's own 404 page on both (review 2026-10-29, nebenbei).
+  if (res.status === 404 && res.body.trim() === 'File not found.') return { kind: 'phpCannotRead', url }
   return { kind: 'http', url, status: res.status }
 }
 

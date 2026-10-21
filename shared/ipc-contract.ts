@@ -2421,8 +2421,9 @@ export interface QuartzGuiApi {
     importKey(args: { projectPath: string; sourcePath: string; name: string; overwrite: boolean }): Promise<FormsKeyImport>
     relayState(args: { projectId: string; projectPath: string; source: PluginSource }): Promise<RelayState>
     relaySaveSettings(args: { projectPath: string; settings: RelaySettings }): Promise<void>
-    /** An address or captcha secret of null removes it; the values never come back to the renderer. */
-    relaySaveSecrets(args: { projectId: string; recipients?: Record<string, string | null>; captchaSecret?: string | null; captchaSecrets?: Record<string, string | null>; moveCaptchaSecret?: { from: string; to: string } }): Promise<void>
+    /** An address or captcha secret of null removes it; the values never come back to the renderer.
+     *  `renewSecret` makes a new signing secret. */
+    relaySaveSecrets(args: { projectId: string; recipients?: Record<string, string | null>; captchaSecret?: string | null; captchaSecrets?: Record<string, string | null>; moveCaptchaSecret?: { from: string; to: string }; renewSecret?: true }): Promise<void>
     /** `url`: the send.php address of `form`, a relay form, asked once the upload went through. */
     relayUpload(args: { projectId: string; projectPath: string; source: PluginSource; url?: string; form?: string }): Promise<RelayUploadResult>
     relayExport(args: { projectId: string; projectPath: string; source: PluginSource; dir: string }): Promise<RelayUploadResult>

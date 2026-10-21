@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { FolderDown, Trash2, Upload } from 'lucide-react'
+import { FolderDown, KeyRound, Trash2, Upload } from 'lucide-react'
 import type { PluginSource, RelayCheck, RelaySettings, RelayState } from '@shared/ipc-contract'
 import { relaySubdir } from '@shared/remotePath'
 import { Badge, Button, Field, FieldGroup, IconButton, Select, SegmentedControl, TextInput, Toggle } from '../../components/ui'
@@ -354,6 +354,19 @@ export function RelaySection({
           checked={s.configReadable}
           onChange={(on) => void save({ configReadable: on })}
         />
+        <div className="flex flex-col items-start gap-1">
+          <Button
+            variant="ghost"
+            onClick={async () => {
+              if (!(await confirmDialog({ text: t('formsEditor.relay.renewSecretConfirm'), confirmLabel: t('formsEditor.relay.renewSecretSubmit'), danger: true }))) return
+              await saveSecrets({ projectId: project.id, renewSecret: true }, t('formsEditor.relay.renewSecretAnnounce'))
+            }}
+          >
+            <KeyRound size={14} aria-hidden />
+            {t('formsEditor.relay.renewSecret')}
+          </Button>
+          <span className="text-micro text-text-muted">{t('formsEditor.relay.renewSecretHint')}</span>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 border-t border-ink/[0.06] pt-3 dark:border-ink/10">

@@ -486,7 +486,9 @@ export async function getRelaySecrets(projectId: string): Promise<RelaySecrets |
  * captcha secret to its new id after a rename (before the other changes); without one under
  * `from` it does nothing. The signing secret is made once, the first
  * time anything is stored, and kept: the relay's stamps are signed with it, and a new one would
- * turn every open page's stamp away. Throws rather than store anything in plain text.
+ * turn every open page's stamp away. Only `renewSecret` makes a new one, for a config.php that was
+ * open to anyone (review 2026-10-29, nebenbei; M5 finds such a one). Throws rather than store
+ * anything in plain text.
  */
 export async function saveRelaySecrets(
   projectId: string,
@@ -495,6 +497,7 @@ export async function saveRelaySecrets(
     captchaSecret?: string | null
     captchaSecrets?: Record<string, string | null>
     moveCaptchaSecret?: { from: string; to: string }
+    renewSecret?: true
   }
 ): Promise<void> {
   const all = await readRelayStore()
@@ -522,7 +525,7 @@ export async function saveRelaySecrets(
   if (change.captchaSecret === null) captchaSecret = undefined
   else if (typeof change.captchaSecret === 'string' && change.captchaSecret.trim()) captchaSecret = change.captchaSecret.trim()
   const next: RelaySecrets = {
-    secret: current.secret,
+    secret: change.renewSecret ? randomBytes(32).toString('base64url') : current.secret,
     recipients,
     ...(captchaSecret ? { captchaSecret } : {}),
     ...(Object.keys(captchaSecrets).length ? { captchaSecrets } : {})

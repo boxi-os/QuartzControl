@@ -712,6 +712,9 @@ export type RelayCheck =
   /** The address redirects to another origin (`to`, the last place, without the query), where
    *  the request arrives with `Origin: null`, from the check as from a visitor's browser. */
   | { kind: 'redirect'; url: string; to: string }
+  /** The address redirects within the origin with 301, 302 or 303 (`status`), which turns a form's
+   *  POST into a GET without its body; the probe, a GET, got through to `to`. */
+  | { kind: 'postRedirect'; url: string; to: string; status: number }
   /** A relay answered, but not the one just uploaded (another `generation`, from quartz-forms
    *  0.5.11 on): the address still names an older place. */
   | { kind: 'otherRelay'; url: string }

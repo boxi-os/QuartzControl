@@ -412,10 +412,12 @@ function unreachableReason(code: string): string {
  * (404) never has one. Measured with the relay on another origin than the site, the common case:
  * fetch said ERR_FAILED for both, request said 500 and 404, and 200 for the relay's own JSON.
  */
-function getWithOrigin(url: string, origin: string | null): Promise<{ status: number; body: string; redirectedTo?: string } | { error: string }> {
+type Answer = { status: number; body: string; redirectedTo?: string; postDropped?: number }
+
+function getWithOrigin(url: string, origin: string | null): Promise<Answer | { error: string }> {
   return new Promise((resolve) => {
     let done = false
-    const finish = (value: { status: number; body: string; redirectedTo?: string } | { error: string }): void => {
+    const finish = (value: Answer | { error: string }): void => {
       if (done) return
       done = true
       clearTimeout(timer)
@@ -426,6 +428,10 @@ function getWithOrigin(url: string, origin: string | null): Promise<{ status: nu
     // 16 KiB every 20 ms and the relay's JSON spread over 12 s both said "no answer" before.
     let status: number | null = null
     let redirectedTo: string | undefined
+    // 301, 302 and 303 turn a form's POST into a GET without a body: measured in Electron's
+    // Chromium from a page of the origin, a 301 to the relay arrived as GET and was answered
+    // "no such form", a 308 arrived as POST (debian-vm, review 2026-10-29, nebenbei).
+    let postDropped: number | undefined
     const timer = setTimeout(() => {
       req.abort()
       const seconds = CHECK_RELAY_TIMEOUT_MS / 1000
@@ -433,7 +439,10 @@ function getWithOrigin(url: string, origin: string | null): Promise<{ status: nu
     }, CHECK_RELAY_TIMEOUT_MS)
     if (origin) req.setHeader('Origin', origin)
     // Followed all the same ('follow'); only where it went is noted.
-    req.on('redirect', (_status, _method, to) => (redirectedTo = to))
+    req.on('redirect', (status, _method, to) => {
+      redirectedTo = to
+      if (status === 301 || status === 302 || status === 303) postDropped ??= status
+    })
     req.on('response', (res) => {
       status = res.statusCode
       const chunks: Buffer[] = []
@@ -444,9 +453,9 @@ function getWithOrigin(url: string, origin: string | null): Promise<{ status: nu
         size += chunk.length
         if (size < CHECK_RELAY_MAX_BYTES) return
         req.abort()
-        finish({ status: res.statusCode, body: Buffer.concat(chunks).subarray(0, CHECK_RELAY_MAX_BYTES).toString('utf-8'), redirectedTo })
+        finish({ status: res.statusCode, body: Buffer.concat(chunks).subarray(0, CHECK_RELAY_MAX_BYTES).toString('utf-8'), redirectedTo, postDropped })
       })
-      res.on('end', () => finish({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf-8'), redirectedTo }))
+      res.on('end', () => finish({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf-8'), redirectedTo, postDropped }))
       res.on('error', (err: Error) => finish({ error: err.message }))
     })
     req.on('error', (err) => finish({ error: unreachableReason(err.message) }))
@@ -492,6 +501,11 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   if (to && to.origin !== new URL(url).origin) {
     to.search = ''
     return { kind: 'redirect', url, to: to.toString() }
+  }
+  // Within the origin the probe gets through, a visitor's post does not (getWithOrigin).
+  if (to && res.postDropped) {
+    to.search = ''
+    return { kind: 'postRedirect', url, to: to.toString(), status: res.postDropped }
   }
   let json: { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown; generation?: unknown } | null
   try {

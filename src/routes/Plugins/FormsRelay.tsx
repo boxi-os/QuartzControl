@@ -453,6 +453,8 @@ function checkText(check: RelayCheck, configReadable: boolean, t: TFunction): st
       return t('formsEditor.relay.checkNoPhp', { url: check.url })
     case 'redirect':
       return t('formsEditor.relay.checkRedirect', { url: check.url, to: check.to })
+    case 'postRedirect':
+      return t('formsEditor.relay.checkPostRedirect', { url: check.url, to: check.to, status: check.status })
     case 'otherRelay':
       return t('formsEditor.relay.checkOtherRelay', { url: check.url })
     case 'phpMessage':

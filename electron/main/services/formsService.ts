@@ -325,7 +325,8 @@ export async function relayState(projectId: string, projectPath: string, source:
       : { currentHash: null, siteOrigin: null, relayForms: [], recipientNames: [], hashProblem: generated.reason }),
     ...(target && file.lastUpload ? { moved: file.lastUpload.location !== locationOf(target, settings.subdir) } : {}),
     // The switch is written at once, the mode only by the next upload (review 2026-10-29, M4).
-    ...(file.lastUpload?.configReadable !== undefined && file.lastUpload.configReadable !== settings.configReadable ? { configModeChanged: true } : {})
+    ...(file.lastUpload?.configReadable !== undefined && file.lastUpload.configReadable !== settings.configReadable ? { configModeChanged: true } : {}),
+    ...(file.lastUpload?.operator !== undefined && file.lastUpload.operator !== operatorStamp(settings, info.fingerprint) ? { operatorChanged: true } : {})
   }
 }
 
@@ -341,6 +342,17 @@ function operatorOf(settings: RelaySettings, secrets: connectionsService.RelaySe
     recipients: secrets.recipients,
     ...(settings.counterDir.trim() ? { counterDir: settings.counterDir.trim() } : {})
   }
+}
+
+/**
+ * What config.php would get from the settings and the stored secrets, as one value: the settings
+ * through operatorOf with the secrets left out, the secrets as their fingerprint (no decrypt, so
+ * no keychain question on every visit). The status said "aktuell" after a new sender or a new
+ * address, both only on the server with the next upload (review 2026-10-29, nebenbei).
+ */
+function operatorStamp(settings: RelaySettings, fingerprint: string | null): string {
+  const open = operatorOf(settings, { secret: '', recipients: {} })
+  return createHash('sha256').update(JSON.stringify([open, fingerprint])).digest('hex').slice(0, 32)
 }
 
 /** Secrets for the relay: the stored ones, or a first set with only a fresh signing secret. */
@@ -544,7 +556,8 @@ export async function relayUpload(projectId: string, projectPath: string, source
     await setRelayModes(dir, settings.configReadable)
     const result = await runDirectoryUpload(projectPath, target.id, dir, settings.subdir, `relay-${target.id}`)
     if (result.success && typeof generated.json.hash === 'string') {
-      await writeRelayFile(projectPath, { ...file, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configReadable: settings.configReadable } })
+      const operator = operatorStamp(settings, (await connectionsService.getRelaySecretInfo(projectId)).fingerprint)
+      await writeRelayFile(projectPath, { ...file, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configReadable: settings.configReadable, operator } })
     }
     const warnings = strings(generated.json.warnings)
     const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)

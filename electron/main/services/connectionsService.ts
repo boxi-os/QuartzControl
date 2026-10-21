@@ -3,7 +3,7 @@ import { existsSync, mkdirSync } from 'fs'
 import { readFile, rename } from 'fs/promises'
 import { readJsonFile, readJsonFileOr, writeJsonFile } from './jsonStore'
 import { join } from 'path'
-import { randomBytes, randomUUID } from 'crypto'
+import { createHmac, randomBytes, randomUUID } from 'crypto'
 import type {
   Connection,
   PinnedHostKey,
@@ -423,6 +423,19 @@ interface StoredRelaySecrets {
   captchaSecret: boolean
   captchaSecrets: string[]
   updatedAt: string
+  /** secretsFingerprint() of what config.php gets from here, so the relay's status can tell a
+   *  change since the upload without a decrypt; absent before 2026-10-21. */
+  fingerprint?: string
+}
+
+/**
+ * An HMAC over the addresses and captcha secrets, keyed with the signing secret: equal for equal
+ * values, whatever order they were stored in, and no way back to an address without the secret.
+ */
+function secretsFingerprint(secrets: RelaySecrets): string {
+  const sorted = (record: Record<string, string> | undefined): [string, string][] => Object.entries(record ?? {}).sort(([a], [b]) => a.localeCompare(b))
+  const values = [sorted(secrets.recipients), secrets.captchaSecret ?? null, sorted(secrets.captchaSecrets)]
+  return createHmac('sha256', secrets.secret).update(JSON.stringify(values)).digest('hex').slice(0, 32)
 }
 
 function relayStorePath(): string {
@@ -437,13 +450,14 @@ async function readRelayStore(): Promise<Record<string, StoredRelaySecrets>> {
 }
 
 /** What the renderer may know about a project's relay secrets. */
-export async function getRelaySecretInfo(projectId: string): Promise<{ stored: boolean; recipients: string[]; captchaSecret: boolean; captchaSecrets: string[]; storage: SecretStorageInfo }> {
+export async function getRelaySecretInfo(projectId: string): Promise<{ stored: boolean; recipients: string[]; captchaSecret: boolean; captchaSecrets: string[]; fingerprint: string | null; storage: SecretStorageInfo }> {
   const entry = (await readRelayStore())[projectId]
   return {
     stored: !!entry,
     recipients: entry?.recipients ?? [],
     captchaSecret: entry?.captchaSecret ?? false,
     captchaSecrets: entry?.captchaSecrets ?? [],
+    fingerprint: entry?.fingerprint ?? null,
     storage: getSecretStorageInfo()
   }
 }
@@ -520,7 +534,8 @@ export async function saveRelaySecrets(
     recipients: Object.keys(recipients),
     captchaSecret: !!captchaSecret,
     captchaSecrets: Object.keys(captchaSecrets),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    fingerprint: secretsFingerprint(next)
   }
   await writeJsonFile(relayStorePath(), all)
 }

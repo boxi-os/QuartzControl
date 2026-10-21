@@ -662,6 +662,9 @@ export interface RelayLastUpload {
   location: string
   /** Whether that upload left config.php readable by the web server; absent before 2026-10-21. */
   configReadable?: boolean
+  /** operatorStamp() of the settings and secrets that upload wrote into config.php; absent before
+   *  2026-10-21. */
+  operator?: string
 }
 
 export interface RelayConflict {
@@ -689,6 +692,9 @@ export interface RelayState {
   moved?: boolean
   /** "config.php für den Webserver lesbar" changed since the last upload: the server still holds the old mode. */
   configModeChanged?: boolean
+  /** Sender, origins, mailer, counter folder, an address or a captcha secret changed since the last
+   *  upload: config.php on the server still holds the old ones. */
+  operatorChanged?: boolean
 }
 
 /** What send.php answered right after an upload (`GET ?challenge=<form>` with the site's origin). */

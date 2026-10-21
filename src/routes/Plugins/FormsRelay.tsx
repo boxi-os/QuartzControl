@@ -97,7 +97,7 @@ export function RelaySection({
       ? { tone: 'red' as const, text: t('formsEditor.relay.statusBroken') }
       : state.moved
           ? { tone: 'amber' as const, text: t('formsEditor.relay.statusMoved', { date }) }
-          : state.configModeChanged || state.currentHash !== state.lastUpload.hash
+          : state.configModeChanged || state.operatorChanged || state.currentHash !== state.lastUpload.hash
             ? { tone: 'amber' as const, text: t('formsEditor.relay.statusChanged', { date }) }
             : { tone: 'green' as const, text: t('formsEditor.relay.statusCurrent', { date }) }
   const missingCaptcha = [

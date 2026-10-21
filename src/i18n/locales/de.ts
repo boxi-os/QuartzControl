@@ -1651,7 +1651,7 @@ export default {
       done: 'Fertig.',
       renewSecret: 'Neues Secret erzeugen',
       renewSecretHint: 'Nötig, wenn die config.php öffentlich lesbar war. Das Relay erhält es mit dem nächsten Hochladen.',
-      renewSecretConfirm: 'Neues Secret für das Relay erzeugen?\n\nNach dem nächsten Hochladen weist das Relay Formulare auf Seiten ab, die vorher geöffnet wurden, bis sie neu geladen werden.',
+      renewSecretConfirm: 'Neues Secret für das Relay erzeugen?\n\nNach dem nächsten Hochladen dauert das Absenden auf Seiten, die schon offen sind, einmal um die Zeitfalle länger.',
       renewSecretSubmit: 'Neues Secret erzeugen',
       renewSecretAnnounce: 'Neues Secret für das Relay erzeugt.',
       uploadedAnnounce: 'Relay hochgeladen.',

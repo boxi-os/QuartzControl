@@ -485,10 +485,12 @@ export async function getRelaySecrets(projectId: string): Promise<RelaySecrets |
  * captcha secret of `null` removes it, a string sets it. `moveCaptchaSecret` carries a form's own
  * captcha secret to its new id after a rename (before the other changes); without one under
  * `from` it does nothing. The signing secret is made once, the first
- * time anything is stored, and kept: the relay's stamps are signed with it, and a new one would
- * turn every open page's stamp away. Only `renewSecret` makes a new one, for a config.php that was
- * open to anyone (review 2026-10-29, nebenbei; M5 finds such a one). Throws rather than store
- * anything in plain text.
+ * time anything is stored, and kept: the relay's stamps are signed with it, and a new one turns
+ * every open page's first post away. Its script then fetches a new stamp and waits the time trap
+ * out again, 3.1 s instead of 0.1 s in Chrome on debian-vm (review 2026-10-30, N6); a form with a
+ * proof of work and no time trap gets no second try (read). Only `renewSecret` makes a new one,
+ * for a config.php that was open to anyone (review 2026-10-29, nebenbei; M5 finds such a one).
+ * Throws rather than store anything in plain text.
  */
 export async function saveRelaySecrets(
   projectId: string,

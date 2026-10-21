@@ -1646,7 +1646,7 @@ export default {
       done: 'Done.',
       renewSecret: 'Make a new secret',
       renewSecretHint: 'Needed when config.php was open to anyone. The relay gets it with the next upload.',
-      renewSecretConfirm: 'Make a new secret for the relay?\n\nAfter the next upload the relay turns away forms on pages opened before, until they are reloaded.',
+      renewSecretConfirm: 'Make a new secret for the relay?\n\nAfter the next upload, sending from a page that is already open takes the time trap longer, once.',
       renewSecretSubmit: 'Make a new secret',
       renewSecretAnnounce: 'New secret for the relay made.',
       uploadedAnnounce: 'Relay uploaded.',

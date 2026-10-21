@@ -111,9 +111,14 @@ export function RelaySection({
 
   // A refusal in one sentence is said with its reason: "Relay konnte nicht hochgeladen werden." alone
   // left it to the <pre>, which is no live region (review 2026-10-30, nebenbei). An upload log that
-  // ended in an error is not read out whole.
-  const failedAnnounce = (output: string): string =>
-    output.trim() && !output.trim().includes('\n') ? `${t('formsEditor.relay.uploadFailedAnnounce')} ${output.trim()}` : t('formsEditor.relay.uploadFailedAnnounce')
+  // ended in an error is not read out whole: its first line that is no "↑"/"✗" entry is said, as
+  // rsync's errors and the silent-connection sentence come in several lines, and they were said
+  // without a reason (review 2026-10-31, nebenbei). rsync's last line is "error: unexpected end of
+  // file", its first names the folder.
+  const failedAnnounce = (output: string): string => {
+    const reason = output.split('\n').find((line) => line.trim() && !/^[↑✗] /.test(line))
+    return reason ? `${t('formsEditor.relay.uploadFailedAnnounce')} ${reason.trim()}` : t('formsEditor.relay.uploadFailedAnnounce')
+  }
 
   async function upload(): Promise<void> {
     setBusy('upload')

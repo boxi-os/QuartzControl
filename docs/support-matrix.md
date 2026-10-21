@@ -36,7 +36,7 @@ dahin gilt der Fall als geduldet.
 |---|---|---|
 | SFTP gegen OpenSSH (`sftp-server`, `internal-sftp`) | unterstützt | gemessen auf `debian-vm` |
 | rsync über SSH, Server rsync 3.x, Client openrsync (macOS) | unterstützt | gemessen |
-| rsync über SSH, Client rsync 3.x (Linux-App) | unterstützt | Messung ausstehend; bisher nur der `mkdir`-Befehl in der Shell |
+| rsync über SSH, Client rsync 3.x (Linux-App) | unterstützt | gemessen 2026-10-21 (rsync 3.5.0 auf `debian-vm`, gebaute App beider Linien, Server auf derselben Maschine) |
 | Konten, die per `rrsync` auf rsync beschränkt sind | geduldet | ohne App gemessen |
 | FTP gegen vsftpd | unterstützt | gemessen (`debian-vm`, ohne chroot; Reihe `fix56/ftp-suite.sh`) |
 | FTP gegen ProFTPD | unterstützt | gemessen 2026-10-21 (1.3.8c aus Debian im Container auf `debian-vm`, mit und ohne chroot) |
@@ -67,6 +67,9 @@ dahin gilt der Fall als geduldet.
   `466117a2` fragt danach `SIZE`.
 - „~/…“ hieß je Weg etwas anderes: `e41df35f` löst „~“ und „~<eigenes Konto>“ über SFTP und FTP
   selbst zum Anmeldeverzeichnis auf, „~<anderes Konto>“ wird abgelehnt.
+- Offen, nicht behoben: Auf `fix/1.1.x` lehnt rsync nur Leerzeichen im Pfad ab, nicht die übrigen
+  Zeichen der Shell (`131b92cb` liegt nur auf `feat/1.2`). Unter openrsync (macOS) wertet die
+  entfernte Shell sie aus; unter rsync 3.x nicht (gemessen 2026-10-21).
 
 ## Rechte und Pfade auf dem Server
 

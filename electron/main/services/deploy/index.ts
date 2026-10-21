@@ -16,6 +16,7 @@ import { webhookAdapter } from './webhook'
 import { rsyncAdapter } from './rsync'
 import { gitBranchAdapter } from './gitBranch'
 import { mainT } from '../../i18n'
+import { remotePathProblem } from '@shared/remotePath'
 
 export const deployEvents = new EventEmitter()
 
@@ -43,6 +44,11 @@ async function makeContext(projectPath: string, targetId: string, outputDir?: st
 
   const adapter = adapterFor(target.destination)
   if (!adapter) throw new Error(mainT('deployNoAdapter', { type: target.destination.type }))
+  // The schema refuses such a path when a target is saved; one saved before the rule knew "~"
+  // (shared/remotePath.ts) is refused here, before preview and upload.
+  if ('remotePath' in target.destination && remotePathProblem(target.destination.remotePath) === 'whole-root') {
+    throw new Error(mainT('deployWholeRoot', { path: target.destination.remotePath }))
+  }
 
   // Resolved in main and never sent to the renderer; a target whose destination needs no
   // credential (a folder, a git branch) simply has no connection to look up.

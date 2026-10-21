@@ -21,8 +21,12 @@ export function remotePathProblem(path: string): RemotePathProblem | null {
 
   const segments = trimmed.split('/').filter((segment) => segment !== '' && segment !== '.')
   if (segments.some((segment) => segment === '..')) return 'traversal'
-  // "/" and "." both name the root of what this login can see; so does "./" and "/.".
-  if (segments.length === 0) return 'whole-root'
+  // "/" and "." both name the root of what this login can see; so does "./" and "/.". So do "~"
+  // and "~user", which the remote shell expands for rsync: an rsync target "~" with deletion
+  // listed the whole home of the account for deletion in its preview, .ssh/ included (debian-vm,
+  // review 2026-10-30, nebenbei). Over SFTP and FTP "~" is a folder of that name, never needed.
+  const below = /^~[^/]*$/.test(segments[0] ?? '') ? segments.slice(1) : segments
+  if (below.length === 0) return 'whole-root'
   return null
 }
 

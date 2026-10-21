@@ -510,8 +510,10 @@ function phpMessage(body: string): string | null {
   // As text, only with the place PHP names after every message: a host's plain-text 404 with a
   // line "Warning: this page has moved to /new/" was said as one (review 2026-10-31, nebenbei).
   const where = `\\s+in\\s+\\/\\S+?(?: on line \\d+|:\\d+)`
-  const line = (kinds: string): string | null =>
-    new RegExp(`^\\s*(?:PHP )?(?:${kinds}):\\s+(.+?)(?:${where})${html ? '?' : ''}\\s*$`, 'm').exec(text)?.[1]?.slice(0, 300) ?? null
+  const line = (kinds: string): string | null => {
+    const found = new RegExp(`^\\s*(?:PHP )?(?:${kinds}):\\s+(.+?)(?:${where})${html ? '?' : ''}\\s*$`, 'm').exec(text)?.[1]
+    return found === undefined ? null : cut(found, 300)
+  }
   return line('Fatal error|Parse error') ?? line('Warning|Deprecated|Notice')
 }
 
@@ -519,6 +521,24 @@ const RELAY_ASK_AGAIN_MS = 3000
 
 /** What the relay answers a `GET ?challenge=` with when it refuses (send.php). */
 const RELAY_GET_ERRORS = ['unknown_form', 'origin', 'secret_config', 'mbstring_config']
+
+/**
+ * The server's words as the page shows them, at most `max` characters, not UTF-16 units: cut at 80
+ * units, an emoji was split and the page showed "�"; and the place a redirect went, which was not
+ * cut at all, stood in the status region with 16 032 characters (review 2026-10-31, nebenbei).
+ */
+function cut(text: string, max: number): string {
+  const chars = Array.from(text)
+  return chars.length <= max ? text : chars.slice(0, max).join('')
+}
+
+/** Where a redirect went, without the query and cut like the rest. */
+function place(to: URL): string {
+  to.search = ''
+  const shown = to.toString()
+  const short = cut(shown, 300)
+  return short === shown ? shown : `${short}…`
+}
 
 /**
  * Asks the uploaded relay for a stamp (`GET ?challenge=<form>`), as a form does when its page
@@ -558,17 +578,14 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   // recommended for send.php (review 2026-10-31, nebenbei).
   const relayAnswered = json?.ok === true ? typeof json.stamp === 'string' : json?.ok === false && RELAY_GET_ERRORS.includes(json.error as string)
   if (to && (to.origin !== new URL(url).origin || res.postDropped) && !relayAnswered) {
-    to.search = ''
-    return { kind: 'redirectNoRelay', url, to: to.toString(), ...(res.local ? { local: true as const } : {}) }
+    return { kind: 'redirectNoRelay', url, to: place(to), ...(res.local ? { local: true as const } : {}) }
   }
   if (to && to.origin !== new URL(url).origin) {
-    to.search = ''
-    return { kind: 'redirect', url, to: to.toString() }
+    return { kind: 'redirect', url, to: place(to) }
   }
   // Within the origin the probe gets through, a visitor's post does not (getWithOrigin).
   if (to && res.postDropped) {
-    to.search = ''
-    return { kind: 'postRedirect', url, to: to.toString(), status: res.postDropped }
+    return { kind: 'postRedirect', url, to: place(to), status: res.postDropped }
   }
   // An answer is not a relay that works: under mod_php (www-data) with counters/ uploaded 0755 by
   // the account, the probe said ok while a form limited to 2 an hour sent three mails of three
@@ -595,7 +612,7 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   if (json && typeof json.error === 'string') {
     // The server's own words, cut as phpMessage cuts PHP's: 65 065 characters of a 64 KiB answer
     // stood in the status region (review 2026-10-30, nebenbei).
-    return { kind: 'relayError', url, status: res.status, error: json.error.slice(0, 80), message: typeof json.message === 'string' ? json.message.slice(0, 300) : '' }
+    return { kind: 'relayError', url, status: res.status, error: cut(json.error, 80), message: typeof json.message === 'string' ? cut(json.message, 300) : '' }
   }
   // PHP that stops (config.php unreadable, display_errors off) answers 500 with nothing: under
   // mod_php even an ErrorDocument 500 left it empty (debian-vm). A 500 with a page is the host's,
@@ -628,8 +645,7 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   // is said by the place it went: a 307 home said "no relay (HTTP 200)" without naming it (review
   // 2026-10-30, nebenbei).
   if (to) {
-    to.search = ''
-    return { kind: 'redirectNoRelay', url, to: to.toString() }
+    return { kind: 'redirectNoRelay', url, to: place(to) }
   }
   return { kind: 'http', url, status: res.status }
 }

@@ -3,7 +3,7 @@ import { join, posix } from 'path'
 import SftpClient from 'ssh2-sftp-client'
 import type { DeployDiffEntry, DeployResult, SshConnection } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
-import { commitManifest, diffAgainstManifest, partitionDiff } from './manifest'
+import { commitManifest, diffAgainstManifest, modesSettled, partitionDiff, readManifest, settleModes } from './manifest'
 import { makeHostVerifier } from './hostVerifier'
 import * as connectionsService from '../connectionsService'
 import { mainT } from '../../i18n'
@@ -47,6 +47,9 @@ export async function sshAuthOptions(connection: SshConnection, secret: string |
 
 // Long enough for someone to open their provider's page and compare a SHA256 fingerprint by eye.
 const HANDSHAKE_WITH_PROMPT_MS = 180_000
+
+// The one-time chmod pass below; ssh2-sftp-client adds listeners per call, and Node warns past ten.
+const CHMOD_CONCURRENCY = 8
 
 /**
  * A server may refuse to change a mode (internal-sftp -P setstat,fsetstat, ProFTPD's mod_sftp).
@@ -137,6 +140,36 @@ export const sftpAdapter: DeployAdapter = {
         processed++
         ctx.emitProgress(processed, total, relPath)
         output += `✗ ${relPath}\n`
+      }
+
+      // Up to 1.1.0 every file went up as 0666 (above), and the manifest never sends an unchanged
+      // file again: after the fix, 474 of a site's 475 files stayed 0666 on debian-vm, and nothing
+      // said so (review 2026-10-29, M6). So once per target, every file sent before and not sent
+      // now gets its mode alone, no data. A server that refuses chmod has kept its umask anyway.
+      // Several requests at a time on the one channel: one after the other, 474 took 23 s.
+      // Not for an upload that brings its own modes (the relay): those are set above, every time.
+      if (!ctx.keepLocalModes && !modesSettled(ctx.projectPath, ctx.target.id)) {
+        const skip = new Set([...toUpload, ...toDelete, ...excludePaths])
+        const earlier = Object.keys(await readManifest(ctx.projectPath, ctx.target.id)).filter((path) => !skip.has(path))
+        let set = 0
+        let next = 0
+        await Promise.all(
+          Array.from({ length: Math.min(CHMOD_CONCURRENCY, earlier.length) }, async () => {
+            for (let i = next++; i < earlier.length; i = next++) {
+              try {
+                await client.chmod(posix.join(destination.remotePath, earlier[i]), 0o644)
+                set++
+              } catch {
+                // removed on the server by hand, or chmod refused: nothing this pass can fix
+              }
+            }
+          })
+        )
+        // A server that refused every chmod refused ssh2's fchmod too, so its files never were 0666:
+        // said apart, measured with sftp-server -P setstat,fsetstat,lsetstat on debian-vm.
+        if (set) output += mainT('sftpModesSettled', { count: set, total: earlier.length })
+        else if (earlier.length) output += mainT('sftpModesRefused', { total: earlier.length })
+        await settleModes(ctx.projectPath, ctx.target.id)
       }
 
       await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, manifestExcludes)

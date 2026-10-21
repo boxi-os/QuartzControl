@@ -48,6 +48,19 @@ export async function sshAuthOptions(connection: SshConnection, secret: string |
 // Long enough for someone to open their provider's page and compare a SHA256 fingerprint by eye.
 const HANDSHAKE_WITH_PROMPT_MS = 180_000
 
+/**
+ * A server may refuse to change a mode (internal-sftp -P setstat,fsetstat, ProFTPD's mod_sftp).
+ * For a file ssh2 swallows that and keeps the mode it opened the file with, which the umask cut
+ * (a new file) or which was there before (an existing one); a folder's chmod is caught above. The
+ * upload goes on either way, so what the server holds is asked and said when it differs. Measured
+ * with such an account on debian-vm: the relay upload stopped at the folder with "_chmod:
+ * Permission denied" and uploaded nothing.
+ */
+async function modeNote(client: SftpClient, remotePath: string, wanted: number): Promise<string> {
+  const actual = (await client.stat(remotePath)).mode & 0o777
+  return actual === wanted ? '' : `${mainT('sftpModeNotSet', { mode: wanted.toString(8), actual: actual.toString(8), path: remotePath })}\n`
+}
+
 export const sftpAdapter: DeployAdapter = {
   async preview(ctx): Promise<DeployDiffEntry[]> {
     return diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)
@@ -96,7 +109,11 @@ export const sftpAdapter: DeployAdapter = {
           await client.mkdir(remoteDir, true)
           // mkdir leaves a folder that is already there as it is, and one the relay's rsync upload
           // had made 0700 kept Apache out of it (403) until its mode was set again.
-          if (ctx.keepLocalModes) await client.chmod(remoteDir, (await stat(join(ctx.buildDir, posix.dirname(relPath)))).mode & 0o777)
+          if (ctx.keepLocalModes) {
+            const wanted = (await stat(join(ctx.buildDir, posix.dirname(relPath)))).mode & 0o777
+            await client.chmod(remoteDir, wanted).catch(() => undefined)
+            output += await modeNote(client, remoteDir, wanted)
+          }
           ensuredDirs.add(remoteDir)
         }
         // ssh2 opens every file with mode 0666 and then sets that mode with fchmod, so the server's
@@ -105,6 +122,7 @@ export const sftpAdapter: DeployAdapter = {
         // became 0666 when overwritten. An explicit mode is set the same way and wins.
         const mode = ctx.keepLocalModes ? (await stat(join(ctx.buildDir, relPath))).mode & 0o777 : 0o644
         await client.put(join(ctx.buildDir, relPath), remotePath, { writeStreamOptions: { mode } })
+        if (ctx.keepLocalModes) output += await modeNote(client, remotePath, mode)
         processed++
         ctx.emitProgress(processed, total, relPath)
         output += `↑ ${relPath}\n`

@@ -3100,3 +3100,22 @@ an der gebauten App (Absätze in `publishing-and-credentials.md`):
 
 Neu nebenbei aufgefallen: Ein `'` im Pfad eines rsync-Ziels bricht den Pfad, den rsync an die
 entfernte Shell gibt (nur Leerraum wird abgelehnt).
+
+Am selben Tag, auf Wunsch des Nutzers, die offenen und die neuen Punkte:
+
+- **`modeNote` wirft bei gescheitertem `stat`** `1e072f79` — ein abgelehntes `stat` ist die Zeile
+  `modeUnchecked`, der Upload läuft weiter. Gemessen am esbuild-Bündel mit einem Stub-Client,
+  nicht an einem echten Server.
+- **`'` im Pfad eines rsync-Ziels** `131b92cb` — gemessen schlimmer als notiert: „q$HOME“ meldete
+  Erfolg und lud nach `q/home/qchost/`. Jetzt werden alle Zeichen der Shell abgelehnt.
+- **Handbuch** — „Neues Secret erzeugen“ im Relay-Absatz, beide Sprachen (Handbuch-Vault
+  `9e1e060`, nicht gepusht).
+- **Übrige Chromium-Codes** `63486f26` — `ERR_ADDRESS_UNREACHABLE` als Satz (gemessen mit einer
+  nft-Regel auf der VM); ein stummer Host läuft in die eigene Frist von 10 s, ein Timeout-Code
+  kommt nicht an; `ERR_INTERNET_DISCONNECTED` bleibt roh.
+- **quartz-forms 0.5.11** (`60ac25d`, Tag `v0.5.11`, gepusht, CI grün) und QuartzControl
+  `19ca4f93` (`FORMS_READ_AGAINST` 0.5.11, `check:plugin-copies` ohne Abweichung).
+- **VM aufgeräumt**: die Testordner der Runde, die Relaytest-Mails, der tote Apache-Block für M3.
+  Die Website, `forms`, `forms-*` und nginx `:8445`/`:8446` bleiben als Messgeschirr.
+- **Langsamer Smoke-Lauf** — nicht wieder aufgetreten (gut 20 Läufe, je etwa 124 s), Ursache
+  unbekannt.

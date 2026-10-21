@@ -231,7 +231,7 @@ function remoteShellPath(path: string): string {
 // The receiver creates only the last folder of the path: measured on debian-vm (rsync 3.5.0), a
 // relay sent to "nb1/a/b" where nb1 was missing failed with 'mkdir "…/nb1/a/b" failed: No such file
 // or directory', which SFTP and FTP create. The dry run does not create anything and passes.
-const MISSING_PARENT = /\bmkdir ".*" failed: No such file or directory/
+const MISSING_PARENT = /\bmkdir "(.*)" failed: No such file or directory/
 
 function remoteSpec(connection: SshConnection, remotePath: string): string {
   // openrsync has no --protect-args, so a remote path is expanded once more by the remote shell.
@@ -354,6 +354,13 @@ export const rsyncAdapter: DeployAdapter = {
       if (ctx.keepLocalModes && result.code !== 0 && MISSING_PARENT.test(result.output)) {
         firstFailure = failureMessage(result.output, connection, result.code)
         result = await send(true)
+      }
+      // For a site it is the sentence SFTP and FTP say, where rsync said 'mkdir "…/review56-tpyo/
+      // htdocs" failed: No such file or directory (2)' and two lines more (debian-vm, review
+      // 2026-10-31, nebenbei). The folder comes from the server's answer, "~" expanded.
+      const missing = MISSING_PARENT.exec(result.output)
+      if (!ctx.keepLocalModes && result.code !== 0 && missing) {
+        return { success: false, output: mainT('deployParentMissing', { path: posix.dirname(missing[1]) }) }
       }
 
       const summary = result.entries

@@ -399,6 +399,9 @@ function unreachableReason(code: string): string {
   if (/^net::ERR_CERT_/.test(code)) return mainT('relayCheckCertificate', { code })
   if (code === 'net::ERR_NAME_NOT_RESOLVED') return mainT('relayCheckNoName', { code })
   if (code === 'net::ERR_CONNECTION_REFUSED') return mainT('relayCheckRefused', { code })
+  // A host that answers with ICMP unreachable (measured with an nft reject on debian-vm, which macOS
+  // reports as ENETUNREACH); one that stays silent runs into CHECK_RELAY_TIMEOUT_MS instead.
+  if (code === 'net::ERR_ADDRESS_UNREACHABLE') return mainT('relayCheckNoRoute', { code })
   if (code === 'net::ERR_EMPTY_RESPONSE' || code === 'net::ERR_CONNECTION_RESET') return mainT('relayCheckDropped', { code })
   if (code === 'net::ERR_SSL_PROTOCOL_ERROR') return mainT('relayCheckNoTls', { code })
   return code

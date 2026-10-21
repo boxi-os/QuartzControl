@@ -17,7 +17,7 @@ import { mainT } from '../../i18n'
 // macOS ships openrsync (protocol 29, "rsync 2.6.9 compatible"), not rsync 3.x, so every flag used
 // here was checked against it rather than against rsync's man page: -rlt, --delete, --dry-run,
 // --itemize-changes, --exclude-from, -e and --port all exist. Notably absent: --protect-args, which
-// is why a remote path containing whitespace is refused below rather than quoted.
+// is why a remote path containing whitespace or a shell character is refused below rather than quoted.
 
 // The rule itself lives in shared/rsyncSupport.ts so the target form can ask the same question
 // before offering rsync; only the wording is local.
@@ -217,12 +217,22 @@ function remoteShellPath(path: string): string {
 // or directory', which SFTP and FTP create. The dry run does not create anything and passes.
 const MISSING_PARENT = /\bmkdir ".*" failed: No such file or directory/
 
+// "~" is left out on purpose: a leading "~/" is meant to expand there.
+const SHELL_SPECIAL = /['"\\$`;&|<>(){}[\]*?!#]/
+
 function remoteSpec(connection: SshConnection, remotePath: string): string {
   // openrsync has no --protect-args, so a remote path is expanded once more by the remote shell.
   // Whitespace there would silently split into two arguments; refused rather than guessed at.
   if (/\s/.test(remotePath)) {
     throw new Error(mainT('rsyncPathWithSpace'))
   }
+  // The same for any other character that shell gives a meaning to, quoting included, since
+  // rsync 3.2.4 and later escape remote args themselves and openrsync does not. Measured on
+  // debian-vm: "q'1" failed with bash's "unexpected end of file", and "q$HOME" reported success
+  // with the files under q/home/qchost/ - with --delete, a site would clean out that folder
+  // (review 2026-10-29, nebenbei).
+  const special = SHELL_SPECIAL.exec(remotePath)
+  if (special) throw new Error(mainT('rsyncPathWithSpecial', { char: special[0] }))
   const withSlash = remotePath.endsWith('/') ? remotePath : `${remotePath}/`
   return `${connection.username}@${connection.host}:${withSlash}`
 }

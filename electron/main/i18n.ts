@@ -400,9 +400,9 @@ const STRINGS = {
     deployWrongType: 'Falscher Zieltyp für den {{adapter}}-Adapter.',
     deployNothingToDo: 'Nichts zu tun: Das Ziel ist bereits auf dem Stand des Builds.\n',
     sftpModesSettled: 'Einmalig {{count}} von {{total}} früher hochgeladenen Dateien auf 0644 gesetzt: Bis 1.1.0 lud QuartzControl sie für jeden Account des Servers beschreibbar hoch.\n',
-    sftpModesRefused: 'Der Server lehnt chmod ab, auch für {{total}} früher hochgeladene Dateien; ihre Rechte bestimmt dort der Server.\n',
+    sftpModesRefused: 'Der Server lehnt chmod ab: {{count}} von {{total}} früher hochgeladenen Dateien bleiben für jeden Account des Servers beschreibbar.\n',
     sftpModesUnfinished:
-      '{{count}} von {{total}} früher hochgeladenen Dateien auf 0644 gesetzt, dann brach die Verbindung ab. Den Rest ({{left}}) setzt der nächste Upload; bis dahin ist er für jeden Account des Servers beschreibbar.\n',
+      '{{count}} von {{total}} früher hochgeladenen Dateien auf 0644 gesetzt, dann brach die Verbindung ab. Die übrigen {{left}} prüft erst der nächste Upload, bis dahin können sie für jeden Account des Servers beschreibbar bleiben.\n',
 
     // Publishing - folder
     folderOverlapsBuild:
@@ -767,9 +767,9 @@ const STRINGS = {
     deployWrongType: 'Wrong destination type for the {{adapter}} adapter.',
     deployNothingToDo: 'Nothing to do: the target already matches the build.\n',
     sftpModesSettled: 'Set {{count}} of {{total}} files uploaded earlier to 0644, once: up to 1.1.0 QuartzControl uploaded them writable by every account on the server.\n',
-    sftpModesRefused: 'The server refuses chmod, also for {{total}} files uploaded earlier; it decides their permissions itself.\n',
+    sftpModesRefused: 'The server refuses chmod: {{count}} of {{total}} files uploaded earlier stay writable by every account on the server.\n',
     sftpModesUnfinished:
-      'Set {{count}} of {{total}} files uploaded earlier to 0644, then the connection broke. The next upload sets the rest ({{left}}); until then it is writable by every account on the server.\n',
+      'Set {{count}} of {{total}} files uploaded earlier to 0644, then the connection broke. The next upload checks the other {{left}}; until then they may stay writable by every account on the server.\n',
 
     folderOverlapsBuild:
       'The target folder ({{dest}}) is inside the build folder ({{build}}) or the other way round. Please pick a folder independent of it.',

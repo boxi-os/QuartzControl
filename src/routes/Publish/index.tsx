@@ -326,7 +326,11 @@ export default function Publish(): JSX.Element {
     setDeployResult(null)
     setProgress(null)
     if (!activeTarget) return
-    const result = await window.quartzGui.deploy.run(project.path, activeTarget.id, outputDir || undefined, Array.from(excluded))
+    // The progress line is the run's, not the result's: a pass that ended early left "113/297 -
+    // Rechte von …" under "Veröffentlichung erfolgreich." (debian-vm, review 2026-10-31, nebenbei).
+    const result = await window.quartzGui.deploy
+      .run(project.path, activeTarget.id, outputDir || undefined, Array.from(excluded))
+      .finally(() => setProgress(null))
     setDeployResult(result)
     // A deploy is where a host key gets pinned, so the connection this page is showing is stale the
     // moment it finishes: the card still read "Host-Key noch nicht bestätigt" until the page was

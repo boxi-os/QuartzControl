@@ -12,7 +12,7 @@ import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } f
 
 export const FORMS_PLUGIN = 'quartz-forms'
 /** The version whose source the copies below are read from. */
-export const FORMS_READ_AGAINST = '0.5.9'
+export const FORMS_READ_AGAINST = '0.5.10'
 /**
  * Widths, the arrangement of options, conditions and page breaks came with this version. An older
  * plugin builds `width`, `layout` and `showIf` without effect and without a word, and refuses a
@@ -567,8 +567,8 @@ export const PART_OF: [RegExp, FormPartId][] = [
  *  what names no key of its own (`title`, `success`, a sentence about the form) is Allgemein. */
 // "no fields" is said on the form's own path up to quartz-forms 0.5.9 (`forms.<id>: no fields …`,
 // validate.ts `noFields`, messages/en.ts and de.ts), not under `fields`, so its badge stood on
-// Allgemein (review 2026-10-28, N8). Read by its words in both languages the CLI answers in; the
-// plugin after 0.5.9 says it under `forms.<id>.fields`, which PART_OF places without this.
+// Allgemein (review 2026-10-28, N8). Read by its words in both languages the CLI answers in; from
+// 0.5.10 on the plugin says it under `forms.<id>.fields`, which PART_OF places without this.
 export const NO_FIELDS = /^(no fields|keine Felder)\b/
 
 // A key the panel does not know stands under "Unbekannte Schlüssel", and so does what the plugin

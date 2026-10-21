@@ -57,10 +57,11 @@ const CHMOD_CONCURRENCY = 8
  * (a new file) or which was there before (an existing one); a folder's chmod is caught above. The
  * upload goes on either way, so what the server holds is asked and said when it differs. Measured
  * with such an account on debian-vm: the relay upload stopped at the folder with "_chmod:
- * Permission denied" and uploaded nothing.
+ * Permission denied" and uploaded nothing. Compared with the special bits: a folder at 2750 was
+ * said as "750", and a setgid the host gave it went unseen (review 2026-10-29, N8).
  */
 async function modeNote(client: SftpClient, remotePath: string, wanted: number): Promise<string> {
-  const actual = (await client.stat(remotePath)).mode & 0o777
+  const actual = (await client.stat(remotePath)).mode & 0o7777
   return actual === wanted ? '' : `${mainT('modeNotSet', { mode: wanted.toString(8), actual: actual.toString(8), path: remotePath })}\n`
 }
 

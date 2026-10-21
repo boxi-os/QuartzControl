@@ -34,7 +34,8 @@ async function siteChmod(client: FtpClient, remotePath: string, localPath: strin
  * it is not what was wanted. Measured with vsftpd's chmod_enable=NO: a line for every file and
  * folder said "not set", five of six of them already holding the wanted mode through the umask.
  * A server whose LIST carries no Unix modes (basic-ftp: no `permissions`) cannot be asked, and
- * gets the refusal itself.
+ * gets the refusal itself. Special bits are not seen: basic-ftp reads `rws` as `rwx` and only the
+ * last three digits of MLSD's unix.mode (review 2026-10-29, N8, read in basic-ftp 6.2.0).
  */
 async function modeNotes(client: FtpClient, refused: Refused[]): Promise<string> {
   const byFolder = new Map<string, Refused[]>()

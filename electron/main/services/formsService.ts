@@ -448,7 +448,11 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   if (json && typeof json.error === 'string') {
     return { kind: 'relayError', url, status: res.status, error: json.error, message: typeof json.message === 'string' ? json.message : '' }
   }
-  if (res.status === 500) return { kind: 'phpError', url }
+  // PHP that stops (config.php unreadable, display_errors off) answers 500 with nothing: under
+  // mod_php even an ErrorDocument 500 left it empty (debian-vm). A 500 with a page is the host's,
+  // and the way out PHP's error offers (config.php readable) is the wrong one there (review
+  // 2026-10-29, N2).
+  if (res.status === 500 && !res.body.trim()) return { kind: 'phpError', url }
   // Where PHP does not run, the server hands out send.php as text - and config.php with it, secret
   // and addresses, when it was uploaded readable. Under Apache with `php_flag engine off` the probe
   // said "no relay (HTTP 200)" for both, and config.php came back 200 with 0644, 403 with 0600

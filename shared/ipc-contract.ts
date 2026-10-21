@@ -695,7 +695,8 @@ export interface RelayState {
 export type RelayCheck =
   /** `counters`: whether PHP may write the counter directory, from quartz-forms 0.5.11 on (absent before). */
   | { kind: 'ok'; url: string; counters?: boolean }
-  /** A status of 500 without the relay's own JSON: PHP stopped before send.php could answer. */
+  /** A status of 500 with an empty body: PHP stopped before send.php could answer. A 500 with a
+   *  page of its own is the server's (`http`). */
   | { kind: 'phpError'; url: string }
   /** The relay's own refusal, e.g. `origin` or `mbstring_config`. */
   | { kind: 'relayError'; url: string; status: number; error: string; message: string }
@@ -705,7 +706,8 @@ export type RelayCheck =
   /** A relay answered, but not the one just uploaded (another `generation`, from quartz-forms
    *  0.5.11 on): the address still names an older place. */
   | { kind: 'otherRelay'; url: string }
-  /** Something else answered: no relay at that address. */
+  /** Something else answered: no relay at that address (404 and the like), the server refused
+   *  access (403), PHP is not reached (502 to 504), or the server's own error page (500). */
   | { kind: 'http'; url: string; status: number }
   | { kind: 'unreachable'; url: string; reason: string }
   | { kind: 'noUrl' }

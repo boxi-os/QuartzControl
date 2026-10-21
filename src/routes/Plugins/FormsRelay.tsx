@@ -427,6 +427,10 @@ function checkText(check: RelayCheck, configReadable: boolean, t: TFunction): st
     case 'otherRelay':
       return t('formsEditor.relay.checkOtherRelay', { url: check.url })
     case 'http':
+      // A 403, a 5xx and a 404 have three different ways out; only the last is the address.
+      if (check.status === 403) return t('formsEditor.relay.checkHttpDenied', { url: check.url })
+      if (check.status >= 502 && check.status <= 504) return t('formsEditor.relay.checkHttpNoPhp', { url: check.url, status: check.status })
+      if (check.status === 500) return t('formsEditor.relay.checkHttpServerError', { url: check.url })
       return t('formsEditor.relay.checkHttp', { url: check.url, status: check.status })
     case 'unreachable':
       return t('formsEditor.relay.checkUnreachable', { reason: check.reason })

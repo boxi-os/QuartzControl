@@ -42,7 +42,7 @@ dahin gilt der Fall als geduldet.
 | FTP gegen ProFTPD | unterstützt | Messung ausstehend (auf `debian-vm` aufsetzen) |
 | FTP gegen Pure-FTPd | unterstützt | Messung ausstehend (auf `debian-vm` aufsetzen) |
 | FTPS (explizit, `secure: true`) | geduldet | nicht gemessen |
-| relativer Pfad über FTP ohne chroot | unterstützt | **bekannter Fehler**: „553“ bei der ersten Datei (seit 1.1.0) |
+| relativer Pfad über FTP ohne chroot | unterstützt | gemessen nach dem Fix `6f005a4e` (vorher „553“ bei der ersten Datei, seit 1.1.0) |
 | Ordner, Webhook, Git-Branch | unterstützt | gemessen |
 
 ## Relay (quartz-forms)

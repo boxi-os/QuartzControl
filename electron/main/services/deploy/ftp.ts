@@ -83,11 +83,15 @@ export const ftpAdapter: DeployAdapter = {
         secure: connection.secure
       })
 
+      // A relative remote path is meant from where the login starts, and ensureDir moves the working
+      // folder, so back there after each, not to "/": on a vsftpd without chroot "/" is the server's
+      // root, and a target "review57-rel" failed at its first file with "553 Could not create file"
+      // (debian-vm, since 1.1.0, review 2026-10-31).
+      const start = await client.pwd()
+
       // The folders above a site's folder are not made (sftp.ts, run).
       if (!ctx.keepLocalModes && toUpload.length > 0) {
         const parent = posix.dirname(destination.remotePath.replace(/\/+$/, ''))
-        // Back to where the login started, against which a relative path is meant.
-        const start = await client.pwd()
         const found = await client.cd(parent).then(
           () => true,
           () => false
@@ -98,7 +102,6 @@ export const ftpAdapter: DeployAdapter = {
 
       // The relay's folder must not be a symlink on the server (sftp.ts, run).
       if (ctx.keepLocalModes) {
-        const start = await client.pwd()
         for (const folder of ctx.relayFolders ?? [destination.remotePath]) {
           const listing = await client.list(posix.dirname(folder)).catch((err: unknown) => {
             if (!(err instanceof FTPError)) throw err
@@ -138,7 +141,7 @@ export const ftpAdapter: DeployAdapter = {
         const remoteDir = posix.dirname(remotePath)
         if (!ensuredDirs.has(remoteDir)) {
           await client.ensureDir(remoteDir)
-          await client.cd('/')
+          await client.cd(start)
           ensuredDirs.add(remoteDir)
           if (ctx.keepLocalModes) await chmod(remoteDir, join(ctx.buildDir, posix.dirname(relPath)))
         }

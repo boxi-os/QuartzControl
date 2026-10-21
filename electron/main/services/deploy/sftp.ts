@@ -61,7 +61,14 @@ const CHMOD_CONCURRENCY = 8
  * said as "750", and a setgid the host gave it went unseen (review 2026-10-29, N8).
  */
 async function modeNote(client: SftpClient, remotePath: string, wanted: number): Promise<string> {
-  const actual = (await client.stat(remotePath)).mode & 0o7777
+  // A stat the server refuses says nothing about the upload, which went through: measured with a
+  // stub client whose stat rejects, the relay upload stopped at its first folder and said only
+  // "_stat: Permission denied" (review 2026-10-29, nebenbei).
+  const actual = await client.stat(remotePath).then(
+    (s) => s.mode & 0o7777,
+    () => null
+  )
+  if (actual === null) return `${mainT('modeUnchecked', { mode: wanted.toString(8), path: remotePath })}\n`
   return actual === wanted ? '' : `${mainT('modeNotSet', { mode: wanted.toString(8), actual: actual.toString(8), path: remotePath })}\n`
 }
 

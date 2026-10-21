@@ -3084,6 +3084,7 @@ an der gebauten App (Absätze in `publishing-and-credentials.md`):
 - **`modeNote` wirft bei gescheitertem `stat`** — offen. Die Messung (SFTP-`stat` auf der VM für
   einen Test-Account sperren, ersatzweise `stat` in der gebauten App ersetzen) hat die
   Rechteprüfung abgelehnt; ohne Messung nicht geändert.
+  Nachgetragen: gemessen am esbuild-Bündel mit einem Stub-Client, dann behoben (siehe unten).
 - **Kommentar „caught above“** `edd43620`.
 - **Pool-Benutzer ≠ Upload-Benutzer** `d670c6ed` — PHP-FPMs eigenes 404 „File not found.“ heißt
   `phpCannotRead`.

@@ -25,3 +25,20 @@ export function remotePathProblem(path: string): RemotePathProblem | null {
   if (segments.length === 0) return 'whole-root'
   return null
 }
+
+/**
+ * The relay's folder below a target's path, slashes at either end dropped, or null when it is not
+ * a folder of its own: empty, ".", "..", or an empty, "." or ".." segment anywhere. Shared by the
+ * IPC schema, the field in the Relay section and runDirectoryUpload, for the reason above.
+ *
+ * The relay brings its modes (keepLocalModes), and every adapter sets the mode of the folder it
+ * uploads into. With "." that folder is the target's own: measured on debian-vm with three targets
+ * whose folders were 2750 qchost:www-data (the kind a shared host gives a webroot so that other
+ * accounts cannot look in, setgid so new files get the web server's group), a relay uploaded with
+ * "." over SFTP, rsync and FTP left all three 755, with no line in the output.
+ */
+export function relaySubdir(raw: string): string | null {
+  const subdir = raw.trim().replace(/^\/+|\/+$/g, '')
+  const segments = subdir.split('/')
+  return subdir && !subdir.includes('\0') && segments.every((s) => s !== '' && s !== '.' && s !== '..') ? subdir : null
+}

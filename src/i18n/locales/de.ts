@@ -1569,6 +1569,7 @@ export default {
       noTarget: 'Kein Ziel',
       subdir: 'Unterordner',
       subdirHint: 'Unter dem Pfad des Ziels, z. B. „forms“. Dort liegen danach send.php und die Konfiguration.',
+      subdirInvalid: 'Der Unterordner muss ein eigener Ordner unter dem Pfad des Ziels sein, ohne „.“ und „..“. QuartzControl setzt beim Hochladen seine Rechte, die des Ziels bleiben, wie sie sind.',
       conflict: 'Das Ziel „{{target}}“ überträgt per rsync und löscht, was der Build nicht hat, also auch „{{path}}“.',
       excludeSubmit: '„{{path}}“ dort ausschließen',
       url: 'Adresse von send.php',

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { FolderDown, Trash2, Upload } from 'lucide-react'
 import type { PluginSource, RelayCheck, RelaySettings, RelayState } from '@shared/ipc-contract'
+import { relaySubdir } from '@shared/remotePath'
 import { Badge, Button, Field, FieldGroup, IconButton, Select, SegmentedControl, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { announce } from '../../state/announcer'
@@ -50,6 +51,7 @@ export function RelaySection({
   const [busy, setBusy] = useState<null | 'upload' | 'export'>(null)
   const [result, setResult] = useState<{ success: boolean; output: string; check?: RelayCheck; countersOpen?: string } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [subdirInvalid, setSubdirInvalid] = useState(false)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
 
   if (error) return <p className="text-micro text-red-600 dark:text-red-400">{error}</p>
@@ -160,8 +162,22 @@ export function RelaySection({
         </Select>
       </Field>
       <Field label={t('formsEditor.relay.subdir')} hint={t('formsEditor.relay.subdirHint')}>
-        <DraftInput value={s.subdir} placeholder="forms" onCommit={(v) => v.trim() && void save({ subdir: v.trim().replace(/^\/+|\/+$/g, '') })} />
+        <DraftInput
+          value={s.subdir}
+          placeholder="forms"
+          aria-invalid={subdirInvalid}
+          onCommit={(v) => {
+            const subdir = relaySubdir(v)
+            setSubdirInvalid(subdir === null)
+            if (subdir) void save({ subdir })
+          }}
+        />
       </Field>
+      {subdirInvalid && (
+        <p role="alert" className="text-micro text-red-600 dark:text-red-400">
+          {t('formsEditor.relay.subdirInvalid')}
+        </p>
+      )}
       {state.conflict && (
         <div className="flex flex-col gap-1.5 rounded-md border border-amber-300 p-2.5 dark:border-amber-500/40">
           <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.relay.conflict', { target: state.conflict.targetName, path: state.conflict.exclude })}</p>

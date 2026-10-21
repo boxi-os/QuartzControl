@@ -1,7 +1,7 @@
 import { isAbsolute } from 'path'
 import { z } from 'zod'
 import { isWritableCssValue } from '@shared/cssVariables'
-import { remotePathProblem } from '@shared/remotePath'
+import { relaySubdir, remotePathProblem } from '@shared/remotePath'
 import { isLocaleCode, TEMPLATE_PART_IDS, type TemplatePartId } from '@shared/ipc-contract'
 
 // Validation for everything crossing the IPC boundary. The renderer is not a trust boundary the
@@ -666,7 +666,7 @@ const relayText = z.string().max(2048)
 const recipientName = z.string().min(1).max(200)
 export const relaySettings = z.looseObject({
   targetId: z.string().max(200).optional(),
-  subdir: z.string().min(1).max(512).regex(/^(?!\/)(?!.*(^|\/)\.\.(\/|$))[^\0]*$/),
+  subdir: z.string().min(1).max(512).refine((v) => relaySubdir(v) === v, 'subdir must name a folder of its own below the target'),
   from: relayText,
   allowedOrigins: z.array(z.string().max(512)).max(50),
   subjectPrefix: relayText,

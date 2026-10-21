@@ -3,6 +3,7 @@ import { existsSync } from 'fs'
 import { writeFile } from 'fs/promises'
 import { join, posix } from 'path'
 import type { DeployDiffEntry, DeployProgressEvent, DeployResult, PublishTarget } from '@shared/ipc-contract'
+import { relaySubdir } from '@shared/remotePath'
 import type { DeployAdapter, DeployContext } from './types'
 import { quartzGuiDir, resolveBuildDir } from '../projectDirs'
 import { forgetManifest } from './manifest'
@@ -132,6 +133,9 @@ export async function runDirectoryUpload(
 ): Promise<DeployResult> {
   const target = await publishTargetsService.getTarget(projectPath, targetId)
   if (!target) return { success: false, output: mainT('deployTargetMissing', { id: targetId }) }
+  // keepLocalModes below sets the mode of the folder it uploads into, which must not be the
+  // target's own (relaySubdir). The schema refuses such a subdir; this is for one saved before.
+  if (relaySubdir(subdir) !== subdir) return { success: false, output: mainT('relaySubdirInvalid', { subdir }) }
   const d = target.destination
   if (d.type !== 'sftp' && d.type !== 'ftp' && d.type !== 'folder') return { success: false, output: mainT('relayTargetType', { type: d.type }) }
   const adapter = adapterFor(d)

@@ -1564,6 +1564,7 @@ export default {
       noTarget: 'No target',
       subdir: 'Folder',
       subdirHint: 'Below the target’s path, such as “forms”. send.php and its configuration go there.',
+      subdirInvalid: 'The folder has to be one of its own below the target’s path, without “.” or “..”. QuartzControl sets its permissions when uploading and leaves the target’s as they are.',
       conflict: 'The target “{{target}}” transfers with rsync and deletes what the build lacks, “{{path}}” included.',
       excludeSubmit: 'Exclude “{{path}}” there',
       url: 'Address of send.php',

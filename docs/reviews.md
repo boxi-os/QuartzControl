@@ -3265,3 +3265,22 @@ Attrappe des Reviews):
 
 Offen wie vorher: der relative FTP-Pfad mit „553“; ein FTP-Server, dessen `MLSD` Symlinks als
 Ordner meldet (Pure-FTPd, gelesen). Keinen dieser Fixes hat ein Review gelesen.
+
+Nachtrag (2026-10-21, Unterstützungsmatrix): Mit dem Nutzer festgelegt, was QuartzControl beim
+Veröffentlichen und beim Relay bedienen will (`docs/support-matrix.md`, `12d3d36d`); die Stufe
+eines Falls entscheidet ab jetzt über einen Befund. Die Messungen dafür auf `debian-vm` (ProFTPD,
+Pure-FTPd und PHP 8.1 in Containern, rsync 3.5.0 als Client) fanden drei Fehler, alle auf
+`fix/1.1.x` behoben und in `feat/1.2` gemergt:
+
+- **Relativer FTP-Pfad** `6f005a4e` — ab dem Anfang des Logins statt ab „/“; vorher „553“ bei der
+  ersten Datei auf vsftpd ohne chroot, seit 1.1.0.
+- **Abgelehnte Löschung über FTP** `466117a2` — nach 550 auf `DELE` fragt der Adapter `SIZE`;
+  vorher zählte sie bei allen drei Servern als gelöscht und verließ das Manifest.
+- **„~“ über SFTP und FTP** `e41df35f` — das Anmeldeverzeichnis, `~<anderes Konto>` abgelehnt;
+  vorher je Server ein Ordner „~“, ein Abbruch oder 553.
+
+rsync 3.x als Client ist gemessen (beide Linien, Nachtrag in
+`decisions/publishing-and-credentials.md`). Offen, nicht behoben: Auf der Fix-Linie lehnt rsync
+nur Leerzeichen ab, nicht die übrigen Zeichen der Shell (`131b92cb` liegt nur auf `feat/1.2`);
+unter openrsync wertet die entfernte Shell sie aus. Keinen dieser Fixes hat ein Review gelesen;
+der Auftrag des siebenundfünfzigsten steht in `docs/REVIEW-2026-11-01-auftrag.md`.

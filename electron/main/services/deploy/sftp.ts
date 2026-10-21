@@ -48,6 +48,13 @@ export async function sshAuthOptions(connection: SshConnection, secret: string |
 // Long enough for someone to open their provider's page and compare a SHA256 fingerprint by eye.
 const HANDSHAKE_WITH_PROMPT_MS = 180_000
 
+// A connection that goes silent (a frozen sshd-session on debian-vm, a NAT that forgets it) left
+// the upload waiting for good: still running after 150 s (review 2026-10-30, nebenbei). ssh2 sends
+// no keepalives unless asked, and the operating system's own probes start after two hours. rsync's
+// ssh gets the same through ServerAliveInterval.
+export const SSH_KEEPALIVE_MS = 15_000
+export const SSH_KEEPALIVE_COUNT = 3
+
 // The one-time chmod pass below; ssh2-sftp-client adds listeners per call, and Node warns past ten.
 const CHMOD_CONCURRENCY = 8
 
@@ -114,10 +121,18 @@ export const sftpAdapter: DeployAdapter = {
         // does mean an unreachable host.
         readyTimeout: connection.hostKey?.fingerprint ? undefined : HANDSHAKE_WITH_PROMPT_MS,
         hostVerifier: makeHostVerifier(connection, (message) => (hostKeyRejection = message)),
+        keepaliveInterval: SSH_KEEPALIVE_MS,
+        keepaliveCountMax: SSH_KEEPALIVE_COUNT,
         ...(await sshAuthOptions(connection, ctx.secret))
       })
 
-      const total = toUpload.length + toDelete.length
+      // The one-time pass below, counted in from the start: its paths are known now, and the
+      // progress stood still through it, 6.6 s for 475 files on debian-vm (review 2026-10-30,
+      // nebenbei).
+      const settle = !ctx.keepLocalModes && !modesSettled(ctx.projectPath, ctx.target.id)
+      const skip = new Set([...toUpload, ...toDelete, ...excludePaths])
+      const earlier = settle ? Object.keys(await readManifest(ctx.projectPath, ctx.target.id)).filter((path) => !skip.has(path)) : []
+      const total = toUpload.length + toDelete.length + earlier.length
       let processed = 0
       const ensuredDirs = new Set<string>()
 
@@ -164,9 +179,7 @@ export const sftpAdapter: DeployAdapter = {
       // now gets its mode alone, no data. A server that refuses chmod has kept its umask anyway.
       // Several requests at a time on the one channel: one after the other, 474 took 23 s.
       // Not for an upload that brings its own modes (the relay): those are set above, every time.
-      if (!ctx.keepLocalModes && !modesSettled(ctx.projectPath, ctx.target.id)) {
-        const skip = new Set([...toUpload, ...toDelete, ...excludePaths])
-        const earlier = Object.keys(await readManifest(ctx.projectPath, ctx.target.id)).filter((path) => !skip.has(path))
+      if (settle) {
         let set = 0
         let refused = 0
         let answered = 0
@@ -200,6 +213,8 @@ export const sftpAdapter: DeployAdapter = {
                 if (serverAnswered(err)) answered++
                 else next = earlier.length
               }
+              processed++
+              ctx.emitProgress(processed, total, mainT('sftpModesProgress', { path: earlier[i] }))
             }
           })
         )
@@ -217,7 +232,8 @@ export const sftpAdapter: DeployAdapter = {
       return { success: true, output }
     } catch (err) {
       // the host-key message explains what actually happened; ssh2's own error does not
-      return { success: false, output: `${output}\n${hostKeyRejection ?? String(err)}` }
+      const silent = /Keepalive timeout/.test(String(err)) ? `${mainT('sshSilent', { host: connection.host, seconds: (SSH_KEEPALIVE_MS * SSH_KEEPALIVE_COUNT) / 1000 })}\n\n` : ''
+      return { success: false, output: `${output}\n${hostKeyRejection ?? `${silent}${String(err)}`}` }
     } finally {
       client.end().catch(() => {})
     }

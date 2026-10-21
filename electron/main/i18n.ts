@@ -426,6 +426,7 @@ const STRINGS = {
       'In „{{dir}}“ liegt noch kein Build. Bitte zuerst bauen oder unter Vorschau & Build einen anderen Ausgabeordner einstellen.',
     deployWrongType: 'Falscher Zieltyp für den {{adapter}}-Adapter.',
     deployNothingToDo: 'Nichts zu tun: Das Ziel ist bereits auf dem Stand des Builds.\n',
+    sftpModesProgress: 'Rechte von {{path}}',
     sftpModesSettled: 'Einmalig {{count}} von {{total}} früher hochgeladenen Dateien auf 0644 gesetzt: Bis 1.1.0 lud QuartzControl sie für jeden Account des Servers beschreibbar hoch.\n',
     sftpModesRefused: 'Der Server lehnt chmod ab: {{count}} von {{total}} früher hochgeladenen Dateien bleiben für jeden Account des Servers beschreibbar.\n',
     sftpModesUnfinished:
@@ -445,6 +446,7 @@ const STRINGS = {
 
     // Publishing - SSH
     sshNoConnection: 'Für dieses Ziel ist kein SSH-Zugang hinterlegt.',
+    sshSilent: '{{host}} hat {{seconds}} s lang nicht geantwortet, deshalb wurde die Verbindung beendet. Versuche es noch einmal.',
     sshNoAgent: 'Kein SSH-Agent gefunden (SSH_AUTH_SOCK ist nicht gesetzt).',
     sshNoPrivateKey: 'Für diesen Zugang ist kein privater Schlüssel hinterlegt.',
 
@@ -822,6 +824,7 @@ const STRINGS = {
       'There is no build in “{{dir}}” yet. Build first or pick a different output folder under Preview & build.',
     deployWrongType: 'Wrong destination type for the {{adapter}} adapter.',
     deployNothingToDo: 'Nothing to do: the target already matches the build.\n',
+    sftpModesProgress: 'permissions of {{path}}',
     sftpModesSettled: 'Set {{count}} of {{total}} files uploaded earlier to 0644, once: up to 1.1.0 QuartzControl uploaded them writable by every account on the server.\n',
     sftpModesRefused: 'The server refuses chmod: {{count}} of {{total}} files uploaded earlier stay writable by every account on the server.\n',
     sftpModesUnfinished:
@@ -838,6 +841,7 @@ const STRINGS = {
     branchUnchanged: 'No changes against what is published, push skipped.',
 
     sshNoConnection: 'No SSH credential is set for this target.',
+    sshSilent: '{{host}} did not answer for {{seconds}} s, so the connection was ended. Try again.',
     sshNoAgent: 'No SSH agent found (SSH_AUTH_SOCK is not set).',
     sshNoPrivateKey: 'No private key is stored for this credential.',
 

@@ -2994,3 +2994,29 @@ die andere Sprache (`list[0]`), der Neu-Lesen-Cache für `texts`, `FORMS_TEXTS_S
 Git-Checkout, eine Platzhalter-Prüfung im Plugin, `partOf` ohne `'more'`, die README-Statuszeilen
 des Plugins, dazu aus dieser Runde: `check:plugin-copies` sieht `entryKey`, `PART_OF`, `NO_FIELDS`
 und `RELAY_OWN_WORDS` nicht, und das Plugin könnte „keine Felder“ unter `forms.<id>.fields` melden.
+
+**Die Nebenbei-Liste danach, auf Wunsch des Nutzers** (je Punkt ein Commit, gemessen an der
+gebauten App mit dem Messgeschirr des Reviews):
+- Sprung `c29eb2d1` — die Seite mit den meisten gemeinsamen Ordnern statt `list[0]`; von
+  `en/8-recipes/01-contact` geht „Umfrage“ jetzt auf `en/8-recipes/04-survey` (`lang` en-US),
+  von der deutschen Seite bleibt er deutsch. Sprache über Suffix oder Frontmatter sieht das nicht.
+  Handbuch-Vault `508565c`.
+- Cache `906c0517` — die Texte je `cli.js`, Schlüssel ist ein Hash des Inhalts (npm setzt allen
+  Dateien dieselbe mtime). Je Aufruf vorher 93 ms, nachher 0–1 ms; ein geändertes `cli.js` liest
+  neu. Die 0,5 s des Reviews waren hier nicht zu sehen.
+- `FORMS_TEXTS_SINCE` `f007f679` — gefragt wird jedes Plugin; die Version sagt nur, was bis zur
+  Antwort und bei „unbekannter Befehl“ steht. Preis: ein Kindprozess je Öffnen bei echtem 0.5.8.
+- Platzhalter: quartz-forms `c2479b9` (fehlender und unbekannter Platzhalter als Hinweis, leerer
+  Text gilt als gewollt), Plugin-Handbuch `af0d76d`, `8b32fae`.
+- `'more'` `c650b45a` — eine Meldung zu einem Schlüssel außerhalb von `FORM_KEYS` steht unter
+  „Unbekannte Schlüssel“; gemessen mit einer Attrappe der Kommandozeile, das Plugin hat keine.
+- READMEs quartz-forms `2afe547`, `55efb5a`.
+- `check:plugin-copies` `800b2000` — `entryKey`, `primary`, `RELAY_OWN_WORDS` ziehen nach
+  `formsOptions.ts`; neuer Block mit 326 Fällen (FORM_KEYS, PART_OF, NO_FIELDS, entryKey gegen
+  `wording()`, RELAY_OWN_WORDS gegen `qf_serialize`), Gegenprobe mit fünf Abweichungen.
+- „keine Felder“ unter `fields`: quartz-forms `bb66b1c`, in der App nur der Kommentar
+  (`ec08b6db`); `NO_FIELDS` bleibt für 0.5.9 und älter.
+
+Die Plugin-Änderungen sind unveröffentlicht (nach 0.5.9). Nicht angefasst, weil nicht genannt:
+die Felder-Liste beim Zuklappen und `extra` unter globalem `demo` aus der Nebenbei-Liste des
+Reviews.

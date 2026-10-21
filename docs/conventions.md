@@ -72,7 +72,9 @@ Begründung.
 - **Was die App auf einen Server lädt, bekommt seinen Modus von der App, nicht vom Werkzeug.**
   SFTP: `put` mit `writeStreamOptions.mode` (`0o644`), denn ssh2 setzt sonst 0666 per `fchmod`.
   Wer eigene Modi braucht (das Relay), setzt sie im lokalen Ordner und sagt `keepLocalModes`;
-  jeder Adapter überträgt sie dann, auch auf vorhandene Dateien (rsync `-p`, FTP `SITE CHMOD`).
+  SFTP, FTP und rsync setzen sie dann bei jedem Upload, auch auf vorhandene Dateien
+  (`runDirectoryUpload` vergisst vorher das Manifest; rsync `-p`, FTP `SITE CHMOD`). Ein Ordner-Ziel
+  übernimmt nur die Modi der Dateien.
   Lehnt der Server einen Modus ab, läuft der Upload weiter und sagt, was der Server hält. Was auf
   dem Server laufen soll, fragt die App nach dem Hochladen einmal ab, mit `net.request`: `net.fetch`
   macht aus einer fremden Origin CORS und aus jedem 500 ein `ERR_FAILED`. Gemessen wird auf einem

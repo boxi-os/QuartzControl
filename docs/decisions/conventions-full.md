@@ -277,6 +277,14 @@ Projektwurzel.
   einem Relay auf einer anderen Origin als der Website (dem Normalfall) jedes 500 und 404 als
   `net::ERR_FAILED`, weil fetch eine fremde Origin als CORS-Anfrage behandelt; `net.request` gibt
   den Status, wie er kam („Ein Server, der keinen Modus setzen lässt“).
+  Nachtrag aus dem 54. Review (2026-10-21, N7), ohne den Text darüber zu ändern: Es war nicht
+  „seit 1.1.0“ so, sondern seit 1.0.0, und statt „Alles neu hochladen“ setzt der SFTP-Adapter die
+  Modi früher hochgeladener Dateien einmal je Ziel selbst (M6). „Jeder Adapter überträgt sie, auch
+  auf Dateien, die schon da sind“ galt für SFTP und FTP nur, wo das Manifest die Datei neu
+  schickte; seit M2 vergisst `runDirectoryUpload` das Manifest vor jedem Lauf, und das gilt für
+  SFTP, FTP und rsync. Ein Ordner-Ziel kopiert den Modus jeder Datei mit (`fs.cp`) und lässt die
+  Modi der Ordner, wie sie sind (gemessen: `forms` 0700 und `counters` 0777 blieben,
+  `config.php` 0640 wurde 0600). Die kurze Regel sagt es seitdem so.
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

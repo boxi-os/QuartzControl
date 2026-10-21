@@ -965,6 +965,22 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
 
 ### Arbeitsweise, die sich bewährt hat
 
+- **Was QuartzControl beim Veröffentlichen bedienen will, steht in der Unterstützungsmatrix, und
+  die Stufe entscheidet über einen Befund** (seit 2026-10-21). Sechs Review-Runden über das
+  Hochladen und das Relay fanden je Runde etwa gleich viele Punkte (54.: 1 Hoch, 6 Mittel, 8
+  Niedrig, 13 nebenbei; 55.: 0, 3, 7, 10; 56.: 0, 2, 5, 14). Die Befunde wurden leichter, aber
+  nicht weniger, aus drei Gründen. Erstens steckten sie in den Fixes der Runde davor: Alle sieben
+  des 56. hingen an Fixes des 55., als Lücke (N1, N3, N4), als Preis (M2, N2) oder weil ein Fix
+  einen Fall erst erreichbar machte (M1, N5). Zweitens deutet die Abfrage des Relays beliebige
+  Antworten fremder Server, und jede Deutung hat Fehlalarme in beide Richtungen. Drittens war die
+  Menge der Server offen (drei FTP-Server, zwei rsync, mod_php und FPM, OPcache-Einstellungen, CDNs,
+  Ordner mit 311), und nirgends stand, welche QuartzControl bedienen will; ein Review hat dann
+  immer ein neues Feld. Mit dem Nutzer festgelegt: drei Stufen in
+  [`../support-matrix.md`](../support-matrix.md); ProFTPD, Pure-FTPd und PHP ab 8.1 werden auf
+  `debian-vm` gemessen und dann unterstützt. Ein geduldeter Fall bekommt einen Fix nur bei Schaden
+  (Datenverlust, fremde Dateien, ein offenes Geheimnis). Niedrig und Nebenbei sammelt die Sitzung,
+  der Nutzer wählt aus; findet eine Runde in einem Bereich nichts über Niedrig, gibt es dort keine
+  weitere, bis sich etwas ändert.
 - **„Kann nicht prüfen“ ist nie „alles gut“.** `unavailable`/`'unknown'` sind eigene Antworten
   (Style-Check, Update-Check, Kataloge, Token-Prüfung, Secret-Backend). Das gilt auch für die
   Prüfskripte: Was eines nicht lesen kann, zählt es und sagt die Zahl, statt es zu übergehen — und

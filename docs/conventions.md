@@ -276,6 +276,11 @@ Begründung.
 
 ### Arbeitsweise, die sich bewährt hat
 
+- **Was QuartzControl beim Veröffentlichen bedienen will, steht in
+  [`support-matrix.md`](support-matrix.md), und die Stufe entscheidet über einen Befund.**
+  Unterstützt: beheben und messen. Geduldet: nur bei Datenverlust, fremden Dateien oder einem
+  offenen Geheimnis beheben, sonst ein Satz. Nicht unterstützt: nur dokumentieren. Niedrig und
+  Nebenbei wählt der Nutzer aus; eine Runde ohne Befund über Niedrig beendet die Serie im Bereich.
 - **„Kann nicht prüfen“ ist nie „alles gut“.** `unavailable`/`'unknown'` sind eigene Antworten,
   auch in Prüfskripten: Was nicht lesbar ist, wird gezählt und genannt.
 - **„Kann nicht prüfen“ wird je Ding gefragt, nicht je Werkzeug — und ein Ersatz antwortet nur in

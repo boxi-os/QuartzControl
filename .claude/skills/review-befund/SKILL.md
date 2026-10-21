@@ -9,6 +9,20 @@ Gilt für die Listen in `docs/REVIEW-<datum>.md`. Die Regeln stehen in `docs/con
 Begründung einer Regel, die der Befund berührt, in `docs/decisions/conventions-full.md` — **lies
 sie, bevor du an der Stelle änderst.**
 
+## Vor der Liste: einordnen
+
+Betrifft die Liste das Veröffentlichen oder das Relay, bekommt jeder Befund und jeder
+Nebenbei-Punkt seine Stufe aus [`docs/support-matrix.md`](../../../docs/support-matrix.md)
+(unterstützt, geduldet, nicht unterstützt). Danach:
+
+- **Hoch und Mittel** werden abgearbeitet, wenn die Stufe es verlangt: unterstützt immer, geduldet
+  nur bei Datenverlust, fremden Dateien oder einem offenen Geheimnis, sonst ein Satz in der Matrix.
+- **Niedrig und Nebenbei** werden mit Stufe und Einschätzung als Liste vorgelegt; der Nutzer wählt
+  aus. Nicht ungefragt abarbeiten.
+- Vor einem Fix fragen, zu welcher Klasse der Fall gehört, und die Nachbarfälle mitmessen, statt
+  nur den gemeldeten Fall zu schließen.
+- Fehlt ein Fall in der Matrix, wird er mit dem Nutzer eingeordnet und eingetragen.
+
 ## Je Befund, einer nach dem anderen
 
 1. **Befund lesen und nachstellen.** Erst messen, wie er wirklich auftritt — an der gebauten App
@@ -34,3 +48,6 @@ sie, bevor du an der Stelle änderst.**
 - Chronik: was aus jedem Befund wurde, ans Ende von `docs/reviews.md`; Kurzstand in `CLAUDE.md`
   („Stand und Reviews“) nachziehen.
 - Die Nebenbei-Liste dem Nutzer nennen. Nicht pushen, nicht taggen, ohne dass er es sagt.
+- Fand die Runde in einem Bereich nichts über Niedrig, das in `docs/reviews.md` sagen: Für diesen
+  Bereich gibt es keine weitere Runde, bis sich dort etwas ändert. Der Auftrag eines neuen Reviews
+  nennt die Matrix und verlangt die Stufe je Befund.

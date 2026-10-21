@@ -95,6 +95,9 @@ Seit dem 2026-10-19 gibt es zwei Linien: Bugfixes für 1.1 auf `fix/1.1.x`, neue
 `npm run build`, `npm run smoke` und eigenem Commit; was nebenbei auffällt, wird gesammelt und
 genannt, nicht mit erledigt. Was nur ein laufendes Programm beantworten kann, wird an der gebauten
 App gemessen, wo es geht mit Vorher-Messung. Ablauf als Skill: `.claude/skills/review-befund/`.
+Was QuartzControl beim Veröffentlichen und beim Relay bedienen will, steht seit dem 2026-10-21 in
+[`docs/support-matrix.md`](docs/support-matrix.md); die Stufe eines Falls entscheidet, ob ein
+Befund behoben wird, und Niedrig/Nebenbei wählt der Nutzer aus.
 
 ## Claude-Skills in diesem Projekt
 

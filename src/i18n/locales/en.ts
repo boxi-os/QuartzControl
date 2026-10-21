@@ -1565,6 +1565,8 @@ export default {
       subdir: 'Folder',
       subdirHint: 'Below the target’s path, such as “forms”. send.php and its configuration go there.',
       subdirInvalid: 'The folder has to be one of its own below the target’s path, without “.” or “..”. QuartzControl sets its permissions when uploading and leaves the target’s as they are.',
+      subdirRsyncChar: 'rsync cannot transfer a folder containing “{{char}}” safely, and the target uploads with rsync. Choose a folder without it.',
+      subdirRsyncSpace: 'rsync cannot transfer a folder containing a space safely, and the target uploads with rsync. Choose a folder without spaces.',
       conflict: 'The target “{{target}}” transfers with rsync and deletes what the build lacks, “{{path}}” included.',
       excludeSubmit: 'Exclude “{{path}}” there',
       url: 'Address of send.php',
@@ -2876,6 +2878,8 @@ export default {
         'whole-root': 'The login directory itself is not allowed, because with deletion enabled it would be emptied. Name the subfolder the site lives in.',
         traversal: 'A path containing “..” is not allowed.'
       },
+      rsyncPathChar: 'rsync cannot transfer a path containing “{{char}}” safely. Choose SFTP as the transfer, or a folder without it.',
+      rsyncPathSpace: 'rsync cannot transfer a path containing a space safely. Choose SFTP as the transfer, or a folder without spaces.',
       transfer: 'Transfer',
       transferSftp: 'SFTP (file by file)',
       transferRsync: 'rsync (faster, compares against the server)',

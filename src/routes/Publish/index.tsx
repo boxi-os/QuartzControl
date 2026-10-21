@@ -43,7 +43,7 @@ import { useAsyncAction } from '../../hooks/useAsyncAction'
 import { useStickyState } from '../../state/uiState'
 import { useUnsavedChanges } from '../../state/unsavedGuard'
 import { rsyncBlockReason } from '@shared/rsyncSupport'
-import { remotePathProblem } from '@shared/remotePath'
+import { remotePathProblem, rsyncUnsafeChar } from '@shared/remotePath'
 import { TAB_ICONS } from '../navConfig'
 import GithubPages from './GithubPages'
 import HandbookLink from '../../components/HandbookLink'
@@ -416,11 +416,17 @@ export default function Publish(): JSX.Element {
     targetDraft && 'remotePath' in targetDraft.destination
       ? remotePathProblem(targetDraft.destination.remotePath)
       : null
+  // The rsync adapter refuses these at preview and upload; a target saved with one was useless
+  // with rsync, and nothing said so until then (review 2026-10-30, N5).
+  const rsyncChar =
+    targetDraft?.destination.type === 'sftp' && targetDraft.destination.transfer === 'rsync'
+      ? rsyncUnsafeChar(targetDraft.destination.remotePath)
+      : null
 
   const targetReady = (() => {
     if (!targetDraft) return false
     const destination = targetDraft.destination
-    if (remotePathIssue) return false
+    if (remotePathIssue || rsyncChar) return false
     if (destination.type === 'folder') return !!destination.path.trim()
     if (destination.type === 'git-branch') return !!destination.branch.trim()
     return !!targetDraft.connectionId
@@ -482,6 +488,10 @@ export default function Publish(): JSX.Element {
                 {remotePathIssue ? (
                   <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                     {t(`publish.targetForm.remotePathError.${remotePathIssue}`)}
+                  </p>
+                ) : rsyncChar ? (
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                    {/\s/.test(rsyncChar) ? t('publish.targetForm.rsyncPathSpace') : t('publish.targetForm.rsyncPathChar', { char: rsyncChar })}
                   </p>
                 ) : (
                   <p className="mt-1 text-xs text-text-muted">{t('publish.targetForm.remotePathHint')}</p>

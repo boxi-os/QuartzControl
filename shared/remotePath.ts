@@ -26,6 +26,22 @@ export function remotePathProblem(path: string): RemotePathProblem | null {
   return null
 }
 
+// "~" is left out on purpose: a leading "~/" is meant to expand there. Loosening it (for rsync
+// 3.2.4 and later, which escape the path themselves) opens the mkdir of the second attempt to the
+// remote shell under openrsync: remoteShellPath's quotes do not survive there (deploy/rsync.ts).
+const SHELL_SPECIAL = /['"\\$`;&|<>(){}[\]*?!#]/
+
+/**
+ * The first character of a remote path that rsync cannot carry safely, or null: whitespace and
+ * anything a shell gives a meaning to. openrsync has no --protect-args, so the remote shell reads
+ * the path once more (deploy/rsync.ts, remoteSpec). Shared by the rsync adapter, the target form
+ * and runDirectoryUpload, so a path is refused where it is typed and not only at the upload:
+ * "neu!" was saved without a word and refused by preview and upload (review 2026-10-30, N5).
+ */
+export function rsyncUnsafeChar(path: string): string | null {
+  return /\s/.exec(path)?.[0] ?? SHELL_SPECIAL.exec(path)?.[0] ?? null
+}
+
 /**
  * The relay's folder below a target's path, slashes at either end dropped, or null when it is not
  * a folder of its own: empty, ".", "..", or an empty, "." or ".." segment anywhere. Shared by the

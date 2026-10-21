@@ -679,7 +679,8 @@ export interface RelayState {
   lastUpload: RelayLastUpload | null
   /** What is stored, never a value: which recipients have an address, which captcha secrets exist. */
   secrets: { stored: boolean; recipients: string[]; captchaSecret: boolean; captchaSecrets: string[]; storageAvailable: boolean }
-  targets: { id: string; name: string; type: string; where: string }[]
+  /** `rsync`: an SFTP target that transfers with rsync, which cannot carry some folder names. */
+  targets: { id: string; name: string; type: string; where: string; rsync: boolean }[]
   conflict: RelayConflict | null
   /** The hash of what the relay would be told now; null with `hashProblem` when it cannot be made. */
   currentHash: string | null

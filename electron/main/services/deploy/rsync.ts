@@ -6,6 +6,7 @@ import { join, posix } from 'path'
 import type { DeployDiffEntry, DeployResult, SshConnection } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
 import { rsyncBlockReason, type RsyncBlockReason } from '@shared/rsyncSupport'
+import { rsyncUnsafeChar } from '@shared/remotePath'
 import * as connectionsService from '../connectionsService'
 import { findExecutable } from '../environmentService'
 import { mainT } from '../../i18n'
@@ -208,9 +209,9 @@ async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
 // Single quotes for the remote shell; a leading "~/" stays outside them so it still expands there,
 // as it does in remoteSpec's path. They hold only under rsync 3.x, which hands --rsync-path on as
 // it is. openrsync (macOS's /usr/bin/rsync) splits the value like a shell itself and drops the
-// quotes, and ssh joins the words with spaces: "/srv/a b" became two folders "a" and "b" on
+// quotes, and ssh joins the words with spaces: ".../sp ace" became two folders "sp" and "ace" on
 // debian-vm (review 2026-10-30, N3). What keeps the mkdir safe there is remoteSpec refusing
-// whitespace and SHELL_SPECIAL before this runs.
+// whatever rsyncUnsafeChar (shared/remotePath.ts) finds before this runs.
 function remoteShellPath(path: string): string {
   const quote = (s: string): string => `'${s.replace(/'/g, `'\\''`)}'`
   return path.startsWith('~/') ? `~/${quote(path.slice(2))}` : quote(path)
@@ -221,24 +222,16 @@ function remoteShellPath(path: string): string {
 // or directory', which SFTP and FTP create. The dry run does not create anything and passes.
 const MISSING_PARENT = /\bmkdir ".*" failed: No such file or directory/
 
-// "~" is left out on purpose: a leading "~/" is meant to expand there. Loosening it (for rsync
-// 3.2.4 and later, which escape the path themselves) opens the mkdir of the second attempt to the
-// remote shell under openrsync: remoteShellPath's quotes do not survive there.
-const SHELL_SPECIAL = /['"\\$`;&|<>(){}[\]*?!#]/
-
 function remoteSpec(connection: SshConnection, remotePath: string): string {
   // openrsync has no --protect-args, so a remote path is expanded once more by the remote shell.
   // Whitespace there would silently split into two arguments; refused rather than guessed at.
-  if (/\s/.test(remotePath)) {
-    throw new Error(mainT('rsyncPathWithSpace'))
-  }
   // The same for any other character that shell gives a meaning to, quoting included, since
   // rsync 3.2.4 and later escape remote args themselves and openrsync does not. Measured on
   // debian-vm: "q'1" failed with bash's "unexpected end of file", and "q$HOME" reported success
   // with the files under q/home/qchost/ - with --delete, a site would clean out that folder
   // (review 2026-10-29, nebenbei).
-  const special = SHELL_SPECIAL.exec(remotePath)
-  if (special) throw new Error(mainT('rsyncPathWithSpecial', { char: special[0] }))
+  const unsafe = rsyncUnsafeChar(remotePath)
+  if (unsafe) throw new Error(/\s/.test(unsafe) ? mainT('rsyncPathWithSpace') : mainT('rsyncPathWithSpecial', { char: unsafe }))
   const withSlash = remotePath.endsWith('/') ? remotePath : `${remotePath}/`
   return `${connection.username}@${connection.host}:${withSlash}`
 }

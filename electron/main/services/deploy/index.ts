@@ -3,7 +3,7 @@ import { existsSync } from 'fs'
 import { writeFile } from 'fs/promises'
 import { join, posix } from 'path'
 import type { DeployDiffEntry, DeployProgressEvent, DeployResult, PublishTarget } from '@shared/ipc-contract'
-import { relaySubdir } from '@shared/remotePath'
+import { relaySubdir, rsyncUnsafeChar } from '@shared/remotePath'
 import type { DeployAdapter, DeployContext } from './types'
 import { quartzGuiDir, resolveBuildDir } from '../projectDirs'
 import { forgetManifest } from './manifest'
@@ -138,6 +138,10 @@ export async function runDirectoryUpload(
   if (d.type !== 'sftp' && d.type !== 'ftp' && d.type !== 'folder') return { success: false, output: mainT('relayTargetType', { type: d.type }) }
   const adapter = adapterFor(d)
   if (!adapter) return { success: false, output: mainT('deployNoAdapter', { type: d.type }) }
+  // The adapter refuses the whole path and advises SFTP, where another folder would do: measured
+  // with "kontakt!" over rsync (review 2026-10-30, N5). The target's own path it says itself.
+  const unsafe = d.type === 'sftp' && d.transfer === 'rsync' && !rsyncUnsafeChar(d.remotePath) ? rsyncUnsafeChar(subdir) : null
+  if (unsafe) return { success: false, output: /\s/.test(unsafe) ? mainT('relaySubdirRsyncSpace', { subdir }) : mainT('relaySubdirRsyncChar', { subdir, char: unsafe }) }
   const destination: PublishTarget['destination'] =
     d.type === 'folder' ? { ...d, path: join(d.path, subdir), deleteRemoved: false } : { ...d, remotePath: posix.join(d.remotePath, subdir), deleteRemoved: false }
   // What QuartzControl uploads gets its mode from QuartzControl, on every run and every way. A mode

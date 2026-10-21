@@ -309,7 +309,7 @@ export async function relayState(projectId: string, projectPath: string, source:
   const info = await connectionsService.getRelaySecretInfo(projectId)
   const targets = (await listTargets(projectPath))
     .filter((t) => t.destination.type === 'sftp' || t.destination.type === 'ftp' || t.destination.type === 'folder')
-    .map((t) => ({ id: t.id, name: t.name, type: t.destination.type, where: t.destination.type === 'folder' ? t.destination.path : 'remotePath' in t.destination ? t.destination.remotePath : '' }))
+    .map((t) => ({ id: t.id, name: t.name, type: t.destination.type, where: t.destination.type === 'folder' ? t.destination.path : 'remotePath' in t.destination ? t.destination.remotePath : '', rsync: t.destination.type === 'sftp' && t.destination.transfer === 'rsync' }))
   const target = settings.targetId ? await getTarget(projectPath, settings.targetId) : null
   const conflict = target ? await rsyncConflict(projectPath, target, settings.subdir) : null
   // What the relay would be told now - the hash covers the forms' rules, not the dated header.

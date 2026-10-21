@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { FolderDown, KeyRound, Trash2, Upload } from 'lucide-react'
 import type { PluginSource, RelayCheck, RelaySettings, RelayState } from '@shared/ipc-contract'
-import { relaySubdir } from '@shared/remotePath'
+import { relaySubdir, rsyncUnsafeChar } from '@shared/remotePath'
 import { Badge, Button, Field, FieldGroup, IconButton, Select, SegmentedControl, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { announce } from '../../state/announcer'
@@ -60,6 +60,8 @@ export function RelaySection({
   if (error) return <p className="text-micro text-red-600 dark:text-red-400">{error}</p>
   if (!state) return <p className="text-micro text-text-muted">{loading ? t('formsEditor.relay.loading') : ''}</p>
   const s = state.settings
+  // Said where the folder is typed, not only by the upload (review 2026-10-30, N5).
+  const subdirRsyncChar = state.targets.find((target) => target.id === s.targetId)?.rsync ? rsyncUnsafeChar(s.subdir) : null
   const save = async (change: Partial<RelaySettings>): Promise<boolean> => {
     try {
       await window.quartzGui.forms.relaySaveSettings({ projectPath: project.path, settings: { ...s, ...change } })
@@ -182,6 +184,11 @@ export function RelaySection({
       {subdirInvalid && (
         <p role="alert" className="text-micro text-red-600 dark:text-red-400">
           {t('formsEditor.relay.subdirInvalid')}
+        </p>
+      )}
+      {!subdirInvalid && subdirRsyncChar && (
+        <p className="text-micro text-red-600 dark:text-red-400">
+          {/\s/.test(subdirRsyncChar) ? t('formsEditor.relay.subdirRsyncSpace') : t('formsEditor.relay.subdirRsyncChar', { char: subdirRsyncChar })}
         </p>
       )}
       {state.conflict && (

@@ -1570,6 +1570,8 @@ export default {
       subdir: 'Unterordner',
       subdirHint: 'Unter dem Pfad des Ziels, z. B. „forms“. Dort liegen danach send.php und die Konfiguration.',
       subdirInvalid: 'Der Unterordner muss ein eigener Ordner unter dem Pfad des Ziels sein, ohne „.“ und „..“. QuartzControl setzt beim Hochladen seine Rechte, die des Ziels bleiben, wie sie sind.',
+      subdirRsyncChar: 'Einen Unterordner mit „{{char}}“ kann rsync nicht sicher übertragen, und das Ziel lädt mit rsync hoch. Wähle einen Unterordner ohne dieses Zeichen.',
+      subdirRsyncSpace: 'Einen Unterordner mit Leerzeichen kann rsync nicht sicher übertragen, und das Ziel lädt mit rsync hoch. Wähle einen Unterordner ohne Leerzeichen.',
       conflict: 'Das Ziel „{{target}}“ überträgt per rsync und löscht, was der Build nicht hat, also auch „{{path}}“.',
       excludeSubmit: '„{{path}}“ dort ausschließen',
       url: 'Adresse von send.php',
@@ -2889,6 +2891,8 @@ export default {
         'whole-root': 'Das Anmeldeverzeichnis selbst geht nicht, weil es mit aktiviertem Löschen geleert würde. Gib den Unterordner an, in dem die Website liegt.',
         traversal: 'Ein Pfad mit „..“ ist nicht erlaubt.'
       },
+      rsyncPathChar: 'Einen Pfad mit „{{char}}“ kann rsync nicht sicher übertragen. Wähle SFTP als Übertragung oder einen Ordner ohne dieses Zeichen.',
+      rsyncPathSpace: 'Einen Pfad mit Leerzeichen kann rsync nicht sicher übertragen. Wähle SFTP als Übertragung oder einen Ordner ohne Leerzeichen.',
       transfer: 'Übertragung',
       transferSftp: 'SFTP (Datei für Datei)',
       transferRsync: 'rsync (schneller, vergleicht mit dem Server)',

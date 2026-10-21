@@ -1630,7 +1630,7 @@ export default {
       checkHttpServerError: "The server answers at {{url}} with error 500 and an error page of its own. The web server's error log names the reason.",
       checkHttpAuth: 'The server asks for a login at {{url}} (HTTP 401), so the relay could not be checked. Visitors without that login cannot send the forms.',
       checkHttpRate: 'The server turned the check at {{url}} away for too many requests (HTTP 429), so the relay could not be checked. Upload it again later.',
-      checkHttpCdn: 'The CDN in front of the server answers at {{url}} with HTTP {{status}}: it does not reach the server behind it. Try again later; if it stays so, ask the host or the CDN provider.',
+      checkHttpCdn: 'The CDN in front of the server answers at {{url}} with HTTP {{status}}: it gets no valid answer from the server behind it. Try again later; if it stays so, ask the host or the CDN provider.',
       checkUnreachable: 'The relay could not be checked: {{reason}}',
       checkNoUrl: 'The relay could not be checked because the send.php address is missing.',
       countersNotWritable: 'PHP cannot write to the folder for counters, so the relay lets every message through: with no rate limit and without remembering used proofs of work. Enter a folder PHP may write to at your host under “Folder for counters”.',

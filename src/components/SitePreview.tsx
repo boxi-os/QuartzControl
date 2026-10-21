@@ -155,11 +155,12 @@ export default function SitePreview({
     setDecidedFor(selector)
     const list = JSON.parse(pagesKey) as string[]
     if (current.found > 0 || list.length === 0 || list.some((p) => samePage(p, page))) return
-    setPage(list[0])
-    setDraft(list[0])
+    const target = nearestPage(list, page)
+    setPage(target)
+    setDraft(target)
     // Said once, not in the status line below: the jump is news, the mark is a state - and the
     // line is said again after every reload of the frame (M1).
-    announce(t('sitePreview.jumped', { page: `/${list[0]}`, name }))
+    announce(t('sitePreview.jumped', { page: `/${target}`, name }))
   }, [deciding, current, pagesKey, selector, name, page, setPage, setDecidedFor, t])
 
   async function start(): Promise<void> {
@@ -336,6 +337,22 @@ export interface PreviewHighlight {
 }
 
 const samePage = (a: string, b: string): boolean => a.replace(/^\/+|\/+$/g, '') === b.replace(/^\/+|\/+$/g, '')
+
+// The page of `list` nearest the one shown: the most leading folders in common, the list's order
+// among equals. A site in several languages keeps each in its folder (quartz-multilanguage's
+// `folder` detection), and the first page by file name sent a jump from `en/…` to the German page
+// (review 2026-10-28, Nebenbei). A language given by suffix or frontmatter is not seen here.
+function nearestPage(list: string[], page: string): string {
+  const folders = (p: string): string[] => p.replace(/^\/+/, '').split('/').slice(0, -1)
+  const shown = folders(page)
+  const shared = (p: string): number => {
+    const own = folders(p)
+    let n = 0
+    while (n < own.length && n < shown.length && own[n] === shown[n]) n++
+    return n
+  }
+  return list.reduce((best, p) => (shared(p) > shared(best) ? p : best), list[0])
+}
 
 function markSentence(report: SitePreviewReport, highlight: PreviewHighlight, page: string, t: TFunction): string {
   if (report.found === 0) {

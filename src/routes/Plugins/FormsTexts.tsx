@@ -58,10 +58,12 @@ export function FormsTexts({
 }): JSX.Element {
   const { t, i18n } = useTranslation()
   const sourceKey = JSON.stringify(source)
-  // A plugin before the command is not asked: it would answer "unbekannter Befehl", and the
-  // section says which version brings the texts instead.
+  // A plugin before the command answers "unbekannter Befehl", and the section says which version
+  // brings the texts instead. Asked all the same: a git checkout between two releases carries the
+  // older number and has the command, and was given the old section (review 2026-10-28,
+  // Nebenbei). Until it answers, the older plugin's section stands.
   const older = installed !== undefined && isNewerVersion(FORMS_TEXTS_SINCE, installed)
-  const query = useIpcQuery(() => (older ? Promise.resolve(null) : window.quartzGui.forms.texts({ projectPath, source })), [projectPath, sourceKey, older])
+  const query = useIpcQuery(() => window.quartzGui.forms.texts({ projectPath, source }), [projectPath, sourceKey])
   const codes = languages.length ? languages : [i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'de']
   const [picked, setPicked] = useStickyState<string>('forms.textsLanguage', codes[0])
   const code = codes.includes(picked) ? picked : codes[0]
@@ -84,7 +86,7 @@ export function FormsTexts({
     return { locale, wording: result.locales[locale] ?? Object.values(result.locales)[0] ?? {}, own: Object.keys(result.locales).some((l) => primary(l) === primary(code)) }
   }, [result, code])
 
-  if (older) {
+  if (older && !plugin) {
     return (
       <div className="flex flex-col gap-3">
         <p className="text-ui text-amber-700 dark:text-amber-400">{t('formsEditor.textList.older', { since: FORMS_TEXTS_SINCE, installed })}</p>

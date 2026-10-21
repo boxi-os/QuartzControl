@@ -3191,3 +3191,38 @@ relativer Pfad über FTP scheitert an einem Server, der das Login nicht einsperr
 der Adapter nach jedem neuen Ordner nach `/` wechselt (gilt schon für 1.1).
 
 **Auch diese Fixes hat kein Review gelesen.**
+
+**Das sechsundfünfzigste Review** ([`REVIEW-2026-10-31.md`](REVIEW-2026-10-31.md), Auftrag
+[`REVIEW-2026-10-31-auftrag.md`](REVIEW-2026-10-31-auftrag.md), `review-2026-10-30..66f1d646` auf
+`feat/1.2`, `5dcfb3f6..8a9061ac` auf `fix/1.1.x`, quartz-forms `v0.5.11..v0.5.14`: die Fixes des
+55. Reviews, die Keepalives, die Pfade): von Claude Opus 5.5 als frisch gestarteter Subagent, ohne
+den Verlauf der Sitzung. 0 Hoch, 2 Mittel, 5 Niedrig; Urteil: die Fix-Linie nicht ohne M1, N2 vorher
+entscheiden; `feat/1.2` nach dem Merge und N1; quartz-forms nicht veröffentlichen vor M2.
+
+Abgearbeitet am 2026-10-21, ein Befund je Commit, gemessen an der gebauten App (Wegwerf-Profil,
+`h.mjs`, `del-scene.sh`, `n3-scene.sh`, `n4-scene.sh`, `m2-bench.sh` im Scratchpad `fix56`) gegen
+`debian-vm`, vorher und nachher. N2 wie vorgeschlagen entschieden (Nutzer):
+
+- **M1** `07e63010`, Doku `e5ce33cc`, auf `fix/1.1.x` — als gelöscht zählt nur die Antwort des
+  Servers, ein Leitungsfehler lässt den Lauf scheitern, das Manifest bleibt; eine Ablehnung wird
+  genannt und bleibt im Manifest. SFTP 168 und FTP 47 von 178 Dateien blieben vorher online.
+- **N2** `2a4df8dc` auf `fix/1.1.x` — das Anmeldeverzeichnis selbst nur mit Löschen abgelehnt;
+  „~“ über rsync und „.“ gehen ohne Löschen wieder, beide Sätze nennen das Ausschalten.
+- **N5** `7371135f` auf `fix/1.1.x` — `sshSilent` auch zwischen zwei Aufrufen (eigener
+  Listener, an der Attrappe gemessen, in der App nicht erreichbar), „rund 60 s“. Dass ssh2 nur
+  Keepalive-Antworten zählt, bleibt; kein solcher Server gefunden. Gemergt in `e37ae7f9`.
+- **N1** `cbea9395` — `localHost()` rechnet `[::ffff:7f00:1]` zurück und schneidet „.“ am Ende ab;
+  100.64/10 bleibt draußen (nur mit Anfrage an einen fremden Host messbar).
+- **N3** `f0c5e559` — jeder Ordner auf dem Weg zum Relay wird gefragt (`relayFolders`), über
+  SFTP, FTP und rsync; `review56-other` behält 2750.
+- **M2** quartz-forms `20d4b87` (0.5.15, `e7874b6`), `252b3f7e` — bei `validate_timestamps=0`
+  liest das Relay die `generation` als Text und verwirft nur bei einer neuen; 3000 Tickets unter
+  `php -S`: 6 Neustarts → 0, unter FPM auf `debian-vm` 0 Byte verschwendet.
+- **N4** `dbd340df` — bei fremder `generation` fragt die Abfrage nach 3 s noch einmal; unter
+  `restrict_api` 2 von 6 `otherRelay` → 0 von 6.
+
+quartz-forms 0.5.15 ist versioniert, nicht getaggt und nicht gepusht; `feat/1.2` und
+`fix/1.1.x` sind nicht gepusht. Die Nebenbei-Liste des Reviews (13 Punkte) ist nicht abgearbeitet.
+Offen wie vorher: der relative FTP-Pfad mit „553“.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

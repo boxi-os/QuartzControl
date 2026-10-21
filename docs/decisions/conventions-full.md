@@ -323,6 +323,18 @@ Projektwurzel.
   Weiterleitung von `debian-vm` auf `127.0.0.1`, hielt einen Dienst dort für ein Relay und
   empfahl dessen Adresse für send.php; den Text des Servers zeigte sie mit 65 065 Zeichen. Die
   kurze Regel sagt es seitdem so.
+  Nachtrag aus dem 56. Review (2026-10-31, abgearbeitet am 2026-10-21), ohne den Text darüber zu
+  ändern: Brach die Verbindung beim Löschen ab, hielten SFTP und FTP jeden weiteren Fehler für
+  „schon weg“, meldeten Erfolg, und das Manifest vergaß die Dateien, die online blieben (M1: 168
+  von 178 über SFTP); erst die Keepalives machten den stummen Fall erreichbar. Die Keepalives
+  beenden nach rund 60 s, nicht nach 45, und ssh2 zählt nur Antworten auf sie, keine Daten (N5).
+  „~“ ohne Löschen hatte 1.1.0 hochgeladen, und die Ablehnung nannte keinen Weg (N2). Die Sperre
+  gegen Weiterleitungen auf diesen Rechner kannte `[::ffff:7f00:1]` und `localhost.` nicht (N1),
+  die Symlink-Prüfung nur den letzten Ordner (N3: ein Link weiter oben setzte einen fremden Ordner
+  von 2750 auf 755). Das Relay verschwendete bei `validate_timestamps=0` mit jeder Anfrage OPcache
+  und ließ ihn neu starten (M2, quartz-forms 0.5.15), und unter `restrict_api` kam der Fehlalarm
+  „ein anderes Relay“ zurück (N4). Die kurze Regel sagt es seitdem so. Messungen in
+  [`publishing-and-credentials.md`](publishing-and-credentials.md).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

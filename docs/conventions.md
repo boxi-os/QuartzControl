@@ -77,14 +77,18 @@ Begründung.
   ebenso (die Dateien per `fs.cp`, die Ordner per `chmod`). Was 1.0.0 bis 1.1.0 über SFTP mit 0666 hochgeladen hat,
   setzt der Adapter einmal je Ziel auf 0644 (`deploy-manifest-<id>.modes.json`): nur reguläre
   Dateien mit genau 0666 (`lstat`), und erledigt ist das Ziel erst, wenn der Server zu jeder Datei
-  geantwortet hat. Die Abfrage nach dem Upload nennt die `generation` und erfährt so, ob das eben
-  hochgeladene Relay antwortet (das Relay liest seine Config an OPcache vorbei und sagt
-  `counters` nur dann); eine Weiterleitung empfiehlt sie nur, wo dort ein Relay antwortet. Fehlende
+  geantwortet hat. Als gelöscht zählt nur die Antwort des Servers, dass die Datei fehlt; ein Fehler
+  der Leitung lässt den Lauf scheitern, und das Manifest bleibt. Die Abfrage nach dem Upload nennt
+  die `generation` und erfährt so, ob das eben hochgeladene Relay antwortet (das Relay liest seine
+  Config an OPcache vorbei und sagt `counters` nur dann; eine fremde `generation` fragt sie nach 3 s
+  noch einmal); eine Weiterleitung empfiehlt sie nur, wo dort ein Relay antwortet. Fehlende
   Ordner über dem Ordner eines Ziels legt nur das Relay an, über jeden Weg; was rsync nicht
   übertragen kann (`rsyncUnsafeChar`), sagt schon das Formular. „~“ ist das Anmeldeverzeichnis
-  selbst. Ist der Ordner des Relays auf dem Server ein Symlink, lädt kein Weg hindurch. Eine
-  SSH-Verbindung, die schweigt, endet nach 45 s (Keepalives in ssh2 und ssh). Die Abfrage folgt
-  keiner Weiterleitung von draußen auf diesen Rechner oder ins LAN und kürzt den Text des Servers.
+  selbst, und das ist nur mit Löschen abgelehnt. Ist ein Ordner auf dem Weg zum Relay auf dem
+  Server ein Symlink, lädt kein Weg hindurch. Eine SSH-Verbindung, die schweigt, endet nach rund
+  60 s (Keepalives in ssh2 und ssh; ssh2 zählt nur Antworten darauf). Die Abfrage folgt keiner
+  Weiterleitung von draußen auf diesen Rechner oder ins LAN, nach dem Literal der Adresse, und
+  kürzt den Text des Servers.
   Lehnt der Server einen Modus ab, läuft der Upload weiter und sagt, was der Server hält. Was auf
   dem Server laufen soll, fragt die App nach dem Hochladen einmal ab, mit `net.request`: `net.fetch`
   macht aus einer fremden Origin CORS und aus jedem 500 ein `ERR_FAILED`. Gemessen wird auf einem

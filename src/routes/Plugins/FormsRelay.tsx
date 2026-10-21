@@ -424,6 +424,12 @@ function checkText(check: RelayCheck, configReadable: boolean, t: TFunction): st
     case 'phpError':
       return configReadable ? t('formsEditor.relay.checkPhpErrorReadable') : t('formsEditor.relay.checkPhpError')
     case 'relayError':
+      // The relay words its errors in English only. Of the four a ticket can meet, unknown_form is
+      // otherRelay (checkRelay) and three are said here (review 2026-10-29, nebenbei); any other
+      // one with the relay's own words.
+      if (check.error === 'origin') return t('formsEditor.relay.checkRelayOrigin', { url: check.url })
+      if (check.error === 'secret_config') return t('formsEditor.relay.checkRelaySecret', { url: check.url })
+      if (check.error === 'mbstring_config') return t('formsEditor.relay.checkRelayMbstring', { url: check.url })
       return t('formsEditor.relay.checkRelayError', { status: check.status, error: check.error, message: check.message })
     case 'noPhp':
       return t('formsEditor.relay.checkNoPhp', { url: check.url })

@@ -469,6 +469,8 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   // generation is older than the one uploaded, so another one too.
   if (res.status === 200 && json?.ok === true && generation && json.generation !== generation) return { kind: 'otherRelay', url }
   if (res.status === 200 && json?.ok === true) return { kind: 'ok', url, ...(typeof json.counters === 'boolean' ? { counters: json.counters } : {}) }
+  // `form` is one of the relay just generated, so a relay that does not know it is another one.
+  if (json?.error === 'unknown_form') return { kind: 'otherRelay', url }
   if (json && typeof json.error === 'string') {
     return { kind: 'relayError', url, status: res.status, error: json.error, message: typeof json.message === 'string' ? json.message : '' }
   }

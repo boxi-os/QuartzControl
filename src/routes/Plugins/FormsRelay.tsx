@@ -52,7 +52,7 @@ export function RelaySection({
   const { t, i18n } = useTranslation()
   const project = useProject()
   const [busy, setBusy] = useState<null | 'upload' | 'export'>(null)
-  const [result, setResult] = useState<{ success: boolean; output: string; check?: RelayCheck; countersOpen?: string; configReadable?: boolean } | null>(null)
+  const [result, setResult] = useState<{ success: boolean; output: string; check?: RelayCheck; countersOpen?: string; configReadable?: boolean; said?: string } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [subdirInvalid, setSubdirInvalid] = useState(false)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
@@ -112,11 +112,12 @@ export function RelaySection({
     setResult(null)
     try {
       const r = await window.quartzGui.forms.relayUpload({ projectId: project.id, projectPath: project.path, source, url: probe?.url, form: probe?.form })
-      setResult(r)
-      announce(r.success ? t('formsEditor.relay.uploadedAnnounce') : t('formsEditor.relay.uploadFailedAnnounce'))
+      // Said in the section's status region, in one go with the check's sentence below it: through
+      // announce() the two arrived in two regions at once (review 2026-10-29, nebenbei).
+      setResult({ ...r, said: r.success ? t('formsEditor.relay.uploadedAnnounce') : t('formsEditor.relay.uploadFailedAnnounce') })
       onChanged()
     } catch (err) {
-      setResult({ success: false, output: formatIpcError(err) })
+      setResult({ success: false, output: formatIpcError(err), said: t('formsEditor.relay.uploadFailedAnnounce') })
     } finally {
       setBusy(null)
     }
@@ -368,11 +369,14 @@ export function RelaySection({
         </div>
         {!canUpload && <span className="text-micro text-text-muted">{t('formsEditor.relay.cannotUpload', { reasons: blockers(state, missing, missingCaptcha, t).join(' ') })}</span>}
         {result && (
-          <pre aria-live="polite" className={`max-h-48 overflow-auto whitespace-pre-wrap rounded-md bg-ink/[0.04] p-2 font-mono text-xs dark:bg-ink/10 ${result.success ? 'text-text' : 'text-red-600 dark:text-red-400'}`}>
+          <pre className={`max-h-48 overflow-auto whitespace-pre-wrap rounded-md bg-ink/[0.04] p-2 font-mono text-xs dark:bg-ink/10 ${result.success ? 'text-text' : 'text-red-600 dark:text-red-400'}`}>
             {(result.success ? t('formsEditor.relay.done') + '\n' : '') + result.output}
           </pre>
         )}
+        {/* The one region that speaks after an upload; the output above arrives with its <pre>,
+            which is no live region then, and would read the whole list if it were one. */}
         <div role="status" className="flex flex-col items-start gap-1.5">
+          {result?.said && <span className="sr-only">{result.said}</span>}
           {result?.check && (
             <>
               <p

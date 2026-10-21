@@ -412,7 +412,8 @@ export function RelaySection({
               {/* The sentence and the button are about the mode this upload set, not the switch:
                   the switch is saved at once, the server only learns it from the next upload
                   (review 2026-10-29, M4) - hence the button does both. */}
-              {result.check.kind === 'phpError' && result.configReadable === false && (
+              {(result.check.kind === 'phpError' || (result.check.kind === 'phpMessage' && result.check.message.includes('config.php'))) &&
+                result.configReadable === false && (
                 <Button
                   variant="ghost"
                   disabled={!canUpload || busy !== null}
@@ -454,6 +455,8 @@ function checkText(check: RelayCheck, configReadable: boolean, t: TFunction): st
       return t('formsEditor.relay.checkRedirect', { url: check.url, to: check.to })
     case 'otherRelay':
       return t('formsEditor.relay.checkOtherRelay', { url: check.url })
+    case 'phpMessage':
+      return t('formsEditor.relay.checkPhpMessage', { url: check.url, message: check.message })
     case 'phpCannotRead':
       return t('formsEditor.relay.checkPhpCannotRead', { url: check.url })
     case 'http':

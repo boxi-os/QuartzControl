@@ -715,6 +715,9 @@ export type RelayCheck =
   /** A relay answered, but not the one just uploaded (another `generation`, from quartz-forms
    *  0.5.11 on): the address still names an older place. */
   | { kind: 'otherRelay'; url: string }
+  /** PHP printed an error instead of (or before) the relay's answer, `display_errors` on: the fatal
+   *  one when there is one, else the first warning, tags and path dropped. */
+  | { kind: 'phpMessage'; url: string; message: string }
   /** PHP-FPM's own 404 ("File not found."): the web server passed send.php on, PHP could not open
    *  it, or, behind an nginx without `try_files`, it is not there. */
   | { kind: 'phpCannotRead'; url: string }

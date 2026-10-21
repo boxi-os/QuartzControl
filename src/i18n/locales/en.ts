@@ -1610,6 +1610,7 @@ export default {
       checkPhpErrorReadable: "The relay answers with error 500 and no message of its own. The web server's error log names the reason.",
       makeReadable: 'Make config.php readable and upload again',
       checkRelayError: 'The relay refuses the probe (HTTP {{status}}, “{{error}}”): {{message}}',
+      checkPhpMessage: 'PHP prints an error at {{url}} instead of the relay’s answer: “{{message}}”',
       checkPhpCannotRead: 'PHP itself answers “File not found.” at {{url}}: it may not read send.php, mostly because it runs as another user at the host than the upload account, or the file is not there.',
       checkRelayOrigin: 'The relay at {{url}} does not accept requests from the site’s address. Add it under “Allowed origins” and upload the relay again.',
       checkRelaySecret: 'The config.php at {{url}} has no usable secret, while the one just uploaded has. Do the target and the folder match the send.php address?',

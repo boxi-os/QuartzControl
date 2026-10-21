@@ -442,6 +442,19 @@ function getWithOrigin(url: string, origin: string | null): Promise<{ status: nu
 }
 
 /**
+ * The error PHP printed into the answer where `display_errors` is on: under mod_php on debian-vm
+ * (`php_flag display_errors on`, config.php 0600) the probe got 200 with "Fatal error: Uncaught
+ * Error: Failed opening required '…/config.php'" and said "no relay (HTTP 200)" (review
+ * 2026-10-29, nebenbei). A warning before the relay's JSON breaks the forms just as well.
+ */
+function phpMessage(body: string): string | null {
+  const text = body.replace(/<[^>]+>/g, '')
+  const line = (kinds: string): string | null =>
+    new RegExp(`^\\s*(?:PHP )?(?:${kinds}):\\s+(.+?)(?:\\s+in\\s+\\/\\S+?(?: on line \\d+|:\\d+))?\\s*$`, 'm').exec(text)?.[1]?.slice(0, 300) ?? null
+  return line('Fatal error|Parse error') ?? line('Warning|Deprecated|Notice')
+}
+
+/**
  * Asks the uploaded relay for a stamp (`GET ?challenge=<form>`), as a form does when its page
  * opens, so a relay that cannot run is found by the upload and not by the first visitor. The
  * origin is the site's, as the relay checks it. `generation` is the one just uploaded, when the
@@ -506,6 +519,8 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
     const configOpen = served && 'status' in served && served.status === 200 && served.body.startsWith('<?php') ? config?.toString() : undefined
     return { kind: 'noPhp', url, ...(configOpen ? { configOpen } : {}) }
   }
+  const shown = phpMessage(res.body)
+  if (shown) return { kind: 'phpMessage', url, message: shown }
   // PHP-FPM says this itself ("Primary script unknown" in the log) where the web server found the
   // file and PHP could not open it: a folder 2750 of the upload account and group www-data, read
   // by a pool running as another account, behind Apache (:8442) and nginx (:8444) on debian-vm.

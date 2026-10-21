@@ -98,11 +98,29 @@ export const ftpAdapter: DeployAdapter = {
 
       // The relay's folder must not be a symlink on the server (sftp.ts, run).
       if (ctx.keepLocalModes) {
+        const start = await client.pwd()
         for (const folder of ctx.relayFolders ?? [destination.remotePath]) {
-          const listing = await client.list(posix.dirname(folder)).catch(() => [])
+          const listing = await client.list(posix.dirname(folder)).catch((err: unknown) => {
+            if (!(err instanceof FTPError)) throw err
+            return []
+          })
           const entry = listing.find((f) => f.name === posix.basename(folder))
           if (entry?.isSymbolicLink) return { success: false, output: mainT('relayDirSymlink', { path: folder }) }
-          if (!entry) break
+          if (entry) continue
+          // vsftpd lists a missing folder and one it may not read alike, empty or with only that
+          // folder's own entry: a link in a folder 311 went unseen, and the relay set the folder it
+          // points to from 2750 to 755 (debian-vm, review 2026-10-31, nebenbei). A folder that
+          // cannot be listed but entered is there, and what it is cannot be said.
+          const there = await client.cd(folder).then(
+            () => true,
+            (err: unknown) => {
+              if (!(err instanceof FTPError)) throw err
+              return false
+            }
+          )
+          await client.cd(start)
+          if (there) return { success: false, output: mainT('relayDirUnchecked', { path: folder, reason: mainT('relayDirUnlisted') }) }
+          break
         }
       }
 

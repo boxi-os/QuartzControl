@@ -151,7 +151,13 @@ export const sftpAdapter: DeployAdapter = {
       // Each of its folders below the target, down to the first that is not there yet.
       if (ctx.keepLocalModes) {
         for (const folder of ctx.relayFolders ?? [destination.remotePath]) {
-          const stats = await (client as SftpClient & { lstat(path: string): Promise<SftpClient.FileStats> }).lstat(folder).catch(() => null)
+          // Only "not there" ends the question; any other answer is one it could not ask, and the
+          // upload behind it used to go on without a word (review 2026-10-31, nebenbei).
+          const stats = await (client as SftpClient & { lstat(path: string): Promise<SftpClient.FileStats> }).lstat(folder).catch((err: unknown) => {
+            if (!serverAnswered(err)) throw err
+            return (err as { code?: unknown }).code === 'ENOENT' ? null : (err as Error)
+          })
+          if (stats instanceof Error) return { success: false, output: mainT('relayDirUnchecked', { path: folder, reason: stats.message }) }
           if (stats?.isSymbolicLink) return { success: false, output: mainT('relayDirSymlink', { path: folder }) }
           if (!stats) break
         }

@@ -85,7 +85,8 @@ Begründung.
   Ordner über dem Ordner eines Ziels legt nur das Relay an, über jeden Weg; was rsync nicht
   übertragen kann (`rsyncUnsafeChar`), sagt schon das Formular. „~“ ist das Anmeldeverzeichnis
   selbst, und das ist nur mit Löschen abgelehnt. Ist ein Ordner auf dem Weg zum Relay auf dem
-  Server ein Symlink, lädt kein Weg hindurch. Eine SSH-Verbindung, die schweigt, endet nach rund
+  Server ein Symlink, lädt kein Weg hindurch. Lässt sich das nicht
+  prüfen, auch nicht. Eine SSH-Verbindung, die schweigt, endet nach rund
   60 s (Keepalives in ssh2 und ssh; ssh2 zählt nur Antworten darauf). Die Abfrage folgt keiner
   Weiterleitung von draußen auf diesen Rechner oder ins LAN, nach dem Literal der Adresse, und
   kürzt den Text des Servers.

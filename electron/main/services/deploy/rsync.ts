@@ -323,7 +323,11 @@ export const rsyncAdapter: DeployAdapter = {
         for (const folder of ctx.relayFolders ?? [destination.remotePath]) {
           const listed = await runRsync(['--list-only', '--no-motd', '-e', env.rshCommand, remoteSpec(connection, folder).replace(/\/+$/, '')])
           if (/^l/m.test(listed.output)) return { success: false, output: mainT('relayDirSymlink', { path: folder }) }
-          if (listed.code !== 0) break
+          if (listed.code === 0) continue
+          // Only "not there" ends the question, as over SFTP.
+          if (/link_stat ".*" failed: No such file or directory/.test(listed.output)) break
+          const reason = listed.output.trim().split('\n')[0] || mainT('rsyncExitCode', { code: listed.code ?? '?' })
+          return { success: false, output: translateSshFailure(listed.output, connection) ?? mainT('relayDirUnchecked', { path: folder, reason }) }
         }
       }
       // A dry run first, purely to know the total: without it the progress bar has no denominator,

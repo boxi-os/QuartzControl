@@ -494,6 +494,9 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
     return { kind: 'noUrl' }
   }
   probe.searchParams.set('challenge', form)
+  // From quartz-forms 0.5.13 on the relay says `counters` and `generation` only to whoever names
+  // the generation (review 2026-10-30, N2); 0.5.11 and 0.5.12 say both to anyone.
+  if (generation) probe.searchParams.set('generation', generation)
   const res = await getWithOrigin(probe.toString(), origin)
   if ('error' in res) return { kind: 'unreachable', url, reason: res.error }
   let json: { ok?: unknown; error?: unknown; message?: unknown; counters?: unknown; generation?: unknown; stamp?: unknown } | null

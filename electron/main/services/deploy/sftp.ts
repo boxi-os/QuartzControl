@@ -58,7 +58,7 @@ const HANDSHAKE_WITH_PROMPT_MS = 180_000
  */
 async function modeNote(client: SftpClient, remotePath: string, wanted: number): Promise<string> {
   const actual = (await client.stat(remotePath)).mode & 0o777
-  return actual === wanted ? '' : `${mainT('sftpModeNotSet', { mode: wanted.toString(8), actual: actual.toString(8), path: remotePath })}\n`
+  return actual === wanted ? '' : `${mainT('modeNotSet', { mode: wanted.toString(8), actual: actual.toString(8), path: remotePath })}\n`
 }
 
 export const sftpAdapter: DeployAdapter = {

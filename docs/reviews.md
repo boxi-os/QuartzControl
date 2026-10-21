@@ -3068,3 +3068,34 @@ Pool-Benutzer ≠ Upload-Benutzer, Kommentar „caught above“) und aus dieser 
 ohne die Einstellungen des Betreibers, kein Weg, das Secret des Relays neu zu erzeugen, PHP mit
 `display_errors=1` (200 statt 500), andere Chromium-Codes roh, Weiterleitungen innerhalb der
 Origin und das Ordner-Ziel ohne Ordnermodi.
+
+Die Nebenbei-Liste, am selben Tag auf Wunsch des Nutzers abgearbeitet, je ein Commit mit Messung
+an der gebauten App (Absätze in `publishing-and-credentials.md`):
+
+- **rsync und verschachtelte Unterordner** `4cdced36` — genau dieser Fehler wird einmal mit
+  `--rsync-path="mkdir -p … && rsync"` wiederholt (nicht bei jedem Lauf, wegen `rrsync`).
+- **`rsyncConflict` mit `rel === ''`** — mit H1 erledigt (Unterordner „.“ wird abgelehnt).
+- **Formulare mit eigener `transport.url`** `a2bcef12` — gefragt wird das erste Relay-Formular
+  mit Adresse, unter seiner Adresse.
+- **Englische Meldung des Relays** `fc9f8357` — `unknown_form` ist `otherRelay`, `origin`,
+  `secret_config` und `mbstring_config` je ein Satz.
+- **Doppelte Ansage** `893bfa2f` — eine Region; gemessen mit einem MutationObserver, nicht mit
+  einem Screenreader.
+- **`modeNote` wirft bei gescheitertem `stat`** — offen. Die Messung (SFTP-`stat` auf der VM für
+  einen Test-Account sperren, ersatzweise `stat` in der gebauten App ersetzen) hat die
+  Rechteprüfung abgelehnt; ohne Messung nicht geändert.
+- **Kommentar „caught above“** `edd43620`.
+- **Pool-Benutzer ≠ Upload-Benutzer** `d670c6ed` — PHP-FPMs eigenes 404 „File not found.“ heißt
+  `phpCannotRead`.
+- **Status ohne die Werte des Betreibers** `e3184875` — Stempel aus `operatorOf()` und einem
+  HMAC-Fingerabdruck der Geheimnisse, ohne Entschlüsseln.
+- **Kein neues Secret** `7a45caec` — „Neues Secret erzeugen“ unter „Selten gebraucht“
+  (`renewSecret`); das Handbuch nennt den Button noch nicht.
+- **`display_errors=1`** `0072bc0e` — `phpMessage` mit der Meldung von PHP.
+- **Andere Chromium-Codes** `ddeaaedf` — fünf gemessene Codes als Satz, der Rest roh.
+- **Weiterleitung innerhalb der Origin** `c49faf5c` — gemessen: 301/302 machen aus dem Absenden
+  ein GET; `postRedirect`.
+- **Ordner-Ziel ohne Ordnermodi** `a5df184c` — setzt sie jetzt wie SFTP; kurze Regel angepasst.
+
+Neu nebenbei aufgefallen: Ein `'` im Pfad eines rsync-Ziels bricht den Pfad, den rsync an die
+entfernte Shell gibt (nur Leerraum wird abgelehnt).

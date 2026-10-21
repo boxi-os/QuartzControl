@@ -250,6 +250,17 @@ Projektwurzel.
   Befehl nennt, nennt auch sein Argument** — `git stash drop` ohne eines trifft den obersten
   Eintrag, und der gehört dem Nutzer, sobald er selbst einen zurückgelegt hat. Messungen in
   [`snapshots-and-updates.md`](snapshots-and-updates.md).
+- **Was die App auf einen Server lädt, bekommt seinen Modus von der App, nicht vom Werkzeug.**
+  (2026-10-21, nachgetragen nach der Kürzung.) Der SFTP-Adapter rief `client.put()` ohne Modus
+  auf, in der Annahme, die umask des Servers entscheide. Sie entscheidet nicht: ssh2 öffnet jede
+  Datei mit `0o666` und setzt diesen Modus danach mit `fchmod`, und das ist kein Anlegen, auf das
+  eine umask wirkt. Gemessen auf `debian-vm` als Hoster (OpenSSH-sftp-server, Nutzer `qchost`):
+  alle 475 Dateien einer veröffentlichten Website waren für jeden Account dort beschreibbar, und
+  eine Datei, die vorher 0644 hatte, wurde beim Überschreiben 0666. Seit 1.1.0 so; wer veröffentlicht hat, braucht nach dem Fix
+  einmal „Alles neu hochladen“, weil das Manifest unveränderte Dateien nicht noch einmal
+  überträgt. Gegenprobe nach dem Fix: alle 475 Dateien 0644. Der Code der Bibliothek hätte es gesagt, aber erst der Server hat es gezeigt; deshalb
+  wird so etwas auf einem Server gemessen
+  ([`publishing-and-credentials.md`](publishing-and-credentials.md), „Ein Modus, den ssh2 setzt“).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

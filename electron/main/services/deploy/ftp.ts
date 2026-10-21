@@ -33,6 +33,11 @@ export const ftpAdapter: DeployAdapter = {
         secure: connection.secure
       })
 
+      // A relative remote path is meant from where the login starts, and ensureDir moves the working
+      // folder, so back there after each, not to "/": on a vsftpd without chroot "/" is the server's
+      // root, and a target "review57-rel" failed at its first file with "553 Could not create file"
+      // (debian-vm, since 1.1.0, review 2026-10-31).
+      const start = await client.pwd()
       const total = toUpload.length + toDelete.length
       let processed = 0
       const ensuredDirs = new Set<string>()
@@ -42,7 +47,7 @@ export const ftpAdapter: DeployAdapter = {
         const remoteDir = posix.dirname(remotePath)
         if (!ensuredDirs.has(remoteDir)) {
           await client.ensureDir(remoteDir)
-          await client.cd('/')
+          await client.cd(start)
           ensuredDirs.add(remoteDir)
         }
         await client.uploadFrom(join(ctx.buildDir, relPath), remotePath)

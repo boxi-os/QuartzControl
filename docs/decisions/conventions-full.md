@@ -335,6 +335,12 @@ Projektwurzel.
   und ließ ihn neu starten (M2, quartz-forms 0.5.15), und unter `restrict_api` kam der Fehlalarm
   „ein anderes Relay“ zurück (N4). Die kurze Regel sagt es seitdem so. Messungen in
   [`publishing-and-credentials.md`](publishing-and-credentials.md).
+  Nachtrag aus der Nebenbei-Liste derselben Runde (2026-10-21): Scheiterte die Frage nach dem
+  Symlink, lud das Relay weiter wie ohne sie; vsftpd beantwortet `LIST` eines Ordners ohne
+  Leserecht wie eines fehlenden, und ein Link darin setzte einen fremden Ordner von 2750 auf 755.
+  „Kann nicht prüfen“ ist auch hier nicht „alles gut“. Und die Abfrage gab ihre `generation` an
+  eine Weiterleitung auf eine andere Origin weiter, weil Apaches `Redirect` die Query anhängt; wer
+  dort mitliest, erfährt `counters`. Die kurze Regel sagt es seitdem so.
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

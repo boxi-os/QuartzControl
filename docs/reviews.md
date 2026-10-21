@@ -3226,3 +3226,42 @@ quartz-forms 0.5.15 ist versioniert, nicht getaggt und nicht gepusht; `feat/1.2`
 Offen wie vorher: der relative FTP-Pfad mit „553“.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+Nachtrag (2026-10-21): Gepusht, `review-2026-10-31` und quartz-forms `v0.5.15` getaggt (CI grün).
+Danach die Nebenbei-Liste, ein Punkt je Commit, gemessen wie oben (dazu `pass-ui.sh`,
+`nb9-scene.sh`, `ftpprobe.cjs`, `tovm.mjs`, `echo.mjs`, `urls-nb3.sh`, `pow-browser.mjs` und die
+Attrappe des Reviews):
+
+- **Fortschritt nach Abbruch** `550ac8d0` auf `fix/1.1.x` — die Zeile verschwindet mit dem Ende
+  des Laufs; vorher stand „113/297 — Rechte von …“ unter „Veröffentlichung erfolgreich.“ (echter
+  Klick).
+- **„~“ über SFTP und FTP** `88b56538` auf `fix/1.1.x` — nur Kommentar und Nachtrag: ProFTPD und
+  Pure-FTPd lösen „~“ selbst auf (gelesen). Gemergt in `da70ab85`.
+- **rsync und der fehlende Elternordner** `6d7e3d11` — derselbe Satz wie SFTP und FTP, der Ordner
+  aus der Antwort des Servers.
+- **`~+/` beim `mkdir`** `36c4ebc3` — `+` und `@` bleiben außerhalb der Quotes; vorher legte die
+  Login-Shell von `qchost` einen Ordner „~+“ an (nur mit rsync 3.x als Client; openrsync verwirft
+  die Quotes).
+- **„Kann nicht prüfen“ bei der Symlink-Frage** `672fba38` — jede Antwort außer „fehlt“ lehnt das
+  Relay mit Grund ab; FTP fragt einen ungelisteten Ordner zusätzlich mit `CWD`. Vorher lud FTP
+  durch einen Link in einem Ordner 311 und setzte `review56-other` auf 755.
+- **`relayAnswered`** `1ec5394d` — nur die vier Fehlercodes des Relays; die fremde API ist
+  `redirectNoRelay`.
+- **`phpMessage` bei Text** `73966695` — als Text nur mit der Ortsangabe, die PHP immer schreibt;
+  echte PHP-Fehler (`php -S`, `html_errors` 0 und 1) unverändert.
+- **Kürzen** `19abc38c` — nach Zeichen statt UTF-16-Einheiten, `to` auf 300 Zeichen mit „…“.
+- **Die `generation` reist mit** `812d1baf` — nicht über eine Weiterleitung auf eine andere Origin.
+- **`failedAnnounce`** `d963d7b3` — die erste Zeile, die kein Protokolleintrag ist; rsync sagte
+  vorher keinen Grund.
+- **Satzlänge** `6e293da1` — `checkRedirectLocal` und `relayDirSymlink` in zwei Sätzen.
+- **`checkHttpCdn`** `63eb5ce0` — „bekommt keine gültige Antwort“ statt „erreicht nicht“
+  (gelesen).
+- **Relay-Tests** quartz-forms `ab6c0f9` — ein Server mit `restrict_api` und `revalidate_freq=2`:
+  alte `generation` sofort, neue nach 3 s; ohne `restrict_api` scheitert der Test.
+- **Zweiter Versuch nach `pow`** — ohne Änderung, in Chrome gemessen (`pow-browser.mjs`, Formular
+  mit `pow` und `minSeconds: 0`, Relay unter `php -S`, Mails in Dateien): mit neuem Secret nach dem
+  Laden GET, POST 400 `pow`, GET mit neuer Challenge, POST 200, eine Mail, „Danke, deine Nachricht
+  wurde gesendet.“; ohne neues Secret ein POST.
+
+Offen wie vorher: der relative FTP-Pfad mit „553“; ein FTP-Server, dessen `MLSD` Symlinks als
+Ordner meldet (Pure-FTPd, gelesen). Keinen dieser Fixes hat ein Review gelesen.

@@ -716,7 +716,7 @@ export type RelayCheck =
  * `countersOpen`: the address under which counters/qf-probe.count (or, from a relay before
  * quartz-forms 0.5.11, counters/.htaccess) was served - the server reads no .htaccess there, so
  * anyone can read how many messages a form got. Asked only while the counters lie next to
- * send.php (no `counterDir`).
+ * send.php (no `counterDir`), and not after a check that got no answer.
  */
 /** `configReadable`: the mode this upload gave config.php, which a `phpError` check is about. */
 export type RelayUploadResult = DeployResult & { check?: RelayCheck; countersOpen?: string; configReadable?: boolean }

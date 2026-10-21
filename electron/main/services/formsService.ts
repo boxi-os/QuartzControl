@@ -519,7 +519,9 @@ export async function relayUpload(projectId: string, projectPath: string, source
     const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)
     const generation = typeof generated.json.generation === 'string' ? generated.json.generation : undefined
     const check = result.success ? await checkRelay(url, origin, strings(generated.json.forms)[0], generation) : undefined
-    const countersOpen = check && check.kind !== 'noUrl' && !settings.counterDir.trim() ? await countersServed(check.url) : null
+    // Not after `unreachable`: a server that kept silent once kept the upload waiting a second
+    // time, 20.9 s for a port that accepts and never answers (review 2026-10-29, N3).
+    const countersOpen = check && check.kind !== 'noUrl' && check.kind !== 'unreachable' && !settings.counterDir.trim() ? await countersServed(check.url) : null
     return { ...result, output: [...warnings, result.output].filter(Boolean).join('\n'), configReadable: settings.configReadable, ...(check ? { check } : {}), ...(countersOpen ? { countersOpen } : {}) }
   })
 }

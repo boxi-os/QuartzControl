@@ -511,13 +511,15 @@ function phpMessage(body: string): string | null {
   return line('Fatal error|Parse error') ?? line('Warning|Deprecated|Notice')
 }
 
+const RELAY_ASK_AGAIN_MS = 3000
+
 /**
  * Asks the uploaded relay for a stamp (`GET ?challenge=<form>`), as a form does when its page
  * opens, so a relay that cannot run is found by the upload and not by the first visitor. The
  * origin is the site's, as the relay checks it. `generation` is the one just uploaded, when the
  * plugin has one (quartz-forms 0.5.11).
  */
-async function checkRelay(url: string | undefined, origin: string | null, form: string | undefined, generation: string | undefined): Promise<RelayCheck> {
+async function checkRelay(url: string | undefined, origin: string | null, form: string | undefined, generation: string | undefined, again = true): Promise<RelayCheck> {
   if (!url || !/^https?:\/\//i.test(url) || !form) return { kind: 'noUrl' }
   let probe: URL
   try {
@@ -568,7 +570,15 @@ async function checkRelay(url: string | undefined, origin: string | null, form: 
   // revalidate_freq seconds, from OPcache: 3 of 6 uploads on debian-vm said so with a visitor
   // asking every 0.2 s (review 2026-10-30, M3). 0.5.12 asks OPcache first; fixed there, where the
   // relay worked with the old config too, not by asking again here.
-  if (res.status === 200 && json?.ok === true && generation && json.generation !== generation) return { kind: 'otherRelay', url }
+  // Except where restrict_api forbids the relay to ask: there it answered the old generation until
+  // revalidate_freq (2 s by default) had passed, 2 of 6 uploads to a php -S with restrict_api and
+  // a visitor every 0.2 s (review 2026-10-31, N4). So once more after 3 s, which costs the wait
+  // only where the answer is "another relay".
+  if (res.status === 200 && json?.ok === true && generation && json.generation !== generation) {
+    if (!again) return { kind: 'otherRelay', url }
+    await new Promise((resolve) => setTimeout(resolve, RELAY_ASK_AGAIN_MS))
+    return checkRelay(url, origin, form, generation, false)
+  }
   if (res.status === 200 && json?.ok === true) return { kind: 'ok', url, ...(typeof json.counters === 'boolean' ? { counters: json.counters } : {}) }
   // `form` is one of the relay just generated, so a relay that does not know it is another one.
   if (json?.error === 'unknown_form') return { kind: 'otherRelay', url }

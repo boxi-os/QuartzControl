@@ -399,6 +399,7 @@ const STRINGS = {
       'In „{{dir}}“ liegt noch kein Build. Bitte zuerst bauen oder unter Vorschau & Build einen anderen Ausgabeordner einstellen.',
     deployWrongType: 'Falscher Zieltyp für den {{adapter}}-Adapter.',
     deployNothingToDo: 'Nichts zu tun: Das Ziel ist bereits auf dem Stand des Builds.\n',
+    sftpModesProgress: 'Rechte von {{path}}',
     sftpModesSettled: 'Einmalig {{count}} von {{total}} früher hochgeladenen Dateien auf 0644 gesetzt: Bis 1.1.0 lud QuartzControl sie für jeden Account des Servers beschreibbar hoch.\n',
     sftpModesRefused: 'Der Server lehnt chmod ab: {{count}} von {{total}} früher hochgeladenen Dateien bleiben für jeden Account des Servers beschreibbar.\n',
     sftpModesUnfinished:
@@ -766,6 +767,7 @@ const STRINGS = {
       'There is no build in “{{dir}}” yet. Build first or pick a different output folder under Preview & build.',
     deployWrongType: 'Wrong destination type for the {{adapter}} adapter.',
     deployNothingToDo: 'Nothing to do: the target already matches the build.\n',
+    sftpModesProgress: 'permissions of {{path}}',
     sftpModesSettled: 'Set {{count}} of {{total}} files uploaded earlier to 0644, once: up to 1.1.0 QuartzControl uploaded them writable by every account on the server.\n',
     sftpModesRefused: 'The server refuses chmod: {{count}} of {{total}} files uploaded earlier stay writable by every account on the server.\n',
     sftpModesUnfinished:

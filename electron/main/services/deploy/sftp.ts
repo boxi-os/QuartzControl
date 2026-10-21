@@ -96,7 +96,13 @@ export const sftpAdapter: DeployAdapter = {
         ...(await sshAuthOptions(connection, ctx.secret))
       })
 
-      const total = toUpload.length + toDelete.length
+      // The one-time pass below, counted in from the start: its paths are known now, and the
+      // progress stood still through it, 6.6 s for 475 files on debian-vm (review 2026-10-30,
+      // nebenbei).
+      const settle = !modesSettled(ctx.projectPath, ctx.target.id)
+      const skip = new Set([...toUpload, ...toDelete, ...excludePaths])
+      const earlier = settle ? Object.keys(await readManifest(ctx.projectPath, ctx.target.id)).filter((path) => !skip.has(path)) : []
+      const total = toUpload.length + toDelete.length + earlier.length
       let processed = 0
       const ensuredDirs = new Set<string>()
 
@@ -133,9 +139,7 @@ export const sftpAdapter: DeployAdapter = {
       // said so (review 2026-10-29, M6). So once per target, every file sent before and not sent
       // now gets its mode alone, no data. A server that refuses chmod has kept its umask anyway.
       // Several requests at a time on the one channel: one after the other, 474 took 23 s.
-      if (!modesSettled(ctx.projectPath, ctx.target.id)) {
-        const skip = new Set([...toUpload, ...toDelete, ...excludePaths])
-        const earlier = Object.keys(await readManifest(ctx.projectPath, ctx.target.id)).filter((path) => !skip.has(path))
+      if (settle) {
         let set = 0
         let refused = 0
         let answered = 0
@@ -169,6 +173,8 @@ export const sftpAdapter: DeployAdapter = {
                 if (serverAnswered(err)) answered++
                 else next = earlier.length
               }
+              processed++
+              ctx.emitProgress(processed, total, mainT('sftpModesProgress', { path: earlier[i] }))
             }
           })
         )

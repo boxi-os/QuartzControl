@@ -13,6 +13,7 @@ import { rsyncAdapter } from './rsync'
 import { gitBranchAdapter } from './gitBranch'
 import { mainT } from '../../i18n'
 import { remotePathProblem } from '@shared/remotePath'
+import { reanchorTildeManifest } from './manifest'
 
 export const deployEvents = new EventEmitter()
 
@@ -44,6 +45,11 @@ async function makeContext(projectPath: string, targetId: string, outputDir?: st
   // (shared/remotePath.ts) is refused here, before preview and upload.
   if ('remotePath' in target.destination && remotePathProblem(target.destination.remotePath, target.destination.deleteRemoved) === 'whole-root') {
     throw new Error(mainT('deployWholeRoot', { path: target.destination.remotePath }))
+  }
+  // Here rather than in the adapters, so the preview already offers every file again.
+  const d = target.destination
+  if ((d.type === 'ftp' || (d.type === 'sftp' && d.transfer !== 'rsync')) && d.remotePath.startsWith('~')) {
+    await reanchorTildeManifest(projectPath, target.id)
   }
 
   // Resolved in main and never sent to the renderer; a target whose destination needs no

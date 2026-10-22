@@ -99,6 +99,28 @@ export async function settleModes(projectPath: string, targetId: string): Promis
   await writeFile(join(quartzGuiDir(projectPath), `deploy-manifest-${targetId}.modes.json`), JSON.stringify({ mode: '0644', at: new Date().toISOString() }, null, 2), 'utf-8')
 }
 
+// Whether this target's manifest has been re-anchored after 1.1.1 made a leading "~" over SFTP and FTP
+// the login directory (fromLoginDir in shared/remotePath.ts). Beside the manifest and named like it,
+// like the modes marker above.
+function tildeMarkerPath(projectPath: string, targetId: string): string {
+  return quartzGuiPath(projectPath, `deploy-manifest-${targetId}.tilde.json`)
+}
+
+/**
+ * Before 1.1.1, "~/blog" over SFTP against OpenSSH went into a folder "~" in the login directory, so
+ * a manifest written then describes another folder than the one the same path names now: measured,
+ * the preview found nothing and the run sent nothing into the folder the path now means (debian-vm,
+ * review 2026-11-01, N2). Once per target every hash is cleared rather than the manifest forgotten:
+ * every file goes up again, and what the manifest knows was published can still be deleted.
+ */
+export async function reanchorTildeManifest(projectPath: string, targetId: string): Promise<void> {
+  if (existsSync(tildeMarkerPath(projectPath, targetId))) return
+  const manifest = await readManifest(projectPath, targetId)
+  const paths = Object.keys(manifest)
+  if (paths.length > 0) await writeManifest(projectPath, targetId, Object.fromEntries(paths.map((path) => [path, ''])))
+  await writeFile(join(quartzGuiDir(projectPath), `deploy-manifest-${targetId}.tilde.json`), JSON.stringify({ at: new Date().toISOString() }, null, 2), 'utf-8')
+}
+
 export async function buildCurrentManifest(buildDir: string): Promise<Manifest> {
   const files = await walkFiles(buildDir)
   const manifest: Manifest = {}

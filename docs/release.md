@@ -546,6 +546,38 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
     mit dem mitgelieferten Paket und Kopien von brain-handbuch: 40 geladene Stylesheets statt 12
     bzw. 28 (siebenundvierzigstes Review, Niedrig 1). Der Satz: „Ein Vorlagenpaket aus 1.1 erst
     nach dem Update auf 1.1 in ein bestehendes Projekt importieren.“
+- **für 1.1.1 außerdem** (Stand 2026-10-22, aus dem 57. und 58. Review; Messungen in
+  [`publishing-and-credentials.md`](decisions/publishing-and-credentials.md), Nachträge vom
+  2026-10-21 und 2026-10-22):
+  - *Ziele mit „~“.* Über SFTP und FTP heißt ein führendes „~“ oder „~<eigenes Konto>“ jetzt auf
+    jedem Server das Anmeldeverzeichnis (`e41df35f`). 1.1.0 legte dafür über OpenSSH einen Ordner
+    „~“ bzw. „~<Konto>“ im Anmeldeverzeichnis an, vsftpd einen Ordner „~<Konto>“; ProFTPD und
+    Pure-FTPd lösten auf oder brachen ab. Jedes solche Ziel lädt beim ersten Lauf nach dem Update
+    einmal alles (`3a7aecce`, Merker `.tilde.json`), auch wo „~“ schon vorher richtig lag. Der
+    Satz: „Wer ein SFTP- oder FTP-Ziel hat, dessen Pfad mit ‚~‘ beginnt: 1.1.1 lädt beim ersten
+    Veröffentlichen einmal alles in den richtigen Ordner. Ein Ordner namens ‚~‘ oder
+    ‚~<Kontoname>‘, den 1.1.0 im Anmeldeverzeichnis angelegt hat, enthält eine alte Kopie der
+    Website und kann gelöscht werden, am besten im Dateimanager des Anbieters oder im
+    SFTP-Programm. In einer Shell heißt er `./~`, nie `~`: `rm -r ~` löscht das ganze
+    Anmeldeverzeichnis. Lag die alte Kopie im Webroot, ist ihre Adresse mit `/~/` danach weg.“
+    (58. Review, N6: der erste Vorschlag nannte nur „~“ und keinen sicheren Weg.)
+  - *rsync und Zeichen der Shell.* `a1d9aef3` lehnt im Remote-Pfad Leerraum und jedes Zeichen ab,
+    das eine Shell deutet, auch `#` und `!`, die 1.1.0 richtig übertragen hat (58. Review, N3).
+    Der Satz: „rsync lehnt jetzt einen Remote-Pfad mit einem Zeichen ab, das eine Shell deutet
+    (etwa `$`, `#`, `!`, `*`, `[`). Unter macOS, bei `*`, `?` und `[` auch unter Linux, konnte ein
+    solcher Pfad in einen anderen Ordner laden und dort löschen. Ein solches Ziel auf SFTP
+    umstellen.“
+  - *Ordner-Ziele prüfen ihren Ordner.* `6dba3247`, `67ef4ae6`, `fde8d49e`: Ein Ordner-Ziel, das
+    schon veröffentlicht hat, bricht ab, wenn sein Ordner fehlt oder keine der veröffentlichten
+    Dateien enthält. Das trifft auch einen Ordner, den ein Skript absichtlich leert, was mit 1.1.0
+    lief (58. Review, N2; Handbuch 6.5). Der Satz: „Ein Ordner-Ziel, das schon veröffentlicht hat,
+    bricht jetzt ab, wenn sein Ordner fehlt oder keine der veröffentlichten Dateien enthält, etwa
+    weil das Laufwerk nicht verbunden ist. Wer den Ordner absichtlich leeren lässt, wählt vor dem
+    nächsten Lauf ‚Alles neu hochladen‘.“
+  - *Kleineres.* Eigene Sätze für eine abgelehnte SSH-Anmeldung (Passwort, hinterlegter
+    Schlüssel, SSH-Agent, zu viele Schlüssel im Agent), einen FTP-Server, der schweigt, und eine
+    `PWD`-Antwort, die QuartzControl nicht lesen kann; ein absoluter FTP-Pfad fragt `PWD` nicht
+    mehr.
 - **die Prüfsummen** als eigener Abschnitt „Checksums (SHA-256)“:
 
       cd release && shasum -a 256 <die Paketdateien>

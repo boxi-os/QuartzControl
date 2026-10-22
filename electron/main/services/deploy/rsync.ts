@@ -247,11 +247,12 @@ const MISSING_PARENT = /\bmkdir "(.*)" failed: No such file or directory/
 function remoteSpec(connection: SshConnection, remotePath: string): string {
   // openrsync has no --protect-args, so a remote path is expanded once more by the remote shell.
   // Whitespace there would silently split into two arguments; refused rather than guessed at.
-  // The same for any other character that shell gives a meaning to, quoting included, since
-  // rsync 3.2.4 and later escape remote args themselves and openrsync does not. Measured on
-  // debian-vm: "q'1" failed with bash's "unexpected end of file", and "q$HOME" reported success
-  // with the files under q/home/qchost/ - with --delete, a site would clean out that folder
-  // (review 2026-10-29, nebenbei).
+  // The same for any other character that shell gives a meaning to, quoting included: openrsync
+  // does not escape remote args, and rsync 3.2.4 and later escape all of them but the wildcards,
+  // which they leave for remote globbing ("fix58-v[a]" went into an existing fix58-va with rsync
+  // 3.5.0, review 2026-11-02, N4). Measured on debian-vm: "q'1" failed with bash's "unexpected end
+  // of file", and "q$HOME" reported success with the files under q/home/qchost/ - with --delete, a
+  // site would clean out that folder (review 2026-10-29, nebenbei).
   const unsafe = rsyncUnsafeChar(remotePath)
   if (unsafe) throw new Error(/\s/.test(unsafe) ? mainT('rsyncPathWithSpace') : mainT('rsyncPathWithSpecial', { char: unsafe }))
   const withSlash = remotePath.endsWith('/') ? remotePath : `${remotePath}/`

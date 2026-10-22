@@ -34,10 +34,11 @@ export function remotePathProblem(path: string, deleteRemoved: boolean): RemoteP
   return null
 }
 
-// "~" is left out on purpose: a leading "~/" or "~user/" is meant to expand there. Loosening it
-// (for rsync 3.2.4 and later, which escape the path themselves) opens the mkdir of the second
-// attempt to the remote shell under openrsync: remoteShellPath's quotes do not survive there
-// (deploy/rsync.ts).
+// "~" is left out on purpose: a leading "~/" or "~user/" is meant to expand there. Not to be
+// loosened for rsync 3.2.4 and later either: they escape the path but leave the wildcards for
+// remote globbing, and "fix58-v[a]" went into an existing fix58-va (rsync 3.5.0 on debian-vm,
+// review 2026-11-02, N4). Under openrsync loosening it also opens the mkdir of the second attempt
+// to the remote shell: remoteShellPath's quotes do not survive there (deploy/rsync.ts).
 const SHELL_SPECIAL = /['"\\$`;&|<>(){}[\]*?!#]/
 
 /**

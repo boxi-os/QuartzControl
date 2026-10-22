@@ -7,6 +7,11 @@ import { commitManifest, diffAgainstManifest, partitionDiff } from './manifest'
 import * as connectionsService from '../connectionsService'
 import { mainT } from '../../i18n'
 
+// basic-ftp's own default, written out so the sentence below names the same number. Without it a
+// server that went silent while deleting ended the run with a bare "Error: Timeout (control
+// socket)" after 30.5 s (vsftpd frozen on debian-vm, review 2026-11-01, nebenbei).
+const FTP_TIMEOUT_MS = 30_000
+
 export const ftpAdapter: DeployAdapter = {
   async preview(ctx: DeployContext): Promise<DeployDiffEntry[]> {
     return diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)
@@ -21,7 +26,7 @@ export const ftpAdapter: DeployAdapter = {
     const diff = await diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)
     const { toUpload, toDelete, manifestExcludes } = partitionDiff(diff, excludePaths, destination.deleteRemoved)
 
-    const client = new FtpClient()
+    const client = new FtpClient(FTP_TIMEOUT_MS)
     let output = ''
     try {
       await client.access({
@@ -101,7 +106,10 @@ export const ftpAdapter: DeployAdapter = {
       await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, [...manifestExcludes, ...kept])
       return { success: true, output }
     } catch (err) {
-      return { success: false, output: `${output}\n${String(err)}` }
+      const silent = /^Timeout \((control|data) socket\)$/.test(err instanceof Error ? err.message : '')
+        ? `${mainT('sshSilent', { host: connection.host, seconds: FTP_TIMEOUT_MS / 1000 })}\n\n`
+        : ''
+      return { success: false, output: `${output}\n${silent}${String(err)}` }
     } finally {
       client.close()
     }

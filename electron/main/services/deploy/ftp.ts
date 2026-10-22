@@ -37,8 +37,11 @@ export const ftpAdapter: DeployAdapter = {
       // A relative remote path is meant from where the login starts, and ensureDir moves the working
       // folder, so back there after each, not to "/": on a vsftpd without chroot "/" is the server's
       // root, and a target "review57-rel" failed at its first file with "553 Could not create file"
-      // (debian-vm, since 1.1.0, review 2026-10-31).
-      const start = await client.pwd()
+      // (debian-vm, since 1.1.0, review 2026-10-31). An absolute path does not need it and keeps "/",
+      // as 1.1.0 did: a PWD reply without quotes, which basic-ftp cannot parse, failed every run
+      // with "Can't parse response to command 'PWD'" (proxy in front of vsftpd, review 2026-11-01,
+      // nebenbei).
+      const start = destination.remotePath.startsWith('/') ? '/' : await client.pwd()
       const root = fromLoginDir(destination.remotePath, start, connection.username)
       if (root === null) return { success: false, output: mainT('deployTildeOtherAccount', { path: destination.remotePath }) }
       const total = toUpload.length + toDelete.length

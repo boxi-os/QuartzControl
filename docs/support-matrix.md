@@ -38,7 +38,7 @@ dahin gilt der Fall als geduldet.
 | SFTP mit `ChrootDirectory` | Messung ausstehend | |
 | SFTP-Server außer OpenSSH (ProFTPD `mod_sftp`, SFTPGo) | geduldet | nicht gemessen |
 | rsync über SSH, Server rsync 3.x, Client openrsync (macOS) | unterstützt | gemessen |
-| rsync über SSH, Client rsync ab 3.2.4 (Linux-App) | unterstützt | gemessen 2026-10-21 (rsync 3.5.0 auf `debian-vm`, gebaute App beider Linien, Server auf derselben Maschine; nicht aus deb, AppImage oder Flatpak) |
+| rsync über SSH, Client rsync ab 3.2.4 (Linux-App) | unterstützt | gemessen 2026-10-21 (rsync 3.5.0 auf `debian-vm`, gebaute App beider Linien, Server auf derselben Maschine; nicht aus deb, AppImage oder Flatpak). Schützt die Argumente bis auf die Wildcards: „fix58-v[a]“ ging in einen vorhandenen Ordner `fix58-va`, „$x“ und „#1“ blieben wörtlich (58. Review, N4); die Ablehnung der Zeichen der Shell braucht es also auch hier |
 | rsync über SSH, Client rsync 3.0 bis 3.2.3 (etwa RHEL 9) | Messung ausstehend | schützt die Argumente nicht und wertet Zeichen der Shell aus wie openrsync (57. Review, N4, gelesen); die Ablehnung dieser Zeichen hängt nicht am Client (`131b92cb`, Fix-Linie `a1d9aef3`) |
 | rsync und ssh in den Linux-Paketen (deb, AppImage, Flatpak) | Messung ausstehend | alle rsync-Messungen liefen außerhalb des Pakets |
 | Konten, die per `rrsync` auf rsync beschränkt sind | geduldet | mit App gemessen (57. Review): die Website mit und ohne `-wo`; das Relay unter `-wo` abgelehnt, weil es nicht lesen darf (`relayDirWriteOnly`, `82f68bd8`) |

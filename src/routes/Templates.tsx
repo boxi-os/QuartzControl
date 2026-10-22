@@ -390,6 +390,18 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
     () => [...new Set((plan?.parts ?? []).filter((p) => selected.includes(p.id)).flatMap((p) => p.missingPackages.map((m) => m.name)))],
     [plan, selected]
   )
+  // Plugins from a git source go through `quartz plugin add`, which clones and builds each one -
+  // the plan has said so since the part was written, and nothing showed it (fifty-ninth review, M3).
+  const cloned = useMemo(
+    () => [
+      ...new Set(
+        (plan?.parts ?? [])
+          .filter((p) => selected.includes(p.id))
+          .flatMap((p) => p.notes.filter((note) => note.startsWith('cliInstall:')).map((note) => note.slice('cliInstall:'.length)))
+      )
+    ],
+    [plan, selected]
+  )
 
   return (
     <Card>
@@ -476,6 +488,11 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
           {missing.length > 0 && (
             <p className="mt-3 text-xs text-text-muted">
               {t('templates.willInstall', { packages: missing.join(', ') })}
+            </p>
+          )}
+          {cloned.length > 0 && (
+            <p className="mt-1 text-xs text-text-muted">
+              {t('templates.willClone', { count: cloned.length, plugins: cloned.join(', ') })}
             </p>
           )}
 

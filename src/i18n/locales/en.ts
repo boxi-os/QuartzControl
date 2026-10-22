@@ -3049,6 +3049,8 @@ export default {
     quotedName: '“{{value}}”',
     planNoChange: 'changes nothing',
     willInstall: 'Will be installed: {{packages}}',
+    willClone: 'Will be cloned from its Git repository and built: {{plugins}}',
+    willClone_other: 'Will be cloned from their Git repositories and built: {{plugins}}',
     importButton: 'Apply template',
     importing: 'Applying…',
     importPreparing: 'Taking a snapshot…',

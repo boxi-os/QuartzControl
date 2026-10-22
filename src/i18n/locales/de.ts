@@ -3064,6 +3064,8 @@ export default {
     quotedName: '„{{value}}“',
     planNoChange: 'ändert nichts',
     willInstall: 'Wird nachinstalliert: {{packages}}',
+    willClone: 'Wird aus seinem Git-Repository geklont und gebaut: {{plugins}}',
+    willClone_other: 'Werden aus ihren Git-Repositorys geklont und gebaut: {{plugins}}',
     importButton: 'Vorlage anwenden',
     importing: 'Wird angewendet…',
     importPreparing: 'Snapshot wird angelegt…',

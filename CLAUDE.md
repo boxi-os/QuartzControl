@@ -82,7 +82,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 Achtundfünfzig Review-Runden sind abgearbeitet (die letzte am 2026-10-22 auf `feat/1.2` und
 `fix/1.1.x`, über die Fixes des 57. vor 1.1.1: ein Ordner-Ziel, dessen Mountpoint nicht ganz leer
-ist, abgelehnte SSH-Anmeldungen, die Notizen für 1.1.1; die achtundvierzigste bis dreiundfünfzigste von einem anderen Modell geschrieben). Veröffentlicht ist `1.1.0` (2026-10-18). Was aus jeder Runde wurde und was noch
+ist, abgelehnte SSH-Anmeldungen, die Notizen für 1.1.1; die achtundvierzigste bis dreiundfünfzigste von einem anderen Modell geschrieben). Veröffentlicht ist `1.1.1` (2026-10-22), davor `1.1.0` (2026-10-18). Was aus jeder Runde wurde und was noch
 ungelesen ist, steht in [`docs/reviews.md`](docs/reviews.md); die früheren Stand-Absätze dieser
 Datei (Releases, Alpha-Test, Gruppe D, offene Punkte) wörtlich in [`docs/stand.md`](docs/stand.md).
 Was aus einer Runde dauerhaft gilt, steht als Regel in `docs/conventions.md`, nicht in der Chronik.

@@ -1,6 +1,30 @@
 # Vor einem Release
 
-> **Zuletzt durchlaufen für 1.1.0 am 2026-10-18** (annotierter Tag `v1.1.0` auf `505bc3fb`, Branch
+> **Zuletzt durchlaufen für 1.1.1 am 2026-10-22** (annotierter Tag `v1.1.1` auf `d452ea22`, Branch
+> `release/1.1.1` von `fix/1.1.x`; `fix/1.1.x` und `main` per Fast-Forward dorthin, danach in
+> `feat/1.2` gemergt). Zehn Pakete, neun auf einer Maschine ihrer Architektur gestartet (macOS x64
+> nicht; statisch: `Info.plist` 1.1.1, App und git x86_64), jedes mit Wegwerf-Profil und 1.1.1 im
+> User-Agent, Node 24.18.1, npm 11.17.0, die sieben Linux-Starts mit `gnome_libsecret`. glibc
+> unverändert 2.34 (git), Electron 2.25. Digests der Release-Seite = `shasum` über `release/`.
+> Plugins unverändert seit 1.1.0 (2b), Google-Schriften ohne neue Familie, nur das Basis-Template
+> neu gebaut (nur das Manifest anders), Vorlagen-Repo `fb112b8`, `--check-sync` Exit 0.
+> QuartzControl-Web: Box und Download auf 1.1.1 (Vault `f68d458`), gegen `gh-pages` 145 geändert,
+> nichts neu oder entfallen (wie `deploy.diff`), veröffentlicht als `40aa338c`, byte-gleich mit dem
+> Bau; alle 36 Pfade und die zwei alten von 4.7 mit 200. Vier Dinge für das nächste Mal:
+> **Der Handbuch-Vault trägt schon Text der Feature-Linie** (`4-gestaltung/08-plugins.md`: der
+> Reiter „Formulare“ für das noch private quartz-forms). Für ein Fix-Release baut die Website aus
+> einer Kopie des Vaults (`rsync -a --exclude .git`, denn die Website nimmt das Datum aus der
+> Änderungszeit; ein git-Worktree setzt alle auf „jetzt“), in der nur diese Datei auf dem Stand
+> der Fix-Linie steht (`git show <commit>:<datei>`, `touch -r`); `content` zeigt nur für den Bau
+> dorthin, `deploy.run` baut nicht selbst. **Auch debian-x86 hat nach dem Hochfahren einen
+> gesperrten Schlüsselbund** (`busctl … Collection Locked` sagt `true`), und die App bleibt dann
+> vor jeder Seite stehen, CDP antwortet nicht; am Bildschirm der VM entsperren. **Die Pakete
+> brauchen rund 3 GB auf dem Mac** (zwei Fassungen in `release/`, die entpackten Bäume aus
+> `dist:mac`); am 2026-10-22 lief die Platte beim Kopieren des x86-Flatpaks voll. Und wer mit
+> `--password-store=basic` um den Schlüsselbund herum startet, wartet nicht auf „Werkzeuge bereit“:
+> Unter Linux steht im Band dann „Zugangsdaten lassen sich nicht speichern“.
+>
+> Davor **1.1.0 am 2026-10-18** (annotierter Tag `v1.1.0` auf `505bc3fb`, Branch
 > `release/1.1.0`, `main` per Fast-Forward von `a282f549`). Zehn Pakete, neun auf einer Maschine
 > ihrer Architektur gestartet (macOS x64 nicht; statisch: `Info.plist` 1.1.0, App und git x86_64),
 > jedes mit Wegwerf-Profil und App-Version 1.1.0 im User-Agent, Node 24.18.1, npm 11.17.0, das

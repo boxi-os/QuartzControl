@@ -132,18 +132,26 @@ bei einem Feature-Release darf die Fix-Linie keines zeigen. So lief es schon bei
 
 ## 2b. Die eigenen Plugins sind vor der App veröffentlicht
 
-Seit 1.1 hängen App, Vorlage und Handbuch an Fassungen der drei eigenen Plugins
-(`quartz-layout-box`, `quartz-multilanguage`, `quartz-navigations`):
+Seit 1.1 hängen App, Vorlage und Handbuch an Fassungen der eigenen Plugins
+(`quartz-layout-box`, `quartz-multilanguage`, `quartz-navigations`), seit 1.2 auch an
+`quartz-forms`:
 
 - **Das Formular kommt aus dem Plugin.** Die App baut die Optionen aus dem `quartz.configSchema`
   der *installierten* Fassung (seit layout-box 0.4.0, multilanguage 0.2.0, navigations 0.4.0);
   eine ältere bekommt das Formular aus ihren `.d.ts`, ohne Abschnitte, Bedingungen und
   Snippet-Auswahl. Auch die Texte des Formulars stehen dort (`x-quartz-l10n`).
+- **quartz-forms hat einen eigenen Reiter**, und der ist gegen eine Fassung abgeschrieben
+  (`FORMS_READ_AGAINST` in `formsOptions.ts`, geprüft von `check:plugin-copies`); was er über eine
+  Definition urteilt, fragt er das installierte Plugin (`dist/cli.js`). Das Repository ist privat
+  bis zum Release 1.2 und wird vor allem anderen dieses Punkts öffentlich, mit einer Fassung, die
+  die MIT-Lizenz trägt (`v0.5.15` hat sie noch nicht).
 - **Die Vorlage installiert, was auf `main` liegt, und das ist entschieden.** `plugins.json` des
-  Pakets nennt die drei als `github:boxi-os/<name>` ohne Ref; ein Import holt den Stand von `main`
+  Pakets nennt sie als `github:boxi-os/<name>` ohne Ref (`qc-basic` alle vier, die anderen
+  Varianten die ersten drei); ein Import holt den Stand von `main`
   zu dem Tag, an dem er läuft. Mit `#v<fassung>` bekäme ein Projekt aus der Vorlage auf der
   Updates-Seite nie eine neuere Fassung angeboten. Der Preis: **Ein Breaking Change an den Optionen
-  oder Klassen eines der drei verlangt neue Vorlagen am selben Tag**, sonst setzt jedes alte Paket
+  oder Klassen eines von ihnen verlangt neue Vorlagen am selben Tag** (bei quartz-forms auch an
+  `forms` und `transport`), sonst setzt jedes alte Paket
   das Plugin still auf eine Form, die es nicht mehr kennt (siebenundvierzigstes Review, Niedrig 4;
   Begründung in [`templates-and-localization.md`](decisions/templates-and-localization.md)).
 - **Die Vorlage wird an der installierten Fassung gebaut** (Punkt 4), und ein Plugin, das im
@@ -157,7 +165,10 @@ Werkstätten und Websites stehen über die Updates-Seite der App auf dieser Fass
     git -C ~/Development/<plugin> describe --tags                                     # ein Tag ohne -N-g…
 
 Ein Commit nach dem Tag, der nur Tests oder README ändert, braucht keine Fassung, solange er
-gepusht ist.
+gepusht ist; ebenso der Rechteinhaber in `LICENSE` (boxi-os statt „Quartz Community“, in allen
+vier am 2026-10-22), der bis zur nächsten Fassung unter „Unreleased“ im CHANGELOG steht. **Stand 2026-10-22:**
+quartz-forms drei Commits nach `v0.5.15` (`ab6c0f9` Test, `6012230` MIT, `3d94eeb`
+Rechteinhaber), gepusht, noch privat.
 
 **Jede neue Fassung braucht auch die App.** Der Editor eines Plugins ist gegen eine Fassung gelesen
 (`*_READ_AGAINST` in `src/routes/Plugins/`) und kennt die mit demselben Code (`*_SAME_CODE`); jede
@@ -456,7 +467,8 @@ sobald Repository und Website öffentlich sind. `qc-basic` installiert quartz-fo
 2026-10-22 mit einem Formular `kontakt`, das nichts sendet (`basic.mjs`, `forms()`); die
 App 1.1 holt `qc-basic.qtpl` online aus dem Vorlagen-Repo, also geht dieses Paket **erst mit 1.2
 und erst, wenn quartz-forms öffentlich ist,** dorthin, sonst scheitert dort jeder Import am
-privaten Repository.
+privaten Repository. Die Reihenfolge am Release-Tag: quartz-forms öffentlich (Repository und
+Handbuch-Website, Punkt 2b), dann die Footer, dann das Paket ins Vorlagen-Repo (Punkt 8).
 
 Am 2026-09-14 trugen alle sechs dieselben sechs Links. Ein neues Plugin oder eine neue Website
 heißt: alle sechs anfassen, Vorlage neu exportieren (Punkt 4), die vier Websites neu
@@ -468,6 +480,11 @@ die Vorlage vier trug — genau die Drift, die eine Liste an sechs Orten erzeugt
 `npm run dist:mac` auf diesem Mac, `dist:linux` und `dist:flatpak` auf den VMs (Eintrag `dist` in
 `CLAUDE.md`). Für Beta 2 waren das zehn Pakete: dmg und zip je
 für arm64 und x64, AppImage und deb je für arm64 und x86_64, Flatpak für aarch64 und x86_64.
+
+**Kein Vorab-Paket von 1.2 geht an jemanden, solange quartz-forms privat ist.** Die mitgelieferte
+`qc-basic.qtpl` installiert es seit dem 2026-10-22; bis dahin scheitert jeder Import mit dem
+Basis-Template erst nach dem Klick (`pluginInstallFailed:quartz-forms`), und die Beispielseiten
+kommen mit einem nackten Codeblock (neunundfünfzigstes Review, Niedrig 4).
 
 **Jedes Paket wird auf einer Maschine seiner Architektur einmal gestartet**, und zwar bevor die
 Release-Seite steht. Beta 1 hat gezeigt, warum: Ihr arm64-AppImage startete auf keiner Debian-VM

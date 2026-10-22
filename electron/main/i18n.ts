@@ -465,7 +465,8 @@ const STRINGS = {
     syncHistoryIncomplete:
       'Die Projekt-Historie ist unvollständig (flacher Klon) und ließ sich nicht vervollständigen. Ein Push wird daran voraussichtlich scheitern:',
     sshAgentIdentity: 'der SSH-Agent',
-    sshStoredKeyIdentity: 'der in QuartzControl hinterlegte Schlüssel',
+    sshStoredKeyRejected:
+      'Der Server hat die Anmeldung als {{user}}@{{host}} mit dem in QuartzControl hinterlegten Schlüssel abgelehnt. Prüfe, ob genau dieser Schlüssel beim Anbieter hinterlegt ist.',
     sshPasswordRejected:
       'Der Server hat die Anmeldung als {{user}}@{{host}} mit Passwort abgelehnt. Prüfe das Passwort; manche Server lassen über SSH nur Schlüssel zu.',
     sshKeyFileUnreadable:
@@ -843,7 +844,8 @@ const STRINGS = {
     syncHistoryIncomplete:
       'The project history is incomplete (a shallow clone) and could not be completed. A push will most likely fail because of it:',
     sshAgentIdentity: 'the SSH agent',
-    sshStoredKeyIdentity: 'the key stored in QuartzControl',
+    sshStoredKeyRejected:
+      'The server refused the login as {{user}}@{{host}} with the key stored in QuartzControl. Check that this exact key is registered with the provider.',
     sshPasswordRejected:
       'The server refused the login as {{user}}@{{host}} with a password. Check the password; some servers only accept keys over SSH.',
     sshKeyFileUnreadable:

@@ -78,8 +78,10 @@ function serverAnswered(err: unknown): boolean {
 // underneath, as in rsync.ts.
 function loginRefused(connection: SshConnection): string {
   if (connection.authMethod === 'password') return mainT('sshPasswordRejected', { user: connection.username, host: connection.host })
-  const identity =
-    connection.authMethod === 'agent' ? mainT('sshAgentIdentity') : (connection.keyPath ?? mainT('sshStoredKeyIdentity'))
+  // A key stored in QuartzControl has no path, so rsyncKeyRejected's advice about the .pub file
+  // does not fit it (review 2026-11-01, nebenbei).
+  if (connection.authMethod === 'privateKey' && !connection.keyPath) return mainT('sshStoredKeyRejected', { user: connection.username, host: connection.host })
+  const identity = connection.authMethod === 'agent' ? mainT('sshAgentIdentity') : (connection.keyPath ?? mainT('sshAgentIdentity'))
   return mainT('rsyncKeyRejected', { user: connection.username, host: connection.host, identity })
 }
 

@@ -86,7 +86,9 @@ export const ftpAdapter: DeployAdapter = {
           if (gone) output += `✗ ${relPath}\n`
           else {
             kept.push(relPath)
-            output += mainT('deployDeleteRefused', { path: relPath, reason: err.message })
+            // The server's own sentence, which vsftpd ends with a period: "(550 Delete operation
+            // failed.)." (review 2026-11-01, nebenbei). Not on SFTP, whose message ends with the path.
+            output += mainT('deployDeleteRefused', { path: relPath, reason: err.message.replace(/\.+$/, '') })
           }
         }
         processed++

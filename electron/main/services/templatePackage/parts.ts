@@ -909,6 +909,44 @@ function instanceKeys(entries: Array<{ name?: string; source: PluginEntry['sourc
   })
 }
 
+const FORMS_PLUGIN = 'quartz-forms'
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+/**
+ * quartz-forms is the one plugin whose options are a site's working state rather than its looks:
+ * the forms, how they send (a relay URL, a service), the public keys, the spam values. Replacing
+ * the entry under 'packageWins' took all of that and left the package's demo form - silently, and
+ * a site whose form sat on a page the package did not replace sent nothing afterwards
+ * (fifty-ninth review, H1). So its options are merged, not replaced: the project keeps everything
+ * it has, and only the package's forms it does not have are added, the project's own winning on
+ * the same id. An added form that would send through the project's transport rather than the
+ * package's carries the package's transport itself: the package's sample page promises that its
+ * form sends nothing, and a project with a relay would otherwise mail it to the owner.
+ */
+function mergeFormsOptions(
+  own: PluginEntry['options'],
+  fromPackage: PluginEntry['options']
+): { options: Record<string, unknown>; added: string[]; kept: string[]; pinned: string | null } {
+  const ownOptions = own ?? {}
+  const ownForms = isRecord(ownOptions.forms) ? ownOptions.forms : {}
+  const packageForms = isRecord(fromPackage?.forms) ? fromPackage.forms : {}
+  const packageTransport = isRecord(fromPackage?.transport) ? fromPackage.transport : null
+  const pin = packageTransport !== null && JSON.stringify(packageTransport) !== JSON.stringify(ownOptions.transport ?? null)
+  const added: Record<string, unknown> = {}
+  const kept: string[] = []
+  for (const [id, form] of Object.entries(packageForms)) {
+    if (id in ownForms) {
+      kept.push(id)
+      continue
+    }
+    added[id] = pin && isRecord(form) && form.transport === undefined ? { ...form, transport: packageTransport } : form
+  }
+  const pinned = pin && Object.keys(added).length > 0 && typeof packageTransport?.kind === 'string' ? packageTransport.kind : null
+  return { options: { ...ownOptions, forms: { ...ownForms, ...added } }, added: Object.keys(added), kept, pinned }
+}
+
 const plugins: TemplatePart<PluginsPayload> = {
   id: 'plugins',
   async collect({ projectPath }) {
@@ -952,6 +990,12 @@ const plugins: TemplatePart<PluginsPayload> = {
         const own = config.plugins[existingKeys.indexOf(keys[index])]
         if (own.enabled !== entry.enabled) plan.notes.push(`${entry.enabled ? 'pluginOn' : 'pluginOff'}:${name}`)
         if (countOf(name) > 1 && !plan.notes.includes(`byPosition:${name}`)) plan.notes.push(`byPosition:${name}`)
+        if (name === FORMS_PLUGIN) {
+          const { added, kept, pinned } = mergeFormsOptions(own.options, entry.options)
+          plan.notes.push(`formsMerged:${added.join(',')}`)
+          if (kept.length > 0) plan.notes.push(`formsOwn:${kept.join(',')}`)
+          if (pinned) plan.notes.push(`formsPinned:${pinned}`)
+        }
       } else plan.additions.push(name)
       const npmName = npmPackageName(entry.source)
       if (npmName && !hasNodeModule(projectPath, npmName)) plan.missingPackages.push({ name: npmName })
@@ -1007,6 +1051,7 @@ const plugins: TemplatePart<PluginsPayload> = {
         }
       }
       if (index === undefined) next.push({ ...entry, name })
+      else if (name === FORMS_PLUGIN) next[index] = { ...entry, name, options: mergeFormsOptions(next[index].options, entry.options).options }
       else next[index] = { ...entry, name }
     }
 

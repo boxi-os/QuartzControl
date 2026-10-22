@@ -604,6 +604,17 @@ function planNotes(t: Translate, plan: TemplatePartPlan, strategy: TemplateConfl
     if (byPosition.length > 0) notes.push(t('templates.planByPosition', { count: byPosition.length, names: quoted(byPosition) }))
     const fonts = listed('fontsRemoved')
     if (fonts.length > 0) notes.push(t('templates.planFontsRemoved', { count: fonts.length, names: quoted(fonts) }))
+    // quartz-forms is merged rather than replaced (mergeFormsOptions in templatePackage/parts.ts),
+    // so it is one of the conflicts the summary counts as replaced, and this says what it keeps.
+    const formsMerged = plan.notes.find((note) => note.startsWith('formsMerged:'))
+    if (formsMerged !== undefined) {
+      const added = formsMerged.slice('formsMerged:'.length).split(',').filter(Boolean)
+      notes.push(added.length > 0 ? t('templates.planFormsMerged', { count: added.length, names: quoted(added) }) : t('templates.planFormsKept'))
+      const pinned = plan.notes.find((note) => note.startsWith('formsPinned:'))?.slice('formsPinned:'.length)
+      if (pinned) notes.push(t('templates.planFormsPinned', { count: added.length, kind: t(`formsEditor.transportKinds.${pinned}`, pinned) }))
+      const own = listed('formsOwn')
+      if (own.length > 0) notes.push(t('templates.planFormsOwn', { count: own.length, names: quoted(own) }))
+    }
   }
   const missing = plan.notes.find((note) => note.startsWith('missingVariables:'))
   if (missing) {

@@ -71,9 +71,10 @@ export const folderAdapter: DeployAdapter = {
       // done and the manifest forgot those files, which then stayed on the drive for good; uploads
       // failed with a raw EACCES on /Volumes, and into an emptied folder only the changed files went
       // while the run said success. Measured on a detached disk image (review 2026-11-01, M2; the
-      // Linux mount point only as an emptied folder). Only asked when there is something to do, as
-      // only then does the page offer "Upload everything again", the way out named below.
-      if (total > 0 && Object.keys(await readManifest(ctx.projectPath, ctx.target.id)).length > 0) {
+      // Linux mount point only as an emptied folder). Asked when there is nothing to do as well: that
+      // run said "Nichts zu tun" with the image detached, and the page shows "Upload everything
+      // again", the way out named below, for every folder target, not only with changes.
+      if (Object.keys(await readManifest(ctx.projectPath, ctx.target.id)).length > 0) {
         const state = await folderState(dest)
         if (state === 'missing') return { success: false, output: mainT('folderMissing', { dest }) }
         if (state === 'empty') return { success: false, output: mainT('folderEmpty', { dest }) }

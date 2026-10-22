@@ -327,7 +327,13 @@ export const rsyncAdapter: DeployAdapter = {
           // Only "not there" ends the question, as over SFTP.
           if (/link_stat ".*" failed: No such file or directory/.test(listed.output)) break
           const reason = listed.output.trim().split('\n')[0] || mainT('rsyncExitCode', { code: listed.code ?? '?' })
-          return { success: false, output: translateSshFailure(listed.output, connection) ?? mainT('relayDirUnchecked', { path: folder, reason }) }
+          // An account that rrsync -wo limits to writing cannot be asked at all, and the rights of the
+          // folder change nothing there: measured on debian-vm, the site went up with 480 files and the
+          // relay was refused with advice about permissions (review 2026-11-01, N3).
+          const unchecked = /rrsync error: reading from write-only server/.test(listed.output)
+            ? mainT('relayDirWriteOnly', { path: folder, reason })
+            : mainT('relayDirUnchecked', { path: folder, reason })
+          return { success: false, output: translateSshFailure(listed.output, connection) ?? unchecked }
         }
       }
       // A dry run first, purely to know the total: without it the progress bar has no denominator,

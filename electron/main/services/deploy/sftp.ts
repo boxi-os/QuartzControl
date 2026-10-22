@@ -93,6 +93,17 @@ function serverAnswered(err: unknown): boolean {
   return typeof code === 'number' || code === 'ENOENT'
 }
 
+// ssh2's "All configured authentication methods failed" alone, where rsync says rsyncKeyRejected
+// with what was offered: measured on debian-vm with a key registered nowhere and with a password,
+// which that server does not take over SSH at all (review 2026-11-01, nebenbei). The raw line stays
+// underneath, as in rsync.ts.
+function loginRefused(connection: SshConnection): string {
+  if (connection.authMethod === 'password') return mainT('sshPasswordRejected', { user: connection.username, host: connection.host })
+  const identity =
+    connection.authMethod === 'agent' ? mainT('sshAgentIdentity') : (connection.keyPath ?? mainT('sshStoredKeyIdentity'))
+  return mainT('rsyncKeyRejected', { user: connection.username, host: connection.host, identity })
+}
+
 export const sftpAdapter: DeployAdapter = {
   async preview(ctx): Promise<DeployDiffEntry[]> {
     return diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)
@@ -286,7 +297,8 @@ export const sftpAdapter: DeployAdapter = {
     } catch (err) {
       // the host-key message explains what actually happened; ssh2's own error does not
       const silent = wentSilent || /Keepalive timeout/.test(String(err)) ? `${mainT('sshSilent', { host: connection.host, seconds: SSH_SILENT_SECONDS })}\n\n` : ''
-      return { success: false, output: `${output}\n${hostKeyRejection ?? `${silent}${String(err)}`}` }
+      const refused = /All configured authentication methods failed/.test(String(err)) ? `${loginRefused(connection)}\n\n` : ''
+      return { success: false, output: `${output}\n${hostKeyRejection ?? `${silent}${refused}${String(err)}`}` }
     } finally {
       client.end().catch(() => {})
     }

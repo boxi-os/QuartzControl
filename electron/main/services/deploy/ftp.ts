@@ -57,6 +57,11 @@ async function modeNotes(client: FtpClient, refused: Refused[]): Promise<string>
   return out
 }
 
+// basic-ftp's own default, written out so the sentence below names the same number. Without it a
+// server that went silent while deleting ended the run with a bare "Error: Timeout (control
+// socket)" after 30.5 s (vsftpd frozen on debian-vm, review 2026-11-01, nebenbei).
+const FTP_TIMEOUT_MS = 30_000
+
 export const ftpAdapter: DeployAdapter = {
   async preview(ctx: DeployContext): Promise<DeployDiffEntry[]> {
     return diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)
@@ -71,7 +76,7 @@ export const ftpAdapter: DeployAdapter = {
     const diff = await diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)
     const { toUpload, toDelete, manifestExcludes } = partitionDiff(diff, excludePaths, destination.deleteRemoved)
 
-    const client = new FtpClient()
+    const client = new FtpClient(FTP_TIMEOUT_MS)
     let output = ''
     try {
       await client.access({
@@ -87,8 +92,11 @@ export const ftpAdapter: DeployAdapter = {
       // A relative remote path is meant from where the login starts, and ensureDir moves the working
       // folder, so back there after each, not to "/": on a vsftpd without chroot "/" is the server's
       // root, and a target "review57-rel" failed at its first file with "553 Could not create file"
-      // (debian-vm, since 1.1.0, review 2026-10-31).
-      const start = await client.pwd()
+      // (debian-vm, since 1.1.0, review 2026-10-31). An absolute path does not need it and keeps "/",
+      // as 1.1.0 did: a PWD reply without quotes, which basic-ftp cannot parse, failed every run
+      // with "Can't parse response to command 'PWD'" (proxy in front of vsftpd, review 2026-11-01,
+      // nebenbei).
+      const start = destination.remotePath.startsWith('/') ? '/' : await client.pwd()
       const root = fromLoginDir(destination.remotePath, start, connection.username)
       if (root === null) return { success: false, output: mainT('deployTildeOtherAccount', { path: destination.remotePath }) }
 
@@ -183,7 +191,9 @@ export const ftpAdapter: DeployAdapter = {
           if (gone) output += `✗ ${relPath}\n`
           else {
             kept.push(relPath)
-            output += mainT('deployDeleteRefused', { path: relPath, reason: err.message })
+            // The server's own sentence, which vsftpd ends with a period: "(550 Delete operation
+            // failed.)." (review 2026-11-01, nebenbei). Not on SFTP, whose message ends with the path.
+            output += mainT('deployDeleteRefused', { path: relPath, reason: err.message.replace(/\.+$/, '') })
           }
         }
         processed++
@@ -193,7 +203,10 @@ export const ftpAdapter: DeployAdapter = {
       await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, [...manifestExcludes, ...kept])
       return { success: true, output }
     } catch (err) {
-      return { success: false, output: `${output}\n${String(err)}` }
+      const silent = /^Timeout \((control|data) socket\)$/.test(err instanceof Error ? err.message : '')
+        ? `${mainT('sshSilent', { host: connection.host, seconds: FTP_TIMEOUT_MS / 1000 })}\n\n`
+        : ''
+      return { success: false, output: `${output}\n${silent}${String(err)}` }
     } finally {
       client.close()
     }

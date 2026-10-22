@@ -3284,3 +3284,39 @@ rsync 3.x als Client ist gemessen (beide Linien, Nachtrag in
 nur Leerzeichen ab, nicht die übrigen Zeichen der Shell (`131b92cb` liegt nur auf `feat/1.2`);
 unter openrsync wertet die entfernte Shell sie aus. Keinen dieser Fixes hat ein Review gelesen;
 der Auftrag des siebenundfünfzigsten steht in `docs/REVIEW-2026-11-01-auftrag.md`.
+
+**Das siebenundfünfzigste Review** ([`REVIEW-2026-11-01.md`](REVIEW-2026-11-01.md), Auftrag
+[`REVIEW-2026-11-01-auftrag.md`](REVIEW-2026-11-01-auftrag.md), `feat/1.2` bei `47ef6429`,
+`fix/1.1.x` bei `e41df35f`, quartz-forms `ab6c0f9`: die Fixes seit dem 56. Review, die
+Unterstützungsmatrix): von Claude Opus 5.5 als frisch gestarteter Subagent, ohne den Verlauf der
+Sitzung. 0 Hoch, 2 Mittel, 4 Niedrig, 12 nebenbei; Urteil: die Fix-Linie nicht ohne M1, M2 sollte
+mit; `feat/1.2` nach dem Merge, N3 und der Matrix.
+
+Abgearbeitet am 2026-10-22, ein Befund je Commit, gemessen an der gebauten App (Wegwerf-Profil,
+`h.mjs` des Reviews, Szenen im Scratchpad der Sitzung) gegen `debian-vm` und ein Disk-Image,
+vorher und nachher. Die Mittel nach der Matrix, Niedrig und Nebenbei wie vorgeschlagen (Nutzer):
+
+- **M1** `a1d9aef3` auf `fix/1.1.x` — die Ablehnung der Zeichen der Shell aus `131b92cb` von Hand
+  übertragen; vorher löschte „fix57-dl$x“ unter openrsync zwei fremde Dateien in `fix57-dl`, und
+  „$HOME“ bot das Home zum Löschen an.
+- **M2** `6dba3247` auf `fix/1.1.x` — ein veröffentlichtes Ordner-Ziel lehnt ab, wenn sein Ordner
+  fehlt oder leer ist (`folderMissing`, `folderEmpty`); vorher vergaß das Manifest 178 Dateien, die
+  auf dem ausgehängten Image blieben. Gemergt in `3916a5b1`.
+- **N2** `3a7aecce` auf `fix/1.1.x` — ein SFTP- oder FTP-Ziel mit „~“ schickt einmal alles neu
+  (Hashes leer, Merker `.tilde.json`); vorher fand die Vorschau 0, und der neue Ordner blieb leer.
+- **Nebenbei** auf `fix/1.1.x`: der doppelte Punkt hinter der Antwort von vsftpd `cffca085`;
+  `PWD` nur für relative Pfade und „~“ `4de01109` (ein absoluter Pfad ging hinter einem Proxy mit
+  unlesbarer 257-Antwort vorher gar nicht); `sshSilent` für FTP `cee97cbe`; eine abgelehnte
+  SFTP-Anmeldung nennt, was angeboten wurde `2fff1874`. Gemergt in `e2c46ec9`.
+- **N3** `82f68bd8` — das Relay unter `rrsync -wo` sagt `relayDirWriteOnly` statt eines Rats zu
+  den Rechten.
+- **N1** `d523ab17` — FTP-Server, die `SIZE` sperren, als geduldet in der Matrix, kein Code.
+- **N4** `a2e24b0e` — Matrix (rsync-Client ab 3.2.4, fehlende Fälle), kurze Regel und
+  Langfassung zum Löschen und zu „~“.
+- **Nebenbei 12** `7f3f33b6` — Berichtigung zum abgelehnten Schlüssel im rsync-3.x-Nachtrag.
+
+Nicht gewählt: Nebenbei 1, 3, 4, 6, 9, 10, 11. Der Bereich Relay hatte nichts über Niedrig: Für
+ihn gibt es keine weitere Runde, bis sich dort etwas ändert. Übertragung und Rechte und Pfade
+hatten je einen Befund über Niedrig. Nichts gepusht.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

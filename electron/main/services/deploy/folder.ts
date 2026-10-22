@@ -1,5 +1,5 @@
 import { randomBytes } from 'crypto'
-import { cp, mkdir, readdir, rename, rm } from 'fs/promises'
+import { cp, lstat, mkdir, readdir, rename, rm } from 'fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'path'
 import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
@@ -18,15 +18,29 @@ function isInside(parent: string, child: string): boolean {
   return rel !== '..' && !rel.startsWith(`..${sep}`)
 }
 
-// 'missing' and 'empty' rather than a boolean: the two read differently to someone looking at the
-// folder. Anything else readdir() refuses (permissions) is a failure of its own and is thrown.
-async function folderState(dir: string): Promise<'missing' | 'empty' | 'filled'> {
+// 'missing' and 'unpublished' rather than a boolean: the two read differently to someone looking at
+// the folder. 'unpublished' asks for the files this target put there, not for an empty folder: the
+// bare mount point of a detached share often still holds a .DS_Store or a marker file, and an empty
+// readdir() let that through (review 2026-11-02, N1). One file found is enough, so a folder that is
+// there costs a single lstat(). Anything else readdir() or lstat() refuses (permissions) is a
+// failure of its own and is thrown.
+async function folderState(dir: string, published: string[]): Promise<'missing' | 'unpublished' | 'published'> {
   try {
-    return (await readdir(dir)).length > 0 ? 'filled' : 'empty'
+    await readdir(dir)
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return 'missing'
     throw err
   }
+  for (const relPath of published) {
+    try {
+      await lstat(join(dir, relPath))
+      return 'published'
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code
+      if (code !== 'ENOENT' && code !== 'ENOTDIR') throw err
+    }
+  }
+  return 'unpublished'
 }
 
 // Copying a build into a directory looks like the same thing as building into it directly (which
@@ -65,19 +79,20 @@ export const folderAdapter: DeployAdapter = {
       const total = toUpload.length + toDelete.length
       let processed = 0
 
-      // A target that has been published to before and whose folder is now gone or empty is not
-      // looking at the folder it was published to: a share or disk that is not connected, or under
-      // Linux the bare mount point it leaves behind. rm() with force counted every deletion there as
+      // A target that has been published to before and whose folder is now gone or holds none of
+      // the files it published is not looking at the folder it was published to: a share or disk
+      // that is not connected, or under Linux the bare mount point it leaves behind. rm() with force counted every deletion there as
       // done and the manifest forgot those files, which then stayed on the drive for good; uploads
       // failed with a raw EACCES on /Volumes, and into an emptied folder only the changed files went
       // while the run said success. Measured on a detached disk image (review 2026-11-01, M2; the
       // Linux mount point only as an emptied folder). Asked when there is nothing to do as well: that
       // run said "Nichts zu tun" with the image detached, and the page shows "Upload everything
       // again", the way out named below, for every folder target, not only with changes.
-      if (Object.keys(await readManifest(ctx.projectPath, ctx.target.id)).length > 0) {
-        const state = await folderState(dest)
+      const published = Object.keys(await readManifest(ctx.projectPath, ctx.target.id))
+      if (published.length > 0) {
+        const state = await folderState(dest, published)
         if (state === 'missing') return { success: false, output: mainT('folderMissing', { dest }) }
-        if (state === 'empty') return { success: false, output: mainT('folderEmpty', { dest }) }
+        if (state === 'unpublished') return { success: false, output: mainT('folderNotPublished', { dest }) }
       }
 
       for (const relPath of toUpload) {

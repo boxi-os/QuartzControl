@@ -187,7 +187,7 @@ export default {
         'The address the site will be reachable at later (without https://). If you do not know it yet, leave “localhost” and fill it in later.',
       useTemplate: 'Install the basic template',
       useTemplateHint:
-        'A finished design to start from: colours for light and dark mode, authored page grids, locally served typefaces and every component styled individually.',
+        'A finished design to start from: colours for light and dark mode, authored page grids, locally served typefaces and every component styled individually. Plus the quartz-forms plugin with a contact form that sends nothing yet.',
       templateContent: 'With example pages',
       templateContentHint:
         '{{count}} pages that show what the site looks like before you have notes of your own. Leave them out if you bring your own notes.',

@@ -189,7 +189,7 @@ export default {
         'Die Adresse, unter der die Website später erreichbar ist (ohne https://). Wenn du sie noch nicht kennst, lass „localhost“ stehen und trage sie später nach.',
       useTemplate: 'Basis-Template mitinstallieren',
       useTemplateHint:
-        'Eine fertige Gestaltung als Basis: Farben für Light- und Dark-Mode, eigene Seitenraster, lokal ausgelieferte Schriften und jede Komponente einzeln gestaltet.',
+        'Eine fertige Gestaltung als Basis: Farben für Light- und Dark-Mode, eigene Seitenraster, lokal ausgelieferte Schriften und jede Komponente einzeln gestaltet. Dazu das Plugin quartz-forms mit einem Kontaktformular, das noch nichts sendet.',
       templateContent: 'Mit Beispielseiten',
       templateContentHint:
         '{{count}} Seiten, die zeigen, wie die Website aussieht, bevor du eigene Notizen hast. Wenn du eigene Notizen mitbringst, lass sie weg.',

@@ -42,6 +42,7 @@ dahin gilt der Fall als geduldet.
 | FTP gegen ProFTPD | unterstützt | gemessen 2026-10-21 (1.3.8c aus Debian im Container auf `debian-vm`, mit und ohne chroot) |
 | FTP gegen Pure-FTPd | unterstützt | gemessen 2026-10-21 (1.0.50 aus Debian im Container auf `debian-vm`, mit und ohne chroot) |
 | FTPS (explizit, `secure: true`) | geduldet | nicht gemessen |
+| FTP-Server, die `SIZE` sperren (vsftpd `cmds_denied`, ProFTPD `<Limit SIZE>`) | geduldet | vsftpd gemessen (57. Review, N1): Eine abgelehnte Löschung zählt dort wieder als gelöscht, die Datei bleibt online und verlässt das Manifest. Daten gehen nicht verloren, fremde Dateien bleiben unberührt; ProFTPD nicht gemessen |
 | relativer Pfad über FTP ohne chroot | unterstützt | gemessen nach dem Fix `6f005a4e` (vorher „553“ bei der ersten Datei, seit 1.1.0) |
 | Ordner, Webhook, Git-Branch | unterstützt | gemessen |
 

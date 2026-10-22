@@ -3367,3 +3367,7 @@ N2 und N3 stehen als Sätze in den Notizen und im Handbuch, nicht im Code; N2 is
 geduldet vorgeschlagen, ebenso zwei neue Zeilen aus N5 (keyboard-interactive nicht unterstützt,
 viele Schlüssel im Agent geduldet), noch nicht mit dem Nutzer eingeordnet. Nicht gewählt:
 Nebenbei 1 und 3 bis 12. Nichts gepusht.
+
+Nachtrag 2026-10-22, nach dem Release von 1.1.1: Der Nutzer hat die drei vorgeschlagenen Stufen
+bestätigt (geleerter Ordner geduldet, keyboard-interactive nicht unterstützt, viele Schlüssel im
+Agent geduldet); die Matrix sagt es in den drei Zeilen.

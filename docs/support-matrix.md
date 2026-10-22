@@ -35,8 +35,8 @@ dahin gilt der Fall als geduldet.
 | Fall | Stufe | Stand |
 |---|---|---|
 | SFTP gegen OpenSSH (`sftp-server`, `internal-sftp`) | unterstützt | gemessen auf `debian-vm` |
-| SFTP mit Passwort an einem Server, der Passwörter nur über keyboard-interactive annimmt (etwa FreeBSD) | nicht unterstützt | QuartzControl schickt nur die Methode `password`; der Satz `sshPasswordRejected` sagt seit `98b7168a`, dass ein richtiges Passwort dann nicht reicht (gemessen mit einem zweiten sshd auf `debian-vm`, 58. Review, N5). Stufe vorgeschlagen, nicht mit dem Nutzer eingeordnet |
-| SFTP und rsync über einen SSH-Agent mit mehr Schlüsseln als `MaxAuthTries` | geduldet | gemessen (58. Review, N5): `sshTooManyKeys` rät zur Schlüsseldatei (`98b7168a`). Stufe vorgeschlagen, nicht mit dem Nutzer eingeordnet |
+| SFTP mit Passwort an einem Server, der Passwörter nur über keyboard-interactive annimmt (etwa FreeBSD) | nicht unterstützt | QuartzControl schickt nur die Methode `password`; der Satz `sshPasswordRejected` sagt seit `98b7168a`, dass ein richtiges Passwort dann nicht reicht (gemessen mit einem zweiten sshd auf `debian-vm`, 58. Review, N5). Stufe mit dem Nutzer eingeordnet (2026-10-22) |
+| SFTP und rsync über einen SSH-Agent mit mehr Schlüsseln als `MaxAuthTries` | geduldet | gemessen (58. Review, N5): `sshTooManyKeys` rät zur Schlüsseldatei (`98b7168a`). Stufe mit dem Nutzer eingeordnet (2026-10-22) |
 | SFTP mit `ChrootDirectory` | Messung ausstehend | |
 | SFTP-Server außer OpenSSH (ProFTPD `mod_sftp`, SFTPGo) | geduldet | nicht gemessen |
 | rsync über SSH, Server rsync 3.x, Client openrsync (macOS) | unterstützt | gemessen |
@@ -54,7 +54,7 @@ dahin gilt der Fall als geduldet.
 | Pfad mit Leerzeichen über SFTP und FTP | unterstützt | gemessen im 57. Review (Website absolut und relativ auf allen vier Wegen, Relay in „forms/a b“) |
 | Ordner, Webhook, Git-Branch | unterstützt | gemessen |
 | Ordner-Ziel auf einem Wechsel- oder Netzlaufwerk | unterstützt | gemessen mit einem Disk-Image (`6dba3247`, `fde8d49e`): fehlt der Ordner oder enthält er keine der veröffentlichten Dateien (auch ein Mountpoint mit nur einer `.DS_Store`), lehnt ein schon veröffentlichtes Ziel ab; der Mountpoint unter Linux nur nachgestellt, ein Netzlaufwerk (SMB, NFS) nicht gemessen |
-| Ordner, den ein anderes Programm nach jedem Lauf leert | geduldet | gemessen (58. Review, N2): jeder Lauf lehnt ab, bis „Alles neu hochladen“ gewählt wird (Handbuch 6.5); mit 1.1.0 lief das. Stufe vorgeschlagen, nicht mit dem Nutzer eingeordnet |
+| Ordner, den ein anderes Programm nach jedem Lauf leert | geduldet | gemessen (58. Review, N2): jeder Lauf lehnt ab, bis „Alles neu hochladen“ gewählt wird (Handbuch 6.5); mit 1.1.0 lief das. Stufe mit dem Nutzer eingeordnet (2026-10-22) |
 
 ## Relay (quartz-forms)
 

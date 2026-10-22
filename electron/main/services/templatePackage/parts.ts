@@ -925,6 +925,19 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * package's carries the package's transport itself: the package's sample page promises that its
  * form sends nothing, and a project with a relay would otherwise mail it to the owner.
  */
+/**
+ * The forms a page embeds with quartz-forms' code block, in the default language `quartz-form` -
+ * the one the package's own pages use. A project that renamed the block or embeds by frontmatter
+ * is not looked for; the note this feeds is a warning before the click, not the build's check.
+ */
+const FORM_BLOCK = /^```quartz-form[ \t]*\r?\n[ \t]*([a-z0-9][a-z0-9-]*)[ \t]*\r?\n```/gm
+
+function formsOf(config: { plugins: PluginEntry[] }): Record<string, unknown> | null {
+  const entry = config.plugins.find((p) => (p.name ?? configService.deriveName(p.source)) === FORMS_PLUGIN)
+  if (!entry) return null
+  return isRecord(entry.options?.forms) ? entry.options.forms : {}
+}
+
 function mergeFormsOptions(
   own: PluginEntry['options'],
   fromPackage: PluginEntry['options']
@@ -1033,7 +1046,12 @@ const plugins: TemplatePart<PluginsPayload> = {
       const name = configService.deriveName(entry.source)
       const index = byInstance.get(payloadKeys[position])
       if (index !== undefined && strategy === 'projectWins') {
-        warn(`pluginSkipped:${name}`)
+        // The project's entry stays, but a form it lacks is an addition, like a plugin it lacks:
+        // the package's pages embed it, and the build stopped at the first of them (fifty-ninth
+        // review, M1).
+        const forms = name === FORMS_PLUGIN ? mergeFormsOptions(next[index].options, entry.options) : null
+        if (forms && forms.added.length > 0) next[index] = { ...next[index], options: forms.options }
+        else warn(`pluginSkipped:${name}`)
         continue
       }
       if (typeof entry.source !== 'string') {
@@ -1300,6 +1318,19 @@ const content: TemplatePart<ContentPayload> = {
       const incoming = files.get(`files/content/${name}`)
       if (incoming && sha(incoming) === sha(await readFile(target))) plan.notes.push(`identical:${name}`)
       else plan.conflicts.push(name)
+    }
+    // Pages that embed a form the project's quartz-forms lacks stop its build. The plugins part
+    // adds such forms, so the page only says so when that part is not ticked (fifty-ninth review,
+    // M1). A project without quartz-forms is not counted: there the block stays a code block.
+    const have = formsOf(await configService.readConfig(projectPath))
+    if (have) {
+      const missing = new Set<string>()
+      for (const name of payload.files) {
+        if (!name.endsWith('.md')) continue
+        const text = files.get(`files/content/${name}`)?.toString('utf-8') ?? ''
+        for (const match of text.matchAll(FORM_BLOCK)) if (!(match[1] in have)) missing.add(match[1])
+      }
+      if (missing.size > 0) plan.notes.push(`formsMissing:${[...missing].join(',')}`)
     }
     return plan
   },

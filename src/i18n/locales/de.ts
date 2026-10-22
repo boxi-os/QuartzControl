@@ -3049,6 +3049,8 @@ export default {
     planFormsPinned_other: 'Sie behalten den Versand der Vorlage: „{{kind}}“.',
     planFormsOwn: 'Das Formular {{names}} hat dieses Projekt schon; Seiten der Vorlage, die es einbinden, zeigen das des Projekts.',
     planFormsOwn_other: 'Die Formulare {{names}} hat dieses Projekt schon; Seiten der Vorlage, die sie einbinden, zeigen die des Projekts.',
+    planFormsMissing: 'Seiten der Vorlage binden das Formular {{names}} ein, das dieses Projekt nicht hat. Es kommt mit dem Teil „Plugins“; ohne ihn bricht der Bau daran ab.',
+    planFormsMissing_other: 'Seiten der Vorlage binden die Formulare {{names}} ein, die dieses Projekt nicht hat. Sie kommen mit dem Teil „Plugins“; ohne ihn bricht der Bau daran ab.',
     planFontsRemoved: 'Löscht die Schriftdatei {{names}}: Die Regel, die sie nennt, wird ersetzt.',
     planFontsRemoved_other: 'Löscht {{count}} Schriftdateien ({{names}}): Die Regeln, die sie nennen, werden ersetzt.',
     planOutsideDetail: 'Wird abgelehnt: {{names}} würde außerhalb des Projekts geschrieben werden.',

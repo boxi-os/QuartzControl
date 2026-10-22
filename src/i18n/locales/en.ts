@@ -3034,6 +3034,8 @@ export default {
     planFormsPinned_other: 'They keep the template’s sending: “{{kind}}”.',
     planFormsOwn: 'This project already has the form {{names}}; pages of the template that embed it show the project’s.',
     planFormsOwn_other: 'This project already has the forms {{names}}; pages of the template that embed them show the project’s.',
+    planFormsMissing: 'Pages of the template embed the form {{names}}, which this project does not have. It comes with the part “Plugins”; without it the build stops there.',
+    planFormsMissing_other: 'Pages of the template embed the forms {{names}}, which this project does not have. They come with the part “Plugins”; without it the build stops there.',
     planFontsRemoved: 'Deletes the font file {{names}}: the rule naming it is replaced.',
     planFontsRemoved_other: 'Deletes {{count}} font files ({{names}}): the rules naming them are replaced.',
     planOutsideDetail: 'Refused: {{names}} would be written outside the project.',

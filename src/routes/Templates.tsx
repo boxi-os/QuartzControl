@@ -468,7 +468,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
                 disabled={running}
                 onToggle={() => toggle(part.id)}
                 summary={planSummary(t, part, strategy)}
-                notes={planNotes(t, part, strategy)}
+                notes={planNotes(t, part, strategy, selected.includes('plugins'))}
               />
             ))}
           </div>
@@ -537,9 +537,12 @@ function noteCount(plan: TemplatePartPlan, kind: string): number {
 function planSummary(t: Translate, plan: TemplatePartPlan, strategy: TemplateConflictStrategy): string {
   const bits: string[] = []
   if (plan.additions.length > 0) bits.push(t('templates.planAdditions', { count: plan.additions.length }))
-  // Under 'projectWins' a custom.scss that gains the package's lines is not kept; planNotes says
-  // what happens to it instead.
-  const merged = strategy === 'projectWins' && plan.notes.includes('customScssMerged') ? 1 : 0
+  // Under 'projectWins' a custom.scss that gains the package's lines is not kept, nor a
+  // quartz-forms entry that gains forms; planNotes says what happens to them instead.
+  const merged =
+    strategy === 'projectWins'
+      ? (plan.notes.includes('customScssMerged') ? 1 : 0) + (plan.notes.some((note) => note.startsWith('formsMerged:') && note.length > 'formsMerged:'.length) ? 1 : 0)
+      : 0
   if (plan.conflicts.length - merged > 0) {
     bits.push(t(strategy === 'packageWins' ? 'templates.planReplaced' : 'templates.planKept', { count: plan.conflicts.length - merged }))
   }
@@ -560,7 +563,7 @@ function planSummary(t: Translate, plan: TemplatePartPlan, strategy: TemplateCon
 // Same shape as the sentence `apply` says later, and same place as the content part's own note.
 const OUTSIDE_NAMES_SHOWN = 3
 
-function planNotes(t: Translate, plan: TemplatePartPlan, strategy: TemplateConflictStrategy): string[] {
+function planNotes(t: Translate, plan: TemplatePartPlan, strategy: TemplateConflictStrategy, pluginsSelected: boolean): string[] {
   const notes: string[] = []
   if (plan.notes.includes('contentIsSymlink')) notes.push(t('templates.planContentIsSymlink'))
   if (noteCount(plan, 'projectIcon') > 0) notes.push(t('templates.planProjectIconKept', { count: noteCount(plan, 'projectIcon') }))
@@ -604,18 +607,22 @@ function planNotes(t: Translate, plan: TemplatePartPlan, strategy: TemplateConfl
     if (byPosition.length > 0) notes.push(t('templates.planByPosition', { count: byPosition.length, names: quoted(byPosition) }))
     const fonts = listed('fontsRemoved')
     if (fonts.length > 0) notes.push(t('templates.planFontsRemoved', { count: fonts.length, names: quoted(fonts) }))
-    // quartz-forms is merged rather than replaced (mergeFormsOptions in templatePackage/parts.ts),
-    // so it is one of the conflicts the summary counts as replaced, and this says what it keeps.
-    const formsMerged = plan.notes.find((note) => note.startsWith('formsMerged:'))
-    if (formsMerged !== undefined) {
-      const added = formsMerged.slice('formsMerged:'.length).split(',').filter(Boolean)
-      notes.push(added.length > 0 ? t('templates.planFormsMerged', { count: added.length, names: quoted(added) }) : t('templates.planFormsKept'))
-      const pinned = plan.notes.find((note) => note.startsWith('formsPinned:'))?.slice('formsPinned:'.length)
-      if (pinned) notes.push(t('templates.planFormsPinned', { count: added.length, kind: t(`formsEditor.transportKinds.${pinned}`, pinned) }))
-      const own = listed('formsOwn')
-      if (own.length > 0) notes.push(t('templates.planFormsOwn', { count: own.length, names: quoted(own) }))
-    }
   }
+  // quartz-forms is merged rather than replaced or kept (mergeFormsOptions in
+  // templatePackage/parts.ts), the same under both strategies: it is one of the conflicts the
+  // summary counts, and this says what it keeps and what it gains.
+  const formsMerged = plan.notes.find((note) => note.startsWith('formsMerged:'))
+  if (formsMerged !== undefined) {
+    const added = formsMerged.slice('formsMerged:'.length).split(',').filter(Boolean)
+    notes.push(added.length > 0 ? t('templates.planFormsMerged', { count: added.length, names: quoted(added) }) : t('templates.planFormsKept'))
+    const pinned = plan.notes.find((note) => note.startsWith('formsPinned:'))?.slice('formsPinned:'.length)
+    if (pinned) notes.push(t('templates.planFormsPinned', { count: added.length, kind: t(`formsEditor.transportKinds.${pinned}`, pinned) }))
+    const own = listed('formsOwn')
+    if (own.length > 0) notes.push(t('templates.planFormsOwn', { count: own.length, names: quoted(own) }))
+  }
+  // The content part's pages embed forms the plugins part adds; without that part they are missing.
+  const formsMissing = listed('formsMissing')
+  if (formsMissing.length > 0 && !pluginsSelected) notes.push(t('templates.planFormsMissing', { count: formsMissing.length, names: quoted(formsMissing) }))
   const missing = plan.notes.find((note) => note.startsWith('missingVariables:'))
   if (missing) {
     const names = missing.slice('missingVariables:'.length).split(',')

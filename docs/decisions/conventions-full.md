@@ -341,6 +341,16 @@ Projektwurzel.
   „Kann nicht prüfen“ ist auch hier nicht „alles gut“. Und die Abfrage gab ihre `generation` an
   eine Weiterleitung auf eine andere Origin weiter, weil Apaches `Redirect` die Query anhängt; wer
   dort mitliest, erfährt `counters`. Die kurze Regel sagt es seitdem so.
+  Nachtrag aus dem 57. Review (2026-11-01, abgearbeitet am 2026-10-22), ohne den Text darüber zu
+  ändern: „Als gelöscht zählt nur die Antwort des Servers“ galt nicht für das Ordner-Ziel, dessen
+  `rm` mit `force` jedes `ENOENT` als erledigt nahm; mit einem ausgehängten Laufwerk meldete ein
+  Lauf 178 Löschungen, das Manifest vergaß sie, und die Dateien blieben auf dem Laufwerk (M2).
+  Jetzt fragt ein Ziel, das schon veröffentlicht wurde, ob sein Ordner da und nicht leer ist. Ein
+  FTP-Server, der `SIZE` sperrt, antwortet darauf 550, und eine abgelehnte Löschung zählt dort
+  wieder als gelöscht (N1, geduldet). „~“ als Anmeldeverzeichnis gilt nur, wo die Sitzung im Home
+  beginnt, und ein Ziel „~/…“ aus 1.1.0 behielt sein Manifest, obwohl es nun einen anderen Ordner
+  meinte; die Vorschau fand nichts (N2). Die kurze Regel sagt es seitdem so. Messungen in
+  [`publishing-and-credentials.md`](publishing-and-credentials.md).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

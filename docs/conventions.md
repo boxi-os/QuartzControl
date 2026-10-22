@@ -78,13 +78,17 @@ Begründung.
   setzt der Adapter einmal je Ziel auf 0644 (`deploy-manifest-<id>.modes.json`): nur reguläre
   Dateien mit genau 0666 (`lstat`), und erledigt ist das Ziel erst, wenn der Server zu jeder Datei
   geantwortet hat. Als gelöscht zählt nur die Antwort des Servers, dass die Datei fehlt; ein Fehler
-  der Leitung lässt den Lauf scheitern, und das Manifest bleibt. Die Abfrage nach dem Upload nennt
+  der Leitung lässt den Lauf scheitern, und das Manifest bleibt. Ein Ordner-Ziel, das schon
+  veröffentlicht wurde, fragt vorher, ob sein Ordner da und nicht leer ist; ein FTP-Server, der
+  `SIZE` sperrt, ist die geduldete Ausnahme. Die Abfrage nach dem Upload nennt
   die `generation` (nur innerhalb der Origin) und erfährt so, ob das eben hochgeladene Relay antwortet (das Relay liest seine
   Config an OPcache vorbei und sagt `counters` nur dann; eine fremde `generation` fragt sie nach 3 s
   noch einmal); eine Weiterleitung empfiehlt sie nur, wo dort ein Relay antwortet. Fehlende
   Ordner über dem Ordner eines Ziels legt nur das Relay an, über jeden Weg; was rsync nicht
   übertragen kann (`rsyncUnsafeChar`), sagt schon das Formular. „~“ ist auf jedem Weg das Anmeldeverzeichnis
-  selbst (SFTP und FTP lösen es selbst auf, `fromLoginDir`), und das ist nur mit Löschen abgelehnt. Ist ein Ordner auf dem Weg zum Relay auf dem
+  selbst (SFTP und FTP lösen es selbst auf, `fromLoginDir`), wo die Sitzung im Home beginnt, und das
+  ist nur mit Löschen abgelehnt; ein Ziel mit „~“ aus 1.1.0 schickt einmal alles neu
+  (`deploy-manifest-<id>.tilde.json`). Ist ein Ordner auf dem Weg zum Relay auf dem
   Server ein Symlink, lädt kein Weg hindurch. Lässt sich das nicht
   prüfen, auch nicht. Eine SSH-Verbindung, die schweigt, endet nach rund
   60 s (Keepalives in ssh2 und ssh; ssh2 zählt nur Antworten darauf). Die Abfrage folgt keiner

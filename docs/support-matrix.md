@@ -35,16 +35,23 @@ dahin gilt der Fall als geduldet.
 | Fall | Stufe | Stand |
 |---|---|---|
 | SFTP gegen OpenSSH (`sftp-server`, `internal-sftp`) | unterstützt | gemessen auf `debian-vm` |
+| SFTP mit `ChrootDirectory` | Messung ausstehend | |
+| SFTP-Server außer OpenSSH (ProFTPD `mod_sftp`, SFTPGo) | geduldet | nicht gemessen |
 | rsync über SSH, Server rsync 3.x, Client openrsync (macOS) | unterstützt | gemessen |
-| rsync über SSH, Client rsync 3.x (Linux-App) | unterstützt | gemessen 2026-10-21 (rsync 3.5.0 auf `debian-vm`, gebaute App beider Linien, Server auf derselben Maschine) |
-| Konten, die per `rrsync` auf rsync beschränkt sind | geduldet | ohne App gemessen |
+| rsync über SSH, Client rsync ab 3.2.4 (Linux-App) | unterstützt | gemessen 2026-10-21 (rsync 3.5.0 auf `debian-vm`, gebaute App beider Linien, Server auf derselben Maschine; nicht aus deb, AppImage oder Flatpak) |
+| rsync über SSH, Client rsync 3.0 bis 3.2.3 (etwa RHEL 9) | Messung ausstehend | schützt die Argumente nicht und wertet Zeichen der Shell aus wie openrsync (57. Review, N4, gelesen); die Ablehnung dieser Zeichen hängt nicht am Client (`131b92cb`, Fix-Linie `a1d9aef3`) |
+| rsync und ssh in den Linux-Paketen (deb, AppImage, Flatpak) | Messung ausstehend | alle rsync-Messungen liefen außerhalb des Pakets |
+| Konten, die per `rrsync` auf rsync beschränkt sind | geduldet | mit App gemessen (57. Review): die Website mit und ohne `-wo`; das Relay unter `-wo` abgelehnt, weil es nicht lesen darf (`relayDirWriteOnly`, `82f68bd8`) |
 | FTP gegen vsftpd | unterstützt | gemessen (`debian-vm`, ohne chroot; Reihe `fix56/ftp-suite.sh`) |
 | FTP gegen ProFTPD | unterstützt | gemessen 2026-10-21 (1.3.8c aus Debian im Container auf `debian-vm`, mit und ohne chroot) |
 | FTP gegen Pure-FTPd | unterstützt | gemessen 2026-10-21 (1.0.50 aus Debian im Container auf `debian-vm`, mit und ohne chroot) |
 | FTPS (explizit, `secure: true`) | geduldet | nicht gemessen |
 | FTP-Server, die `SIZE` sperren (vsftpd `cmds_denied`, ProFTPD `<Limit SIZE>`) | geduldet | vsftpd gemessen (57. Review, N1): Eine abgelehnte Löschung zählt dort wieder als gelöscht, die Datei bleibt online und verlässt das Manifest. Daten gehen nicht verloren, fremde Dateien bleiben unberührt; ProFTPD nicht gemessen |
 | relativer Pfad über FTP ohne chroot | unterstützt | gemessen nach dem Fix `6f005a4e` (vorher „553“ bei der ersten Datei, seit 1.1.0) |
+| FTP-Server, deren Antwort auf `PWD` basic-ftp nicht lesen kann | geduldet | hinter einem Proxy gemessen (`4de01109`): ein absoluter Pfad geht wie in 1.1.0, ein relativer und „~“ scheitern roh |
+| Pfad mit Leerzeichen über SFTP und FTP | unterstützt | gemessen im 57. Review (Website absolut und relativ auf allen vier Wegen, Relay in „forms/a b“) |
 | Ordner, Webhook, Git-Branch | unterstützt | gemessen |
+| Ordner-Ziel auf einem Wechsel- oder Netzlaufwerk | unterstützt | gemessen mit einem Disk-Image (`6dba3247`): fehlt der Ordner oder ist er leer, lehnt ein schon veröffentlichtes Ziel ab; der leere Mountpoint unter Linux nur nachgestellt |
 
 ## Relay (quartz-forms)
 
@@ -56,7 +63,8 @@ dahin gilt der Fall als geduldet.
 | PHP unter 8.1, PHP ohne mbstring | nicht unterstützt | das Relay sagt es selbst |
 | LiteSpeed und andere Webserver | geduldet | nicht gemessen |
 | OPcache mit Standardwerten | unterstützt | gemessen |
-| OPcache mit `validate_timestamps=0` oder `restrict_api` | geduldet | gemessen und behandelt (quartz-forms 0.5.12 bis 0.5.15, QuartzControl N4 des 56.) |
+| OPcache mit `validate_timestamps=0` oder `restrict_api` | geduldet | gemessen und behandelt (quartz-forms 0.5.12 bis 0.5.15, QuartzControl N4 des 56.); mit `restrict_api` und `revalidate_freq` über 3 s kommt die zweite Frage zu früh, und die Abfrage sagt „ein anderes Relay“ (57. Review, gelesen) |
+| PHP mit `disable_functions=mail` oder `open_basedir` | geduldet | nicht gemessen |
 | Versand über `mail()` oder ein sendmail des Hosts | unterstützt | gemessen (Postfix lokal auf `debian-vm`) |
 | SMTP | nicht unterstützt | nicht angeboten |
 | ein CDN vor dem Server | geduldet | an der Attrappe gemessen |
@@ -68,9 +76,9 @@ dahin gilt der Fall als geduldet.
   `466117a2` fragt danach `SIZE`.
 - „~/…“ hieß je Weg etwas anderes: `e41df35f` löst „~“ und „~<eigenes Konto>“ über SFTP und FTP
   selbst zum Anmeldeverzeichnis auf, „~<anderes Konto>“ wird abgelehnt.
-- Offen, nicht behoben: Auf `fix/1.1.x` lehnt rsync nur Leerzeichen im Pfad ab, nicht die übrigen
-  Zeichen der Shell (`131b92cb` liegt nur auf `feat/1.2`). Unter openrsync (macOS) wertet die
-  entfernte Shell sie aus; unter rsync 3.x nicht (gemessen 2026-10-21).
+- Auf `fix/1.1.x` lehnte rsync nur Leerzeichen im Pfad ab, nicht die übrigen Zeichen der Shell;
+  unter openrsync (macOS) wertete die entfernte Shell sie aus, und „…$x“ mit Löschen löschte in
+  einem fremden Ordner (M1 des 57. Reviews). Behoben mit `a1d9aef3`, wie `131b92cb` auf `feat/1.2`.
 
 ## Rechte und Pfade auf dem Server
 
@@ -81,6 +89,8 @@ dahin gilt der Fall als geduldet.
 | „~/…“ und „~<eigenes Konto>/…“ | unterstützt | gemessen über SFTP, rsync und alle drei FTP-Server (`e41df35f`) |
 | „~<anderes Konto>/…“ über SFTP und FTP | nicht unterstützt | QuartzControl sagt es (`deployTildeOtherAccount`); über rsync löst die Shell es auf |
 | fremde Eigentümer, Ordner ohne Lese- oder Suchrecht, Symlinks auf dem Weg zum Relay | geduldet | sauber ablehnen, nicht weiter verfeinern |
+| ProFTPD mit `ShowSymlinks off` | geduldet | nicht gemessen; ein Link erscheint als Ordner, und die Symlink-Frage des Relays sieht ihn nicht |
+| „~“ bei einem Konto, dessen Sitzung nicht im Home beginnt (`internal-sftp -d`, vsftpd `local_root`) | geduldet | gelesen (57. Review, N4): SFTP nimmt den Startordner der Sitzung, FTP `PWD`, rsync `$HOME`, und das sind dann zwei Ordner. Ein Wechsel zwischen SFTP und rsync behält das Manifest (`locationKey` ohne `transfer`) |
 | Tilde-Formen außer `~` und `~user` (`~+`, `~-`) über rsync | geduldet | an der Shell gemessen |
 
 ## Was ein Review damit tut

@@ -3333,3 +3333,6 @@ erledigt, auf `fix/1.1.x` und gemergt in `feat/1.2`:
   `.pub`-Datei.
 
 Auch diese hat kein Review gelesen.
+
+Der Auftrag des achtundfünfzigsten steht in `docs/REVIEW-2026-11-02-auftrag.md` (nur Übertragung
+sowie Rechte und Pfade; Relay abgeschlossen).

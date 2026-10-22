@@ -167,8 +167,10 @@ Werkstätten und Websites stehen über die Updates-Seite der App auf dieser Fass
 Ein Commit nach dem Tag, der nur Tests oder README ändert, braucht keine Fassung, solange er
 gepusht ist; ebenso der Rechteinhaber in `LICENSE` (boxi-os statt „Quartz Community“, in allen
 vier am 2026-10-22), der bis zur nächsten Fassung unter „Unreleased“ im CHANGELOG steht. **Stand 2026-10-22:**
-quartz-forms drei Commits nach `v0.5.15` (`ab6c0f9` Test, `6012230` MIT, `3d94eeb`
-Rechteinhaber), gepusht, noch privat.
+quartz-forms sechs Commits nach `v0.5.15` (Test, MIT `6012230`, Rechteinhaber `3d94eeb`,
+Kommentar, `AGENTS.md`, hCaptcha mit `onload` `4b12fe0`), gepusht, noch privat; der hCaptcha-Fix
+ändert `src`, also kommt er mit der nächsten Fassung, und der Reiter muss dagegen nicht neu gelesen
+werden (nur `forms.inline.ts`, nichts davon ist abgeschrieben).
 
 **Jede neue Fassung braucht auch die App.** Der Editor eines Plugins ist gegen eine Fassung gelesen
 (`*_READ_AGAINST` in `src/routes/Plugins/`) und kennt die mit demselben Code (`*_SAME_CODE`); jede

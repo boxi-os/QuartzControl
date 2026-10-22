@@ -571,8 +571,12 @@ Abschalten nicht kann.
   Automatisierung, nicht verifiziert. Ohne JavaScript: Dankeseite und Mail. Rechenaufgabe 0,23 s.
 - Die zwei Emulationen: alles, auch beide Captchas und ohne JavaScript. Die Zeiten der
   Rechenaufgabe (0,85 s und 0,35 s) sind die der Mac-CPU und sagen über Telefone nichts.
-- In allen Browsern schreibt hCaptcha „should not render before js api is fully loaded“ in die
-  Konsole; das Widget funktioniert trotzdem.
+- In allen Browsern schrieb hCaptcha „should not render before js api is fully loaded“ in die
+  Konsole; das Widget funktionierte trotzdem. Behoben im Plugin (`4b12fe0`): gerendert wird erst,
+  wenn der `onload`-Callback aus der Skript-URL kommt, nicht beim `load`-Ereignis. Nachher in
+  Chrome, WebKit und Firefox keine Warnung, Chrome und WebKit 27 von 27. Das Widget spricht seitdem
+  die Sprache der Seite; in WebKit verdeckt der längere deutsche Hinweis des Testschlüssels das
+  Häkchen (gesetzt wurde es dort per Tastatur), mit einem echten Schlüssel gibt es ihn nicht.
 
 Nicht gemessen: Safari selbst, echte Telefone, der hCaptcha-Klick in Firefox und der Versand über
 einen echten Mailserver (den testet der Nutzer selbst). Skripte und Website lagen im Scratchpad der

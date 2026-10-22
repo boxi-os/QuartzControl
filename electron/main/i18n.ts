@@ -412,6 +412,10 @@ const STRINGS = {
     folderOverlapsBuild:
       'Der Zielordner ({{dest}}) liegt im Build-Ordner ({{build}}) oder umgekehrt. Bitte einen davon unabhängigen Ordner wählen.',
     folderIsProject: 'Der Projektordner selbst kann kein Veröffentlichungsziel sein.',
+    folderMissing:
+      'Den Zielordner „{{dest}}“ gibt es nicht, obwohl dieses Ziel schon veröffentlicht wurde. Ist das Laufwerk verbunden? Soll er neu angelegt werden, zuerst „Alles neu hochladen“ wählen.',
+    folderEmpty:
+      'Der Zielordner „{{dest}}“ ist leer, obwohl dieses Ziel schon veröffentlicht wurde. Ist das Laufwerk verbunden? Soll er neu befüllt werden, zuerst „Alles neu hochladen“ wählen.',
 
     // Publishing - git branch
     branchNoOrigin:
@@ -785,6 +789,10 @@ const STRINGS = {
     folderOverlapsBuild:
       'The target folder ({{dest}}) is inside the build folder ({{build}}) or the other way round. Please pick a folder independent of it.',
     folderIsProject: 'The project folder itself cannot be a publish target.',
+    folderMissing:
+      'The target folder “{{dest}}” does not exist, although this target has been published before. Is the drive connected? To create it again, choose “Upload everything again” first.',
+    folderEmpty:
+      'The target folder “{{dest}}” is empty, although this target has been published before. Is the drive connected? To fill it again, choose “Upload everything again” first.',
 
     branchNoOrigin:
       'No “origin” remote configured. Git sync has to connect the project to a repository first (git remote add origin <url>).',

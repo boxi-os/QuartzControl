@@ -1,9 +1,9 @@
 import { randomBytes } from 'crypto'
-import { cp, mkdir, rename, rm } from 'fs/promises'
+import { cp, mkdir, readdir, rename, rm } from 'fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'path'
 import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
-import { commitManifest, diffAgainstManifest, partitionDiff } from './manifest'
+import { commitManifest, diffAgainstManifest, partitionDiff, readManifest } from './manifest'
 import { mainT } from '../../i18n'
 
 // True when `child` is `parent` or lies underneath it. Checked via relative() rather than a
@@ -16,6 +16,17 @@ function isInside(parent: string, child: string): boolean {
   if (rel === '') return true
   if (isAbsolute(rel)) return false
   return rel !== '..' && !rel.startsWith(`..${sep}`)
+}
+
+// 'missing' and 'empty' rather than a boolean: the two read differently to someone looking at the
+// folder. Anything else readdir() refuses (permissions) is a failure of its own and is thrown.
+async function folderState(dir: string): Promise<'missing' | 'empty' | 'filled'> {
+  try {
+    return (await readdir(dir)).length > 0 ? 'filled' : 'empty'
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return 'missing'
+    throw err
+  }
 }
 
 // Copying a build into a directory looks like the same thing as building into it directly (which
@@ -53,6 +64,20 @@ export const folderAdapter: DeployAdapter = {
     try {
       const total = toUpload.length + toDelete.length
       let processed = 0
+
+      // A target that has been published to before and whose folder is now gone or empty is not
+      // looking at the folder it was published to: a share or disk that is not connected, or under
+      // Linux the bare mount point it leaves behind. rm() with force counted every deletion there as
+      // done and the manifest forgot those files, which then stayed on the drive for good; uploads
+      // failed with a raw EACCES on /Volumes, and into an emptied folder only the changed files went
+      // while the run said success. Measured on a detached disk image (review 2026-11-01, M2; the
+      // Linux mount point only as an emptied folder). Only asked when there is something to do, as
+      // only then does the page offer "Upload everything again", the way out named below.
+      if (total > 0 && Object.keys(await readManifest(ctx.projectPath, ctx.target.id)).length > 0) {
+        const state = await folderState(dest)
+        if (state === 'missing') return { success: false, output: mainT('folderMissing', { dest }) }
+        if (state === 'empty') return { success: false, output: mainT('folderEmpty', { dest }) }
+      }
 
       for (const relPath of toUpload) {
         const target = join(dest, relPath)

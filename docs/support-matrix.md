@@ -48,7 +48,7 @@ dahin gilt der Fall als geduldet.
 | FTPS (explizit, `secure: true`) | geduldet | nicht gemessen |
 | FTP-Server, die `SIZE` sperren (vsftpd `cmds_denied`, ProFTPD `<Limit SIZE>`) | geduldet | vsftpd gemessen (57. Review, N1): Eine abgelehnte Löschung zählt dort wieder als gelöscht, die Datei bleibt online und verlässt das Manifest. Daten gehen nicht verloren, fremde Dateien bleiben unberührt; ProFTPD nicht gemessen |
 | relativer Pfad über FTP ohne chroot | unterstützt | gemessen nach dem Fix `6f005a4e` (vorher „553“ bei der ersten Datei, seit 1.1.0) |
-| FTP-Server, deren Antwort auf `PWD` basic-ftp nicht lesen kann | geduldet | hinter einem Proxy gemessen (`4de01109`): ein absoluter Pfad geht wie in 1.1.0, ein relativer und „~“ scheitern roh |
+| FTP-Server, deren Antwort auf `PWD` basic-ftp nicht lesen kann | geduldet | hinter einem Proxy gemessen (`4de01109`, `d9d42887`): ein absoluter Pfad geht wie in 1.1.0, ein relativer und „~“ bekommen `ftpPwdUnreadable` mit der Antwort des Servers und dem Rat zum absoluten Pfad |
 | Pfad mit Leerzeichen über SFTP und FTP | unterstützt | gemessen im 57. Review (Website absolut und relativ auf allen vier Wegen, Relay in „forms/a b“) |
 | Ordner, Webhook, Git-Branch | unterstützt | gemessen |
 | Ordner-Ziel auf einem Wechsel- oder Netzlaufwerk | unterstützt | gemessen mit einem Disk-Image (`6dba3247`): fehlt der Ordner oder ist er leer, lehnt ein schon veröffentlichtes Ziel ab; der leere Mountpoint unter Linux nur nachgestellt |

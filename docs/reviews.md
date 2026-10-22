@@ -3320,3 +3320,16 @@ ihn gibt es keine weitere Runde, bis sich dort etwas ändert. Übertragung und R
 hatten je einen Befund über Niedrig. Nichts gepusht.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+Nachtrag (2026-10-22): Drei Punkte, die beim Abarbeiten auffielen, auf Wunsch des Nutzers mit
+erledigt, auf `fix/1.1.x` und gemergt in `feat/1.2`:
+
+- **Ordner-Ziel ohne Änderungen** `67ef4ae6` — die Frage nach dem Ordner auch dann; `6dba3247`
+  hatte sie mit einer falschen Annahme über den Button ausgelassen, und die Seite sagte bei
+  ausgehängtem Laufwerk „Veröffentlichung erfolgreich.“
+- **Relatives FTP-Ziel bei unlesbarem `PWD`** `d9d42887` — `ftpPwdUnreadable` mit der Antwort des
+  Servers und dem Rat zum absoluten Pfad statt der rohen Zeile.
+- **Abgelehnter hinterlegter Schlüssel** `955fe048` — `sshStoredKeyRejected` ohne den Rat zur
+  `.pub`-Datei.
+
+Auch diese hat kein Review gelesen.

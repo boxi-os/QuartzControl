@@ -3399,3 +3399,23 @@ Neue Regel: „Eine Vorlage bringt Gestaltung; was eine Website arbeiten lässt,
 `decisions/templates-and-localization.md`). Die Browser-Messungen vor dem Release stehen in
 `decisions/plugins-and-config.md`. Niedrig 1 bis 4 und die acht Nebenbei-Punkte legt die Sitzung
 dem Nutzer zur Auswahl vor. Nichts gepusht.
+
+Nachtrag am selben Tag: Der Nutzer hat alle vier Niedrig gewählt, dazu drei Nebenbei-Punkte und die
+Warnung von hCaptcha aus dem Browser-Lauf; alles gepusht.
+
+- **N2** — Rechteinhaber `boxi-os` in allen vier `LICENSE` (quartz-forms `3d94eeb`, layout-box
+  `c72947c`, multilanguage `4d0d8a6`, navigations `354dd51`).
+- **N1** `0f41912f` — der Assistent nennt quartz-forms und das Kontaktformular; App-Handbuch 2.2
+  sagt, welche Beispielseite es zeigt, und nennt das Häkchen wie die App „Mit Beispielseiten“
+  (Vault `64711b3`).
+- **N3, N4** `1603f765` — `docs/release.md` kennt vier eigene Plugins, die Reihenfolge am
+  Release-Tag und kein Vorab-Paket, solange quartz-forms privat ist.
+- **Nebenbei** — der Kommentar zu den Ressourcen in `transformer.ts` (quartz-forms `f76c6f1`),
+  `"private": true` in `AGENTS.md` begründet (`b0d2cc2`), die Lizenz auf den Startseiten der vier
+  Plugin-Handbücher (je ein Commit in den Vaults).
+- **Browser-Lauf** — hCaptcha rendert nach seinem `onload`-Callback (quartz-forms `4b12fe0`, Doku
+  `7c1f7580`): keine Warnung mehr in Chrome, WebKit und Firefox.
+
+Nicht gewählt: Nebenbei „0 Formular-Einträge“, `LICENSE` in `files`, die Honeypot-Notiz und drei
+Punkte aus der Abarbeitung (Zählung unter „werden ersetzt“, nur der Codeblock wird erkannt, der
+Satz nennt „Plugins“ auch ohne diesen Teil).

@@ -81,8 +81,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 ## Stand und Reviews
 
 Neunundfünfzig Review-Runden sind abgearbeitet (die letzte am 2026-10-22 auf `feat/1.2`, über
-die Lizenz von quartz-forms und `qc-basic` mit Formular: Hoch und Mittel behoben, Niedrig und
-Nebenbei wählt der Nutzer noch; die achtundvierzigste bis dreiundfünfzigste von einem anderen Modell geschrieben). Veröffentlicht ist `1.1.1` (2026-10-22), davor `1.1.0` (2026-10-18). Was aus jeder Runde wurde und was noch
+die Lizenz von quartz-forms und `qc-basic` mit Formular: alles Gewählte behoben; die achtundvierzigste bis dreiundfünfzigste von einem anderen Modell geschrieben). Veröffentlicht ist `1.1.1` (2026-10-22), davor `1.1.0` (2026-10-18). Was aus jeder Runde wurde und was noch
 ungelesen ist, steht in [`docs/reviews.md`](docs/reviews.md); die früheren Stand-Absätze dieser
 Datei (Releases, Alpha-Test, Gruppe D, offene Punkte) wörtlich in [`docs/stand.md`](docs/stand.md).
 Was aus einer Runde dauerhaft gilt, steht als Regel in `docs/conventions.md`, nicht in der Chronik.

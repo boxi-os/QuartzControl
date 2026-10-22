@@ -3344,4 +3344,26 @@ Claude Opus 5.5 als frisch gestarteter Subagent, ohne den Verlauf der Sitzung. 0
 6 Niedrig, 12 nebenbei; Urteil: die Fix-Linie als 1.1.1, sobald es Release-Notes gibt (N6),
 `feat/1.2` nach der Berichtigung von N4. Kein Bereich hatte einen Befund über Niedrig: Für
 Übertragung sowie Rechte und Pfade gibt es keine weitere Runde, bis sich dort etwas ändert.
-Noch nicht abgearbeitet; der Nutzer wählt aus.
+
+Abgearbeitet am 2026-10-22, ein Befund je Commit, gemessen an der gebauten App (Wegwerf-Profil,
+`h.mjs`, Szenen im Scratchpad der Sitzung) gegen `debian-vm` und ein Disk-Image, vorher und
+nachher, nach jedem Merge auf `feat/1.2` wiederholt. Gewählt hat der Nutzer N1, N4, N5 (nur die
+Sätze), N6 und Nebenbei 2:
+
+- **N1** `fde8d49e` auf `fix/1.1.x` — ein Ordner-Ziel fragt, ob eine der veröffentlichten Dateien
+  noch da ist, nicht ob der Ordner leer ist (`folderNotPublished`); vorher ließ ein Mountpoint mit
+  nur einer `.DS_Store` M2 zurück: 178 Löschungen als erledigt, ein Upload auf die lokale Platte.
+  Kommentar umbrochen in `7cb9c89a`. Gemergt in `755bf67a`.
+- **N5** `98b7168a` auf `fix/1.1.x` — `sshAgentRejected` ohne den Rat zur `.pub`-Datei (SFTP und
+  rsync), `sshTooManyKeys` statt der rohen Zeile, `sshPasswordRejected` sagt, dass ein richtiges
+  Passwort nicht reicht, wenn der Server es nicht so annimmt; keyboard-interactive selbst nicht.
+- **Nebenbei 2** `b978e8cd` auf `fix/1.1.x` — kein doppelter Punkt in `ftpPwdUnreadable`.
+- **N4** `16f395ae` (Kommentar, Fix-Linie), Merge `f1fce81d` (Kommentar in `remotePath.ts`),
+  `b709fbcd` (Matrix, Nachtrag) — rsync ab 3.2.4 schützt die Argumente bis auf die Wildcards.
+- **N6** `22b223e2` — die Sätze für die Notizen von 1.1.1 in `docs/release.md`, Punkt 7, mit einem
+  sicheren Weg zum alten Ordner „~“; Handbuch 6.4 und 6.5 im Vault (`47c8fb3`).
+
+N2 und N3 stehen als Sätze in den Notizen und im Handbuch, nicht im Code; N2 ist in der Matrix als
+geduldet vorgeschlagen, ebenso zwei neue Zeilen aus N5 (keyboard-interactive nicht unterstützt,
+viele Schlüssel im Agent geduldet), noch nicht mit dem Nutzer eingeordnet. Nicht gewählt:
+Nebenbei 1 und 3 bis 12. Nichts gepusht.

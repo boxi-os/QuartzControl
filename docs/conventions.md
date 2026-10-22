@@ -79,7 +79,8 @@ Begründung.
   Dateien mit genau 0666 (`lstat`), und erledigt ist das Ziel erst, wenn der Server zu jeder Datei
   geantwortet hat. Als gelöscht zählt nur die Antwort des Servers, dass die Datei fehlt; ein Fehler
   der Leitung lässt den Lauf scheitern, und das Manifest bleibt. Ein Ordner-Ziel, das schon
-  veröffentlicht wurde, fragt vorher, ob sein Ordner da und nicht leer ist; ein FTP-Server, der
+  veröffentlicht wurde, fragt vorher, ob sein Ordner da ist und eine der veröffentlichten Dateien
+  enthält, nicht ob er leer ist; ein FTP-Server, der
   `SIZE` sperrt, ist die geduldete Ausnahme. Die Abfrage nach dem Upload nennt
   die `generation` (nur innerhalb der Origin) und erfährt so, ob das eben hochgeladene Relay antwortet (das Relay liest seine
   Config an OPcache vorbei und sagt `counters` nur dann; eine fremde `generation` fragt sie nach 3 s

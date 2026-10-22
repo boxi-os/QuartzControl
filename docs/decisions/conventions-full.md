@@ -351,6 +351,12 @@ Projektwurzel.
   beginnt, und ein Ziel „~/…“ aus 1.1.0 behielt sein Manifest, obwohl es nun einen anderen Ordner
   meinte; die Vorschau fand nichts (N2). Die kurze Regel sagt es seitdem so. Messungen in
   [`publishing-and-credentials.md`](publishing-and-credentials.md).
+  Nachtrag aus dem 58. Review (2026-11-02, abgearbeitet am 2026-10-22): „nicht leer“ war die falsche
+  Frage. Der Mountpoint eines ausgehängten Laufwerks hält oft noch eine `.DS_Store` oder eine
+  Markierdatei, und dann kam M2 zurück: 178 Löschungen als erledigt, das Manifest vergaß sie, ein
+  Upload landete auf der lokalen Platte (N1). Gefragt wird jetzt, ob eine der Dateien aus dem
+  Manifest noch da ist (`lstat`, bis zur ersten). Der Preis: Ein Ordner, den ein Skript absichtlich
+  leert, scheitert bei jedem Lauf, bis „Alles neu hochladen“ gewählt wird (N2, Handbuch 6.5).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

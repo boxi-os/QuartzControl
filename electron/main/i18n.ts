@@ -434,6 +434,8 @@ const STRINGS = {
     deployWrongType: 'Falscher Zieltyp für den {{adapter}}-Adapter.',
     deployNothingToDo: 'Nichts zu tun: Das Ziel ist bereits auf dem Stand des Builds.\n',
     deployDeleteRefused: '{{path}} konnte auf dem Server nicht gelöscht werden ({{reason}}). Der nächste Upload versucht es wieder.\n',
+    ftpPwdUnreadable:
+      'Der Server sagt nicht lesbar, in welchem Ordner die Anmeldung beginnt ({{reply}}). Für „{{path}}“ braucht QuartzControl diesen Ordner: Trage einen absoluten Pfad ein, der mit „/“ beginnt.',
     sftpModesProgress: 'Rechte von {{path}}',
     sftpModesSettled: 'Einmalig {{count}} von {{total}} früher hochgeladenen Dateien auf 0644 gesetzt: Bis 1.1.0 lud QuartzControl sie für jeden Account des Servers beschreibbar hoch.\n',
     sftpModesRefused: 'Der Server lehnt chmod ab: {{count}} von {{total}} früher hochgeladenen Dateien bleiben für jeden Account des Servers beschreibbar.\n',
@@ -495,7 +497,8 @@ const STRINGS = {
     syncHistoryIncomplete:
       'Die Projekt-Historie ist unvollständig (flacher Klon) und ließ sich nicht vervollständigen. Ein Push wird daran voraussichtlich scheitern:',
     sshAgentIdentity: 'der SSH-Agent',
-    sshStoredKeyIdentity: 'der in QuartzControl hinterlegte Schlüssel',
+    sshStoredKeyRejected:
+      'Der Server hat die Anmeldung als {{user}}@{{host}} mit dem in QuartzControl hinterlegten Schlüssel abgelehnt. Prüfe, ob genau dieser Schlüssel beim Anbieter hinterlegt ist.',
     sshPasswordRejected:
       'Der Server hat die Anmeldung als {{user}}@{{host}} mit Passwort abgelehnt. Prüfe das Passwort; manche Server lassen über SSH nur Schlüssel zu.',
     sshKeyFileUnreadable:
@@ -847,6 +850,8 @@ const STRINGS = {
     deployWrongType: 'Wrong destination type for the {{adapter}} adapter.',
     deployNothingToDo: 'Nothing to do: the target already matches the build.\n',
     deployDeleteRefused: '{{path}} could not be deleted on the server ({{reason}}). The next upload tries again.\n',
+    ftpPwdUnreadable:
+      'The server does not say readably which folder the login starts in ({{reply}}). QuartzControl needs that folder for “{{path}}”: enter an absolute path starting with “/”.',
     sftpModesProgress: 'permissions of {{path}}',
     sftpModesSettled: 'Set {{count}} of {{total}} files uploaded earlier to 0644, once: up to 1.1.0 QuartzControl uploaded them writable by every account on the server.\n',
     sftpModesRefused: 'The server refuses chmod: {{count}} of {{total}} files uploaded earlier stay writable by every account on the server.\n',
@@ -903,7 +908,8 @@ const STRINGS = {
     syncHistoryIncomplete:
       'The project history is incomplete (a shallow clone) and could not be completed. A push will most likely fail because of it:',
     sshAgentIdentity: 'the SSH agent',
-    sshStoredKeyIdentity: 'the key stored in QuartzControl',
+    sshStoredKeyRejected:
+      'The server refused the login as {{user}}@{{host}} with the key stored in QuartzControl. Check that this exact key is registered with the provider.',
     sshPasswordRejected:
       'The server refused the login as {{user}}@{{host}} with a password. Check the password; some servers only accept keys over SSH.',
     sshKeyFileUnreadable:

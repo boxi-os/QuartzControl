@@ -230,11 +230,12 @@ function remoteSpec(connection: SshConnection, remotePath: string): string {
   if (/\s/.test(remotePath)) {
     throw new Error(mainT('rsyncPathWithSpace'))
   }
-  // The same for any other character that shell gives a meaning to, quoting included, since
-  // rsync 3.2.4 and later escape remote args themselves and openrsync does not. Measured on
-  // debian-vm with openrsync: "fix57-dl$x" with deletion went to fix57-dl and deleted another
-  // site's files there, and the preview for "$HOME" listed the home's .bash_logout as removed
-  // (review 2026-11-01, M1; on feat/1.2 since 131b92cb).
+  // The same for any other character that shell gives a meaning to, quoting included: openrsync
+  // does not escape remote args, and rsync 3.2.4 and later escape all of them but the wildcards,
+  // which they leave for remote globbing ("fix58-v[a]" went into an existing fix58-va with rsync
+  // 3.5.0, review 2026-11-02, N4). Measured on debian-vm with openrsync: "fix57-dl$x" with
+  // deletion went to fix57-dl and deleted another site's files there, and the preview for "$HOME"
+  // listed the home's .bash_logout as removed (review 2026-11-01, M1; on feat/1.2 since 131b92cb).
   const special = SHELL_SPECIAL.exec(remotePath)
   if (special) throw new Error(mainT('rsyncPathWithSpecial', { char: special[0] }))
   const withSlash = remotePath.endsWith('/') ? remotePath : `${remotePath}/`

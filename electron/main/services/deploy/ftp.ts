@@ -55,7 +55,9 @@ export const ftpAdapter: DeployAdapter = {
         } catch (err) {
           const unread = err instanceof Error && /^Can't parse response to command 'PWD': /.exec(err.message)
           if (!(err instanceof FTPError) && !unread) throw err
-          const reply = unread ? err.message.slice(unread[0].length) : (err as Error).message
+          // the reply goes in parentheses mid-sentence, so its own closing period goes, as in
+          // deployDeleteRefused ("(550 PWD not allowed here.).", review 2026-11-02, nebenbei)
+          const reply = (unread ? err.message.slice(unread[0].length) : (err as Error).message).replace(/\.+$/, '')
           return { success: false, output: mainT('ftpPwdUnreadable', { path: destination.remotePath, reply }) }
         }
       }

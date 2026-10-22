@@ -56,6 +56,7 @@ import { LAYOUT_CONFIG } from './example-template/layout.mjs'
 import {
   PLUGIN_PATCHES,
   LAYOUT_BOXES,
+  FORMS_SOURCE,
   LAYOUT_BOX_SOURCE,
   MULTILANGUAGE_SOURCE,
   MULTILANGUAGE_ENTRY,
@@ -110,11 +111,14 @@ const DATA = V.derive({
   patches: PLUGIN_PATCHES,
   boxes: LAYOUT_BOXES,
   navigations: NAVIGATION_ENTRIES,
-  presets: PRESETS
+  presets: PRESETS,
+  // Das Example hat kein Formular; nur die Basis füllt die Liste (basic.mjs, forms()).
+  forms: []
 })
 // Was die Gegenprobe im Zielprojekt wiederfinden muss.
 const expectedBoxes = DATA.boxes.length
 const expectedNavigations = DATA.navigations.length
+const expectedForms = DATA.forms.length
 
 // Was hier steht, liest jemand im Anlege-Assistenten, bevor er zusagt - also zählt es die Dinge auf,
 // die das Paket wirklich enthält. „Drei eigene Frames" stand hier noch, als `drawing` längst der
@@ -879,7 +883,7 @@ async function buildTemplate() {
               fontOrigin: 'local',
               cdnCaching: false
             },
-            plugins: [...plugins, ...a.boxes, a.multilanguage, ...a.navigations],
+            plugins: [...plugins, ...a.boxes, a.multilanguage, ...a.navigations, ...a.forms],
             layout: a.layout
           }
           await window.quartzGui.config.save(a.path, next)
@@ -897,6 +901,7 @@ async function buildTemplate() {
           patches: DATA.patches,
           boxes: DATA.boxes,
           navigations: DATA.navigations,
+          forms: DATA.forms,
           multilanguage: MULTILANGUAGE_ENTRY,
           layout: LAYOUT_CONFIG,
           theme: THEME_ENTRY,
@@ -905,7 +910,7 @@ async function buildTemplate() {
           // Vergleiche, weil der vierte Eintrag sonst wieder vergessen wird - der dritte wurde es:
           // die Multilanguage-Quelle stand hier anfangs nicht, und ein versehentlicher zweiter
           // Lauf hatte sie doppelt im Projekt.
-          appendedSources: [LAYOUT_BOX_SOURCE, MULTILANGUAGE_SOURCE, NAVIGATIONS_SOURCE]
+          appendedSources: [LAYOUT_BOX_SOURCE, MULTILANGUAGE_SOURCE, NAVIGATIONS_SOURCE, FORMS_SOURCE]
         }
       )
       done(`${applied.plugins} Einträge`)
@@ -1342,6 +1347,15 @@ async function verify() {
     const navigations = instances('quartz-navigations')
     done(`${navigations.length} von ${expectedNavigations}`)
 
+    // Nur die Basis bringt quartz-forms mit. Gezählt werden Einträge und Formulare, denn ein
+    // Eintrag ohne `forms` baute ebenso grün und zeigte auf der Beispielseite nichts.
+    step('Formulare im Ziel')
+    const formEntries = instances('quartz-forms')
+    const formIds = formEntries.flatMap((entry) => Object.keys(entry.options?.forms ?? {}))
+    const wantedIds = DATA.forms.flatMap((entry) => Object.keys(entry.options?.forms ?? {}))
+    done(`${formEntries.length} von ${expectedForms} Einträgen, Formulare: ${formIds.join(', ') || 'keine'}` +
+      (wantedIds.every((id) => formIds.includes(id)) ? '' : ` - ERWARTET: ${wantedIds.join(', ')}`))
+
     // Erst in einem frischen Projekt eine Aussage: Vorher lagen die Dateien vom letzten Lauf da.
     step('Schriftdateien im Ziel')
     const fontDir = path.join(CONTROL, 'quartz/static/fonts')
@@ -1353,6 +1367,7 @@ async function verify() {
       frames: frames.length,
       boxes: boxes.length,
       navigations: navigations.length,
+      forms: formEntries.length,
       fonts: fontsThere
     }
   })
@@ -1386,7 +1401,7 @@ async function main() {
     installContent(WORKSHOP)
   }
   if (phase(2, 'plugin')) {
-    log('\n2 · quartz-layout-box')
+    log('\n2 · github:-Plugins')
     step('installieren')
     installGithubPlugins(WORKSHOP)
   }
@@ -1401,7 +1416,7 @@ async function main() {
     const outcome = await verify()
     log('\n═══════════════════════════════════')
     log(written ? `Paket: ${written.filePath}` : 'Paket: (nicht in diesem Lauf geschrieben)')
-    log(`Gegenprobe: ${outcome.frames} Frames, ${outcome.boxes} Layout-Boxen, ${outcome.navigations} Navigationen, ${outcome.fonts} Schriftdateien, ${outcome.warnings.length} Warnungen, Build grün.`)
+    log(`Gegenprobe: ${outcome.frames} Frames, ${outcome.boxes} Layout-Boxen, ${outcome.navigations} Navigationen, ${outcome.forms} Formular-Einträge, ${outcome.fonts} Schriftdateien, ${outcome.warnings.length} Warnungen, Build grün.`)
   } else if (written) {
     log('\n═══════════════════════════════════')
     log(`Paket: ${written.filePath}`)

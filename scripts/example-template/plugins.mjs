@@ -737,6 +737,16 @@ export const NAVIGATION_ENTRIES = [
   }
 ]
 
+/* ------------------------------------------------------------- forms, in the basis only */
+
+// Der vierte github:-Eintrag, und der einzige, den nicht jede Variante bekommt: Nur die
+// Basis-Vorlage installiert quartz-forms (Entscheidung vom 2026-10-22), mit einem Formular, das
+// nichts sendet. Den Eintrag bildet basic.mjs, die Quelle steht hier, weil Phase 4 jede Quelle
+// kennen muss, die sie anhängt. Gestaltet ist das Plugin in allen Varianten (plugin-forms.scss).
+//
+// Kein Pin auf einen Tag, aus demselben Grund wie bei der Navigation oben.
+export const FORMS_SOURCE = 'github:boxi-os/quartz-forms'
+
 /**
  * The community theme entry.
  *

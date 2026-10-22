@@ -21,7 +21,7 @@ import * as path from 'node:path'
 import { projectPath, workshopPath } from '../project-paths.mjs'
 import * as basic from './basic.mjs'
 import * as doku from './doku.mjs'
-import { LAYOUT_BOX_SOURCE, MULTILANGUAGE_SOURCE, NAVIGATIONS_SOURCE } from './plugins.mjs'
+import { FORMS_SOURCE, LAYOUT_BOX_SOURCE, MULTILANGUAGE_SOURCE, NAVIGATIONS_SOURCE } from './plugins.mjs'
 
 // Der Vault des Beispielprojekts. Er steht hier und nicht in `project-paths.mjs`, aus dem Grund,
 // den diese Datei selbst nennt: ein Vault ist die Quelle eines Projekts, nicht seine Kopie, und
@@ -33,6 +33,7 @@ const EXAMPLE_VAULT = path.join(os.homedir(), 'Obsidian/QuartzProjekte/Example')
 const LAYOUT_BOX = ['quartz-layout-box', LAYOUT_BOX_SOURCE]
 const MULTILANGUAGE = ['quartz-multilanguage', MULTILANGUAGE_SOURCE]
 const NAVIGATIONS = ['quartz-navigations', NAVIGATIONS_SOURCE]
+const FORMS = ['quartz-forms', FORMS_SOURCE]
 
 /**
  * Eine Variante. Die Felder, in der Reihenfolge, in der das Bauskript sie braucht:
@@ -56,7 +57,8 @@ const NAVIGATIONS = ['quartz-navigations', NAVIGATIONS_SOURCE]
  *                 hing der ganze Vergleich an `builtin`, und `qc-example.qtpl` verglich niemand,
  *                 obwohl es seit `201eb0d` dort liegt.
  *   derive        Wie die Example-Daten zu denen dieser Variante werden. Bekommt
- *                 { patches, boxes, navigations } und gibt dieselbe Form zurück.
+ *                 { patches, boxes, navigations, presets, forms } und gibt dieselbe Form zurück;
+ *                 `forms` ist im Example leer, nur die Basis füllt es.
  *   describe      Der Beschreibungstext des Pakets, gegen die wirklichen Zahlen gebildet.
  *
  * `stylesSource` ist keine Vorliebe, sondern eine Aussage über den Beweiswert. Die Stylesheets
@@ -111,12 +113,14 @@ export const VARIANTS = {
     file: 'qc-basic.qtpl',
     workshop: () => workshopPath('basic-vorlage'),
     control: () => workshopPath('basic-gegenprobe'),
-    // Der einzige Eintrag mit `mode: 'copy'`: Sein Inhalt liegt als zwanzig Notizen im Repo
+    // Der einzige Eintrag mit `mode: 'copy'`: Sein Inhalt liegt als zweiundzwanzig Notizen im Repo
     // (basic-content/README.md sagt, warum) und wird als echtes Verzeichnis in die Werkstatt
     // kopiert statt als Symlink in einen Vault gelegt. Und er reist mit — er ist der Grund, warum
     // der Assistent ein Häkchen „Mit den Beispielseiten" anbietet.
     content: { mode: 'copy', from: 'basic-content', ships: true },
-    plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
+    // Als einzige Variante mit quartz-forms: Ein neues Projekt bekommt ein Kontaktformular, das
+    // nichts sendet, und eine Seite, die es zeigt (basic.mjs, forms()).
+    plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS, FORMS],
     stylesSource: false,
     builtin: true,
     published: true,
@@ -124,12 +128,14 @@ export const VARIANTS = {
       patches: basic.patches(data.patches),
       boxes: basic.boxes(data.boxes),
       navigations: basic.navigations(data.navigations),
-      presets: basic.presets(data.presets)
+      presets: basic.presets(data.presets),
+      forms: basic.forms()
     }),
     describe: ({ frames, pages, styles }) =>
       `Die Grundlage für ein neues Projekt: gemessene Kontraste (WCAG AA in hell und dunkel), ` +
       `${frames} eigene Frames, ${styles} Stylesheets — jede Plugin-Komponente ist gestaltet, auch ` +
-      `die, die hier ausgeschaltet sind. Dazu ${pages} Beispielseiten in zwei Sprachen, die zeigen, ` +
+      `die, die hier ausgeschaltet sind. Dazu ein Kontaktformular, das noch nichts sendet, und ` +
+      `${pages} Beispielseiten in zwei Sprachen, die zeigen, ` +
       'wie die Website aussieht, und die gelöscht werden, sobald eigene Notizen da sind.'
   },
 

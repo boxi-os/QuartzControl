@@ -21,6 +21,7 @@
 // Art Fehler, die man erst am fertigen Paket sieht.
 
 import * as doku from './doku.mjs'
+import { FORMS_SOURCE } from './plugins.mjs'
 
 // Was ausgeschaltet wird, und warum.
 //
@@ -161,4 +162,37 @@ export function presets(base) {
     id: preset.id.replace(/^tpl-minimal-lesbar-/, 'tpl-basis-'),
     name: preset.name.replace(/^Example/, 'Basis')
   }))
+}
+
+/**
+ * Ein Formular, das nichts sendet: quartz-forms mit der eingebauten Vorlage `contact` und
+ * `transport.kind: demo`.
+ *
+ * Ein neues Projekt hat kein Relay, keinen PHP-Webspace und keinen Empfänger. Ein Formular, das
+ * dorthin sendet, scheiterte auf der ersten Website bei jedem Klick. `demo` prüft, was getippt
+ * wurde, und zeigt, wie die Nachricht angekommen wäre. Der Transport steht global und nicht am
+ * Formular: Wer im Reiter „Formulare“ ein zweites anlegt, bekommt ebenfalls eines, das
+ * funktioniert, und wer das Relay einrichtet, stellt an einer Stelle um.
+ *
+ * Eingebunden wird es auf einer Beispielseite je Sprache (`2-schreiben/3-formulare.md`), nicht
+ * über `layoutForm`: Ein Formular unter jeder Seite wäre ein Kasten, den der Nutzer erst
+ * abschalten muss. Die Kennung ist deutsch wie die `translationKey`s der Beispielseiten; Titel und
+ * Felder bringt die Vorlage in beiden Sprachen mit.
+ */
+export function forms() {
+  return [
+    {
+      source: FORMS_SOURCE,
+      name: 'quartz-forms',
+      enabled: true,
+      // `defaultOrder` des Manifests
+      order: 70,
+      options: {
+        transport: { kind: 'demo' },
+        forms: { kontakt: { template: 'contact' } }
+      },
+      // Die Vorgabeposition der Komponente. Sie zeigt nur etwas, wenn `layoutForm` gesetzt ist.
+      layout: { position: 'afterBody', priority: 20 }
+    }
+  ]
 }

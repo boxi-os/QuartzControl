@@ -1,6 +1,6 @@
 # Der Inhalt der Basis-Vorlage
 
-Zwanzig Notizen, zehn je Sprache. Sie reisen im Baustein `content` des Pakets `qc-basic.qtpl` mit
+Zweiundzwanzig Notizen, elf je Sprache. Sie reisen im Baustein `content` des Pakets `qc-basic.qtpl` mit
 und sind das, was jemand sieht, der ein neues Projekt mit der Basis-Vorlage anlegt und „Mit den
 Beispielseiten" eingeschaltet lässt.
 
@@ -8,7 +8,7 @@ Beispielseiten" eingeschaltet lässt.
 
 Der Inhalt der Example-Vorlage liegt in einem Obsidian-Vault (`~/Obsidian/QuartzProjekte/Example`),
 weil er gepflegt wird: 266 Notizen, ein Handbuch in sieben Kapiteln, mit Bildern und einer
-gestaffelten Änderungszeit. Diese zwanzig werden nicht gepflegt, sie werden *gelesen und gelöscht*.
+gestaffelten Änderungszeit. Diese zweiundzwanzig werden nicht gepflegt, sie werden *gelesen und gelöscht*.
 Sie gehören damit zur Vorlage wie ein Stylesheet, nicht zu einer Website — also ins Repo, wo eine
 Änderung an ihnen im Diff steht und mit dem Code reist, der sie einträgt.
 
@@ -37,3 +37,6 @@ sie ganz liest, bevor man sie löscht.
   ihre Nummer im Titel tragen — dort darf `stripNumericPrefix` deshalb nicht gesetzt werden.
 - Drei Ebenen, damit die Navigation etwas zu zeigen hat: Wurzel → Ordner → Unterordner
   (`2-schreiben/2-medien/`). Mit nur zwei Ebenen sieht ein Baum aus wie eine Liste.
+- `2-schreiben/3-formulare.md` und `en/2-writing/3-forms.md` binden das Formular `kontakt` ein,
+  das `basic.mjs` (`forms()`) in die Konfiguration schreibt. Wer die Kennung dort ändert, ändert
+  sie auf beiden Seiten.

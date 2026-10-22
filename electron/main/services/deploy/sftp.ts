@@ -76,13 +76,20 @@ function serverAnswered(err: unknown): boolean {
 // with what was offered: measured on debian-vm with a key registered nowhere and with a password,
 // which that server does not take over SSH at all (review 2026-11-01, nebenbei). The raw line stays
 // underneath, as in rsync.ts.
-function loginRefused(connection: SshConnection): string {
+function loginRefused(connection: SshConnection, error: string): string | null {
+  // sshd's MaxAuthTries (6 by default) ends the login before an agent holding more keys gets to
+  // the registered one; ssh2 says only this line (review 2026-11-02, N5).
+  if (/Too many authentication failures/.test(error)) {
+    return connection.authMethod === 'agent' ? mainT('sshTooManyKeys', { user: connection.username, host: connection.host }) : null
+  }
+  if (!/All configured authentication methods failed/.test(error)) return null
   if (connection.authMethod === 'password') return mainT('sshPasswordRejected', { user: connection.username, host: connection.host })
   // A key stored in QuartzControl has no path, so rsyncKeyRejected's advice about the .pub file
   // does not fit it (review 2026-11-01, nebenbei).
   if (connection.authMethod === 'privateKey' && !connection.keyPath) return mainT('sshStoredKeyRejected', { user: connection.username, host: connection.host })
-  const identity = connection.authMethod === 'agent' ? mainT('sshAgentIdentity') : (connection.keyPath ?? mainT('sshAgentIdentity'))
-  return mainT('rsyncKeyRejected', { user: connection.username, host: connection.host, identity })
+  // Nor does it fit the agent, which has no path either (review 2026-11-02, N5).
+  if (connection.authMethod === 'agent' || !connection.keyPath) return mainT('sshAgentRejected', { user: connection.username, host: connection.host })
+  return mainT('rsyncKeyRejected', { user: connection.username, host: connection.host, identity: connection.keyPath })
 }
 
 export const sftpAdapter: DeployAdapter = {
@@ -241,7 +248,8 @@ export const sftpAdapter: DeployAdapter = {
     } catch (err) {
       // the host-key message explains what actually happened; ssh2's own error does not
       const silent = wentSilent || /Keepalive timeout/.test(String(err)) ? `${mainT('sshSilent', { host: connection.host, seconds: SSH_SILENT_SECONDS })}\n\n` : ''
-      const refused = /All configured authentication methods failed/.test(String(err)) ? `${loginRefused(connection)}\n\n` : ''
+      const refusal = loginRefused(connection, String(err))
+      const refused = refusal ? `${refusal}\n\n` : ''
       return { success: false, output: `${output}\n${hostKeyRejection ?? `${silent}${refused}${String(err)}`}` }
     } finally {
       client.end().catch(() => {})

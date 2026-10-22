@@ -402,6 +402,8 @@ const STRINGS = {
     deployWrongType: 'Falscher Zieltyp für den {{adapter}}-Adapter.',
     deployNothingToDo: 'Nichts zu tun: Das Ziel ist bereits auf dem Stand des Builds.\n',
     deployDeleteRefused: '{{path}} konnte auf dem Server nicht gelöscht werden ({{reason}}). Der nächste Upload versucht es wieder.\n',
+    ftpPwdUnreadable:
+      'Der Server sagt nicht lesbar, in welchem Ordner die Anmeldung beginnt ({{reply}}). Für „{{path}}“ braucht QuartzControl diesen Ordner: Trage einen absoluten Pfad ein, der mit „/“ beginnt.',
     sftpModesProgress: 'Rechte von {{path}}',
     sftpModesSettled: 'Einmalig {{count}} von {{total}} früher hochgeladenen Dateien auf 0644 gesetzt: Bis 1.1.0 lud QuartzControl sie für jeden Account des Servers beschreibbar hoch.\n',
     sftpModesRefused: 'Der Server lehnt chmod ab: {{count}} von {{total}} früher hochgeladenen Dateien bleiben für jeden Account des Servers beschreibbar.\n',
@@ -783,6 +785,8 @@ const STRINGS = {
     deployWrongType: 'Wrong destination type for the {{adapter}} adapter.',
     deployNothingToDo: 'Nothing to do: the target already matches the build.\n',
     deployDeleteRefused: '{{path}} could not be deleted on the server ({{reason}}). The next upload tries again.\n',
+    ftpPwdUnreadable:
+      'The server does not say readably which folder the login starts in ({{reply}}). QuartzControl needs that folder for “{{path}}”: enter an absolute path starting with “/”.',
     sftpModesProgress: 'permissions of {{path}}',
     sftpModesSettled: 'Set {{count}} of {{total}} files uploaded earlier to 0644, once: up to 1.1.0 QuartzControl uploaded them writable by every account on the server.\n',
     sftpModesRefused: 'The server refuses chmod: {{count}} of {{total}} files uploaded earlier stay writable by every account on the server.\n',

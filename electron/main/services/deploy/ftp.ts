@@ -46,7 +46,19 @@ export const ftpAdapter: DeployAdapter = {
       // as 1.1.0 did: a PWD reply without quotes, which basic-ftp cannot parse, failed every run
       // with "Can't parse response to command 'PWD'" (proxy in front of vsftpd, review 2026-11-01,
       // nebenbei).
-      const start = destination.remotePath.startsWith('/') ? '/' : await client.pwd()
+      // A relative path and "~" do need it, so a reply that cannot be read gets a sentence with the
+      // reply in it - it usually names the folder - and the way out, an absolute path (same proxy).
+      let start = '/'
+      if (!destination.remotePath.startsWith('/')) {
+        try {
+          start = await client.pwd()
+        } catch (err) {
+          const unread = err instanceof Error && /^Can't parse response to command 'PWD': /.exec(err.message)
+          if (!(err instanceof FTPError) && !unread) throw err
+          const reply = unread ? err.message.slice(unread[0].length) : (err as Error).message
+          return { success: false, output: mainT('ftpPwdUnreadable', { path: destination.remotePath, reply }) }
+        }
+      }
       const root = fromLoginDir(destination.remotePath, start, connection.username)
       if (root === null) return { success: false, output: mainT('deployTildeOtherAccount', { path: destination.remotePath }) }
       const total = toUpload.length + toDelete.length

@@ -22,6 +22,10 @@ Begründung.
 - **Ein Vorlagen-Paket ist so wenig eine Vertrauensgrenze wie der Renderer.** `readZip` weist
   absolute Namen, `..`, Laufwerksbuchstaben und NUL ab; jeder Name aus einem Baustein geht durch
   `containedPath()` (`templatePackage/shared.ts`), in `plan` wie in `apply`.
+- **Eine Vorlage bringt Gestaltung; was eine Website arbeiten lässt, ersetzt sie nicht.**
+  quartz-forms wird beim Import unter beiden Strategien zusammengeführt (`mergeFormsOptions` in
+  `templatePackage/parts.ts`): Das Projekt behält seine Optionen, die Vorlage bringt nur fehlende
+  Formulare. Ein weiteres Plugin mit Arbeitsstand kommt dorthin, und der Dry-Run sagt es.
 - **Fremdes Markup, das auf die Website geht, wird neu geschrieben, nicht durchgereicht — und
   geprüft wird mit dem Parser, der es dort liest.** `inlineSvg.ts` schreibt aus einer
   Erlaubnisliste. Jeder Leser zählt: Markdown-Struktur als Referenz maskieren, Attributnamen wie

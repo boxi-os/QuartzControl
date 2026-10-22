@@ -550,3 +550,30 @@ besteht die Prüfung des Plugins, ein anderer nicht. Gegenprobe: `scale` aus `CO
 gestrichen und eine Skala einen Wert zu weit: drei Abweichungen. Gemessen an der gebauten App
 gegen eine Wegwerf-Kopie von gui-test; ein Seitenumbruch wurde nur über die Pfeile verschoben,
 nicht per Maus- oder Tastatur-Drag.
+
+**In fünf Browsern, nach einem Seitenwechsel ohne Neuladen (2026-10-22, vor 1.2).** Auf Wunsch des
+Nutzers vor dem Release gemessen, mit quartz-forms `6012230` auf einer Kopie der Website
+`basic-gegenprobe` und acht Formularen (Kontakt, verschlüsselt, wahlweise verschlüsselt,
+Rechenaufgabe 16 Bit, Schritte mit Bedingungen, Turnstile und hCaptcha mit den Testschlüsseln,
+Vorführung) gegen ein Relay unter `php -S` mit dem Mailer `file`; verschlüsselte Nachrichten mit
+`gpg` entschlüsselt. Jedes Formular wurde über einen Link der Website erreicht, also nach der
+SPA-Navigation von Quartz, nicht durch Neuladen. Werkzeuge: Chrome 155 und WebKit 26.5 über
+playwright-core 1.62.1 (WebKit ist die Engine von Safari, nicht Safari), iPhone 15 und Pixel 7
+als Emulation derselben, Firefox 157 über puppeteer-core 24.43.1 und WebDriver BiDi. Firefox
+startet aus der Shell nicht (macOS verweigert ihm den Profilordner), wohl aber über
+`open -n -g -a Firefox --env MOZ_HEADLESS=1 --args --profile … --remote-debugging-port …`; ohne
+JavaScript lief eine zweite Instanz mit `javascript.enabled` false in der `user.js`, weil BiDi das
+Abschalten nicht kann.
+
+- Chrome und WebKit: alle 27 Prüfungen bestanden, Rechenaufgabe 0,15 s bzw. 0,24 s.
+- Firefox: alles bis auf das Häkchen von hCaptcha, das sich im automatisierten Firefox weder per
+  Klick noch per Tastatur setzen ließ (das Widget erscheint); vermutlich erkennt hCaptcha die
+  Automatisierung, nicht verifiziert. Ohne JavaScript: Dankeseite und Mail. Rechenaufgabe 0,23 s.
+- Die zwei Emulationen: alles, auch beide Captchas und ohne JavaScript. Die Zeiten der
+  Rechenaufgabe (0,85 s und 0,35 s) sind die der Mac-CPU und sagen über Telefone nichts.
+- In allen Browsern schreibt hCaptcha „should not render before js api is fully loaded“ in die
+  Konsole; das Widget funktioniert trotzdem.
+
+Nicht gemessen: Safari selbst, echte Telefone, der hCaptcha-Klick in Firefox und der Versand über
+einen echten Mailserver (den testet der Nutzer selbst). Skripte und Website lagen im Scratchpad der
+Sitzung (`bt/run.mjs`).

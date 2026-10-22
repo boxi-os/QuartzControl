@@ -291,3 +291,36 @@ Der Preis, sobald er nicht mehr null ist: Ein Breaking Change an den Optionen od
 drei Plugins verlangt neue Vorlagenpakete am selben Tag (`docs/release.md`, Punkt 2b). Sonst
 schreibt ein altes Paket Optionen und Stylesheets einer Form, die das dann installierte Plugin nicht
 mehr kennt, und zwar still.
+
+## quartz-forms wird beim Import zusammengeführt, nicht ersetzt (2026-10-22, neunundfünfzigstes Review)
+
+Seit `47421728` installiert `qc-basic` quartz-forms mit dem Formular `kontakt` (Versand
+`demo`) und zwei Seiten, die es einbinden. Das Review fand zwei Wege, auf denen ein Import in ein
+Projekt mit eigenen Formularen still schadet, beide gemessen an der gebauten App (Wegwerf-Profil,
+`templatePackage.import`, Kopien eines Projekts mit `transport: relay` samt URL, den Formularen
+`feedback` und `anmeldung`, eigenen Spam-Werten und zwei Seiten, die sie einbinden):
+
+- **„Vorlage gewinnt“ (H1):** Der Eintrag hatte danach genau die Optionen der Vorlage —
+  `{transport: demo, forms: {kontakt}}`, 0 Warnungen, im Dry-Run einer von „45 werden ersetzt“.
+  „Jetzt bauen“ brach an `content/anmeldung.md` ab; ohne die eigenen Seiten baute es grün und jedes
+  Formular sendete nur noch zur Vorführung.
+- **„Projekt gewinnt“ mit Inhalt (M1):** Der Eintrag blieb, die Beispielseiten kamen, und der Bau
+  brach an `content/2-schreiben/3-formulare.md` ab, weil `kontakt` fehlte.
+
+Bisher trug kein Eintrag einer Vorlage etwas, das ein Nutzer nicht in Minuten nachstellt. Bei
+quartz-forms sind die Optionen der Arbeitsstand einer laufenden Website. Deshalb jetzt
+`mergeFormsOptions` in `parts.ts`, unter beiden Strategien gleich: Das Projekt behält alle seine
+Optionen, die Vorlage bringt nur Formulare, die es noch nicht hat, bei gleicher Kennung gewinnt das
+des Projekts. Ein hinzugefügtes Formular nimmt den Versand der Vorlage mit, wenn der des Projekts
+ein anderer ist, damit die Beispielseite auf einer Website mit Relay nicht an den Betreiber mailt,
+was sie als Vorführung ankündigt. Unter „Vorlage gewinnt“ setzt die Vorlage weiterhin die Felder
+des Eintrags selbst (`enabled`, `order`, `layout`). Der Dry-Run sagt, was bleibt und was dazukommt,
+welchen Versand ein neues Formular behält und welche Formulare das Projekt schon hat; der Baustein
+Inhalt nennt Formulare, die seine Seiten einbinden und dem Projekt fehlen, wenn „Plugins“ nicht
+angekreuzt ist. Nachher, dieselben Kopien: Relay-URL, beide Formulare und die Spam-Werte
+geblieben, `kontakt` mit `transport: demo` dazu, gebaut grün unter beiden Strategien,
+`data-transport="relay"` auf den eigenen Seiten, `"demo"` auf den Beispielseiten (`723bc585`,
+`eb0cdad8`).
+
+Mit derselben Runde zeigt die Vorlagen-Seite die Notiz `cliInstall`, die der Plan seit `59bba978`
+anlegt: „Werden aus ihren Git-Repositorys geklont und gebaut: …“ (M3, `604c3984`).

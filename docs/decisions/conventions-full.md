@@ -35,6 +35,19 @@ Projektwurzel.
   nie ungeprüft auf ein Verzeichnis gelegt - `containedPath()` (`templatePackage/shared.ts`)
   entscheidet per `resolve()`+`relative()`, in `plan` wie in `apply`. Messungen in
   [`templates-and-localization.md`](templates-and-localization.md).
+- **Eine Vorlage bringt Gestaltung; was eine Website arbeiten lässt, ersetzt sie nicht.** Bis
+  `qc-basic` quartz-forms mitbrachte (2026-10-22), trug kein Plugin-Eintrag einer Vorlage etwas,
+  das ein Nutzer nicht in Minuten nachstellt: Optionen von Komponenten. Bei quartz-forms sind die
+  Optionen der Arbeitsstand einer laufenden Website, Formulare, Versand mit Relay-URL, Schlüssel,
+  Spam-Werte. „Vorlage gewinnt“ ersetzte sie still durch das Vorführ-Formular der Vorlage, und die
+  Website sendete danach nichts mehr oder baute nicht; „Projekt gewinnt“ ließ das Formular fehlen,
+  das die Beispielseiten einbinden, und der Bau brach ab (neunundfünfzigstes Review, H1 und M1).
+  Deshalb `mergeFormsOptions` (`templatePackage/parts.ts`), unter beiden Strategien gleich: Das
+  Projekt behält alle Optionen, die Vorlage fügt nur Formulare hinzu, die es nicht hat, bei
+  gleicher Kennung gewinnt das des Projekts, und ein hinzugefügtes Formular behält den Versand der
+  Vorlage. Damit weiß die App an einer weiteren Stelle etwas über ein eigenes Plugin, neben
+  `optionFormExtras.ts` und `PluginOptionsForm/editors.tsx`; der Grund steht am Code. Messungen in
+  [`templates-and-localization.md`](templates-and-localization.md).
 - **Fremdes Markup, das auf die Website geht, wird neu geschrieben, nicht durchgereicht — und
   geprüft wird mit dem Parser, der es dort liest.** Eine SVG-Datei, als Code in ein Snippet
   eingefügt, steht auf jeder Seite. Der erste Bereiniger parste sie als XML, strich nach einer

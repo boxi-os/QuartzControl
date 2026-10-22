@@ -3371,3 +3371,31 @@ Nebenbei 1 und 3 bis 12. Nichts gepusht.
 Nachtrag 2026-10-22, nach dem Release von 1.1.1: Der Nutzer hat die drei vorgeschlagenen Stufen
 bestätigt (geleerter Ordner geduldet, keyboard-interactive nicht unterstützt, viele Schlüssel im
 Agent geduldet); die Matrix sagt es in den drei Zeilen.
+
+**Das neunundfünfzigste Review** ([`REVIEW-2026-11-03.md`](REVIEW-2026-11-03.md), Auftrag
+[`REVIEW-2026-11-03-auftrag.md`](REVIEW-2026-11-03-auftrag.md), `feat/1.2` bei `0a14b200`,
+quartz-forms `6012230`, App-Handbuch `d3902f8`: die MIT-Lizenz von quartz-forms und `qc-basic`
+mit Formular): von Claude Fable 5.1 als frisch gestarteter Subagent, ohne den Verlauf der Sitzung.
+1 Hoch, 3 Mittel, 4 Niedrig, 8 nebenbei; Urteil: so nicht mit 1.2, vorher H1, M2 (mit neuem Paket)
+und M1.
+
+Abgearbeitet am 2026-10-22 auf `feat/1.2`, ein Befund je Commit, gemessen an der gebauten App
+(Wegwerf-Profil, die Skripte des Reviews `import.mjs`, `build.mjs`, `templates-ui.mjs` gegen
+Kopien seiner Projekte), vorher und nachher:
+
+- **H1** `723bc585` — quartz-forms wird bei „Vorlage gewinnt“ zusammengeführt statt ersetzt
+  (`mergeFormsOptions`): Relay-URL, eigene Formulare und Spam-Werte bleiben, `kontakt` kommt mit
+  dem Versand der Vorlage dazu; der Dry-Run sagt es. Vorher `{transport: demo, forms: {kontakt}}`
+  und ein abgebrochener Bau, nachher grün.
+- **M1** `eb0cdad8` — dasselbe unter „Projekt gewinnt“; der Baustein Inhalt nennt fehlende
+  Formulare, wenn „Plugins“ nicht angekreuzt ist. Vorher brach der Bau an der Beispielseite ab,
+  nachher grün.
+- **M2** `cc6ed583` — die Beispielseiten nennen erst den Versand, dann den Abschnitt „Relay“;
+  Paket neu exportiert (Phase 11 grün), nur die zwei Seiten geändert.
+- **M3** `604c3984` — die Vorlagen-Seite sagt, welche Plugins aus Git geklont und gebaut werden.
+
+Neue Regel: „Eine Vorlage bringt Gestaltung; was eine Website arbeiten lässt, ersetzt sie nicht.“
+(`docs/conventions.md`, Begründung in `conventions-full.md`, Messung in
+`decisions/templates-and-localization.md`). Die Browser-Messungen vor dem Release stehen in
+`decisions/plugins-and-config.md`. Niedrig 1 bis 4 und die acht Nebenbei-Punkte legt die Sitzung
+dem Nutzer zur Auswahl vor. Nichts gepusht.

@@ -81,13 +81,14 @@ export const folderAdapter: DeployAdapter = {
 
       // A target that has been published to before and whose folder is now gone or holds none of
       // the files it published is not looking at the folder it was published to: a share or disk
-      // that is not connected, or under Linux the bare mount point it leaves behind. rm() with force counted every deletion there as
-      // done and the manifest forgot those files, which then stayed on the drive for good; uploads
-      // failed with a raw EACCES on /Volumes, and into an emptied folder only the changed files went
-      // while the run said success. Measured on a detached disk image (review 2026-11-01, M2; the
-      // Linux mount point only as an emptied folder). Asked when there is nothing to do as well: that
-      // run said "Nichts zu tun" with the image detached, and the page shows "Upload everything
-      // again", the way out named below, for every folder target, not only with changes.
+      // that is not connected, or under Linux the bare mount point it leaves behind. rm() with force
+      // counted every deletion there as done and the manifest forgot those files, which then stayed
+      // on the drive for good; uploads failed with a raw EACCES on /Volumes, and into an emptied
+      // folder only the changed files went while the run said success. Measured on a detached disk
+      // image (review 2026-11-01, M2; the Linux mount point only as an emptied folder). Asked when
+      // there is nothing to do as well: that run said "Nichts zu tun" with the image detached, and
+      // the page shows "Upload everything again", the way out named below, for every folder target,
+      // not only with changes.
       const published = Object.keys(await readManifest(ctx.projectPath, ctx.target.id))
       if (published.length > 0) {
         const state = await folderState(dest, published)

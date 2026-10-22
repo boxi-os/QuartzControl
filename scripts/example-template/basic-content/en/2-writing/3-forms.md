@@ -22,6 +22,6 @@ form's id. Fields, texts and sending are set in QuartzControl under *Plugins →
 
 ## To make it really send
 
-Under “Sending”, all forms are set to “Demo”. If you have web space with PHP, set up the script
-that passes the messages on as mail in the “Relay” section, and switch sending to “Relay”.
-Without PHP, a form service such as Formspree or Web3Forms works too.
+Under “Sending”, all forms are set to “Demo”. If you have web space with PHP, switch sending to
+“Relay”; the “Relay” section then appears, where you set up the script that passes the messages
+on as mail. Without PHP, a form service such as Formspree or Web3Forms works too.

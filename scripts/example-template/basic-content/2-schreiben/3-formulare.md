@@ -22,6 +22,7 @@ Formulare* ein.
 
 ## Damit es wirklich sendet
 
-Unter „Versand“ steht für alle Formulare „Vorführung“. Hast du einen Webspace mit PHP, richtest
-du im Abschnitt „Relay“ das Skript ein, das die Nachrichten als Mail weitergibt, und stellst den
-Versand auf „Relay“ um. Ohne PHP geht es über einen Formulardienst wie Formspree oder Web3Forms.
+Unter „Versand“ steht für alle Formulare „Vorführung“. Hast du einen Webspace mit PHP, stellst
+du den Versand auf „Relay“ um; dann erscheint der Abschnitt „Relay“, in dem du das Skript
+einrichtest, das die Nachrichten als Mail weitergibt. Ohne PHP geht es über einen Formulardienst
+wie Formspree oder Web3Forms.

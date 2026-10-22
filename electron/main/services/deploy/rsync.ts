@@ -129,12 +129,20 @@ function translateSshFailure(output: string, connection: SshConnection): string 
     // was generated but never registered with the provider, or a different key than the one tested
     // by hand. Measured during the alpha test, where an `ssh -i … -o BatchMode=yes` from a terminal
     // succeeded against the very server this reported as refusing the key.
-    const identity =
-      connection.authMethod === 'agent' ? mainT('sshAgentIdentity') : (connection.keyPath ?? mainT('sshAgentIdentity'))
+    // The agent has no path, so the advice about the .pub file does not fit it (review 2026-11-02,
+    // N5); rsync only runs with a key file or the agent.
     // The raw text goes underneath rather than being dropped. It is three lines for this failure,
     // unlike the host-key wall of "@" above, and this is the message that turned out to point the
     // wrong way - a summary that replaces the evidence cannot be checked.
-    return `${mainT('rsyncKeyRejected', { user: connection.username, host: connection.host, identity })}\n\n${output.trim()}`
+    const refused =
+      connection.authMethod === 'agent' || !connection.keyPath
+        ? mainT('sshAgentRejected', { user: connection.username, host: connection.host })
+        : mainT('rsyncKeyRejected', { user: connection.username, host: connection.host, identity: connection.keyPath })
+    return `${refused}\n\n${output.trim()}`
+  }
+  // sshd's MaxAuthTries ends the login before an agent holding more keys gets to the registered one.
+  if (output.includes('Too many authentication failures') && connection.authMethod === 'agent') {
+    return `${mainT('sshTooManyKeys', { user: connection.username, host: connection.host })}\n\n${output.trim()}`
   }
   // ssh's own line for ServerAliveCountMax ("Timeout, server … not responding."), raw underneath.
   if (/Timeout, server .* not responding/.test(output)) {

@@ -448,8 +448,8 @@ const STRINGS = {
     folderIsProject: 'Der Projektordner selbst kann kein Veröffentlichungsziel sein.',
     folderMissing:
       'Den Zielordner „{{dest}}“ gibt es nicht, obwohl dieses Ziel schon veröffentlicht wurde. Ist das Laufwerk verbunden? Soll er neu angelegt werden, zuerst „Alles neu hochladen“ wählen.',
-    folderEmpty:
-      'Der Zielordner „{{dest}}“ ist leer, obwohl dieses Ziel schon veröffentlicht wurde. Ist das Laufwerk verbunden? Soll er neu befüllt werden, zuerst „Alles neu hochladen“ wählen.',
+    folderNotPublished:
+      'Im Zielordner „{{dest}}“ liegt keine der Dateien, die dieses Ziel dort veröffentlicht hat. Ist das Laufwerk verbunden? Soll er neu befüllt werden, zuerst „Alles neu hochladen“ wählen.',
 
     // Publishing - git branch
     branchNoOrigin:
@@ -496,11 +496,14 @@ const STRINGS = {
       'Die Projekt-Historie war unvollständig (flacher Klon) und konnte so nicht gepusht werden. Sie wurde vor dem Push vervollständigt; das passiert nur einmal.',
     syncHistoryIncomplete:
       'Die Projekt-Historie ist unvollständig (flacher Klon) und ließ sich nicht vervollständigen. Ein Push wird daran voraussichtlich scheitern:',
-    sshAgentIdentity: 'der SSH-Agent',
     sshStoredKeyRejected:
       'Der Server hat die Anmeldung als {{user}}@{{host}} mit dem in QuartzControl hinterlegten Schlüssel abgelehnt. Prüfe, ob genau dieser Schlüssel beim Anbieter hinterlegt ist.',
     sshPasswordRejected:
-      'Der Server hat die Anmeldung als {{user}}@{{host}} mit Passwort abgelehnt. Prüfe das Passwort; manche Server lassen über SSH nur Schlüssel zu.',
+      'Der Server hat die Anmeldung als {{user}}@{{host}} mit Passwort abgelehnt. Prüfe das Passwort; stimmt es, nimmt der Server Passwörter nicht in der Form an, in der QuartzControl sie schickt, und es bleibt die Anmeldung mit Schlüssel.',
+    sshAgentRejected:
+      'Der Server hat die Anmeldung als {{user}}@{{host}} mit den Schlüsseln aus dem SSH-Agent abgelehnt. Prüfe, ob einer davon beim Anbieter hinterlegt ist; welche der Agent hält, zeigt „ssh-add -l“.',
+    sshTooManyKeys:
+      'Der Server hat die Anmeldung als {{user}}@{{host}} abgebrochen, weil der SSH-Agent mehr Schlüssel angeboten hat, als der Server zulässt. Wähle für diesen Zugang die Schlüsseldatei statt des SSH-Agent.',
     sshKeyFileUnreadable:
       'Die Schlüsseldatei „{{path}}“ lässt sich nicht lesen. Prüfe den Pfad und die Rechte (chmod 600).',
 
@@ -863,8 +866,8 @@ const STRINGS = {
     folderIsProject: 'The project folder itself cannot be a publish target.',
     folderMissing:
       'The target folder “{{dest}}” does not exist, although this target has been published before. Is the drive connected? To create it again, choose “Upload everything again” first.',
-    folderEmpty:
-      'The target folder “{{dest}}” is empty, although this target has been published before. Is the drive connected? To fill it again, choose “Upload everything again” first.',
+    folderNotPublished:
+      'The target folder “{{dest}}” holds none of the files this target published there. Is the drive connected? To fill it again, choose “Upload everything again” first.',
 
     branchNoOrigin:
       'No “origin” remote configured. Git sync has to connect the project to a repository first (git remote add origin <url>).',
@@ -907,11 +910,14 @@ const STRINGS = {
       'The project history was incomplete (a shallow clone) and could not have been pushed. It was completed before the push; this happens only once.',
     syncHistoryIncomplete:
       'The project history is incomplete (a shallow clone) and could not be completed. A push will most likely fail because of it:',
-    sshAgentIdentity: 'the SSH agent',
     sshStoredKeyRejected:
       'The server refused the login as {{user}}@{{host}} with the key stored in QuartzControl. Check that this exact key is registered with the provider.',
     sshPasswordRejected:
-      'The server refused the login as {{user}}@{{host}} with a password. Check the password; some servers only accept keys over SSH.',
+      'The server refused the login as {{user}}@{{host}} with a password. Check the password; if it is right, the server does not take passwords the way QuartzControl sends them, and logging in with a key remains.',
+    sshAgentRejected:
+      'The server refused the login as {{user}}@{{host}} with the keys in the SSH agent. Check that one of them is registered with the provider; “ssh-add -l” lists the ones the agent holds.',
+    sshTooManyKeys:
+      'The server ended the login as {{user}}@{{host}} because the SSH agent offered more keys than the server allows. Choose the key file instead of the SSH agent for this connection.',
     sshKeyFileUnreadable:
       'The key file “{{path}}” cannot be read. Check the path and its permissions (chmod 600).',
 

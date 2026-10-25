@@ -281,11 +281,20 @@ async function buildArgs(
   // Except for an upload that asks for its own modes (the relay): without -p a new file or folder
   // still gets the local mode, so the relay's folder arrived as 0700 from its mkdtemp() folder and
   // Apache answered 403, while one that is already there keeps its mode whatever it should be.
-  if (ctx.keepLocalModes) args.push('-p')
+  // Not when removing: with nothing sent, -p would only set the relay's folder to the mode of the
+  // empty local one.
+  if (ctx.keepLocalModes && !ctx.onlyPaths) args.push('-p')
   if (deleteRemoved) args.push('--delete')
   if (dryRun) args.push('--dry-run')
 
-  if (excludePaths.length > 0) {
+  if (ctx.onlyPaths) {
+    // Removing the relay: --delete may take these and nothing else. An excluded path is one
+    // --delete leaves alone, so everything that is not named is excluded ("- *", which also keeps
+    // rsync out of counters/).
+    const filterFile = join(env.dir, 'only')
+    await writeFile(filterFile, [...ctx.onlyPaths.map((p) => `+ /${p.replace(/^\/+/, '')}`), '- *'].join('\n') + '\n', 'utf-8')
+    args.push(`--exclude-from=${filterFile}`)
+  } else if (excludePaths.length > 0) {
     // A file rather than N --exclude arguments: the list is per-file and can be long, and a
     // leading slash anchors each pattern to the transfer root so "index.html" cannot also match
     // "unter/index.html".
@@ -333,8 +342,12 @@ export const rsyncAdapter: DeployAdapter = {
           const listed = await runRsync(['--list-only', '--no-motd', '-e', env.rshCommand, remoteSpec(connection, folder).replace(/\/+$/, '')])
           if (/^l/m.test(listed.output)) return { success: false, output: mainT('relayDirSymlink', { path: folder }) }
           if (listed.code === 0) continue
-          // Only "not there" ends the question, as over SFTP.
-          if (/link_stat ".*" failed: No such file or directory/.test(listed.output)) break
+          // Only "not there" ends the question, as over SFTP. To remove, it is the answer: rsync
+          // would make the missing folder to delete nothing in it.
+          if (/link_stat ".*" failed: No such file or directory/.test(listed.output)) {
+            if (ctx.onlyPaths) return { success: true, output: mainT('relayRemoveGone', { path: folder }) }
+            break
+          }
           const reason = listed.output.trim().split('\n')[0] || mainT('rsyncExitCode', { code: listed.code ?? '?' })
           // An account that rrsync -wo limits to writing cannot be asked at all, and the rights of the
           // folder change nothing there: measured on debian-vm, the site went up with 480 files and the
@@ -373,7 +386,7 @@ export const rsyncAdapter: DeployAdapter = {
       // Only for the relay, whose folder below the target is QuartzControl's to make, as SFTP and FTP
       // do. For a site the missing folder was the one sign of a mistyped path: a target "…/tpyo/
       // htdocs" got 475 files in a new tree and success, where 1.1.0 refused (review 2026-10-30, N4).
-      if (ctx.keepLocalModes && result.code !== 0 && MISSING_PARENT.test(result.output)) {
+      if (ctx.keepLocalModes && !ctx.onlyPaths && result.code !== 0 && MISSING_PARENT.test(result.output)) {
         firstFailure = failureMessage(result.output, connection, result.code)
         result = await send(true)
       }
@@ -395,7 +408,7 @@ export const rsyncAdapter: DeployAdapter = {
         // (debian-vm, rrsync 3.5.0, review 2026-10-30, N4).
         output:
           result.code === 0
-            ? summary ? `${summary}\n` : mainT('deployNothingToDo')
+            ? summary ? `${summary}\n` : ctx.onlyPaths ? mainT('relayRemoveGone', { path: destination.remotePath }) : mainT('deployNothingToDo')
             : [firstFailure, failureMessage(result.output, connection, result.code)].filter(Boolean).join('\n')
       }
     } finally {

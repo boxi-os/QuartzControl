@@ -407,7 +407,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
       case 'relay': {
         const r = relayQuery.data
         if (!r) return relayQuery.loading ? t('formsEditor.relay.loading') : ''
-        if (!r.lastUpload) return t('formsEditor.relay.statusNever')
+        if (!r.lastUpload) return r.removedAt ? t('formsEditor.relay.statusRemoved', { date: new Date(r.removedAt).toLocaleDateString(i18n.resolvedLanguage) }) : t('formsEditor.relay.statusNever')
         if (r.hashProblem !== undefined) return t('formsEditor.relay.statusBroken')
         const date = new Date(r.lastUpload.at).toLocaleDateString(i18n.resolvedLanguage)
         return relayOutdated(r) ? t('formsEditor.relay.statusChanged', { date }) : t('formsEditor.relay.statusCurrent', { date })

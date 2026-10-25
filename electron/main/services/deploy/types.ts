@@ -20,6 +20,12 @@ export interface DeployContext {
    * of them may be a symlink on the server (sftp, ftp, rsync).
    */
   relayFolders?: string[]
+  /**
+   * Removing the relay (formsService.relayRemove): only these paths below the target may go, and
+   * nothing is sent. sftp, ftp and folder get them as their manifest; rsync, which has none, as a
+   * filter, so its --delete leaves the rest of the folder (counters/) alone.
+   */
+  onlyPaths?: string[]
   emitProgress(processed: number, total: number, currentFile?: string): void
 }
 

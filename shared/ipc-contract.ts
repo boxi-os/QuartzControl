@@ -677,6 +677,8 @@ export interface RelayConflict {
 export interface RelayState {
   settings: RelaySettings
   lastUpload: RelayLastUpload | null
+  /** When the relay was last taken off the server (forms.relayRemove), while none was uploaded since. */
+  removedAt?: string
   /** What is stored, never a value: which recipients have an address, which captcha secrets exist. */
   secrets: { stored: boolean; recipients: string[]; captchaSecret: boolean; captchaSecrets: string[]; storageAvailable: boolean }
   /** `rsync`: an SFTP target that transfers with rsync, which cannot carry some folder names. */
@@ -1724,6 +1726,7 @@ export const IPC = {
   formsRelaySaveSecrets: 'forms:relaySaveSecrets',
   formsRelayUpload: 'forms:relayUpload',
   formsRelayExport: 'forms:relayExport',
+  formsRelayRemove: 'forms:relayRemove',
   formsRelayExcludeFromSite: 'forms:relayExcludeFromSite',
   pluginThemeStyleSettingsInfo: 'plugin:themeStyleSettingsInfo',
   themeMarketplaceList: 'themeMarketplace:list',
@@ -2439,6 +2442,9 @@ export interface QuartzGuiApi {
     /** `url`: the send.php address of `form`, a relay form, asked once the upload went through. */
     relayUpload(args: { projectId: string; projectPath: string; source: PluginSource; url?: string; form?: string }): Promise<RelayUploadResult>
     relayExport(args: { projectId: string; projectPath: string; source: PluginSource; dir: string }): Promise<RelayUploadResult>
+    /** Deletes send.php, config.php and config.generated.php where the relay was last uploaded, and
+     *  forgets that upload; counters/ stays. The stored addresses and secrets stay too. */
+    relayRemove(args: { projectPath: string }): Promise<DeployResult>
     relayExcludeFromSite(args: { projectPath: string; targetId: string; path: string }): Promise<void>
   }
   content: {

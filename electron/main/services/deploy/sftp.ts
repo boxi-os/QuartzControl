@@ -225,6 +225,8 @@ export const sftpAdapter: DeployAdapter = {
 
       // What was not deleted stays in the manifest, so the next upload offers it again.
       const kept: string[] = []
+      // Removing the relay: a file that was not there is not said deleted (relayRemove).
+      let missing = 0
       for (const relPath of toDelete) {
         try {
           await client.delete(posix.join(root, relPath))
@@ -236,8 +238,10 @@ export const sftpAdapter: DeployAdapter = {
           // them (review 2026-10-31, M1). A dropped connection fails the run, and the manifest
           // stays as it was.
           if (!serverAnswered(err)) throw err
-          if ((err as { code?: unknown }).code === 2) output += `✗ ${relPath}\n`
-          else {
+          if ((err as { code?: unknown }).code === 2) {
+            if (ctx.onlyPaths) missing++
+            else output += `✗ ${relPath}\n`
+          } else {
             kept.push(relPath)
             output += mainT('deployDeleteRefused', { path: relPath, reason: (err as Error).message })
           }
@@ -245,6 +249,7 @@ export const sftpAdapter: DeployAdapter = {
         processed++
         ctx.emitProgress(processed, total, relPath)
       }
+      if (ctx.onlyPaths && missing === toDelete.length) output += mainT('relayRemoveGone', { path: root })
 
       // Up to 1.1.0 every file went up as 0666 (above), and the manifest never sends an unchanged
       // file again: after the fix, 474 of a site's 475 files stayed 0666 on debian-vm, and nothing

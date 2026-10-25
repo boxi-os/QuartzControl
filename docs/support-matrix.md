@@ -72,6 +72,7 @@ dahin gilt der Fall als geduldet.
 | SMTP | nicht unterstützt | nicht angeboten |
 | ein CDN vor dem Server | geduldet | an der Attrappe gemessen |
 | eine Weiterleitung an der Adresse von send.php | geduldet | an Attrappe und `debian-vm` gemessen; die Abfrage deutet fremde Antworten und kann irren |
+| Relay vom Server entfernen (Ordner, SFTP, rsync, FTP) | unterstützt | Mailtest-Befund 7 (2026-10-25): löscht nur send.php, config.php und config.generated.php am Ort des letzten Hochladens, `counters/` bleibt; Ordner lokal und SFTP/rsync auf `debian-vm` (Account `boxi`, Home statt Webroot) gemessen, auch mit fehlenden Dateien, fehlendem Ordner und geändertem Unterordner/Ziel; **FTP nicht gemessen** (kein Zugang ohne Kontoänderung auf der VM) |
 
 ### Behoben aus den Messungen vom 2026-10-21
 

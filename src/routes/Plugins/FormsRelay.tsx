@@ -54,7 +54,7 @@ export function RelaySection({
 }): JSX.Element {
   const { t, i18n } = useTranslation()
   const project = useProject()
-  const [busy, setBusy] = useState<null | 'upload' | 'export'>(null)
+  const [busy, setBusy] = useState<null | 'upload' | 'export' | 'remove'>(null)
   const [result, setResult] = useState<{ success: boolean; output: string; check?: RelayCheck; countersOpen?: string; configReadable?: boolean; said?: string } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [subdirInvalid, setSubdirInvalid] = useState(false)
@@ -109,7 +109,7 @@ export function RelaySection({
   const suggestedUrl = siteBase ? `${siteBase}/${s.subdir.replace(/^\/+|\/+$/g, '')}/send.php` : null
   const date = state.lastUpload ? new Date(state.lastUpload.at).toLocaleString(i18n.resolvedLanguage) : ''
   const status = !state.lastUpload
-    ? { tone: 'slate' as const, text: t('formsEditor.relay.statusNever') }
+    ? { tone: 'slate' as const, text: state.removedAt ? t('formsEditor.relay.statusRemoved', { date: new Date(state.removedAt).toLocaleString(i18n.resolvedLanguage) }) : t('formsEditor.relay.statusNever') }
     : state.hashProblem !== undefined
       ? { tone: 'red' as const, text: t('formsEditor.relay.statusBroken') }
       : state.moved
@@ -146,6 +146,26 @@ export function RelaySection({
       onChanged()
     } catch (err) {
       setResult({ success: false, output: formatIpcError(err), said: failedAnnounce(formatIpcError(err)) })
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  // Where the last upload went, as the question names it: the target and the folder below it.
+  const uploadedTo = state.lastUpload ? { target: state.targets.find((x) => x.id === state.lastUpload?.targetId)?.name ?? state.lastUpload.targetId, subdir: state.lastUpload.location.split('|').at(-1) ?? '' } : null
+
+  // A relay could be uploaded and never taken down again (mail test 2026-10-25, finding 7).
+  async function remove(): Promise<void> {
+    if (!uploadedTo) return
+    if (!(await confirmDialog({ text: t('formsEditor.relay.removeConfirm', uploadedTo), confirmLabel: t('formsEditor.relay.removeSubmit'), danger: true }))) return
+    setBusy('remove')
+    setResult(null)
+    try {
+      const r = await window.quartzGui.forms.relayRemove({ projectPath: project.path })
+      setResult({ ...r, said: r.success ? t('formsEditor.relay.removedAnnounce') : `${t('formsEditor.relay.removeFailedAnnounce')} ${r.output.split('\n')[0] ?? ''}`.trim() })
+      onChanged()
+    } catch (err) {
+      setResult({ success: false, output: formatIpcError(err), said: t('formsEditor.relay.removeFailedAnnounce') })
     } finally {
       setBusy(null)
     }
@@ -434,6 +454,12 @@ export function RelaySection({
             <FolderDown size={14} aria-hidden />
             {t('formsEditor.relay.export')}
           </Button>
+          {uploadedTo && (
+            <Button variant="ghost" onClick={() => void remove()} disabled={busy !== null}>
+              <Trash2 size={14} aria-hidden />
+              {busy === 'remove' ? t('formsEditor.relay.removing') : t('formsEditor.relay.remove')}
+            </Button>
+          )}
           {/* Where the next step is taken, not only at the top of the section (finding 4). */}
           {status.tone === 'amber' && <Badge tone="amber">{status.text}</Badge>}
         </div>

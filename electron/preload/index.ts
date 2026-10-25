@@ -311,6 +311,7 @@ const api: QuartzGuiApi = {
       ipcRenderer.invoke(IPC.formsRelaySaveSecrets, args),
     relayUpload: (args: { projectId: string; projectPath: string; source: PluginSource; url?: string; form?: string }) => ipcRenderer.invoke(IPC.formsRelayUpload, args),
     relayExport: (args: { projectId: string; projectPath: string; source: PluginSource; dir: string }) => ipcRenderer.invoke(IPC.formsRelayExport, args),
+    relayRemove: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.formsRelayRemove, args),
     relayExcludeFromSite: (args: { projectPath: string; targetId: string; path: string }) => ipcRenderer.invoke(IPC.formsRelayExcludeFromSite, args)
   },
   content: {

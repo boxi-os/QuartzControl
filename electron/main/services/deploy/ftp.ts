@@ -180,6 +180,8 @@ export const ftpAdapter: DeployAdapter = {
 
       // What was not deleted stays in the manifest, so the next upload offers it again (sftp.ts, run).
       const kept: string[] = []
+      // Removing the relay: a file that was not there is not said deleted (relayRemove).
+      let missing = 0
       for (const relPath of toDelete) {
         const remotePath = posix.join(root, relPath)
         try {
@@ -202,7 +204,8 @@ export const ftpAdapter: DeployAdapter = {
                 return sizeErr.code === 550
               }
             ))
-          if (gone) output += `✗ ${relPath}\n`
+          if (gone && ctx.onlyPaths) missing++
+          else if (gone) output += `✗ ${relPath}\n`
           else {
             kept.push(relPath)
             // The server's own sentence, which vsftpd ends with a period: "(550 Delete operation
@@ -213,6 +216,7 @@ export const ftpAdapter: DeployAdapter = {
         processed++
         ctx.emitProgress(processed, total, relPath)
       }
+      if (ctx.onlyPaths && missing === toDelete.length) output += mainT('relayRemoveGone', { path: root })
 
       await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, [...manifestExcludes, ...kept])
       return { success: true, output }

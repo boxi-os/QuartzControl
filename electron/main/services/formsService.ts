@@ -5,7 +5,7 @@ import { net } from 'electron'
 import { isIPv4, isIPv6 } from 'net'
 import { tmpdir } from 'os'
 import { join, posix, relative, sep } from 'path'
-import type { FormsCheckResult, FormsKeyImport, FormsTextsResult, FormsKeyReport, PluginSource, PublishTarget, RelayCheck, RelayConflict, RelayLastUpload, RelaySettings, RelayState, RelayUploadResult } from '@shared/ipc-contract'
+import type { DeployResult, FormsCheckResult, FormsKeyImport, FormsTextsResult, FormsKeyReport, PluginSource, PublishTarget, RelayCheck, RelayConflict, RelayLastUpload, RelaySettings, RelayState, RelayUploadResult } from '@shared/ipc-contract'
 import * as connectionsService from './connectionsService'
 import { runDirectoryUpload } from './deploy'
 import { readJsonFile, writeJsonFile } from './jsonStore'
@@ -197,6 +197,7 @@ const DEFAULT_RELAY: RelaySettings = {
 interface RelayFile {
   settings?: Partial<RelaySettings>
   lastUpload?: RelayLastUpload
+  removedAt?: string
 }
 
 async function readRelayFile(projectPath: string): Promise<RelayFile> {
@@ -318,6 +319,7 @@ export async function relayState(projectId: string, projectPath: string, source:
   return {
     settings,
     lastUpload: file.lastUpload ?? null,
+    ...(!file.lastUpload && file.removedAt ? { removedAt: file.removedAt } : {}),
     secrets: { stored: info.stored, recipients: info.recipients, captchaSecret: info.captchaSecret, captchaSecrets: info.captchaSecrets, storageAvailable: info.storage.available },
     targets,
     conflict,
@@ -718,7 +720,7 @@ export async function relayUpload(projectId: string, projectPath: string, source
     const result = await runDirectoryUpload(projectPath, target.id, dir, settings.subdir, `relay-${target.id}`)
     if (result.success && typeof generated.json.hash === 'string') {
       const operator = operatorStamp(settings, (await connectionsService.getRelaySecretInfo(projectId)).fingerprint)
-      await writeRelayFile(projectPath, { ...file, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configReadable: settings.configReadable, operator } })
+      await writeRelayFile(projectPath, { ...file, removedAt: undefined, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configReadable: settings.configReadable, operator } })
     }
     const warnings = strings(generated.json.warnings)
     const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)
@@ -754,6 +756,37 @@ export async function relayExport(projectId: string, projectPath: string, source
   if (!generated.ok) return { success: false, output: generated.reason }
   const written = strings(generated.json.written).map((f) => `→ ${f}`)
   return { success: true, output: [...strings(generated.json.warnings), ...written, usable ? '' : mainT('relayExportPlaceholders')].filter(Boolean).join('\n') }
+}
+
+/** The relay's files that carry its code and the owner's values; counters/ is the server's. */
+const RELAY_REMOVED = ['send.php', 'config.php', 'config.generated.php']
+
+/**
+ * Takes the relay down where it was last uploaded: send.php, config.php (secret, addresses) and
+ * config.generated.php, through the target's own adapter, which deletes these and nothing else.
+ * counters/ stays with its .htaccess, which keeps the counts the server wrote unreadable; under
+ * mod_php they are the web server's files, which the account often cannot delete at all. A relay
+ * could be uploaded and never removed (mail test 2026-10-25, finding 7). Where it was is the last
+ * upload's location, not the settings: a target or folder changed since then is refused, as
+ * QuartzControl no longer has the way there. The stored addresses and secrets stay.
+ */
+export async function relayRemove(projectPath: string): Promise<DeployResult> {
+  const file = await readRelayFile(projectPath)
+  const last = file.lastUpload
+  if (!last) return { success: false, output: mainT('relayRemoveNotUploaded') }
+  const target = await getTarget(projectPath, last.targetId)
+  if (!target) return { success: false, output: mainT('deployTargetMissing', { id: last.targetId }) }
+  const subdir = last.location.split('|').at(-1) ?? ''
+  if (locationOf(target, subdir) !== last.location) return { success: false, output: mainT('relayRemoveMoved', { target: target.name }) }
+  return withTempDir(async (dir) => {
+    const result = await runDirectoryUpload(projectPath, target.id, dir, subdir, `relay-${target.id}`, RELAY_REMOVED)
+    if (!result.success) return result
+    // "never uploaded" would not be true now.
+    const { lastUpload: _removed, ...rest } = file
+    await writeRelayFile(projectPath, { ...rest, removedAt: new Date().toISOString() })
+    // Said only where a file went: with none left there, counters/ may be gone as well.
+    return /^✗ /m.test(result.output) ? { ...result, output: `${result.output.trimEnd()}\n${mainT('relayRemovedRest', { subdir })}` } : result
+  })
 }
 
 /** Adds the relay's directory to a site target's excludes, so its rsync --delete leaves it alone. */

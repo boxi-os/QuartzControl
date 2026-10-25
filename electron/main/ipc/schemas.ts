@@ -689,4 +689,5 @@ export const formsRelaySaveSecretsArgs = z.looseObject({
 })
 export const formsRelayUploadArgs = formsRelayStateArgs.extend({ url: z.string().max(2048).optional(), form: z.string().max(200).optional() })
 export const formsRelayExportArgs = formsRelayStateArgs.extend({ dir: absolutePath })
+export const formsRelayRemoveArgs = z.looseObject({ projectPath: absolutePath })
 export const formsRelayExcludeArgs = z.looseObject({ projectPath: absolutePath, targetId: z.string().min(1).max(200), path: z.string().min(1).max(512) })

@@ -133,13 +133,17 @@ export async function runDeploy(
  * - no `excludes` of the site's;
  * - sftp, ftp and folder only: a webhook or a branch has no path to put a directory below;
  * - every file on every run, with its local mode (`keepLocalModes`), see below.
+ *
+ * With `remove`, the same way takes the relay down instead (formsService.relayRemove): `localDir`
+ * is empty, and only the paths named there are deleted, never what the server wrote beside them.
  */
 export async function runDirectoryUpload(
   projectPath: string,
   targetId: string,
   localDir: string,
   subdir: string,
-  manifestKey: string
+  manifestKey: string,
+  remove?: string[]
 ): Promise<DeployResult> {
   const target = await publishTargetsService.getTarget(projectPath, targetId)
   if (!target) return { success: false, output: mainT('deployTargetMissing', { id: targetId }) }
@@ -154,8 +158,9 @@ export async function runDirectoryUpload(
   // with "kontakt!" over rsync (review 2026-10-30, N5). The target's own path it says itself.
   const unsafe = d.type === 'sftp' && d.transfer === 'rsync' && !rsyncUnsafeChar(d.remotePath) ? rsyncUnsafeChar(subdir) : null
   if (unsafe) return { success: false, output: /\s/.test(unsafe) ? mainT('relaySubdirRsyncSpace', { subdir }) : mainT('relaySubdirRsyncChar', { subdir, char: unsafe }) }
+  const deleteRemoved = remove !== undefined
   const destination: PublishTarget['destination'] =
-    d.type === 'folder' ? { ...d, path: join(d.path, subdir), deleteRemoved: false } : { ...d, remotePath: posix.join(d.remotePath, subdir), deleteRemoved: false }
+    d.type === 'folder' ? { ...d, path: join(d.path, subdir), deleteRemoved } : { ...d, remotePath: posix.join(d.remotePath, subdir), deleteRemoved }
   // What QuartzControl uploads gets its mode from QuartzControl, on every run and every way. A mode
   // is no change a manifest sees, so the manifest is forgotten first: rsync's -p set the modes of
   // all files on every run anyway, SFTP and FTP only with "Alles neu hochladen". Measured on
@@ -164,9 +169,12 @@ export async function runDirectoryUpload(
   await forgetManifest(projectPath, manifestKey)
   // A manifest of its own from the first run: an unclaimed legacy deploy-manifest.json is adopted
   // by whichever id asks first (manifest.ts), and that must be the site's target, not this one.
+  // To remove, it names exactly the paths to delete: sftp, ftp and folder delete what their
+  // manifest has and the (empty) local folder does not, and nothing else.
   const own = quartzGuiDir(projectPath)
   const manifestFile = join(own, `deploy-manifest-${manifestKey}.json`)
-  if (!existsSync(manifestFile)) await writeFile(manifestFile, '{}\n', 'utf-8')
+  if (remove) await writeFile(manifestFile, JSON.stringify(Object.fromEntries(remove.map((path) => [path, 'remove'])), null, 2), 'utf-8')
+  else if (!existsSync(manifestFile)) await writeFile(manifestFile, '{}\n', 'utf-8')
   try {
     const secret = target.connectionId ? await connectionsService.getSecret(target.connectionId) : null
     const ctx: DeployContext = {
@@ -174,7 +182,10 @@ export async function runDirectoryUpload(
       target: { ...target, id: manifestKey, destination, excludes: [] },
       buildDir: localDir,
       secret,
+      // Also to remove: it asks each folder on the way whether it is a symlink, and it keeps the
+      // one-time 0666 pass of a site's target (sftp.ts) off the relay's files.
       keepLocalModes: true,
+      ...(remove ? { onlyPaths: remove } : {}),
       // Every one, not only the last: a link "lnk -> /srv/qc/www" in the target and the subdir
       // "lnk/review56-other" put the relay into another site's folder and set it from 2750 to 755,
       // over SFTP, FTP and rsync alike (debian-vm, review 2026-10-31, N3).

@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto'
+import { existsSync } from 'fs'
 import { chmod, cp, lstat, mkdir, readdir, rename, rm, stat } from 'fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'path'
 import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
@@ -93,8 +94,18 @@ export const folderAdapter: DeployAdapter = {
       const published = Object.keys(await readManifest(ctx.projectPath, ctx.target.id))
       if (published.length > 0) {
         const state = await folderState(dest, published)
+        // Removing the relay: none of its files there is what was asked for, and so is a missing
+        // folder of its own while the one above it is there; without that one, it may be a disk
+        // that is not connected.
+        if (state === 'missing' && ctx.onlyPaths) {
+          if (existsSync(dirname(dest))) return { success: true, output: mainT('relayRemoveGone', { path: dest }) }
+          return { success: false, output: mainT('relayRemoveFolderMissing', { dest }) }
+        }
         if (state === 'missing') return { success: false, output: mainT('folderMissing', { dest }) }
-        if (state === 'unpublished') return { success: false, output: mainT('folderNotPublished', { dest }) }
+        if (state === 'unpublished') {
+          if (ctx.onlyPaths) return { success: true, output: mainT('relayRemoveGone', { path: dest }) }
+          return { success: false, output: mainT('folderNotPublished', { dest }) }
+        }
       }
 
       for (const relPath of toUpload) {

@@ -191,7 +191,8 @@ const DEFAULT_RELAY: RelaySettings = {
   mailer: 'mail',
   sendmailPath: '/usr/sbin/sendmail -t -i',
   counterDir: '',
-  configReadable: false
+  configReadable: false,
+  envelopeSender: true
 }
 
 interface RelayFile {
@@ -342,6 +343,9 @@ function operatorOf(settings: RelaySettings, secrets: connectionsService.RelaySe
     ...(secrets.captchaSecret ? { captchaSecret: secrets.captchaSecret } : {}),
     ...(secrets.captchaSecrets ? { captchaSecrets: secrets.captchaSecrets } : {}),
     mailer: settings.mailer === 'sendmail' ? { sendmail: settings.sendmailPath } : 'mail',
+    // Only when off: a key with the default would change operatorStamp() of every relay uploaded
+    // before, and say "geändert" where nothing is.
+    ...(settings.envelopeSender ? {} : { envelopeSender: false }),
     recipients: secrets.recipients,
     ...(settings.counterDir.trim() ? { counterDir: settings.counterDir.trim() } : {})
   }

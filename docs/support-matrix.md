@@ -68,7 +68,7 @@ dahin gilt der Fall als geduldet.
 | OPcache mit Standardwerten | unterstützt | gemessen |
 | OPcache mit `validate_timestamps=0` oder `restrict_api` | geduldet | gemessen und behandelt (quartz-forms 0.5.12 bis 0.5.15, QuartzControl N4 des 56.); mit `restrict_api` und `revalidate_freq` über 3 s kommt die zweite Frage zu früh, und die Abfrage sagt „ein anderes Relay“ (57. Review, gelesen) |
 | PHP mit `disable_functions=mail` oder `open_basedir` | geduldet | nicht gemessen |
-| Versand über `mail()` oder ein sendmail des Hosts | unterstützt | gemessen (Postfix lokal auf `debian-vm`) |
+| Versand über `mail()` oder ein sendmail des Hosts | unterstützt | gemessen (Postfix lokal auf `debian-vm`); der Absender geht seit quartz-forms 0.5.16 als `-f` mit (bei all-inkl gemessen), ein Hoster, der das ablehnt, bekommt den Schalter „Absender als Umschlag-Absender (-f)“ (60. Review, M3; nur an einer sendmail-Attrappe gemessen) |
 | SMTP | nicht unterstützt | nicht angeboten |
 | ein CDN vor dem Server | geduldet | an der Attrappe gemessen |
 | eine Weiterleitung an der Adresse von send.php | geduldet | an Attrappe und `debian-vm` gemessen; die Abfrage deutet fremde Antworten und kann irren |

@@ -675,7 +675,8 @@ export const relaySettings = z.looseObject({
   mailer: z.enum(['mail', 'sendmail']),
   sendmailPath: relayText,
   counterDir: relayText,
-  configReadable: z.boolean().optional()
+  configReadable: z.boolean().optional(),
+  envelopeSender: z.boolean().optional()
 })
 export const formsRelayStateArgs = z.looseObject({ projectId: uuid, projectPath: absolutePath, source: pluginOptionSchemaArgs.shape.source })
 export const formsRelaySaveSettingsArgs = z.looseObject({ projectPath: absolutePath, settings: relaySettings })

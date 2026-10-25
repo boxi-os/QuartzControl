@@ -440,6 +440,12 @@ export function RelaySection({
               checked={s.configReadable}
               onChange={(on) => void save({ configReadable: on })}
             />
+            <Toggle
+              label={t('formsEditor.relay.envelopeSender')}
+              hint={t('formsEditor.relay.envelopeSenderHint')}
+              checked={s.envelopeSender}
+              onChange={(on) => void save({ envelopeSender: on })}
+            />
             <div className="flex flex-col items-start gap-1">
               <Button
                 variant="ghost"

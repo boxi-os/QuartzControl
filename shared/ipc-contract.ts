@@ -652,6 +652,8 @@ export interface RelaySettings {
   counterDir: string
   /** config.php as 0644 instead of 0600, for a host whose PHP runs as the web server's user. */
   configReadable: boolean
+  /** The sender as the envelope sender (-f); false leaves it to the host (quartz-forms 0.6.0). */
+  envelopeSender: boolean
 }
 
 export interface RelayLastUpload {

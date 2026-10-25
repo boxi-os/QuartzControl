@@ -128,8 +128,9 @@ export async function runDeploy(
  *
  * - its own manifest (`deploy-manifest-<manifestKey>.json`), so neither upload takes the other's
  *   files for its own - an sftp/ftp/folder deploy deletes only what its manifest says it sent;
- * - never `deleteRemoved`: the relay's directory also holds what the server writes (counters, used
- *   proofs of work), and a wrong path with deletion would empty a directory this app does not own;
+ * - never `deleteRemoved` on an upload: the relay's directory also holds what the server writes
+ *   (counters, used proofs of work), and a wrong path with deletion would empty a directory this
+ *   app does not own;
  * - no `excludes` of the site's;
  * - sftp, ftp and folder only: a webhook or a branch has no path to put a directory below;
  * - every file on every run, with its local mode (`keepLocalModes`), see below.

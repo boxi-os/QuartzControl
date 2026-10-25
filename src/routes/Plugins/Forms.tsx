@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 import type { FormsCheckResult, FormUsagePage, LayoutPosition, NormalizedOptionSchema, PluginEntry, PluginSource, QuartzConfig, RelayState } from '@shared/ipc-contract'
 import { slugPath } from '@shared/formUsages'
-import { Badge, Button, Card, CardHeading, Combobox, DetailLayout, Field, FieldGroup, FoldBox, IconButton, InfoNote, SegmentedControl, Select, SelectableRow, TextInput, Toggle, focusRowAt, useCopyToClipboard } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, Combobox, DetailLayout, DIVIDED_ROWS, Field, FieldGroup, FoldBox, IconButton, InfoNote, SegmentedControl, Select, SelectableRow, TextInput, Toggle, focusRowAt, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { ObjectBlock, type FormContext } from '../../components/PluginOptionsForm/editors'
@@ -924,27 +924,30 @@ function FormPanel({
         <TextEditor label={t('formsEditor.title')} value={def.title} fallback={template?.title} languages={languages} onValue={(v) => setKey('title', v)} />
         <TextEditor label={t('formsEditor.description')} hint={t('formsEditor.descriptionHint')} value={def.description} languages={languages} multiline onValue={(v) => setKey('description', v)} />
         <TextEditor label={t('formsEditor.submitLabel')} hint={t('formsEditor.submitLabelHint')} value={def.submitLabel} languages={languages} onValue={(v) => setKey('submitLabel', v)} />
-        <FieldGroup label={t('formsEditor.afterSending')}>
-          <SegmentedControl
-            label={t('formsEditor.afterSending')}
-            value={successMode}
-            onChange={(m) => setSuccess({ mode: m })}
-            options={[
-              { value: 'inline', label: t('formsEditor.successModes.inline') },
-              { value: 'redirect', label: t('formsEditor.successModes.redirect') }
-            ]}
-          />
-        </FieldGroup>
-        {successMode === 'inline' ? (
-          <TextEditor label={t('formsEditor.successText')} hint={t('formsEditor.successTextHint')} value={success.text} languages={languages} onValue={(v) => setSuccess({ text: v })} />
-        ) : (
-          <SlugField
-            value={typeof success.slug === 'string' ? success.slug : ''}
-            slugs={slugs}
-            onCommit={(v) => setSuccess({ slug: v.trim() || undefined })}
-          />
-        )}
+        {/* One row: the text or the page is what the choice above it asks for. */}
         <div className="flex flex-col gap-3">
+          <FieldGroup label={t('formsEditor.afterSending')}>
+            <SegmentedControl
+              label={t('formsEditor.afterSending')}
+              value={successMode}
+              onChange={(m) => setSuccess({ mode: m })}
+              options={[
+                { value: 'inline', label: t('formsEditor.successModes.inline') },
+                { value: 'redirect', label: t('formsEditor.successModes.redirect') }
+              ]}
+            />
+          </FieldGroup>
+          {successMode === 'inline' ? (
+            <TextEditor label={t('formsEditor.successText')} hint={t('formsEditor.successTextHint')} value={success.text} languages={languages} onValue={(v) => setSuccess({ text: v })} />
+          ) : (
+            <SlugField
+              value={typeof success.slug === 'string' ? success.slug : ''}
+              slugs={slugs}
+              onCommit={(v) => setSuccess({ slug: v.trim() || undefined })}
+            />
+          )}
+        </div>
+        <div className="flex flex-col gap-2.5">
           <p className="text-micro font-semibold uppercase tracking-wide text-text-muted">{t('pluginOptions.rarelyUsed')}</p>
           <Field label="className" configKey hint={t('formsEditor.classNameHint')}>
             <DraftInput value={typeof def.className === 'string' ? def.className : ''} onCommit={(v) => setKey('className', v.trim() || undefined)} />
@@ -953,24 +956,26 @@ function FormPanel({
       </FormPart>
 
       <FormPart {...part('fields')} icon={ListChecks} title={t('formsEditor.parts.fields')}>
-        <FormFieldsEditor
-          def={def}
-          fields={eff.fields}
-          schema={form}
-          languages={languages}
-          lang={lang}
-          anonymous={anonymous}
-          fieldMessages={messages.problems.filter((m) => m.field !== undefined)}
-          olderPlugin={olderPlugin}
-          onFields={(next) => setKey('fields', next)}
-        />
-        {/* The way back once the template's fields became the form's own: before, only taking
-            `fields:` out of the YAML by hand (review 2026-10-28, N9). */}
-        {template && Array.isArray(def.fields) && (
-          <Button variant="ghost" className="self-start" onClick={() => void takeTemplateFields()}>
-            {t('formsEditor.templateFieldsBack', { template: templateName })}
-          </Button>
-        )}
+        <div className="flex flex-col gap-3">
+          <FormFieldsEditor
+            def={def}
+            fields={eff.fields}
+            schema={form}
+            languages={languages}
+            lang={lang}
+            anonymous={anonymous}
+            fieldMessages={messages.problems.filter((m) => m.field !== undefined)}
+            olderPlugin={olderPlugin}
+            onFields={(next) => setKey('fields', next)}
+          />
+          {/* The way back once the template's fields became the form's own: before, only taking
+              `fields:` out of the YAML by hand (review 2026-10-28, N9). */}
+          {template && Array.isArray(def.fields) && (
+            <Button variant="ghost" className="self-start" onClick={() => void takeTemplateFields()}>
+              {t('formsEditor.templateFieldsBack', { template: templateName })}
+            </Button>
+          )}
+        </div>
       </FormPart>
 
       <FormPart {...part('sending')} icon={Send} title={t('formsEditor.parts.sending')}>
@@ -1090,27 +1095,31 @@ function FormPanel({
 
       <FormPart {...part('embed')} icon={Code} title={t('formsEditor.parts.embed')}>
         <p className="text-micro text-text-muted">{t('formsEditor.embedHint')}</p>
-        {(
-          [
-            ['placeholder', snippets.placeholder],
-            ['codeBlock', snippets.codeBlock],
-            ['frontmatter', snippets.frontmatter]
-          ] as const
-        ).map(([k, text]) => (
-          <div key={k} className="flex flex-wrap items-start gap-2">
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="text-micro font-medium text-text-secondary">{t(`formsEditor.embedKinds.${k}`)}</span>
-              <pre className="overflow-x-auto rounded-md bg-ink/[0.04] px-2 py-1.5 font-mono text-xs text-text dark:bg-ink/10">{text}</pre>
+        {/* The snippets and their copy region as one row: the region stands empty, and alone it
+            drew a line over nothing. */}
+        <div className="flex flex-col gap-3">
+          {(
+            [
+              ['placeholder', snippets.placeholder],
+              ['codeBlock', snippets.codeBlock],
+              ['frontmatter', snippets.frontmatter]
+            ] as const
+          ).map(([k, text]) => (
+            <div key={k} className="flex flex-wrap items-start gap-2">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="text-micro font-medium text-text-secondary">{t(`formsEditor.embedKinds.${k}`)}</span>
+                <pre className="overflow-x-auto rounded-md bg-ink/[0.04] px-2 py-1.5 font-mono text-xs text-text dark:bg-ink/10">{text}</pre>
+              </div>
+              <Button variant="ghost" onClick={() => copy(text, t(`formsEditor.embedKinds.${k}`))}>
+                <Copy size={14} aria-hidden />
+                {t('formsEditor.copy')}
+              </Button>
             </div>
-            <Button variant="ghost" onClick={() => copy(text, t(`formsEditor.embedKinds.${k}`))}>
-              <Copy size={14} aria-hidden />
-              {t('formsEditor.copy')}
-            </Button>
-          </div>
-        ))}
-        <p aria-live="polite" className="text-micro text-green-600 dark:text-green-400">
-          {copied ? t('formsEditor.copied') : ''}
-        </p>
+          ))}
+          <p aria-live="polite" className="text-micro text-green-600 dark:text-green-400">
+            {copied ? t('formsEditor.copied') : ''}
+          </p>
+        </div>
         <div className="flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-micro font-medium text-text-secondary">{t('formsEditor.usedOn')}</span>
@@ -1188,7 +1197,10 @@ function FormPart({
       aside={problems > 0 ? <Badge tone="red">{t('formsEditor.check.problemBadge', { count: problems })}</Badge> : null}
       open={open}
       onToggle={onToggle}
-      bodyClassName="gap-3"
+      // A line between the options, as in the options form of every other plugin: label, control
+      // and hint one under the other with nothing between them read as one column in which an
+      // option was hard to find (mail test 2026-10-25, finding 8).
+      bodyClassName={`gap-3.5 ${DIVIDED_ROWS}`}
     >
       {children}
     </FoldBox>

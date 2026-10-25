@@ -4,7 +4,7 @@ import type { TFunction } from 'i18next'
 import { FolderDown, KeyRound, Send, Trash2, Upload } from 'lucide-react'
 import type { PluginSource, RelayCheck, RelaySettings, RelayState } from '@shared/ipc-contract'
 import { relaySubdir, rsyncUnsafeChar } from '@shared/remotePath'
-import { Badge, Button, Field, FieldGroup, IconButton, Select, SegmentedControl, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, DIVIDED_ROWS, Field, FieldGroup, IconButton, Select, SegmentedControl, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { announce } from '../../state/announcer'
 import { confirmDialog } from '../../utils/confirm'
@@ -205,242 +205,255 @@ export function RelaySection({
         </p>
       )}
 
-      <Field label={t('formsEditor.relay.target')} hint={state.targets.length ? t('formsEditor.relay.targetHint') : t('formsEditor.relay.noTargets')}>
-        <Select value={s.targetId ?? ''} onChange={(e) => void save({ targetId: e.target.value || undefined })}>
-          <option value="">{t('formsEditor.relay.noTarget')}</option>
-          {state.targets.map((target) => (
-            <option key={target.id} value={target.id}>
-              {`${target.name} (${target.type}: ${target.where})`}
-            </option>
-          ))}
-        </Select>
-      </Field>
-      <Field label={t('formsEditor.relay.subdir')} hint={t('formsEditor.relay.subdirHint')}>
-        <DraftInput
-          value={s.subdir}
-          placeholder="forms"
-          aria-invalid={subdirInvalid}
-          onCommit={(v) => {
-            const subdir = relaySubdir(v)
-            setSubdirInvalid(subdir === null)
-            if (subdir) void save({ subdir })
-          }}
-        />
-      </Field>
-      {subdirInvalid && (
-        <p role="alert" className="text-micro text-red-600 dark:text-red-400">
-          {t('formsEditor.relay.subdirInvalid')}
-        </p>
-      )}
-      {!subdirInvalid && subdirRsyncChar && (
-        <p className="text-micro text-red-600 dark:text-red-400">
-          {/\s/.test(subdirRsyncChar) ? t('formsEditor.relay.subdirRsyncSpace') : t('formsEditor.relay.subdirRsyncChar', { char: subdirRsyncChar })}
-        </p>
-      )}
-      {state.conflict && (
-        <div className="flex flex-col gap-1.5 rounded-md border border-amber-300 p-2.5 dark:border-amber-500/40">
-          <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.relay.conflict', { target: state.conflict.targetName, path: state.conflict.exclude })}</p>
-          <div>
-            <Button
-              variant="ghost"
-              onClick={() =>
-                void window.quartzGui.forms
-                  .relayExcludeFromSite({ projectPath: project.path, targetId: state.conflict!.targetId, path: state.conflict!.exclude })
-                  .then(onChanged, (err) => setMessage(formatIpcError(err)))
-              }
-            >
-              {t('formsEditor.relay.excludeSubmit', { path: state.conflict.exclude })}
-            </Button>
-          </div>
+      {/* A line between the options, as in the options form of every other plugin: one column of
+          label, control and hint read as one block in which an option was hard to find (mail test
+          2026-10-25, finding 8). An option's own sentences and buttons stay in its row. */}
+      <div className={`flex flex-col gap-3.5 ${DIVIDED_ROWS}`}>
+        <Field label={t('formsEditor.relay.target')} hint={state.targets.length ? t('formsEditor.relay.targetHint') : t('formsEditor.relay.noTargets')}>
+          <Select value={s.targetId ?? ''} onChange={(e) => void save({ targetId: e.target.value || undefined })}>
+            <option value="">{t('formsEditor.relay.noTarget')}</option>
+            {state.targets.map((target) => (
+              <option key={target.id} value={target.id}>
+                {`${target.name} (${target.type}: ${target.where})`}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <div className="flex flex-col gap-2">
+          <Field label={t('formsEditor.relay.subdir')} hint={t('formsEditor.relay.subdirHint')}>
+            <DraftInput
+              value={s.subdir}
+              placeholder="forms"
+              aria-invalid={subdirInvalid}
+              onCommit={(v) => {
+                const subdir = relaySubdir(v)
+                setSubdirInvalid(subdir === null)
+                if (subdir) void save({ subdir })
+              }}
+            />
+          </Field>
+          {subdirInvalid && (
+            <p role="alert" className="text-micro text-red-600 dark:text-red-400">
+              {t('formsEditor.relay.subdirInvalid')}
+            </p>
+          )}
+          {!subdirInvalid && subdirRsyncChar && (
+            <p className="text-micro text-red-600 dark:text-red-400">
+              {/\s/.test(subdirRsyncChar) ? t('formsEditor.relay.subdirRsyncSpace') : t('formsEditor.relay.subdirRsyncChar', { char: subdirRsyncChar })}
+            </p>
+          )}
+          {state.conflict && (
+            <div className="flex flex-col gap-1.5 rounded-md border border-amber-300 p-2.5 dark:border-amber-500/40">
+              <p className="text-micro text-amber-700 dark:text-amber-400">{t('formsEditor.relay.conflict', { target: state.conflict.targetName, path: state.conflict.exclude })}</p>
+              <div>
+                <Button
+                  variant="ghost"
+                  onClick={() =>
+                    void window.quartzGui.forms
+                      .relayExcludeFromSite({ projectPath: project.path, targetId: state.conflict!.targetId, path: state.conflict!.exclude })
+                      .then(onChanged, (err) => setMessage(formatIpcError(err)))
+                  }
+                >
+                  {t('formsEditor.relay.excludeSubmit', { path: state.conflict.exclude })}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
-      <FieldGroup label={t('formsEditor.relay.url')}>
-        {/* Only shown here: the address is typed under "Versand", and a suggestion that does not fit
-            left no word of where (mail test 2026-10-25, finding 1). */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="break-all font-mono text-micro text-text">{transportUrl || t('formsEditor.noUrl')}</span>
-          <Button variant="ghost" onClick={onOpenTransport}>
-            <Send size={14} aria-hidden />
-            {t('formsEditor.sections.transport')}
-          </Button>
-        </div>
-        {suggestedUrl && suggestedUrl !== transportUrl && (
+        <FieldGroup label={t('formsEditor.relay.url')}>
+          {/* Only shown here: the address is typed under "Versand", and a suggestion that does not fit
+              left no word of where (mail test 2026-10-25, finding 1). */}
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="ghost" onClick={() => onTransportUrl(suggestedUrl)}>
-              {t('formsEditor.relay.useUrl')}
+            <span className="break-all font-mono text-micro text-text">{transportUrl || t('formsEditor.noUrl')}</span>
+            <Button variant="ghost" onClick={onOpenTransport}>
+              <Send size={14} aria-hidden />
+              {t('formsEditor.sections.transport')}
             </Button>
-            <span className="break-all font-mono text-micro text-text-muted">{suggestedUrl}</span>
           </div>
-        )}
-        <span className="text-micro text-text-muted">{t('formsEditor.relay.urlHint')}</span>
-      </FieldGroup>
+          {suggestedUrl && suggestedUrl !== transportUrl && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="ghost" onClick={() => onTransportUrl(suggestedUrl)}>
+                {t('formsEditor.relay.useUrl')}
+              </Button>
+              <span className="break-all font-mono text-micro text-text-muted">{suggestedUrl}</span>
+            </div>
+          )}
+          <span className="text-micro text-text-muted">{t('formsEditor.relay.urlHint')}</span>
+        </FieldGroup>
 
-      <Field label={t('formsEditor.relay.from')} hint={t('formsEditor.relay.fromHint')}>
-        <DraftInput value={s.from} placeholder="formulare@example.org" onCommit={(v) => void save({ from: v.trim() })} />
-      </Field>
-      <Field label={t('formsEditor.relay.origins')} hint={t('formsEditor.relay.originsHint')}>
-        <DraftInput
-          value={s.allowedOrigins.join(', ')}
-          placeholder={siteOrigin ?? 'https://example.org'}
-          onCommit={(v) =>
-            void save({
-              allowedOrigins: v
-                .split(/[,\s]+/)
-                .map((o) => o.trim())
-                .filter(Boolean)
-            })
-          }
-        />
-      </Field>
-      {s.allowedOrigins.length === 0 && siteOrigin && (
-        <div className="-mt-2">
-          <Button variant="ghost" onClick={() => void save({ allowedOrigins: [siteOrigin] })}>
-            {t('formsEditor.relay.useOrigin', { origin: siteOrigin })}
-          </Button>
+        <Field label={t('formsEditor.relay.from')} hint={t('formsEditor.relay.fromHint')}>
+          <DraftInput value={s.from} placeholder="formulare@example.org" onCommit={(v) => void save({ from: v.trim() })} />
+        </Field>
+        <div className="flex flex-col gap-2">
+          <Field label={t('formsEditor.relay.origins')} hint={t('formsEditor.relay.originsHint')}>
+            <DraftInput
+              value={s.allowedOrigins.join(', ')}
+              placeholder={siteOrigin ?? 'https://example.org'}
+              onCommit={(v) =>
+                void save({
+                  allowedOrigins: v
+                    .split(/[,\s]+/)
+                    .map((o) => o.trim())
+                    .filter(Boolean)
+                })
+              }
+            />
+          </Field>
+          {s.allowedOrigins.length === 0 && siteOrigin && (
+            <div>
+              <Button variant="ghost" onClick={() => void save({ allowedOrigins: [siteOrigin] })}>
+                {t('formsEditor.relay.useOrigin', { origin: siteOrigin })}
+              </Button>
+            </div>
+          )}
         </div>
-      )}
 
-      <FieldGroup label={t('formsEditor.relay.recipients')}>
-        {names.length === 0 && <span className="text-micro text-text-muted">{t('formsEditor.relay.noRecipients')}</span>}
-        <ul className="flex flex-col gap-2">
-          {names.map((name) => {
-            const set = state.secrets.recipients.includes(name)
-            const used = neededRecipients.includes(name)
-            return (
-              <li key={name} className="flex flex-col gap-1 rounded-md border border-ink/10 p-2 dark:border-ink/10">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-ui text-text">{name}</span>
-                  <Badge tone={set ? 'green' : 'red'}>{set ? t('formsEditor.relay.addressSet') : t('formsEditor.relay.addressMissing')}</Badge>
-                  {!used && <Badge>{t('formsEditor.relay.unusedName')}</Badge>}
-                  <span className="flex-1" />
-                  {set && (
-                    <IconButton
-                      icon={Trash2}
-                      title={t('formsEditor.relay.removeAddress', { name })}
-                      onClick={() => {
-                        forget(`recipient:${name}`)
-                        void saveSecrets({ projectId: project.id, recipients: { [name]: null } }, t('formsEditor.relay.addressRemovedAnnounce', { name }))
-                      }}
+        <FieldGroup label={t('formsEditor.relay.recipients')}>
+          {names.length === 0 && <span className="text-micro text-text-muted">{t('formsEditor.relay.noRecipients')}</span>}
+          <ul className="flex flex-col gap-2">
+            {names.map((name) => {
+              const set = state.secrets.recipients.includes(name)
+              const used = neededRecipients.includes(name)
+              return (
+                <li key={name} className="flex flex-col gap-1 rounded-md border border-ink/10 p-2 dark:border-ink/10">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-ui text-text">{name}</span>
+                    <Badge tone={set ? 'green' : 'red'}>{set ? t('formsEditor.relay.addressSet') : t('formsEditor.relay.addressMissing')}</Badge>
+                    {!used && <Badge>{t('formsEditor.relay.unusedName')}</Badge>}
+                    <span className="flex-1" />
+                    {set && (
+                      <IconButton
+                        icon={Trash2}
+                        title={t('formsEditor.relay.removeAddress', { name })}
+                        onClick={() => {
+                          forget(`recipient:${name}`)
+                          void saveSecrets({ projectId: project.id, recipients: { [name]: null } }, t('formsEditor.relay.addressRemovedAnnounce', { name }))
+                        }}
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <TextInput
+                      type="email"
+                      autoComplete="off"
+                      aria-label={t('formsEditor.relay.addressFor', { name })}
+                      placeholder={set ? t('formsEditor.relay.replaceAddress') : 'name@example.org'}
+                      value={drafts[name] ?? ''}
+                      onChange={(e) => setDrafts({ ...drafts, [name]: e.target.value })}
+                      className="min-w-0 flex-1"
+                      disabled={!state.secrets.storageAvailable}
                     />
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <TextInput
-                    type="email"
-                    autoComplete="off"
-                    aria-label={t('formsEditor.relay.addressFor', { name })}
-                    placeholder={set ? t('formsEditor.relay.replaceAddress') : 'name@example.org'}
-                    value={drafts[name] ?? ''}
-                    onChange={(e) => setDrafts({ ...drafts, [name]: e.target.value })}
-                    className="min-w-0 flex-1"
-                    disabled={!state.secrets.storageAvailable}
-                  />
-                  <Button
-                    disabled={!drafts[name]?.includes('@') || !state.secrets.storageAvailable}
-                    onClick={() => {
-                      const address = drafts[name]
-                      // The relay reads an address at @example. as the placeholder it ships with,
-                      // i.e. as missing (send.php), and would refuse the form after the upload.
-                      if (/@example\./i.test(address)) {
-                        setMessage(t('formsEditor.relay.exampleAddress'))
-                        return
-                      }
-                      setDrafts({ ...drafts, [name]: '' })
-                      void saveSecrets({ projectId: project.id, recipients: { [name]: address } }, '', `recipient:${name}`)
-                    }}
-                  >
-                    {t('formsEditor.relay.saveAddress')}
-                  </Button>
-                </div>
-                <p role="status" className="text-micro text-green-700 dark:text-green-400">
-                  {savedNote(`recipient:${name}`, t('formsEditor.relay.addressSetAnnounce', { name }), t('formsEditor.relay.addressSetPending', { name }))}
-                </p>
-              </li>
-            )
-          })}
-        </ul>
-        <span className="text-micro text-text-muted">{t('formsEditor.relay.recipientsHint')}</span>
-      </FieldGroup>
+                    <Button
+                      disabled={!drafts[name]?.includes('@') || !state.secrets.storageAvailable}
+                      onClick={() => {
+                        const address = drafts[name]
+                        // The relay reads an address at @example. as the placeholder it ships with,
+                        // i.e. as missing (send.php), and would refuse the form after the upload.
+                        if (/@example\./i.test(address)) {
+                          setMessage(t('formsEditor.relay.exampleAddress'))
+                          return
+                        }
+                        setDrafts({ ...drafts, [name]: '' })
+                        void saveSecrets({ projectId: project.id, recipients: { [name]: address } }, '', `recipient:${name}`)
+                      }}
+                    >
+                      {t('formsEditor.relay.saveAddress')}
+                    </Button>
+                  </div>
+                  <p role="status" className="text-micro text-green-700 dark:text-green-400">
+                    {savedNote(`recipient:${name}`, t('formsEditor.relay.addressSetAnnounce', { name }), t('formsEditor.relay.addressSetPending', { name }))}
+                  </p>
+                </li>
+              )
+            })}
+          </ul>
+          <span className="text-micro text-text-muted">{t('formsEditor.relay.recipientsHint')}</span>
+        </FieldGroup>
 
-      {(captcha.global || state.secrets.captchaSecret) && (
-        <SecretRow
-          label={t('formsEditor.relay.captchaSecret')}
-          hint={captcha.global ? t('formsEditor.relay.captchaSecretHint', { provider: captcha.global.provider }) : t('formsEditor.relay.captchaUnused')}
-          isSet={state.secrets.captchaSecret}
-          needed={!!captcha.global}
-          disabled={!state.secrets.storageAvailable}
-          note={savedNote('captcha', t('formsEditor.relay.secretSetAnnounce'), t('formsEditor.relay.secretSetPending'))}
-          onSave={(value) => void saveSecrets({ projectId: project.id, captchaSecret: value }, '', 'captcha')}
-          onRemove={() => {
-            forget('captcha')
-            void saveSecrets({ projectId: project.id, captchaSecret: null }, t('formsEditor.relay.secretRemovedAnnounce'))
-          }}
-        />
-      )}
-      {[...new Set([...captcha.forms.map((f) => f.id), ...state.secrets.captchaSecrets])].map((id) => {
-        const need = captcha.forms.find((f) => f.id === id)
-        return (
+        {(captcha.global || state.secrets.captchaSecret) && (
           <SecretRow
-            key={id}
-            label={t('formsEditor.relay.captchaSecretFor', { form: id })}
-            hint={need ? t('formsEditor.relay.captchaSecretForHint', { provider: need.provider }) : t('formsEditor.relay.captchaUnused')}
-            isSet={state.secrets.captchaSecrets.includes(id)}
-            needed={!!need}
+            label={t('formsEditor.relay.captchaSecret')}
+            hint={captcha.global ? t('formsEditor.relay.captchaSecretHint', { provider: captcha.global.provider }) : t('formsEditor.relay.captchaUnused')}
+            isSet={state.secrets.captchaSecret}
+            needed={!!captcha.global}
             disabled={!state.secrets.storageAvailable}
-            note={savedNote(`captcha:${id}`, t('formsEditor.relay.secretSetAnnounce'), t('formsEditor.relay.secretSetPending'))}
-            onSave={(value) => void saveSecrets({ projectId: project.id, captchaSecrets: { [id]: value } }, '', `captcha:${id}`)}
+            note={savedNote('captcha', t('formsEditor.relay.secretSetAnnounce'), t('formsEditor.relay.secretSetPending'))}
+            onSave={(value) => void saveSecrets({ projectId: project.id, captchaSecret: value }, '', 'captcha')}
             onRemove={() => {
-              forget(`captcha:${id}`)
-              void saveSecrets({ projectId: project.id, captchaSecrets: { [id]: null } }, t('formsEditor.relay.secretRemovedAnnounce'))
+              forget('captcha')
+              void saveSecrets({ projectId: project.id, captchaSecret: null }, t('formsEditor.relay.secretRemovedAnnounce'))
             }}
           />
-        )
-      })}
+        )}
+        {[...new Set([...captcha.forms.map((f) => f.id), ...state.secrets.captchaSecrets])].map((id) => {
+          const need = captcha.forms.find((f) => f.id === id)
+          return (
+            <SecretRow
+              key={id}
+              label={t('formsEditor.relay.captchaSecretFor', { form: id })}
+              hint={need ? t('formsEditor.relay.captchaSecretForHint', { provider: need.provider }) : t('formsEditor.relay.captchaUnused')}
+              isSet={state.secrets.captchaSecrets.includes(id)}
+              needed={!!need}
+              disabled={!state.secrets.storageAvailable}
+              note={savedNote(`captcha:${id}`, t('formsEditor.relay.secretSetAnnounce'), t('formsEditor.relay.secretSetPending'))}
+              onSave={(value) => void saveSecrets({ projectId: project.id, captchaSecrets: { [id]: value } }, '', `captcha:${id}`)}
+              onRemove={() => {
+                forget(`captcha:${id}`)
+                void saveSecrets({ projectId: project.id, captchaSecrets: { [id]: null } }, t('formsEditor.relay.secretRemovedAnnounce'))
+              }}
+            />
+          )
+        })}
 
-      <FieldGroup label={t('formsEditor.relay.mailer')}>
-        <SegmentedControl
-          label={t('formsEditor.relay.mailer')}
-          value={s.mailer}
-          onChange={(m) => void save({ mailer: m })}
-          options={[
-            { value: 'mail', label: t('formsEditor.relay.mailerMail') },
-            { value: 'sendmail', label: 'sendmail' }
-          ]}
-        />
-        <span className="text-micro text-text-muted">{t('formsEditor.relay.mailerHint')}</span>
-      </FieldGroup>
-      {s.mailer === 'sendmail' && (
-        <Field label={t('formsEditor.relay.sendmailPath')} hint={t('formsEditor.relay.sendmailPathHint')}>
-          <DraftInput value={s.sendmailPath} onCommit={(v) => v.trim() && void save({ sendmailPath: v.trim() })} />
-        </Field>
-      )}
-      <div className="flex flex-col gap-3">
-        <p className="text-micro font-semibold uppercase tracking-wide text-text-muted">{t('pluginOptions.rarelyUsed')}</p>
-        <Field label={t('formsEditor.relay.subjectPrefix')} hint={t('formsEditor.relay.subjectPrefixHint')}>
-          <DraftInput value={s.subjectPrefix} placeholder="[Website]" onCommit={(v) => void save({ subjectPrefix: v })} />
-        </Field>
-        <Field label={t('formsEditor.relay.counterDir')} hint={t('formsEditor.relay.counterDirHint')}>
-          <DraftInput value={s.counterDir} placeholder="/home/name/quartz-forms-counters" onCommit={(v) => void save({ counterDir: v.trim() })} />
-        </Field>
-        <Toggle
-          label={t('formsEditor.relay.configReadable')}
-          hint={t('formsEditor.relay.configReadableHint')}
-          checked={s.configReadable}
-          onChange={(on) => void save({ configReadable: on })}
-        />
-        <div className="flex flex-col items-start gap-1">
-          <Button
-            variant="ghost"
-            onClick={async () => {
-              if (!(await confirmDialog({ text: t('formsEditor.relay.renewSecretConfirm'), confirmLabel: t('formsEditor.relay.renewSecretSubmit'), danger: true }))) return
-              await saveSecrets({ projectId: project.id, renewSecret: true }, t('formsEditor.relay.renewSecretAnnounce'))
-            }}
-          >
-            <KeyRound size={14} aria-hidden />
-            {t('formsEditor.relay.renewSecret')}
-          </Button>
-          <span className="text-micro text-text-muted">{t('formsEditor.relay.renewSecretHint')}</span>
+        <div className="flex flex-col gap-3">
+          <FieldGroup label={t('formsEditor.relay.mailer')}>
+            <SegmentedControl
+              label={t('formsEditor.relay.mailer')}
+              value={s.mailer}
+              onChange={(m) => void save({ mailer: m })}
+              options={[
+                { value: 'mail', label: t('formsEditor.relay.mailerMail') },
+                { value: 'sendmail', label: 'sendmail' }
+              ]}
+            />
+            <span className="text-micro text-text-muted">{t('formsEditor.relay.mailerHint')}</span>
+          </FieldGroup>
+          {s.mailer === 'sendmail' && (
+            <Field label={t('formsEditor.relay.sendmailPath')} hint={t('formsEditor.relay.sendmailPathHint')}>
+              <DraftInput value={s.sendmailPath} onCommit={(v) => v.trim() && void save({ sendmailPath: v.trim() })} />
+            </Field>
+          )}
+        </div>
+        <div className="flex flex-col gap-2.5">
+          <p className="text-micro font-semibold uppercase tracking-wide text-text-muted">{t('pluginOptions.rarelyUsed')}</p>
+          <div className={`flex flex-col gap-3.5 ${DIVIDED_ROWS}`}>
+            <Field label={t('formsEditor.relay.subjectPrefix')} hint={t('formsEditor.relay.subjectPrefixHint')}>
+              <DraftInput value={s.subjectPrefix} placeholder="[Website]" onCommit={(v) => void save({ subjectPrefix: v })} />
+            </Field>
+            <Field label={t('formsEditor.relay.counterDir')} hint={t('formsEditor.relay.counterDirHint')}>
+              <DraftInput value={s.counterDir} placeholder="/home/name/quartz-forms-counters" onCommit={(v) => void save({ counterDir: v.trim() })} />
+            </Field>
+            <Toggle
+              label={t('formsEditor.relay.configReadable')}
+              hint={t('formsEditor.relay.configReadableHint')}
+              checked={s.configReadable}
+              onChange={(on) => void save({ configReadable: on })}
+            />
+            <div className="flex flex-col items-start gap-1">
+              <Button
+                variant="ghost"
+                onClick={async () => {
+                  if (!(await confirmDialog({ text: t('formsEditor.relay.renewSecretConfirm'), confirmLabel: t('formsEditor.relay.renewSecretSubmit'), danger: true }))) return
+                  await saveSecrets({ projectId: project.id, renewSecret: true }, t('formsEditor.relay.renewSecretAnnounce'))
+                }}
+              >
+                <KeyRound size={14} aria-hidden />
+                {t('formsEditor.relay.renewSecret')}
+              </Button>
+              <span className="text-micro text-text-muted">{t('formsEditor.relay.renewSecretHint')}</span>
+            </div>
+          </div>
         </div>
       </div>
 

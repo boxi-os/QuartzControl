@@ -173,6 +173,8 @@ Kommentar, `AGENTS.md`, hCaptcha mit `onload` `4b12fe0`), gepusht, noch privat; 
 werden (nur `forms.inline.ts`, nichts davon ist abgeschrieben). **Stand 2026-10-25:** `v0.5.16`
 (`76c0d90`) trägt all das samt den Befunden des Mailtests, die App liest gegen sie (`edfd8e86`);
 danach nur `e2afa20` (`AGENTS.md`, wann eine Fassung minor ist), gepusht, noch privat.
+**Stand 2026-10-25, abends:** `v0.6.0` (`c126612`) mit dem Schalter `envelopeSender` (60. Review,
+M3); die App liest gegen sie, `check:plugin-copies` ohne Abweichung; gepusht, noch privat.
 
 **Jede neue Fassung braucht auch die App.** Der Editor eines Plugins ist gegen eine Fassung gelesen
 (`*_READ_AGAINST` in `src/routes/Plugins/`) und kennt die mit demselben Code (`*_SAME_CODE`); jede

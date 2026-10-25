@@ -1219,7 +1219,11 @@ export function DetailLayout({
 
   return (
     <div
-      className={`grid items-start gap-6 ${
+      // One column below xl as well, and one that may shrink: the implicit column took the
+      // min-content of the panel stacked under the list, where a truncated line counts at its
+      // full length - a consent field's 78 characters made the Formulare tab 904 px wide in a
+      // 750 px page (mail test 2026-10-25, side list).
+      className={`grid grid-cols-[minmax(0,1fr)] items-start gap-6 ${
         panelWidth === 'wide'
           ? 'xl:grid-cols-[minmax(0,1fr)_28rem] 2xl:grid-cols-[minmax(0,1fr)_34rem]'
           : 'xl:grid-cols-[minmax(0,1fr)_20rem]'

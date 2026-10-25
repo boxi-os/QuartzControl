@@ -47,6 +47,10 @@ interface Inherited {
 // max-w-full and the wrapping row below: the layout board's side panel is 20rem wide, and a
 // fixed 14rem field with its reset button ran past it (P7.4, measured: 25 px at navigations).
 const INPUT_WIDTH = 'w-56 max-w-full'
+// A line of text grows with what it holds, from that width up to the row's: at a fixed 14rem a
+// relay address and a captcha site key stood cut off by 60-70 px, and an inherited value shown as
+// placeholder too (mail test 2026-10-25, side list). field-sizing counts the placeholder as well.
+const TEXT_WIDTH = 'min-w-56 max-w-full [field-sizing:content]'
 
 // ── one object: its fields in order, by group, the inactive ones greyed where they stand ──
 
@@ -719,7 +723,7 @@ function StringEditor({
               lineRef.current = e.currentTarget
             }}
             onBlur={(e) => commit(e.target.value)}
-            className={INPUT_WIDTH}
+            className={TEXT_WIDTH}
           />
           <PlaceholderList
             off={placeholdersOff}
@@ -733,7 +737,7 @@ function StringEditor({
           />
         </span>
       ) : (
-        <TextInput key={current} id={id} type="text" defaultValue={current} placeholder={placeholder} onBlur={(e) => commit(e.target.value)} className={INPUT_WIDTH} />
+        <TextInput key={current} id={id} type="text" defaultValue={current} placeholder={placeholder} onBlur={(e) => commit(e.target.value)} className={TEXT_WIDTH} />
       )}
       {ctx.explicitEmpty && (value === '' || value === undefined) && (
         <button

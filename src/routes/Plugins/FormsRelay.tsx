@@ -61,8 +61,9 @@ export function RelaySection({
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   // Rows whose secret was saved here, with the upload it was saved after: the row says so until
   // the next upload. A replaced address left "Adresse gesetzt" as it was, and the amber status had
-  // scrolled away (mail test 2026-10-25, finding 4).
-  const [pending, setPending] = useState<Record<string, string>>({})
+  // scrolled away (mail test 2026-10-25, finding 4). `before` is the state the save was made on:
+  // the note waits for the one read after it.
+  const [pending, setPending] = useState<Record<string, { at: string; before: RelayState }>>({})
 
   if (error) return <p className="text-micro text-red-600 dark:text-red-400">{error}</p>
   if (!state) return <p className="text-micro text-text-muted">{loading ? t('formsEditor.relay.loading') : ''}</p>
@@ -88,7 +89,7 @@ export function RelaySection({
       await window.quartzGui.forms.relaySaveSecrets(change)
       setMessage(null)
       setResult(null)
-      if (row) setPending((p) => ({ ...p, [row]: state?.lastUpload?.at ?? '' }))
+      if (row && state) setPending((p) => ({ ...p, [row]: { at: state.lastUpload?.at ?? '', before: state } }))
       else announce(said)
       onChanged()
     } catch (err) {
@@ -98,8 +99,15 @@ export function RelaySection({
 
   const names = [...new Set([...neededRecipients, ...state.secrets.recipients])]
   const forget = (row: string): void => setPending(({ [row]: _gone, ...rest }) => rest)
-  const savedNote = (row: string, set: string, setPendingText: string): string =>
-    pending[row] === undefined || pending[row] !== (state.lastUpload?.at ?? '') ? '' : state.lastUpload ? setPendingText : set
+  // "Das Relay erhält sie mit dem nächsten Hochladen" while the status says so too: with the old
+  // address saved again the status was "aktuell" and the row still said it (review 2026-11-04,
+  // N1). Asked of the state read after the save, or the row's live region said the short sentence
+  // and then the long one.
+  const savedNote = (row: string, set: string, setPendingText: string): string => {
+    const p = pending[row]
+    if (!p || p.at !== (state.lastUpload?.at ?? '') || p.before === state) return ''
+    return relayOutdated(state) ? setPendingText : set
+  }
   const missing = neededRecipients.filter((n) => !state.secrets.recipients.includes(n))
   // Below the site's own address, base path included: the target whose folder the relay goes
   // into is, in the common case, the site itself.
@@ -605,6 +613,12 @@ function blockers(state: RelayState, missing: string[], missingCaptcha: string[]
   if (state.conflict) out.push(t('formsEditor.relay.blockConflict'))
   if (state.hashProblem !== undefined) out.push(t('formsEditor.relay.blockProblems'))
   return out
+}
+
+/** Uploaded once, and what an upload would write or where it would go is no longer that. */
+export function relayOutdated(r: RelayState): boolean {
+  if (!r.lastUpload || r.hashProblem !== undefined) return false
+  return r.moved || r.configModeChanged || r.operatorChanged || r.currentHash !== r.lastUpload.hash
 }
 
 /** A recipient name the relay maps to an address: no spaces, nothing PHP or YAML would read twice. */

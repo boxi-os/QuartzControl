@@ -26,7 +26,7 @@ import {
   Vote,
   Wrench
 } from 'lucide-react'
-import type { FormsCheckResult, FormUsagePage, LayoutPosition, NormalizedOptionSchema, PluginEntry, PluginSource, QuartzConfig, RelayState } from '@shared/ipc-contract'
+import type { FormsCheckResult, FormUsagePage, LayoutPosition, NormalizedOptionSchema, PluginEntry, PluginSource, QuartzConfig } from '@shared/ipc-contract'
 import { slugPath } from '@shared/formUsages'
 import { Badge, Button, Card, CardHeading, Combobox, DetailLayout, DIVIDED_ROWS, Field, FieldGroup, FoldBox, IconButton, InfoNote, SegmentedControl, Select, SelectableRow, TextInput, Toggle, focusRowAt, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
@@ -91,7 +91,7 @@ import { TextEditor } from './FormText'
 import { FormsTexts } from './FormsTexts'
 import { FormFieldsEditor } from './FormFieldsEditor'
 import { KeysSection } from './FormsKeys'
-import { RelayRecipientField, RelaySection } from './FormsRelay'
+import { RelayRecipientField, RelaySection, relayOutdated } from './FormsRelay'
 import { ReadAgainstNote } from './ReadAgainstNote'
 import { SavesImmediately } from './SavesImmediately'
 
@@ -1493,12 +1493,6 @@ function CheckSummary({
  * asks the relay for that form's stamp at that address. Asking the global address alone said it
  * was missing when only a form had one (review 2026-10-29, nebenbei).
  */
-/** Uploaded once, and what an upload would write or where it would go is no longer that. */
-function relayOutdated(r: RelayState): boolean {
-  if (!r.lastUpload || r.hashProblem !== undefined) return false
-  return r.moved || r.configModeChanged || r.operatorChanged || r.currentHash !== r.lastUpload.hash
-}
-
 function relayProbe(forms: [string, FormDef][], options: Options): { form: string; url: string } | null {
   const global = isObject(options.transport) && typeof options.transport.url === 'string' ? options.transport.url.trim() : ''
   for (const [id, def] of forms) {

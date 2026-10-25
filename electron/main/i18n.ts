@@ -384,6 +384,7 @@ const STRINGS = {
     relayRemoveMoved: 'Das Ziel „{{target}}“ oder der Unterordner hat sich seit dem Hochladen geändert. Den alten Ort kennt QuartzControl nicht mehr; lösche send.php, config.php und config.generated.php dort selbst.',
     relayRemoveGone: 'Unter „{{path}}“ lag kein Relay mehr.\n',
     relayRemoveRefused: '{{path}} konnte auf dem Server nicht gelöscht werden ({{reason}}).\n',
+    relayRemoveUnchecked: 'Ob {{path}} auf dem Server noch liegt, konnte nicht geprüft werden: Der Zugang darf den Ordner „{{folder}}“ nicht öffnen ({{reason}}).\n',
     relayRemoveRefusedRest: 'Das Relay ist damit nicht vom Server entfernt. Lösche diese Dateien dort selbst, oder erlaube dem Zugang das Löschen in diesem Ordner und versuche es noch einmal.',
     relayRemoveFolderMissing: 'Den Ordner „{{dest}}“ und den darüber gibt es nicht. Ist das Laufwerk verbunden?',
     relayRemovedRest: 'Der Ordner „{{subdir}}/counters“ bleibt mit den Zählern des Servers liegen; ohne send.php nimmt dort nichts mehr Formulare an.',
@@ -441,6 +442,7 @@ const STRINGS = {
     deployWrongType: 'Falscher Zieltyp für den {{adapter}}-Adapter.',
     deployNothingToDo: 'Nichts zu tun: Das Ziel ist bereits auf dem Stand des Builds.\n',
     deployDeleteRefused: '{{path}} konnte auf dem Server nicht gelöscht werden ({{reason}}). Der nächste Upload versucht es wieder.\n',
+    deployDeleteUnchecked: 'Ob {{path}} auf dem Server noch liegt, konnte nicht geprüft werden: Der Zugang darf den Ordner „{{folder}}“ nicht öffnen ({{reason}}). Der nächste Upload versucht es wieder.\n',
     ftpPwdUnreadable:
       'Der Server sagt nicht lesbar, in welchem Ordner die Anmeldung beginnt ({{reply}}). Für „{{path}}“ braucht QuartzControl diesen Ordner: Trage einen absoluten Pfad ein, der mit „/“ beginnt.',
     sftpModesProgress: 'Rechte von {{path}}',
@@ -813,6 +815,7 @@ const STRINGS = {
     relayRemoveMoved: 'The target “{{target}}” or the folder has changed since the upload. QuartzControl no longer knows the old place; delete send.php, config.php and config.generated.php there yourself.',
     relayRemoveGone: 'There was no relay under “{{path}}” any more.\n',
     relayRemoveRefused: '{{path}} could not be deleted on the server ({{reason}}).\n',
+    relayRemoveUnchecked: 'Whether {{path}} is still on the server could not be checked: the login may not open the folder “{{folder}}” ({{reason}}).\n',
     relayRemoveRefusedRest: 'So the relay is not removed from the server. Delete these files there yourself, or allow the login to delete in this folder and try again.',
     relayRemoveFolderMissing: 'Neither the folder “{{dest}}” nor the one above it exists. Is the drive connected?',
     relayRemovedRest: 'The folder “{{subdir}}/counters” stays with the server’s counts; without send.php nothing there takes forms any more.',
@@ -867,6 +870,7 @@ const STRINGS = {
     deployWrongType: 'Wrong destination type for the {{adapter}} adapter.',
     deployNothingToDo: 'Nothing to do: the target already matches the build.\n',
     deployDeleteRefused: '{{path}} could not be deleted on the server ({{reason}}). The next upload tries again.\n',
+    deployDeleteUnchecked: 'Whether {{path}} is still on the server could not be checked: the login may not open the folder “{{folder}}” ({{reason}}). The next upload tries again.\n',
     ftpPwdUnreadable:
       'The server does not say readably which folder the login starts in ({{reply}}). QuartzControl needs that folder for “{{path}}”: enter an absolute path starting with “/”.',
     sftpModesProgress: 'permissions of {{path}}',

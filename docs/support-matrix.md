@@ -72,12 +72,16 @@ dahin gilt der Fall als geduldet.
 | SMTP | nicht unterstützt | nicht angeboten |
 | ein CDN vor dem Server | geduldet | an der Attrappe gemessen |
 | eine Weiterleitung an der Adresse von send.php | geduldet | an Attrappe und `debian-vm` gemessen; die Abfrage deutet fremde Antworten und kann irren |
-| Relay vom Server entfernen (Ordner, SFTP, rsync, FTP) | unterstützt | Mailtest-Befund 7 (2026-10-25): löscht nur send.php, config.php und config.generated.php am Ort des letzten Hochladens, `counters/` bleibt; Ordner lokal und SFTP/rsync auf `debian-vm` (Account `boxi`, Home statt Webroot) gemessen, auch mit fehlenden Dateien, fehlendem Ordner und geändertem Unterordner/Ziel; FTP gegen vsftpd, ProFTPD und Pure-FTPd (Account `qchost`, ohne chroot) mit denselben Fällen gemessen. Eine abgelehnte Löschung (Ordner 555) ist seit dem Fix nach Befund 7 über FTP und SFTP ein Fehlschlag, der Stand bleibt „hochgeladen“; vorher hieß sie „vom Server entfernt“, und config.php blieb liegen. rsync scheiterte schon vorher richtig |
+| Relay vom Server entfernen (Ordner, SFTP, rsync, FTP) | unterstützt | Mailtest-Befund 7 (2026-10-25): löscht nur send.php, config.php und config.generated.php am Ort des letzten Hochladens, `counters/` bleibt; Ordner lokal und SFTP/rsync auf `debian-vm` (Account `boxi`, Home statt Webroot) gemessen, auch mit fehlenden Dateien, fehlendem Ordner und geändertem Unterordner/Ziel; FTP gegen vsftpd, ProFTPD und Pure-FTPd (Account `qchost`, ohne chroot) mit denselben Fällen gemessen. Eine abgelehnte Löschung (Ordner 555) ist seit dem Fix nach Befund 7 über FTP und SFTP ein Fehlschlag, der Stand bleibt „hochgeladen“; vorher hieß sie „vom Server entfernt“, und config.php blieb liegen. rsync scheiterte schon vorher richtig. Ein Ordner ohne `x` (644, auch der darüber) hieß über FTP noch „lag kein Relay mehr“, weil `SIZE` dort für eine vorhandene Datei ebenfalls 550 sagt und `LIST` eine leere Liste gibt (60. Review, H1); seit dem Fix fragt FTP, ob sich der Ordner öffnen lässt, und sagt sonst „konnte nicht geprüft werden“, der Stand bleibt, gemessen auf allen drei Servern |
 
 ### Behoben aus den Messungen vom 2026-10-21
 
 - Eine abgelehnte Löschung über FTP zählte als gelöscht, bei allen drei Servern (550 für beides):
   `466117a2` fragt danach `SIZE`.
+  In einem Ordner ohne `x` sagt auch `SIZE` 550, für eine Datei, die da ist; seit dem Fix nach dem
+  60. Review (H1) zählt eine Datei nur als weg, wenn sich ihr Ordner öffnen lässt oder der Ordner
+  darüber ihn nicht zeigt. Für die Website heißt das: Sie bleibt im Manifest, und der nächste
+  Upload löscht sie.
 - „~/…“ hieß je Weg etwas anderes: `e41df35f` löst „~“ und „~<eigenes Konto>“ über SFTP und FTP
   selbst zum Anmeldeverzeichnis auf, „~<anderes Konto>“ wird abgelehnt.
 - Auf `fix/1.1.x` lehnte rsync nur Leerzeichen im Pfad ab, nicht die übrigen Zeichen der Shell;

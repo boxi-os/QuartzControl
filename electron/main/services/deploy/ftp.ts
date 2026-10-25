@@ -178,6 +178,42 @@ export const ftpAdapter: DeployAdapter = {
       }
       if (refused.length) output += await modeNotes(client, refused)
 
+      // Whether the login can enter a folder: null when it can or the folder is not there, else the
+      // folder it cannot enter and the server's reply. Without x on a folder SIZE answers 550 for a
+      // file that is there, and LIST answers an empty list, as for a missing folder: a relay folder
+      // 644 was said "no relay any more", the state reset and the three files left online, on vsftpd,
+      // ProFTPD and Pure-FTPd alike, and so with the folder above it 644 (debian-vm, review
+      // 2026-11-04, H1). A folder is missing only where the folder above can be entered and does not
+      // list it; one above that may be entered but not read lists nothing, and is not told apart.
+      const closedFolders = new Map<string, Promise<{ folder: string; reason: string } | null>>()
+      const closedFolder = (folder: string): Promise<{ folder: string; reason: string } | null> => {
+        let known = closedFolders.get(folder)
+        if (!known) {
+          known = (async () => {
+            const refusal = await client.cd(folder).then(
+              () => null,
+              (err: unknown) => {
+                if (!(err instanceof FTPError)) throw err
+                return err.message.replace(/\.+$/, '')
+              }
+            )
+            await client.cd(start)
+            if (refusal === null) return null
+            const above = posix.dirname(folder)
+            if (above === folder) return { folder, reason: refusal }
+            const closedAbove = await closedFolder(above)
+            if (closedAbove) return closedAbove
+            const listing = await client.list(above).catch((err: unknown) => {
+              if (!(err instanceof FTPError)) throw err
+              return []
+            })
+            return listing.some((f) => f.name === posix.basename(folder)) ? { folder, reason: refusal } : null
+          })()
+          closedFolders.set(folder, known)
+        }
+        return known
+      }
+
       // What was not deleted stays in the manifest, so the next upload offers it again (sftp.ts, run).
       const kept: string[] = []
       // Removing the relay: a file that was not there is not said deleted (relayRemove).
@@ -194,7 +230,8 @@ export const ftpAdapter: DeployAdapter = {
           // 550 is the answer for a missing file and for a refused one alike, on vsftpd, ProFTPD and
           // Pure-FTPd: a file in a folder 555 was said deleted, stayed online and left the manifest,
           // so no later run tried again (debian-vm, support matrix, 2026-10-21). SIZE tells them
-          // apart on all three; what it cannot answer is kept, to be asked again next time.
+          // apart on all three, in a folder the login can enter (closedFolder); what it cannot answer
+          // is kept, to be asked again next time.
           const gone =
             err.code === 550 &&
             (await client.size(remotePath).then(
@@ -204,7 +241,11 @@ export const ftpAdapter: DeployAdapter = {
                 return sizeErr.code === 550
               }
             ))
-          if (gone && ctx.onlyPaths) missing++
+          const closed = gone ? await closedFolder(posix.dirname(remotePath)) : null
+          if (closed) {
+            kept.push(relPath)
+            output += mainT(ctx.onlyPaths ? 'relayRemoveUnchecked' : 'deployDeleteUnchecked', { path: relPath, folder: closed.folder, reason: closed.reason })
+          } else if (gone && ctx.onlyPaths) missing++
           else if (gone) output += `✗ ${relPath}\n`
           else {
             kept.push(relPath)

@@ -144,7 +144,7 @@ Seit 1.1 hängen App, Vorlage und Handbuch an Fassungen der eigenen Plugins
   (`FORMS_READ_AGAINST` in `formsOptions.ts`, geprüft von `check:plugin-copies`); was er über eine
   Definition urteilt, fragt er das installierte Plugin (`dist/cli.js`). Das Repository ist privat
   bis zum Release 1.2 und wird vor allem anderen dieses Punkts öffentlich, mit einer Fassung, die
-  die MIT-Lizenz trägt (`v0.5.15` hat sie noch nicht).
+  die MIT-Lizenz trägt (die erste ist `v0.5.16`).
 - **Die Vorlage installiert, was auf `main` liegt, und das ist entschieden.** `plugins.json` des
   Pakets nennt sie als `github:boxi-os/<name>` ohne Ref (`qc-basic` alle vier, die anderen
   Varianten die ersten drei); ein Import holt den Stand von `main`
@@ -170,7 +170,9 @@ vier am 2026-10-22), der bis zur nächsten Fassung unter „Unreleased“ im CHA
 quartz-forms sechs Commits nach `v0.5.15` (Test, MIT `6012230`, Rechteinhaber `3d94eeb`,
 Kommentar, `AGENTS.md`, hCaptcha mit `onload` `4b12fe0`), gepusht, noch privat; der hCaptcha-Fix
 ändert `src`, also kommt er mit der nächsten Fassung, und der Reiter muss dagegen nicht neu gelesen
-werden (nur `forms.inline.ts`, nichts davon ist abgeschrieben).
+werden (nur `forms.inline.ts`, nichts davon ist abgeschrieben). **Stand 2026-10-25:** `v0.5.16`
+(`76c0d90`) trägt all das samt den Befunden des Mailtests, die App liest gegen sie (`edfd8e86`);
+danach nur `e2afa20` (`AGENTS.md`, wann eine Fassung minor ist), gepusht, noch privat.
 
 **Jede neue Fassung braucht auch die App.** Der Editor eines Plugins ist gegen eine Fassung gelesen
 (`*_READ_AGAINST` in `src/routes/Plugins/`) und kennt die mit demselben Code (`*_SAME_CODE`); jede

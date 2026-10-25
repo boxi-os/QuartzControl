@@ -370,6 +370,18 @@ Projektwurzel.
   Upload landete auf der lokalen Platte (N1). Gefragt wird jetzt, ob eine der Dateien aus dem
   Manifest noch da ist (`lstat`, bis zur ersten). Der Preis: Ein Ordner, den ein Skript absichtlich
   leert, scheitert bei jedem Lauf, bis „Alles neu hochladen“ gewählt wird (N2, Handbuch 6.5).
+  Nachtrag aus dem 60. Review (2026-11-04, abgearbeitet am 2026-10-25): Auch 550 auf `DELE` und
+  `SIZE` zusammen beweisen über FTP kein „weg“. In einem Ordner ohne `x` sagen beide 550 für eine
+  Datei, die da ist, und `LIST` gibt eine leere Liste; das Entfernen des Relays hieß „lag kein Relay
+  mehr“, setzte den Stand zurück und ließ `config.php` mit Secret und Adressen online, auf vsftpd,
+  ProFTPD und Pure-FTPd (H1). Gefragt wird jetzt, ob sich der Ordner öffnen lässt, und sonst, ob
+  der Ordner darüber ihn zeigt. Und Löschen nach Namen löschte, was gerade dort lag: Zwei Projekte
+  mit Relay im selben Ordner entfernten gegenseitig ihr Relay (N4 a, alle vier Wege), und ein
+  Zugang, der auf einen anderen Server umgeschrieben wurde, behielt seine id und damit den Ort
+  (N4 b). Das Entfernen fragt jetzt nach dem, was nur das eigene Hochladen kennt: die `generation`,
+  die quartz-forms bei jedem Lauf neu würfelt, und `user@host` des Zugangs. Was sich nicht lesen
+  lässt, wird nicht gelöscht, denn die Löschung scheiterte dort ohnehin. Die kurze Regel sagt es
+  seitdem so. Messungen in [`publishing-and-credentials.md`](publishing-and-credentials.md).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

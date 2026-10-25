@@ -3419,3 +3419,53 @@ Warnung von hCaptcha aus dem Browser-Lauf; alles gepusht.
 Nicht gewählt: Nebenbei „0 Formular-Einträge“, `LICENSE` in `files`, die Honeypot-Notiz und drei
 Punkte aus der Abarbeitung (Zählung unter „werden ersetzt“, nur der Codeblock wird erkannt, der
 Satz nennt „Plugins“ auch ohne diesen Teil).
+
+**Das sechzigste Review** ([`REVIEW-2026-11-04.md`](REVIEW-2026-11-04.md), Auftrag
+[`REVIEW-2026-11-04-auftrag.md`](REVIEW-2026-11-04-auftrag.md), `feat/1.2` bei `53eb1525`,
+quartz-forms `e2afa20` mit Tag `v0.5.16`: die Fixes aus dem Mailtest vom 2026-10-25): von Claude
+Fable 5.1 als frisch gestarteter Subagent, ohne den Verlauf der Sitzung. 1 Hoch, 3 Mittel,
+10 Niedrig, 10 nebenbei; Urteil: so nicht mit 1.2, vorher H1, M1 und M2, M3 braucht eine
+Entscheidung im Plugin.
+
+Abgearbeitet am 2026-10-25 auf `feat/1.2`, ein Befund je Commit, gemessen an der gebauten App
+(Geschirr des Reviews, Wegwerf-Profile, `debian-vm` mit SFTP, rsync und drei FTP-Servern, das
+Relay unter `php -S`), vorher und nachher; Messungen in `decisions/publishing-and-credentials.md`:
+
+- **M3** — der Umschlag-Absender ist ein Schalter (Weg 2): quartz-forms `e3a3d0a`
+  (`envelopeSender`), QuartzControl `d34ee7e0`, App-Handbuch `5545bcc`.
+- **H1** `8e7bb090` — über FTP zählt eine Datei nur dort als weg, wo sich ihr Ordner öffnen lässt;
+  vorher hieß ein Relay-Ordner 644 auf allen drei Servern „lag kein Relay mehr“.
+- **M1** `a234a8be` — rsync und das Ordner-Ziel sagen eine abgelehnte Löschung in den Sätzen von
+  SFTP und FTP.
+- **M2** `a7b9f2c2` — die Ablehnung bei geändertem Ziel nennt den alten Ort und Zugang.
+
+Nachtrag am selben Tag: Der Nutzer hat aus Niedrig und Nebenbei gewählt, was einen Satz falsch
+macht oder fremde Dateien trifft:
+
+- **N1** `f18d61ec` — „Das Relay erhält sie mit dem nächsten Hochladen“ nur, solange der Status
+  es auch sagt (`relayOutdated`).
+- **N2** `1c969826` — bei leerer Origin-Liste ein eigener Nebensatz.
+- **N5** `c8a81597` — mit `counterDir` nennt das Entfernen, wo die Zähler bleiben.
+- **N6** `4fc7a3db` — der Bestätigungsdialog hat einen Satz Folgen und sagt, dass Adressen und
+  Secrets bleiben (statt des Vorschlags, einen Hinweis unter den Button zu setzen, den es nicht
+  gibt).
+- **N7** `f837b2b8` — das Ordner-Ziel sagt kein „✗“ für eine Datei, die nicht da war.
+- **N4 b** `5be75e82` — ein Zugang, der jetzt auf einen anderen Server zeigt, gilt als verschoben,
+  und das Entfernen lehnt ab.
+- **N3** `fcc277b4` — `originListed` steht in `shared/relayOrigin.ts`, und `check:plugin-copies`
+  lässt PHP `qf_origin_allowed` mit 16 Fällen dagegen antworten; der erste Lauf fand eine
+  Abweichung (`strcasecmp` kennt nur ASCII), behoben.
+- **N4 a** `742b5246` — das Entfernen liest vorher `config.generated.php` und löscht nur bei der
+  `generation` des letzten Hochladens; vorher löschten zwei Projekte im selben Ordner gegenseitig.
+- **Nebenbei** — Kopfkommentar von `runDirectoryUpload` (`db110204`), `urlHint` (`fb2805b1`); aus
+  der Abarbeitung: das Ordner-Ziel bricht beim Website-Löschen nicht mehr roh ab (`cbfbab87`), FTP
+  sagt „konnte nicht geprüft werden“ einmal je Ordner (`f07b19f9`); die Matrix-Zeile nachgezogen.
+
+Neue Regel: „Über FTP heißt 550 ‚fehlt‘ nur, wo sich der Ordner öffnen lässt. Das Relay entfernt
+nur sein eigenes“ (Zusatz zur Veröffentlichen-Regel in `docs/conventions.md`, Begründung in
+`conventions-full.md`). Nicht gewählt: N8 (`send.php` als Ordner bleibt über rsync und FTP still
+liegen, kein Geheimnis; steht in der Matrix), N9 (`field-sizing`), N10 (Bild für das Handbuch, mit
+1.2); nebenbei die mtime über rsync, `|` im Unterordner, der englische Satz der Relay-Seite ohne JS
+(quartz-forms), die Ausnahme für erzeugte Dateien in `AGENTS.md`; aus der Abarbeitung die rohen
+Zeilen des Ordner-Ziels bei einem Ordner ohne `x` oder ohne `r` und von rsync bei 311, und der
+Grenzfall 711 in `closedFolder` (Kommentar). Nichts gepusht.

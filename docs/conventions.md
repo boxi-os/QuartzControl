@@ -82,7 +82,10 @@ Begründung.
   setzt der Adapter einmal je Ziel auf 0644 (`deploy-manifest-<id>.modes.json`): nur reguläre
   Dateien mit genau 0666 (`lstat`), und erledigt ist das Ziel erst, wenn der Server zu jeder Datei
   geantwortet hat. Als gelöscht zählt nur die Antwort des Servers, dass die Datei fehlt; ein Fehler
-  der Leitung lässt den Lauf scheitern, und das Manifest bleibt. Ein Ordner-Ziel, das schon
+  der Leitung lässt den Lauf scheitern, und das Manifest bleibt. Über FTP heißt 550 „fehlt“ nur, wo
+  sich der Ordner öffnen lässt. Das Relay entfernt nur sein eigenes: dieselbe `generation` in
+  `config.generated.php`, derselbe `user@host` wie beim Hochladen; was sich nicht lesen lässt, gilt
+  nicht als eigenes. Ein Ordner-Ziel, das schon
   veröffentlicht wurde, fragt vorher, ob sein Ordner da ist und eine der veröffentlichten Dateien
   enthält, nicht ob er leer ist; ein FTP-Server, der
   `SIZE` sperrt, ist die geduldete Ausnahme. Die Abfrage nach dem Upload nennt

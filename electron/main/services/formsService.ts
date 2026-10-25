@@ -537,6 +537,13 @@ function phpMessage(body: string): string | null {
 
 const RELAY_ASK_AGAIN_MS = 3000
 
+/** Whether the relay's list allows `origin`, by send.php's rule (qf_origin_allowed): case aside,
+ *  without a trailing slash, an empty list allows any. */
+function originListed(allowed: string[], origin: string): boolean {
+  const bare = (o: string): string => o.replace(/\/+$/, '').toLowerCase()
+  return allowed.length === 0 || allowed.some((a) => bare(a) === bare(origin))
+}
+
 /** What the relay answers a `GET ?challenge=` with when it refuses (send.php). */
 const RELAY_GET_ERRORS = ['unknown_form', 'origin', 'secret_config', 'mbstring_config']
 
@@ -720,7 +727,12 @@ export async function relayUpload(projectId: string, projectPath: string, source
     // asked under the global one, or not at all (review 2026-10-29, nebenbei).
     const forms = strings(generated.json.forms)
     const probeForm = form && forms.includes(form) ? form : forms[0]
-    const check = result.success ? await checkRelay(url, origin, probeForm, generation) : undefined
+    const asked = result.success ? await checkRelay(url, origin, probeForm, generation) : undefined
+    // A refusal of the origin had one way out, "add it", also when it was listed already: the
+    // check asks with the origin of baseUrl, and with baseUrl left on another site the origin the
+    // user had typed stood there right (mail test 2026-10-25, finding 2). Listed, the refusal came
+    // from another relay than this one.
+    const check = asked?.kind === 'relayError' && asked.error === 'origin' && origin ? { ...asked, origin: { sent: origin, listed: originListed(settings.allowedOrigins, origin) } } : asked
     // Not after `unreachable`: a server that kept silent once kept the upload waiting a second
     // time, 20.9 s for a port that accepts and never answers (review 2026-10-29, N3).
     const countersOpen = check && check.kind !== 'noUrl' && check.kind !== 'unreachable' && !settings.counterDir.trim() ? await countersServed(check.url) : null

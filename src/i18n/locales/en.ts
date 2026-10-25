@@ -1616,6 +1616,8 @@ export default {
       checkPhpMessage: 'PHP prints an error at {{url}} instead of the relay’s answer: “{{message}}”',
       checkPhpCannotRead: 'PHP itself answers “File not found.” at {{url}}: it may not read send.php, mostly because it runs as another user at the host than the upload account, or the file is not there.',
       checkRelayOrigin: 'The relay at {{url}} does not accept requests from the site’s address. Add it under “Allowed origins” and upload the relay again.',
+      checkRelayOriginBase: 'The relay at {{url}} does not accept requests from {{origin}}, the address from the project’s base URL. Correct the base URL under “Configuration” or add {{origin}} under “Allowed origins”, then upload the relay again.',
+      checkRelayOriginOther: 'The relay at {{url}} does not accept requests from {{origin}}, although it is listed under “Allowed origins”: another relay than the one just uploaded answers there. Check the address of send.php and the subfolder.',
       checkRelaySecret: 'The relay at {{url}} finds no usable secret in its config.php, while the one just uploaded has one. Do the target and the folder match the send.php address?',
       checkRelayMbstring: 'PHP at {{url}} lacks the mbstring extension, without which the relay accepts no message. Ask the host to enable it.',
       checkNoPhp: 'PHP does not run at {{url}}: the server hands out send.php as text. Upload the relay to a folder where PHP runs.',

@@ -771,8 +771,8 @@ const RELAY_REMOVED = ['send.php', 'config.php', 'config.generated.php']
  * counters/ stays with its .htaccess, which keeps the counts the server wrote unreadable; under
  * mod_php they are the web server's files, which the account often cannot delete at all. A relay
  * could be uploaded and never removed (mail test 2026-10-25, finding 7). Where it was is the last
- * upload's location, not the settings: a target or folder changed since then is refused, as
- * QuartzControl no longer has the way there. The stored addresses and secrets stay.
+ * upload's location, not the settings: a target changed since then is refused with the old place,
+ * as QuartzControl no longer has the way there. The stored addresses and secrets stay.
  */
 export async function relayRemove(projectPath: string): Promise<DeployResult> {
   const file = await readRelayFile(projectPath)
@@ -781,7 +781,16 @@ export async function relayRemove(projectPath: string): Promise<DeployResult> {
   const target = await getTarget(projectPath, last.targetId)
   if (!target) return { success: false, output: mainT('deployTargetMissing', { id: last.targetId }) }
   const subdir = last.location.split('|').at(-1) ?? ''
-  if (locationOf(target, subdir) !== last.location) return { success: false, output: mainT('relayRemoveMoved', { target: target.name }) }
+  if (locationOf(target, subdir) !== last.location) {
+    // The old place is in the location, and the sentence names it: it said QuartzControl no longer
+    // knew it, and that the subfolder might have changed, which never refuses - removing takes the
+    // uploaded one (review 2026-11-04, M2). The login only where it is another one now.
+    const [type, connectionId, ...rest] = last.location.split('|')
+    const where = rest.slice(0, -1).join('|')
+    const path = type === 'folder' ? join(where, subdir) : posix.join(where, subdir)
+    const login = connectionId && connectionId !== (target.connectionId ?? '') ? (await connectionsService.getConnection(connectionId))?.name : undefined
+    return { success: false, output: mainT('relayRemoveMoved', { target: target.name, path, login: login ? mainT('relayRemoveMovedLogin', { name: login }) : '' }) }
+  }
   return withTempDir(async (dir) => {
     const result = await runDirectoryUpload(projectPath, target.id, dir, subdir, `relay-${target.id}`, RELAY_REMOVED)
     if (!result.success) return result

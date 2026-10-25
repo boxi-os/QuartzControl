@@ -562,7 +562,11 @@ function checkText(check: RelayCheck, configReadable: boolean, t: TFunction): st
       // otherRelay (checkRelay) and three are said here (review 2026-10-29, nebenbei); any other
       // one with the relay's own words.
       // The check asks with the origin of baseUrl: not listed, either baseUrl or the list is wrong.
-      if (check.error === 'origin' && check.origin) return t(check.origin.listed ? 'formsEditor.relay.checkRelayOriginOther' : 'formsEditor.relay.checkRelayOriginBase', { url: check.url, origin: check.origin.sent })
+      if (check.error === 'origin' && check.origin) {
+        const values = { url: check.url, origin: check.origin.sent }
+        if (check.origin.listed === 'any') return t('formsEditor.relay.checkRelayOriginAny', values)
+        return t(check.origin.listed ? 'formsEditor.relay.checkRelayOriginOther' : 'formsEditor.relay.checkRelayOriginBase', values)
+      }
       if (check.error === 'origin') return t('formsEditor.relay.checkRelayOrigin', { url: check.url })
       if (check.error === 'secret_config') return t('formsEditor.relay.checkRelaySecret', { url: check.url })
       if (check.error === 'mbstring_config') return t('formsEditor.relay.checkRelayMbstring', { url: check.url })

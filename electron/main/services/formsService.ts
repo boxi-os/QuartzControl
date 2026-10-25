@@ -737,8 +737,10 @@ export async function relayUpload(projectId: string, projectPath: string, source
     // A refusal of the origin had one way out, "add it", also when it was listed already: the
     // check asks with the origin of baseUrl, and with baseUrl left on another site the origin the
     // user had typed stood there right (mail test 2026-10-25, finding 2). Listed, the refusal came
-    // from another relay than this one.
-    const check = asked?.kind === 'relayError' && asked.error === 'origin' && origin ? { ...asked, origin: { sent: origin, listed: originListed(settings.allowedOrigins, origin) } } : asked
+    // from another relay than this one. An empty list allows any, and the sentence says so: it said
+    // "listed" there (review 2026-11-04, N2).
+    const listed = settings.allowedOrigins.length === 0 ? ('any' as const) : originListed(settings.allowedOrigins, origin ?? '')
+    const check = asked?.kind === 'relayError' && asked.error === 'origin' && origin ? { ...asked, origin: { sent: origin, listed } } : asked
     // Not after `unreachable`: a server that kept silent once kept the upload waiting a second
     // time, 20.9 s for a port that accepts and never answers (review 2026-10-29, N3).
     const countersOpen = check && check.kind !== 'noUrl' && check.kind !== 'unreachable' && !settings.counterDir.trim() ? await countersServed(check.url) : null

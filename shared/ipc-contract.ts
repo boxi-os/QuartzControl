@@ -710,8 +710,9 @@ export type RelayCheck =
    *  page of its own is the server's (`http`). */
   | { kind: 'phpError'; url: string }
   /** The relay's own refusal, e.g. `origin` or `mbstring_config`. With `origin`, `sent` is the
-   *  origin the check asked with and `listed` whether the uploaded "Erlaubte Origins" name it. */
-  | { kind: 'relayError'; url: string; status: number; error: string; message: string; origin?: { sent: string; listed: boolean } }
+   *  origin the check asked with and `listed` whether the uploaded "Erlaubte Origins" name it,
+   *  `'any'` when the list was empty. */
+  | { kind: 'relayError'; url: string; status: number; error: string; message: string; origin?: { sent: string; listed: boolean | 'any' } }
   /** send.php came back as its own source: PHP does not run there. `configOpen`: the address under
    *  which config.php was served as well, secret and addresses included. */
   | { kind: 'noPhp'; url: string; configOpen?: string }

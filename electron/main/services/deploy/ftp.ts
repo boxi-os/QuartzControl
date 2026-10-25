@@ -218,6 +218,9 @@ export const ftpAdapter: DeployAdapter = {
       const kept: string[] = []
       // Removing the relay: a file that was not there is not said deleted (relayRemove).
       let missing = 0
+      // Files whose folder cannot be entered, said once per folder after the loop: per file, the
+      // relay's three repeated the same sentence three times (review 2026-11-04, nebenbei).
+      const unchecked = new Map<string, { reason: string; paths: string[] }>()
       for (const relPath of toDelete) {
         const remotePath = posix.join(root, relPath)
         try {
@@ -244,7 +247,9 @@ export const ftpAdapter: DeployAdapter = {
           const closed = gone ? await closedFolder(posix.dirname(remotePath)) : null
           if (closed) {
             kept.push(relPath)
-            output += mainT(ctx.onlyPaths ? 'relayRemoveUnchecked' : 'deployDeleteUnchecked', { path: relPath, folder: closed.folder, reason: closed.reason })
+            const entry = unchecked.get(closed.folder) ?? { reason: closed.reason, paths: [] }
+            entry.paths.push(relPath)
+            unchecked.set(closed.folder, entry)
           } else if (gone && ctx.onlyPaths) missing++
           else if (gone) output += `✗ ${relPath}\n`
           else {
@@ -256,6 +261,11 @@ export const ftpAdapter: DeployAdapter = {
         }
         processed++
         ctx.emitProgress(processed, total, relPath)
+      }
+      for (const [folder, { reason, paths }] of unchecked) {
+        const vars = { path: paths[0], paths: paths.join(', '), folder, reason }
+        if (paths.length === 1) output += ctx.onlyPaths ? mainT('relayRemoveUnchecked', vars) : mainT('deployDeleteUnchecked', vars)
+        else output += ctx.onlyPaths ? mainT('relayRemoveUncheckedMany', vars) : mainT('deployDeleteUncheckedMany', vars)
       }
       if (ctx.onlyPaths && missing === toDelete.length) output += mainT('relayRemoveGone', { path: root })
 

@@ -457,7 +457,10 @@ export function RelaySection({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
+      {/* The foot of the card (the section is its last child, the card has p-4): with a line
+          between the options, the upload area under the same line read as one more option
+          (mail test 2026-10-25, finding 8, side list). */}
+      <div className="-mx-4 -mb-4 flex flex-col gap-2 rounded-b-[10px] border-t border-ink/10 bg-ink/[0.03] px-4 py-3 dark:border-ink/15 dark:bg-ink/[0.04]">
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => void upload()} disabled={!canUpload || busy !== null}>
             <Upload size={14} aria-hidden />

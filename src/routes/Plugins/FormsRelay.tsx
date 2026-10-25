@@ -166,6 +166,8 @@ export function RelaySection({
   // A relay could be uploaded and never taken down again (mail test 2026-10-25, finding 7).
   async function remove(): Promise<void> {
     if (!uploadedTo) return
+    // One sentence of consequences, with what stays here: it had two, the files and the forms, and
+    // nothing said the addresses and secrets stay (review 2026-11-04, N6). The output names the files.
     if (!(await confirmDialog({ text: t('formsEditor.relay.removeConfirm', uploadedTo), confirmLabel: t('formsEditor.relay.removeSubmit'), danger: true }))) return
     setBusy('remove')
     setResult(null)

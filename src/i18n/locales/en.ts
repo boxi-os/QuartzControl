@@ -1663,7 +1663,7 @@ export default {
       renewSecretSubmit: 'Make a new secret',
       renewSecretAnnounce: 'New secret for the relay made.',
       remove: 'Remove from server …',
-      removeConfirm: 'Remove the relay at “{{target}}”, folder “{{subdir}}”, from the server?\n\nQuartzControl deletes send.php, config.php and config.generated.php there. Forms that send there no longer arrive until you upload the relay again.',
+      removeConfirm: 'Remove the relay at “{{target}}”, folder “{{subdir}}”, from the server?\n\nForms that send there no longer arrive; the addresses and secrets stay in QuartzControl for the next upload.',
       removeSubmit: 'Remove',
       removing: 'Removing …',
       removedAnnounce: 'Relay removed from the server.',

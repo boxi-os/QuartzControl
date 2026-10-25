@@ -129,10 +129,11 @@ export function RelaySection({
   // ended in an error is not read out whole: its first line that is no "↑"/"✗" entry is said, as
   // rsync's errors and the silent-connection sentence come in several lines, and they were said
   // without a reason (review 2026-10-31, nebenbei). rsync's last line is "error: unexpected end of
-  // file", its first names the folder.
-  const failedAnnounce = (output: string): string => {
+  // file", its first names the folder. Removing too: a run that deleted one file and was refused the
+  // next begins with "✗ send.php" (review 2026-11-04, M1).
+  const failedAnnounce = (output: string, failed = t('formsEditor.relay.uploadFailedAnnounce')): string => {
     const reason = output.split('\n').find((line) => line.trim() && !/^[↑✗] /.test(line))
-    return reason ? `${t('formsEditor.relay.uploadFailedAnnounce')} ${reason.trim()}` : t('formsEditor.relay.uploadFailedAnnounce')
+    return reason ? `${failed} ${reason.trim()}` : failed
   }
 
   async function upload(): Promise<void> {
@@ -162,7 +163,7 @@ export function RelaySection({
     setResult(null)
     try {
       const r = await window.quartzGui.forms.relayRemove({ projectPath: project.path })
-      setResult({ ...r, said: r.success ? t('formsEditor.relay.removedAnnounce') : `${t('formsEditor.relay.removeFailedAnnounce')} ${r.output.split('\n')[0] ?? ''}`.trim() })
+      setResult({ ...r, said: r.success ? t('formsEditor.relay.removedAnnounce') : failedAnnounce(r.output, t('formsEditor.relay.removeFailedAnnounce')) })
       onChanged()
     } catch (err) {
       setResult({ success: false, output: formatIpcError(err), said: t('formsEditor.relay.removeFailedAnnounce') })

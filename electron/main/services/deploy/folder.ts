@@ -137,18 +137,31 @@ export const folderAdapter: DeployAdapter = {
         output += `→ ${relPath}\n`
       }
 
+      // Removing the relay: a refused deletion is said per file and the others are still tried, as
+      // over SFTP and FTP. Thrown, the first one ended the run with a bare "Error: EACCES: …, unlink
+      // '…/config.generated.php'" and the other two unnamed (folder 555, review 2026-11-04, M1).
+      const kept: string[] = []
       for (const relPath of toDelete) {
         // force: already gone is not an error here, same as on the remote adapters
-        await rm(join(dest, relPath), { force: true })
+        try {
+          await rm(join(dest, relPath), { force: true })
+          output += `✗ ${relPath}\n`
+        } catch (err) {
+          const code = (err as NodeJS.ErrnoException).code
+          if (!ctx.onlyPaths || (code !== 'EACCES' && code !== 'EPERM')) throw err
+          kept.push(relPath)
+          output += mainT('relayRemoveRefused', { path: relPath, reason: (err as Error).message.split(',')[0] })
+        }
         processed++
         ctx.emitProgress(processed, total, relPath)
-        output += `✗ ${relPath}\n`
       }
 
-      await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, manifestExcludes)
+      await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, [...manifestExcludes, ...kept])
+      if (kept.length > 0) return { success: false, output: output + mainT('relayRemoveRefusedRest') }
       return { success: true, output: output || mainT('deployNothingToDo') }
     } catch (err) {
-      return { success: false, output: `${output}\n${String(err)}` }
+      // Without a leading empty line: the relay's panel announces the first line (M1).
+      return { success: false, output: [output.trimEnd(), String(err)].filter(Boolean).join('\n') }
     }
   }
 }

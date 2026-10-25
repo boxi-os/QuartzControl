@@ -244,6 +244,11 @@ function remoteShellPath(path: string): string {
 // or directory', which SFTP and FTP create. The dry run does not create anything and passes.
 const MISSING_PARENT = /\bmkdir "(.*)" failed: No such file or directory/
 
+// The receiver's line for a deletion it was refused, "rsync: [generator] delete_file: unlink(send.php)
+// failed: Permission denied (13)" from rsync 3.5.0 on debian-vm (folder 555, review 2026-11-04, M1);
+// before 3.2.4 without "[generator] ". The name is relative to the transfer's folder.
+const DELETE_REFUSED = /delete_file: unlink\((.*)\) failed: (.*?)(?: \(\d+\))?$/gm
+
 function remoteSpec(connection: SshConnection, remotePath: string): string {
   // openrsync has no --protect-args, so a remote path is expanded once more by the remote shell.
   // Whitespace there would silently split into two arguments; refused rather than guessed at.
@@ -401,6 +406,14 @@ export const rsyncAdapter: DeployAdapter = {
       const summary = result.entries
         .map((entry) => `${entry.status === 'removed' ? '✗' : '↑'} ${entry.path}`)
         .join('\n')
+      // Removing the relay: a refused deletion in the sentences SFTP and FTP say. Raw, the panel showed
+      // the three rsync lines and ".d..t.... ./", without saying the relay was still there (M1).
+      const refused = ctx.onlyPaths && result.code !== 0 ? [...result.output.matchAll(DELETE_REFUSED)] : []
+      if (refused.length > 0) {
+        const removed = result.entries.filter((entry) => entry.status === 'removed').map((entry) => `✗ ${entry.path}\n`)
+        const said = refused.map(([, path, reason]) => mainT('relayRemoveRefused', { path, reason }))
+        return { success: false, output: [...removed, ...said, mainT('relayRemoveRefusedRest')].join('') }
+      }
       return {
         success: result.code === 0,
         // The first answer as well when the second attempt fails too: behind rrsync, which runs

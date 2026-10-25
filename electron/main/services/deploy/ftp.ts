@@ -210,7 +210,7 @@ export const ftpAdapter: DeployAdapter = {
             kept.push(relPath)
             // The server's own sentence, which vsftpd ends with a period: "(550 Delete operation
             // failed.)." (review 2026-11-01, nebenbei). Not on SFTP, whose message ends with the path.
-            output += mainT('deployDeleteRefused', { path: relPath, reason: err.message.replace(/\.+$/, '') })
+            output += mainT(ctx.onlyPaths ? 'relayRemoveRefused' : 'deployDeleteRefused', { path: relPath, reason: err.message.replace(/\.+$/, '') })
           }
         }
         processed++
@@ -219,6 +219,8 @@ export const ftpAdapter: DeployAdapter = {
       if (ctx.onlyPaths && missing === toDelete.length) output += mainT('relayRemoveGone', { path: root })
 
       await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, [...manifestExcludes, ...kept])
+      // Removing the relay: as in sftp.ts, a refused deletion leaves the relay where it was.
+      if (ctx.onlyPaths && kept.length > 0) return { success: false, output: output + mainT('relayRemoveRefusedRest') }
       return { success: true, output }
     } catch (err) {
       const silent = /^Timeout \((control|data) socket\)$/.test(err instanceof Error ? err.message : '')

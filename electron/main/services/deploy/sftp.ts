@@ -243,7 +243,7 @@ export const sftpAdapter: DeployAdapter = {
             else output += `✗ ${relPath}\n`
           } else {
             kept.push(relPath)
-            output += mainT('deployDeleteRefused', { path: relPath, reason: (err as Error).message })
+            output += mainT(ctx.onlyPaths ? 'relayRemoveRefused' : 'deployDeleteRefused', { path: relPath, reason: (err as Error).message })
           }
         }
         processed++
@@ -307,6 +307,10 @@ export const sftpAdapter: DeployAdapter = {
       }
 
       await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, [...manifestExcludes, ...kept])
+      // Removing the relay: a file the server kept is a relay still there, config.php with it. Said
+      // removed, the state was reset and the button gone (debian-vm, chmod 555, mail test
+      // 2026-10-25, finding 7 over FTP); for a site the next upload tries again, here nothing does.
+      if (ctx.onlyPaths && kept.length > 0) return { success: false, output: output + mainT('relayRemoveRefusedRest') }
       return { success: true, output }
     } catch (err) {
       // the host-key message explains what actually happened; ssh2's own error does not

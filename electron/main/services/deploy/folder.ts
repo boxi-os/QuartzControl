@@ -141,20 +141,29 @@ export const folderAdapter: DeployAdapter = {
       // over SFTP and FTP. Thrown, the first one ended the run with a bare "Error: EACCES: …, unlink
       // '…/config.generated.php'" and the other two unnamed (folder 555, review 2026-11-04, M1).
       const kept: string[] = []
+      // Removing the relay: a file that was not there is not said deleted, as over SFTP and FTP. With
+      // rm's force it said "✗ send.php" for a send.php deleted by hand (review 2026-11-04, N7).
+      let missing = 0
       for (const relPath of toDelete) {
-        // force: already gone is not an error here, same as on the remote adapters
         try {
-          await rm(join(dest, relPath), { force: true })
+          await rm(join(dest, relPath))
           output += `✗ ${relPath}\n`
         } catch (err) {
           const code = (err as NodeJS.ErrnoException).code
-          if (!ctx.onlyPaths || (code !== 'EACCES' && code !== 'EPERM')) throw err
-          kept.push(relPath)
-          output += mainT('relayRemoveRefused', { path: relPath, reason: (err as Error).message.split(',')[0] })
+          // Already gone is not an error here, same as on the remote adapters.
+          if (code === 'ENOENT') {
+            if (ctx.onlyPaths) missing++
+            else output += `✗ ${relPath}\n`
+          } else {
+            if (!ctx.onlyPaths || (code !== 'EACCES' && code !== 'EPERM')) throw err
+            kept.push(relPath)
+            output += mainT('relayRemoveRefused', { path: relPath, reason: (err as Error).message.split(',')[0] })
+          }
         }
         processed++
         ctx.emitProgress(processed, total, relPath)
       }
+      if (ctx.onlyPaths && missing === toDelete.length) output += mainT('relayRemoveGone', { path: dest })
 
       await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, [...manifestExcludes, ...kept])
       if (kept.length > 0) return { success: false, output: output + mainT('relayRemoveRefusedRest') }

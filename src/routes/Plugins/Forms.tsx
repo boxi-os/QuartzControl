@@ -26,7 +26,7 @@ import {
   Vote,
   Wrench
 } from 'lucide-react'
-import type { FormsCheckResult, FormUsagePage, LayoutPosition, NormalizedOptionSchema, PluginEntry, PluginSource, QuartzConfig } from '@shared/ipc-contract'
+import type { FormsCheckResult, FormUsagePage, LayoutPosition, NormalizedOptionSchema, PluginEntry, PluginSource, QuartzConfig, RelayState } from '@shared/ipc-contract'
 import { slugPath } from '@shared/formUsages'
 import { Badge, Button, Card, CardHeading, Combobox, DetailLayout, Field, FieldGroup, FoldBox, IconButton, InfoNote, SegmentedControl, Select, SelectableRow, TextInput, Toggle, focusRowAt, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
@@ -410,7 +410,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
         if (!r.lastUpload) return t('formsEditor.relay.statusNever')
         if (r.hashProblem !== undefined) return t('formsEditor.relay.statusBroken')
         const date = new Date(r.lastUpload.at).toLocaleDateString(i18n.resolvedLanguage)
-        return r.moved || r.configModeChanged || r.operatorChanged || r.currentHash !== r.lastUpload.hash ? t('formsEditor.relay.statusChanged', { date }) : t('formsEditor.relay.statusCurrent', { date })
+        return relayOutdated(r) ? t('formsEditor.relay.statusChanged', { date }) : t('formsEditor.relay.statusCurrent', { date })
       }
       case 'texts': {
         const count = isObject(options.texts) ? Object.values(options.texts).reduce<number>((n, v) => n + (isObject(v) ? Object.keys(v).length : 0), 0) : 0
@@ -450,6 +450,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
             onRescan={() => setScan((n) => n + 1)}
             onShowPage={(slug) => setPreviewGoTo({ page: slugPath(slug) })}
             messages={messagesOf((m) => m.form === selectedForm[0])}
+            relayChanged={!!relayQuery.data && relayOutdated(relayQuery.data)}
             relayRecipients={{
               names: [
                 ...forms
@@ -762,6 +763,7 @@ function FormPanel({
   onRescan,
   onShowPage,
   messages,
+  relayChanged,
   relayRecipients
 }: {
   id: string
@@ -787,6 +789,8 @@ function FormPanel({
   onRescan: () => void
   onShowPage: (slug: string) => void
   messages: { problems: PlacedMessage[]; hints: PlacedMessage[] }
+  /** The saved config or the relay's settings differ from the last upload. */
+  relayChanged: boolean
   relayRecipients: { names: string[]; stored: string[] | null; storageAvailable: boolean; saveAddress: (name: string, address: string) => Promise<void> }
 }): JSX.Element {
   const { t } = useTranslation()
@@ -864,12 +868,29 @@ function FormPanel({
 
   return (
     <Card className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
+      {/* Stays in view while the panel scrolls: "Gespeichert" and the relay's state are what a
+          change down in the panel answers with, and the panel keeps its scroll position (mail
+          test 2026-10-25, finding 4). */}
+      <div className="sticky top-0 z-10 -mx-4 -mt-4 flex flex-col gap-1 rounded-t-[10px] bg-surface px-4 pb-2 pt-4">
         <CardHeading icon={ClipboardList}>
           <span className="break-words">{title}</span>
         </CardHeading>
         <div className="flex flex-wrap items-center gap-2">
           <SavesImmediately saved={saved} />
+          {/* Next to "Gespeichert": a change saved here reaches the server with the next upload of
+              the relay, which only the list row and the Relay section said, both out of sight
+              (mail test 2026-10-25, finding 4). */}
+          {kind === 'relay' && (
+            <span role="status" className="flex flex-wrap items-center gap-2">
+              {relayChanged && <Badge tone="amber">{t('formsEditor.relay.panelChanged')}</Badge>}
+            </span>
+          )}
+          {kind === 'relay' && relayChanged && (
+            <Button variant="ghost" onClick={() => onOpenSection('relay')}>
+              <Server size={14} aria-hidden />
+              {t('formsEditor.sections.relay')}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1460,6 +1481,12 @@ function CheckSummary({
  * asks the relay for that form's stamp at that address. Asking the global address alone said it
  * was missing when only a form had one (review 2026-10-29, nebenbei).
  */
+/** Uploaded once, and what an upload would write or where it would go is no longer that. */
+function relayOutdated(r: RelayState): boolean {
+  if (!r.lastUpload || r.hashProblem !== undefined) return false
+  return r.moved || r.configModeChanged || r.operatorChanged || r.currentHash !== r.lastUpload.hash
+}
+
 function relayProbe(forms: [string, FormDef][], options: Options): { form: string; url: string } | null {
   const global = isObject(options.transport) && typeof options.transport.url === 'string' ? options.transport.url.trim() : ''
   for (const [id, def] of forms) {

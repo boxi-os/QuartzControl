@@ -59,6 +59,10 @@ export function RelaySection({
   const [message, setMessage] = useState<string | null>(null)
   const [subdirInvalid, setSubdirInvalid] = useState(false)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
+  // Rows whose secret was saved here, with the upload it was saved after: the row says so until
+  // the next upload. A replaced address left "Adresse gesetzt" as it was, and the amber status had
+  // scrolled away (mail test 2026-10-25, finding 4).
+  const [pending, setPending] = useState<Record<string, string>>({})
 
   if (error) return <p className="text-micro text-red-600 dark:text-red-400">{error}</p>
   if (!state) return <p className="text-micro text-text-muted">{loading ? t('formsEditor.relay.loading') : ''}</p>
@@ -69,6 +73,8 @@ export function RelaySection({
     try {
       await window.quartzGui.forms.relaySaveSettings({ projectPath: project.path, settings: { ...s, ...change } })
       setMessage(null)
+      // The last upload's output no longer describes what an upload would bring.
+      setResult(null)
       onChanged()
       return true
     } catch (err) {
@@ -76,11 +82,14 @@ export function RelaySection({
       return false
     }
   }
-  const saveSecrets = async (change: Parameters<typeof window.quartzGui.forms.relaySaveSecrets>[0], said: string): Promise<void> => {
+  /** `row`: said in that row's own region instead of through announce(). */
+  const saveSecrets = async (change: Parameters<typeof window.quartzGui.forms.relaySaveSecrets>[0], said: string, row?: string): Promise<void> => {
     try {
       await window.quartzGui.forms.relaySaveSecrets(change)
       setMessage(null)
-      announce(said)
+      setResult(null)
+      if (row) setPending((p) => ({ ...p, [row]: state?.lastUpload?.at ?? '' }))
+      else announce(said)
       onChanged()
     } catch (err) {
       setMessage(formatIpcError(err))
@@ -88,6 +97,9 @@ export function RelaySection({
   }
 
   const names = [...new Set([...neededRecipients, ...state.secrets.recipients])]
+  const forget = (row: string): void => setPending(({ [row]: _gone, ...rest }) => rest)
+  const savedNote = (row: string, set: string, setPendingText: string): string =>
+    pending[row] === undefined || pending[row] !== (state.lastUpload?.at ?? '') ? '' : state.lastUpload ? setPendingText : set
   const missing = neededRecipients.filter((n) => !state.secrets.recipients.includes(n))
   // Below the site's own address, base path included: the target whose folder the relay goes
   // into is, in the common case, the site itself.
@@ -286,7 +298,10 @@ export function RelaySection({
                     <IconButton
                       icon={Trash2}
                       title={t('formsEditor.relay.removeAddress', { name })}
-                      onClick={() => void saveSecrets({ projectId: project.id, recipients: { [name]: null } }, t('formsEditor.relay.addressRemovedAnnounce', { name }))}
+                      onClick={() => {
+                        forget(`recipient:${name}`)
+                        void saveSecrets({ projectId: project.id, recipients: { [name]: null } }, t('formsEditor.relay.addressRemovedAnnounce', { name }))
+                      }}
                     />
                   )}
                 </div>
@@ -312,12 +327,15 @@ export function RelaySection({
                         return
                       }
                       setDrafts({ ...drafts, [name]: '' })
-                      void saveSecrets({ projectId: project.id, recipients: { [name]: address } }, t('formsEditor.relay.addressSetAnnounce', { name }))
+                      void saveSecrets({ projectId: project.id, recipients: { [name]: address } }, '', `recipient:${name}`)
                     }}
                   >
                     {t('formsEditor.relay.saveAddress')}
                   </Button>
                 </div>
+                <p role="status" className="text-micro text-green-700 dark:text-green-400">
+                  {savedNote(`recipient:${name}`, t('formsEditor.relay.addressSetAnnounce', { name }), t('formsEditor.relay.addressSetPending', { name }))}
+                </p>
               </li>
             )
           })}
@@ -332,8 +350,12 @@ export function RelaySection({
           isSet={state.secrets.captchaSecret}
           needed={!!captcha.global}
           disabled={!state.secrets.storageAvailable}
-          onSave={(value) => void saveSecrets({ projectId: project.id, captchaSecret: value }, t('formsEditor.relay.secretSetAnnounce'))}
-          onRemove={() => void saveSecrets({ projectId: project.id, captchaSecret: null }, t('formsEditor.relay.secretRemovedAnnounce'))}
+          note={savedNote('captcha', t('formsEditor.relay.secretSetAnnounce'), t('formsEditor.relay.secretSetPending'))}
+          onSave={(value) => void saveSecrets({ projectId: project.id, captchaSecret: value }, '', 'captcha')}
+          onRemove={() => {
+            forget('captcha')
+            void saveSecrets({ projectId: project.id, captchaSecret: null }, t('formsEditor.relay.secretRemovedAnnounce'))
+          }}
         />
       )}
       {[...new Set([...captcha.forms.map((f) => f.id), ...state.secrets.captchaSecrets])].map((id) => {
@@ -346,8 +368,12 @@ export function RelaySection({
             isSet={state.secrets.captchaSecrets.includes(id)}
             needed={!!need}
             disabled={!state.secrets.storageAvailable}
-            onSave={(value) => void saveSecrets({ projectId: project.id, captchaSecrets: { [id]: value } }, t('formsEditor.relay.secretSetAnnounce'))}
-            onRemove={() => void saveSecrets({ projectId: project.id, captchaSecrets: { [id]: null } }, t('formsEditor.relay.secretRemovedAnnounce'))}
+            note={savedNote(`captcha:${id}`, t('formsEditor.relay.secretSetAnnounce'), t('formsEditor.relay.secretSetPending'))}
+            onSave={(value) => void saveSecrets({ projectId: project.id, captchaSecrets: { [id]: value } }, '', `captcha:${id}`)}
+            onRemove={() => {
+              forget(`captcha:${id}`)
+              void saveSecrets({ projectId: project.id, captchaSecrets: { [id]: null } }, t('formsEditor.relay.secretRemovedAnnounce'))
+            }}
           />
         )
       })}
@@ -408,6 +434,8 @@ export function RelaySection({
             <FolderDown size={14} aria-hidden />
             {t('formsEditor.relay.export')}
           </Button>
+          {/* Where the next step is taken, not only at the top of the section (finding 4). */}
+          {status.tone === 'amber' && <Badge tone="amber">{status.text}</Badge>}
         </div>
         {!canUpload && <span className="text-micro text-text-muted">{t('formsEditor.relay.cannotUpload', { reasons: blockers(state, missing, missingCaptcha, t).join(' ') })}</span>}
         {result && (
@@ -686,6 +714,7 @@ function SecretRow({
   isSet,
   needed,
   disabled,
+  note,
   onSave,
   onRemove
 }: {
@@ -694,6 +723,8 @@ function SecretRow({
   isSet: boolean
   needed: boolean
   disabled: boolean
+  /** What saving here did, in the row's own live region; empty until then. */
+  note: string
   onSave: (value: string) => void
   onRemove: () => void
 }): JSX.Element {
@@ -728,6 +759,9 @@ function SecretRow({
         </Button>
         {isSet && <IconButton icon={Trash2} title={t('formsEditor.relay.removeSecretNamed', { name: label })} onClick={onRemove} />}
       </div>
+      <span role="status" className="text-micro text-green-700 dark:text-green-400">
+        {note}
+      </span>
       <span className="text-micro text-text-muted">{hint}</span>
     </FieldGroup>
   )

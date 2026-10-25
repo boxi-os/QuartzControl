@@ -137,9 +137,10 @@ export const folderAdapter: DeployAdapter = {
         output += `→ ${relPath}\n`
       }
 
-      // Removing the relay: a refused deletion is said per file and the others are still tried, as
-      // over SFTP and FTP. Thrown, the first one ended the run with a bare "Error: EACCES: …, unlink
-      // '…/config.generated.php'" and the other two unnamed (folder 555, review 2026-11-04, M1).
+      // A refused deletion is said per file and the others are still tried, as over SFTP and FTP;
+      // the file stays in the manifest. Thrown, the first one ended the run with a bare "Error:
+      // EACCES: …, unlink '…/config.generated.php'" and the other two unnamed (folder 555, review
+      // 2026-11-04, M1), and a website deploy the same way (nebenbei).
       const kept: string[] = []
       // Removing the relay: a file that was not there is not said deleted, as over SFTP and FTP. With
       // rm's force it said "✗ send.php" for a send.php deleted by hand (review 2026-11-04, N7).
@@ -155,9 +156,9 @@ export const folderAdapter: DeployAdapter = {
             if (ctx.onlyPaths) missing++
             else output += `✗ ${relPath}\n`
           } else {
-            if (!ctx.onlyPaths || (code !== 'EACCES' && code !== 'EPERM')) throw err
+            if (code !== 'EACCES' && code !== 'EPERM') throw err
             kept.push(relPath)
-            output += mainT('relayRemoveRefused', { path: relPath, reason: (err as Error).message.split(',')[0] })
+            output += mainT(ctx.onlyPaths ? 'relayRemoveRefused' : 'deployDeleteRefused', { path: relPath, reason: (err as Error).message.split(',')[0] })
           }
         }
         processed++
@@ -166,7 +167,7 @@ export const folderAdapter: DeployAdapter = {
       if (ctx.onlyPaths && missing === toDelete.length) output += mainT('relayRemoveGone', { path: dest })
 
       await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, [...manifestExcludes, ...kept])
-      if (kept.length > 0) return { success: false, output: output + mainT('relayRemoveRefusedRest') }
+      if (ctx.onlyPaths && kept.length > 0) return { success: false, output: output + mainT('relayRemoveRefusedRest') }
       return { success: true, output: output || mainT('deployNothingToDo') }
     } catch (err) {
       // Without a leading empty line: the relay's panel announces the first line (M1).

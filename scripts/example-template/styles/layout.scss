@@ -173,6 +173,7 @@ article [id^="user-content-fn"],
   // Values come from --tpl-col-right-* (variables.mjs).
   .qgframe-area-right {
     --col-ring-reach: calc(var(--tpl-focus-width) + var(--tpl-focus-offset));
+    --col-right-ground: var(--light);
     position: var(--tpl-col-right-position);
     // Below the header bar, minus the focus ring reach.
     top: calc(var(--tpl-header-h) + var(--tpl-space-lg) - var(--col-ring-reach));
@@ -194,7 +195,8 @@ article [id^="user-content-fn"],
     position: sticky;
     top: 0;
     z-index: 1;
-    background: var(--light);
+    // The column's ground: its strip in this template's frames, the page elsewhere (below).
+    background: var(--col-right-ground);
 
     // Short fade under the heading so rows do not look cut through.
     &::after {
@@ -203,7 +205,7 @@ article [id^="user-content-fn"],
       inset-inline: 0;
       inset-block-start: 100%;
       height: var(--tpl-fade);
-      background: linear-gradient(to bottom, var(--light), transparent);
+      background: linear-gradient(to bottom, var(--col-right-ground), transparent);
       pointer-events: none;
     }
   }
@@ -266,15 +268,18 @@ article [id^="user-content-fn"],
 
 /* --------------------------------------------- die linke Spalte, wenn sie stehen bleiben soll */
 
-// Left column from 901px: optionally sticky and scrolling (--tpl-col-left-*). The clip edge moves
-// out by the focus ring reach so focus rings are not cut off.
+// Left column from 901px: sticky and scrolling by default since 1.2 (--tpl-col-left-*). The clip
+// edge moves out so focus rings are not cut off. Unlike the right column it fades at both ends,
+// the way the page dissolves under the header: nothing sticks at its top. So the top padding is as
+// deep as the fade, and the negative margin and the sticky offset take it back - the first row
+// sits where it did and is fully visible until it scrolls into the fade.
 @media (min-width: 901px) {
   .qgframe-area-left {
     --col-ring-reach: calc(var(--tpl-focus-width) + var(--tpl-focus-offset));
     position: var(--tpl-col-left-position);
-    top: calc(var(--tpl-header-h) + var(--tpl-space-lg) - var(--col-ring-reach));
+    top: calc(var(--tpl-header-h) + var(--tpl-space-lg) - var(--tpl-fade));
     align-self: start;
-    margin-block-start: calc(-1 * var(--col-ring-reach));
+    margin-block-start: calc(-1 * var(--tpl-fade));
     margin-inline: calc(-1 * var(--col-ring-reach));
     padding-inline: var(--col-ring-reach);
     max-height: var(--tpl-col-left-height);
@@ -282,7 +287,7 @@ article [id^="user-content-fn"],
     overflow-y: auto;
     mask-image: var(--tpl-col-left-mask);
     -webkit-mask-image: var(--tpl-col-left-mask);
-    padding-block: var(--col-ring-reach) var(--tpl-fade);
+    padding-block: var(--tpl-fade);
   }
 
   // Sticky without a height: use the right column's cap and mask so the column stays reachable.
@@ -300,13 +305,73 @@ article [id^="user-content-fn"],
   }
 }
 
+/* ------------------------------------------------------ the strips behind the two columns */
+
+// A column's colour (--tpl-col-left-bg, --tpl-col-right-bg) is a strip from the header down to
+// the footer and out to the edge of the window. The column cannot paint it: it is sticky and only
+// as tall as its content. So the grid paints it, as a pseudo-element placed into the column's
+// named area, which spans every row between header and footer. It reaches up and down by the
+// frame's rowGap (2rem, frames.mjs) and inward halfway across the gutter (4rem desktop, 3rem
+// tablet). A box-shadow carries it to the window's edge without widening the page: spread and
+// offset of the same size, so it grows outward only and the text column keeps its ground. What it
+// throws up and down lies under the header and the footer, which both paint above it. No clip-path
+// to cut that off: clip-path makes a stacking context, and the right strip, last in the tree, then
+// painted over the table of contents. The masks of the columns fade their content into it.
+//
+// Only this template's frames, by name: in a frame without a `left` or `right` area (`drawing`,
+// `focus` below 901px) `grid-area` would make the pseudo-element an implicit track and widen the
+// grid. A frame someone adds draws no strip, and its right headings keep the page's ground.
+@media (min-width: 901px) {
+  .page:is([data-frame="editorial"], [data-frame="index"], [data-frame="focus"]) .qgframe-grid::before {
+    content: "";
+    grid-area: left;
+    margin-block: -2rem;
+    margin-inline-end: -1.5rem;
+    background: var(--tpl-col-left-bg);
+    box-shadow: -100vmax 0 0 100vmax var(--tpl-col-left-bg);
+  }
+}
+
+@media (min-width: 1201px) {
+  .page:is([data-frame="editorial"], [data-frame="index"], [data-frame="focus"]) .qgframe-grid::before {
+    margin-inline-end: -2rem;
+  }
+
+  .page:is([data-frame="editorial"], [data-frame="index"], [data-frame="focus"]) .qgframe-grid::after {
+    content: "";
+    grid-area: right;
+    // First in paint order, like the left strip, so nothing in the text column lies beneath it.
+    order: -1;
+    margin-block: -2rem;
+    margin-inline-start: -2rem;
+    background: var(--tpl-col-right-bg);
+    box-shadow: 100vmax 0 0 100vmax var(--tpl-col-right-bg);
+  }
+
+  .page:is([data-frame="editorial"], [data-frame="index"], [data-frame="focus"]) .qgframe-area-right {
+    --col-right-ground: var(--tpl-col-right-bg);
+  }
+}
+
 /* ------------------------------------------------ the footer paints over what the column leaves */
 
-// Footer paints above the sticky right column, which Chromium does not clamp to its area.
+// Footer paints above the sticky right column, which Chromium does not clamp to its area. Its
+// ground (--tpl-footer-bg) runs to both edges of the window and down past the frame's padding,
+// drawn the way the strips are; the pseudo-element sits behind the footer's content.
 .qgframe-area-footer {
   position: relative;
   z-index: 1;
-  background: var(--light);
+  background: var(--tpl-footer-bg);
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    box-shadow: 0 0 0 100vmax var(--tpl-footer-bg);
+    clip-path: inset(0 -100vmax -100vmax);
+    pointer-events: none;
+  }
 }
 
 // ===================================================================================== site-footer

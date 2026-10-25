@@ -33,13 +33,25 @@
   gap: var(--tpl-space-sm);
   // Bottom hairline.
   border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
-  // Sticky on every width, with its own background.
+  // Sticky on every width, with its own background (--tpl-header-bg).
   position: sticky;
   top: 0;
   z-index: 80;
-  background: var(--light);
+  background: var(--tpl-header-bg);
   // Constant padding.
   padding-block: var(--tpl-header-pad);
+}
+
+// The bar's ground runs to both edges of the window and up over the frame's top padding, like the
+// footer's (layout.scss). Behind the bar's content; the hairline stays the width of the bar.
+.qgframe-area-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  box-shadow: 0 0 0 100vmax var(--tpl-header-bg);
+  clip-path: inset(-100vmax -100vmax 0);
+  pointer-events: none;
 }
 
 // The brand group shrinks, the toolbar does not. min-width: 0 on every level of the chain.
@@ -136,14 +148,16 @@
 
 /* ------------------------------------------------------- the edge once the page moves */
 
-// A fixed fade below the bar, starting one hairline under its edge.
+// A fixed fade below the bar, starting one hairline under its edge. Painted as a border image
+// rather than a background so it can reach both edges of the window like the bar's ground: an
+// outset is painted without widening the page, a wider box would scroll it sideways.
 .qgframe-area-header::after {
   content: "";
   position: absolute;
   inset-block-start: calc(100% + var(--tpl-rule-width));
   inset-inline: 0;
   height: var(--tpl-page-fade);
-  background: linear-gradient(to bottom, var(--light), transparent);
+  border-image: linear-gradient(to bottom, var(--tpl-header-bg), transparent) fill 0 / 0 / 0 100vmax;
   pointer-events: none;
 }
 
@@ -161,7 +175,7 @@
     margin-inline: -20px;
     padding-inline: var(--tpl-space-sm) var(--tpl-space-sm);
     padding-inline-start: calc(var(--tpl-target) + var(--tpl-space-sm));
-    background: var(--light);
+    background: var(--tpl-header-bg);
     // Bottom hairline.
     border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
   }

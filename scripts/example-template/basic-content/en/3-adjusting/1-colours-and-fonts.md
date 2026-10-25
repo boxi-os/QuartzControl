@@ -20,25 +20,31 @@ The order is also the recommendation: custom CSS is the last step, not the first
 your changes survive an update of the template is decided when you import it: “Project wins”
 keeps them, “Template wins” resets all five rows to the template's state.
 
-## Two groups in the variables tab worth knowing
+## Three groups in the variables tab worth knowing
 
 **The side columns.** Whether a column stays put while the page scrolls is decided by three
-variables per column, and they belong together — whoever switches the right one switches all
+variables per column, and they belong together — whoever switches a column switches all
 three:
 
 | Variable                  | stays put                                                      | scrolls along |
 | ------------------------- | -------------------------------------------------------------- | ------------- |
 | `--tpl-col-…-position`    | `sticky`                                                       | `static`      |
 | `--tpl-col-…-height`      | `calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg))` | `none`        |
-| `--tpl-col-…-mask`        | `var(--tpl-fade-mask-end)`                                     | `none`        |
+| `--tpl-col-…-mask`        | left `var(--tpl-fade-mask)`, right `var(--tpl-fade-mask-end)`   | `none`        |
 
-`…` stands for `left` or `right`. Default: the right one stays put, the left one scrolls along. A
-half state looks like a bug — a column that stops in the middle of the text and scrolls inside
-itself.
+`…` stands for `left` or `right`. Default: both columns stay put. One that is longer than the
+window scrolls inside itself and fades out softly, the left one at top and bottom, the right one
+at the bottom only. A half state looks like a bug — a column that stops in the middle of the text
+and scrolls inside itself.
 
 On the left, the position is enough: when `--tpl-col-left-position` is `sticky` and height and mask
 are still `none`, the template fills in the two values itself. A height of your own stays. The page
 keeps scrolling even with the pointer over the navigation.
+
+**The surfaces.** `--tpl-col-left-bg` and `--tpl-col-right-bg` colour the side columns as strips
+from the header down to the footer, `--tpl-header-bg` and `--tpl-footer-bg` the header and footer
+across the full width. The default is the page ground, so they only show once you change them. As
+with the callout colours, the app does not check the contrast on them.
 
 **The callout colours** (`--tpl-callout-…`) are measured, not chosen: each holds 4.5:1 on the page
 ground and on the tinted surface of its box. Whoever changes one can put it below that threshold,

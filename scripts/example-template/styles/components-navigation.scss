@@ -372,7 +372,8 @@ li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.
     top: calc((var(--tpl-header-h) - var(--tpl-target)) / 2);
     inset-inline-start: var(--tpl-space-xs);
     z-index: 101;
-    background: var(--light);
+    // It sits in the app bar.
+    background: var(--tpl-header-bg);
   }
 
   .explorer .mobile-explorer .lucide-menu {
@@ -417,8 +418,9 @@ li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.
     margin: 0;
     // Room at the top for the trigger.
     padding: calc(var(--tpl-target) + var(--tpl-space-md)) var(--tpl-space-md) var(--tpl-space-lg);
-    // Frosted like the search overlay, more opaque because text runs behind it.
-    background: color-mix(in srgb, var(--light) 88%, transparent);
+    // Frosted like the search overlay, more opaque because text runs behind it. The drawer is the
+    // left column on a phone, so it takes that column's ground.
+    background: color-mix(in srgb, var(--tpl-col-left-bg) 88%, transparent);
     backdrop-filter: blur(14px) saturate(1.4);
     border-inline-end: var(--tpl-rule-width) solid var(--tpl-rule);
     // Rounded on the edge facing the page.

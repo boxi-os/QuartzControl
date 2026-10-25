@@ -20,24 +20,30 @@ erste. Ob deine Änderungen ein Update der Vorlage überleben, entscheidest du b
 „Projekt gewinnt“ behält sie, „Vorlage gewinnt“ setzt alle fünf Zeilen auf den Stand der
 Vorlage zurück.
 
-## Zwei Gruppen im Variablen-Tab, die man kennen sollte
+## Drei Gruppen im Variablen-Tab, die man kennen sollte
 
 **Die Seitenspalten.** Ob eine Spalte beim Rollen stehen bleibt, entscheiden drei Variablen je
-Spalte, und sie gehören zusammen — wer die rechte umstellt, stellt alle drei um:
+Spalte, und sie gehören zusammen — wer eine Spalte umstellt, stellt alle drei um:
 
 | Variable                  | stehen bleiben                                                 | mitlaufen |
 | ------------------------- | -------------------------------------------------------------- | --------- |
 | `--tpl-col-…-position`    | `sticky`                                                       | `static`  |
 | `--tpl-col-…-height`      | `calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg))` | `none`    |
-| `--tpl-col-…-mask`        | `var(--tpl-fade-mask-end)`                                     | `none`    |
+| `--tpl-col-…-mask`        | links `var(--tpl-fade-mask)`, rechts `var(--tpl-fade-mask-end)` | `none`    |
 
-Für `…` steht `left` oder `right`. Vorgabe: rechts bleibt stehen, links läuft mit. Ein halber
-Zustand sieht aus wie ein Fehler — eine Spalte, die mitten im Text aufhört und in sich selbst
-rollt.
+Für `…` steht `left` oder `right`. Vorgabe: Beide Spalten bleiben stehen. Ist eine länger als das
+Fenster, rollt sie in sich selbst und blendet dabei links oben und unten weich aus, rechts nur
+unten. Ein halber Zustand sieht aus wie ein Fehler — eine Spalte, die mitten im Text aufhört und
+in sich selbst rollt.
 
 Links genügt die Position: Steht `--tpl-col-left-position` auf `sticky` und stehen Höhe und Maske
 noch auf `none`, setzt die Vorlage die zwei Werte selbst ein. Eine eigene Höhe bleibt. Die Seite
 rollt auch dann weiter, wenn der Mauszeiger über der Navigation steht.
+
+**Die Flächen.** `--tpl-col-left-bg` und `--tpl-col-right-bg` färben die Seitenspalten als
+Streifen vom Kopf bis zum Fuß, `--tpl-header-bg` und `--tpl-footer-bg` Kopf und Fuß über die ganze
+Breite. Vorgabe ist der Seitengrund, also sieht man sie erst, wenn man sie ändert. Wie bei den
+Callout-Farben prüft die App den Kontrast darauf nicht.
 
 **Die Callout-Farben** (`--tpl-callout-…`) sind gemessen, nicht gewählt: Jede hält 4,5:1 auf dem
 Seitengrund und auf der getönten Fläche ihres Kastens. Wer eine ändert, kann sie unter diese

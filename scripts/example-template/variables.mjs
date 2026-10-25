@@ -265,17 +265,22 @@ export const VARIABLE_OVERRIDES = [
      schneidet der Deckel eine Zeile mitten durch). Der eigene Roller braucht keinen Schalter:
      Ohne Deckel läuft nichts über, also rollt auch nichts.
 
-     Die Vorgaben sind der Stand vom 2026-09-20 und ändern nichts: rechts bleibt stehen, links
-     nicht. Wer eine Spalte umstellt, stellt alle drei ihrer Zeilen um — ein halber Zustand ist
+     Seit dem 2026-10-26 (1.2) bleiben beide Spalten stehen; bis dahin blieb nur die rechte
+     stehen. Links faded die Spalte oben und unten (`--tpl-fade-mask`), rechts nur unten, weil
+     dort die klebenden Überschriften die Oberkante decken. Wer eine Spalte umstellt, stellt alle
+     drei ihrer Zeilen um — ein halber Zustand ist
      möglich und sieht aus wie ein Fehler: `static` mit Höhendeckel ist eine Spalte, die mitten im
      Text aufhört und in sich selbst rollt. Für die linke Spalte gilt seit dem 2026-09-30 eine
      Ausnahme: Steht nur die Position auf `sticky` und Höhe und Maske auf `none`, setzt layout.scss
      die Werte der rechten Spalte selbst ein (Style-Query, in Engines ohne sie wie vorher).
 
-     **Die Höhe der linken Spalte ist der Grund, das nicht leichtfertig umzulegen.** Gemessen bei
-     900px Fensterhöhe: Der Example hat links 1637px mit offenem Kapitel und 2555px auf der
-     Startseite — stehen bleiben heißt dort zwingend „rollt in sich selbst", mit allem, was das
-     für Rad und Tastatur bedeutet. Das Basis-Template kommt auf 696px und stünde einfach still.
+     **Die Höhe der linken Spalte ist der Preis.** Bis zum 2026-09-20 hatte der Example links
+     1637px mit offenem Kapitel und 2555px auf der Startseite (der Explorer); seit dem Akkordeon
+     der Navigation sind es 343px auf der Startseite und höchstens 769px (Kapitel 2 offen),
+     gemessen am 2026-10-26 an allen sieben Kapiteln. Der Deckel liegt bei 900px Fensterhöhe bei
+     783px: Darunter rollt die Spalte in sich selbst, mit allem, was das für Rad und Tastatur
+     bedeutet. Das Basis-Template kommt auf rund 440px. Entschieden für alle Varianten vom Nutzer am
+     2026-10-26.
 
      Und eine klebende Spalte ist ein Stapelkontext: Die Vollansicht des Graphen hängt daran
      (components-note.scss). Wer die linke Spalte klebrig macht, legt dort einen neuen an.
@@ -283,13 +288,35 @@ export const VARIABLE_OVERRIDES = [
      Die zwei Spalten schalten an verschiedenen Breiten um, und das ist gemessen, nicht gewählt:
      Links ist ab 901px eine Spalte, rechts erst ab 1201px — darunter legt das Frame den Bereich
      unter den Artikel (frames.mjs), wo Stehenbleiben nichts bedeutet. */
-  { key: 'tpl-col-left-position', light: 'static' },
-  { key: 'tpl-col-left-height', light: 'none' },
-  { key: 'tpl-col-left-mask', light: 'none' },
+  { key: 'tpl-col-left-position', light: 'sticky' },
+  {
+    key: 'tpl-col-left-height',
+    light: 'calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg))'
+  },
+  { key: 'tpl-col-left-mask', light: 'var(--tpl-fade-mask)' },
   { key: 'tpl-col-right-position', light: 'sticky' },
   {
     key: 'tpl-col-right-height',
     light: 'calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg))'
   },
-  { key: 'tpl-col-right-mask', light: 'var(--tpl-fade-mask-end)' }
+  { key: 'tpl-col-right-mask', light: 'var(--tpl-fade-mask-end)' },
+
+  /* ---- die Grundfarben von Spalten, Kopf und Fuß -----------------------------------------
+     Vier Flächen, die sich vom Seitengrund absetzen können. Die Vorgabe ist der Seitengrund
+     selbst, also sieht eine Website ohne Änderung aus wie vorher; eingestellt wird im
+     Variablen-Tab, hell und dunkel getrennt.
+
+     Eine Spaltenfarbe ist ein durchgehender Streifen vom Kopf bis zum Fuß und bis an den Rand
+     des Fensters, nicht die Fläche hinter dem Inhalt der Spalte (layout.scss sagt, wie). Ihn
+     zeichnen nur die Frames dieser Vorlage; ein selbst angelegter Frame bekommt keinen Streifen,
+     und seine Spalten faden in den Seitengrund. Links gilt die Farbe ab 901px und in der
+     Schublade am Telefon, rechts ab 1201px, wo der Bereich eine Spalte ist. Kopf und Fuß gehen
+     auf jeder Breite über die ganze Fensterbreite, der Fade unter dem Kopf nimmt dessen Farbe.
+
+     Der Preis: Diese Farben misst `--check-contrast` nicht, wie die Callout-Farben. Wer eine
+     setzt, prüft Text und Links darauf selbst; die Vorgabe ist gemessen, weil sie `--light` ist. */
+  { key: 'tpl-col-left-bg', light: 'var(--light)' },
+  { key: 'tpl-col-right-bg', light: 'var(--light)' },
+  { key: 'tpl-header-bg', light: 'var(--light)' },
+  { key: 'tpl-footer-bg', light: 'var(--light)' }
 ]

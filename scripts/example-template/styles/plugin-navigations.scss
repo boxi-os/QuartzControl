@@ -149,7 +149,13 @@
     height: var(--tpl-target);
     padding: 0;
     border-radius: var(--tpl-radius-md);
-    background: var(--light);
+    // It sits in the app bar.
+    background: var(--tpl-header-bg);
+  }
+
+  // The drawer is the left column on a phone, so it takes that column's ground.
+  .qgframe-area-left .quartz-nav--mobile-offcanvas .quartz-nav__panel {
+    background: var(--tpl-col-left-bg);
   }
 
   // Restate the hover background (the unlayered one above beats the plugin's).

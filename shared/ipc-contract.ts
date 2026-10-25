@@ -667,6 +667,9 @@ export interface RelayLastUpload {
   /** operatorStamp() of the settings and secrets that upload wrote into config.php; absent before
    *  2026-10-21. */
   operator?: string
+  /** The counterDir that upload wrote into config.php, when one was set: removing the relay names
+   *  where the counts stay. */
+  counterDir?: string
 }
 
 export interface RelayConflict {

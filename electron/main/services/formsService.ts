@@ -724,7 +724,8 @@ export async function relayUpload(projectId: string, projectPath: string, source
     const result = await runDirectoryUpload(projectPath, target.id, dir, settings.subdir, `relay-${target.id}`)
     if (result.success && typeof generated.json.hash === 'string') {
       const operator = operatorStamp(settings, (await connectionsService.getRelaySecretInfo(projectId)).fingerprint)
-      await writeRelayFile(projectPath, { ...file, removedAt: undefined, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configReadable: settings.configReadable, operator } })
+      const counterDir = settings.counterDir.trim()
+      await writeRelayFile(projectPath, { ...file, removedAt: undefined, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configReadable: settings.configReadable, operator, ...(counterDir ? { counterDir } : {}) } })
     }
     const warnings = strings(generated.json.warnings)
     const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)
@@ -799,8 +800,11 @@ export async function relayRemove(projectPath: string): Promise<DeployResult> {
     // "never uploaded" would not be true now.
     const { lastUpload: _removed, ...rest } = file
     await writeRelayFile(projectPath, { ...rest, removedAt: new Date().toISOString() })
-    // Said only where a file went: with none left there, counters/ may be gone as well.
-    return /^✗ /m.test(result.output) ? { ...result, output: `${result.output.trimEnd()}\n${mainT('relayRemovedRest', { subdir })}` } : result
+    // Said only where a file went: with none left there, counters/ may be gone as well. With a
+    // counterDir the counts are there, and counters/ only holds its .htaccess and the probe file
+    // (review 2026-11-04, N5).
+    const stays = last.counterDir ? mainT('relayRemovedRestCounterDir', { subdir, counterDir: last.counterDir }) : mainT('relayRemovedRest', { subdir })
+    return /^✗ /m.test(result.output) ? { ...result, output: `${result.output.trimEnd()}\n${stays}` } : result
   })
 }
 

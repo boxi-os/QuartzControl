@@ -499,6 +499,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
               onTransportUrl={(url) =>
                 updateOptions((o) => ({ ...o, transport: { ...(isObject(o.transport) ? o.transport : { kind: 'relay' }), url } }), t('formsEditor.relay.urlAnnounce'))
               }
+              onOpenTransport={() => setSelected('section:transport')}
               onChanged={() => setRelayRound((n) => n + 1)}
             />
           </Card>

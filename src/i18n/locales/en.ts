@@ -1571,7 +1571,7 @@ export default {
       excludeSubmit: 'Exclude “{{path}}” there',
       url: 'Address of send.php',
       useUrl: 'Use the suggestion',
-      urlHint: 'Where the forms send to (Sending, for all forms). The suggestion holds when the target is the site itself.',
+      urlHint: 'Where the forms send to; it is entered or changed under “Sending”. The suggestion holds when the target is the site itself.',
       urlAnnounce: 'Relay address entered.',
       from: 'Sender',
       fromHint: 'An address of the web space’s domain, or mail servers refuse the messages (SPF).',

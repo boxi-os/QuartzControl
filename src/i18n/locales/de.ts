@@ -1576,7 +1576,7 @@ export default {
       excludeSubmit: '„{{path}}“ dort ausschließen',
       url: 'Adresse von send.php',
       useUrl: 'Vorschlag übernehmen',
-      urlHint: 'Dorthin senden die Formulare (Versand für alle Formulare). Der Vorschlag gilt, wenn das Ziel die Website selbst ist.',
+      urlHint: 'Dorthin senden die Formulare; eintragen oder ändern lässt sie sich unter „Versand“. Der Vorschlag gilt, wenn das Ziel die Website selbst ist.',
       urlAnnounce: 'Adresse des Relays eingetragen.',
       from: 'Absender',
       fromHint: 'Eine Adresse der Domain des Webspace, sonst weisen Mailserver die Nachrichten ab (SPF).',

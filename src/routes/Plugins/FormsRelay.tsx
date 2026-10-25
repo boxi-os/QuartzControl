@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { FolderDown, KeyRound, Trash2, Upload } from 'lucide-react'
+import { FolderDown, KeyRound, Send, Trash2, Upload } from 'lucide-react'
 import type { PluginSource, RelayCheck, RelaySettings, RelayState } from '@shared/ipc-contract'
 import { relaySubdir, rsyncUnsafeChar } from '@shared/remotePath'
 import { Badge, Button, Field, FieldGroup, IconButton, Select, SegmentedControl, TextInput, Toggle } from '../../components/ui'
@@ -30,6 +30,7 @@ export function RelaySection({
   neededRecipients,
   captcha,
   onTransportUrl,
+  onOpenTransport,
   onChanged
 }: {
   state: RelayState | null
@@ -47,6 +48,8 @@ export function RelaySection({
   /** Which captcha secrets the relay needs (captchaNeeds), read from the config. */
   captcha: CaptchaNeeds
   onTransportUrl: (url: string) => void
+  /** Opens the "Versand" section, where the send.php address is typed. */
+  onOpenTransport: () => void
   onChanged: () => void
 }): JSX.Element {
   const { t, i18n } = useTranslation()
@@ -221,7 +224,15 @@ export function RelaySection({
       )}
 
       <FieldGroup label={t('formsEditor.relay.url')}>
-        <span className="break-all font-mono text-micro text-text">{transportUrl || t('formsEditor.noUrl')}</span>
+        {/* Only shown here: the address is typed under "Versand", and a suggestion that does not fit
+            left no word of where (mail test 2026-10-25, finding 1). */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="break-all font-mono text-micro text-text">{transportUrl || t('formsEditor.noUrl')}</span>
+          <Button variant="ghost" onClick={onOpenTransport}>
+            <Send size={14} aria-hidden />
+            {t('formsEditor.sections.transport')}
+          </Button>
+        </div>
         {suggestedUrl && suggestedUrl !== transportUrl && (
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="ghost" onClick={() => onTransportUrl(suggestedUrl)}>

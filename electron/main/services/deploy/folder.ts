@@ -1,10 +1,11 @@
 import { randomBytes } from 'crypto'
 import { existsSync } from 'fs'
-import { chmod, cp, lstat, mkdir, readdir, rename, rm, stat } from 'fs/promises'
+import { chmod, cp, lstat, mkdir, readFile, readdir, rename, rm, stat } from 'fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'path'
 import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, partitionDiff, readManifest } from './manifest'
+import { RELAY_GENERATED, relayGuard } from './relayGuard'
 import { mainT } from '../../i18n'
 
 // True when `child` is `parent` or lies underneath it. Checked via relative() rather than a
@@ -106,6 +107,15 @@ export const folderAdapter: DeployAdapter = {
           if (ctx.onlyPaths) return { success: true, output: mainT('relayRemoveGone', { path: dest }) }
           return { success: false, output: mainT('folderNotPublished', { dest }) }
         }
+      }
+
+      // Removing the relay: only this upload's (relayGuard.ts).
+      if (ctx.ownGeneration) {
+        const read = await readFile(join(dest, RELAY_GENERATED), 'utf-8').catch((err: NodeJS.ErrnoException) =>
+          err.code === 'ENOENT' || err.code === 'ENOTDIR' ? null : { unreadable: err.message.split(',')[0] }
+        )
+        const refusal = relayGuard(read, ctx.ownGeneration, dest)
+        if (refusal) return refusal
       }
 
       for (const relPath of toUpload) {

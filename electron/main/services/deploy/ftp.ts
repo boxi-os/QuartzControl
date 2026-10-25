@@ -1,10 +1,12 @@
 import { stat } from 'fs/promises'
+import { Writable } from 'stream'
 import { join, posix } from 'path'
 import { Client as FtpClient, FTPError } from 'basic-ftp'
 import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
 import { fromLoginDir } from '@shared/remotePath'
 import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, partitionDiff } from './manifest'
+import { RELAY_GENERATED, relayGuard } from './relayGuard'
 import * as connectionsService from '../connectionsService'
 import { mainT } from '../../i18n'
 
@@ -212,6 +214,39 @@ export const ftpAdapter: DeployAdapter = {
           closedFolders.set(folder, known)
         }
         return known
+      }
+
+      // Removing the relay: only this upload's (relayGuard.ts). RETR answers 550 for a missing file
+      // and a refused one alike, as DELE below: missing only where SIZE says so too and the folder
+      // can be entered.
+      if (ctx.ownGeneration) {
+        const remote = posix.join(root, RELAY_GENERATED)
+        const chunks: Buffer[] = []
+        const sink = new Writable({
+          write(chunk: Buffer, _encoding, done) {
+            chunks.push(chunk)
+            done()
+          }
+        })
+        const read = await client.downloadTo(sink, remote).then(
+          () => Buffer.concat(chunks).toString('utf-8'),
+          async (err: unknown) => {
+            if (!(err instanceof FTPError)) throw err
+            const reason = err.message.replace(/\.+$/, '')
+            if (err.code !== 550) return { unreadable: reason }
+            const there = await client.size(remote).then(
+              () => true,
+              (sizeErr: unknown) => {
+                if (!(sizeErr instanceof FTPError)) throw sizeErr
+                return sizeErr.code !== 550
+              }
+            )
+            const closed = there ? null : await closedFolder(root)
+            return there ? { unreadable: reason } : closed ? { unreadable: `${closed.folder}: ${closed.reason}` } : null
+          }
+        )
+        const refusal = relayGuard(read, ctx.ownGeneration, root)
+        if (refusal) return refusal
       }
 
       // What was not deleted stays in the manifest, so the next upload offers it again (sftp.ts, run).

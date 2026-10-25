@@ -6,6 +6,7 @@ import { fromLoginDir } from '@shared/remotePath'
 import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, modesSettled, partitionDiff, readManifest, settleModes } from './manifest'
 import { makeHostVerifier } from './hostVerifier'
+import { RELAY_GENERATED, relayGuard } from './relayGuard'
 import * as connectionsService from '../connectionsService'
 import { mainT } from '../../i18n'
 
@@ -185,6 +186,21 @@ export const sftpAdapter: DeployAdapter = {
           if (stats?.isSymbolicLink) return { success: false, output: mainT('relayDirSymlink', { path: folder }) }
           if (!stats) break
         }
+      }
+
+      // Removing the relay: only this upload's (relayGuard.ts). Missing is the server's status 2, as
+      // for a deletion below.
+      if (ctx.ownGeneration) {
+        const read = await client.get(posix.join(root, RELAY_GENERATED)).then(
+          (data) => String(data),
+          (err: unknown) => {
+            if (!serverAnswered(err)) throw err
+            const code = (err as { code?: unknown }).code
+            return code === 2 || code === 'ENOENT' ? null : { unreadable: (err as Error).message }
+          }
+        )
+        const refusal = relayGuard(read, ctx.ownGeneration, root)
+        if (refusal) return refusal
       }
 
       // The one-time pass below, counted in from the start: its paths are known now, and the

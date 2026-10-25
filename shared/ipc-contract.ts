@@ -673,6 +673,9 @@ export interface RelayLastUpload {
   /** user@host of the connection that upload went through; absent for a folder target and before
    *  2026-10-25. A connection rewritten to another server keeps its id and the location. */
   server?: string
+  /** The `generation` that upload wrote into config.generated.php: removing deletes only a relay
+   *  that still names it. Absent before 2026-10-25 and with a plugin that writes none. */
+  generation?: string
 }
 
 export interface RelayConflict {

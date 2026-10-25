@@ -136,7 +136,8 @@ export async function runDeploy(
  * - every file on every run, with its local mode (`keepLocalModes`), see below.
  *
  * With `remove`, the same way takes the relay down instead (formsService.relayRemove): `localDir`
- * is empty, and only the paths named there are deleted, never what the server wrote beside them.
+ * is empty, and only the paths named there are deleted, never what the server wrote beside them;
+ * with `ownGeneration` as well, only when the relay there is still that upload's (relayGuard.ts).
  */
 export async function runDirectoryUpload(
   projectPath: string,
@@ -144,7 +145,8 @@ export async function runDirectoryUpload(
   localDir: string,
   subdir: string,
   manifestKey: string,
-  remove?: string[]
+  remove?: string[],
+  ownGeneration?: string
 ): Promise<DeployResult> {
   const target = await publishTargetsService.getTarget(projectPath, targetId)
   if (!target) return { success: false, output: mainT('deployTargetMissing', { id: targetId }) }
@@ -187,6 +189,7 @@ export async function runDirectoryUpload(
       // one-time 0666 pass of a site's target (sftp.ts) off the relay's files.
       keepLocalModes: true,
       ...(remove ? { onlyPaths: remove } : {}),
+      ...(remove && ownGeneration ? { ownGeneration } : {}),
       // Every one, not only the last: a link "lnk -> /srv/qc/www" in the target and the subdir
       // "lnk/review56-other" put the relay into another site's folder and set it from 2750 to 755,
       // over SFTP, FTP and rsync alike (debian-vm, review 2026-10-31, N3).

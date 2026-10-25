@@ -1,10 +1,11 @@
 import { spawn } from 'child_process'
-import { access, chmod, mkdtemp, rm, writeFile } from 'fs/promises'
+import { access, chmod, mkdtemp, readFile, rm, writeFile } from 'fs/promises'
 import { constants } from 'fs'
 import { tmpdir } from 'os'
 import { join, posix } from 'path'
 import type { DeployDiffEntry, DeployResult, SshConnection } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
+import { RELAY_GENERATED, relayGuard } from './relayGuard'
 import { rsyncBlockReason, type RsyncBlockReason } from '@shared/rsyncSupport'
 import { rsyncUnsafeChar } from '@shared/remotePath'
 import * as connectionsService from '../connectionsService'
@@ -363,6 +364,27 @@ export const rsyncAdapter: DeployAdapter = {
           return { success: false, output: translateSshFailure(listed.output, connection) ?? unchecked }
         }
       }
+      // Removing the relay: only this upload's (relayGuard.ts), fetched with rsync itself, without
+      // remoteSpec's trailing slash, which asks for a folder. A folder in its place is skipped
+      // without an error and leaves no file.
+      if (ctx.ownGeneration) {
+        const local = await mkdtemp(join(tmpdir(), 'qc-relay-guard-'))
+        try {
+          const fetched = await runRsync(['--no-motd', '-e', env.rshCommand, remoteSpec(connection, posix.join(destination.remotePath, RELAY_GENERATED)).replace(/\/+$/, ''), `${local}/`])
+          const said = (): string => translateSshFailure(fetched.output, connection) ?? (fetched.output.trim().split('\n')[0] || mainT('rsyncExitCode', { code: fetched.code ?? '?' }))
+          const read =
+            fetched.code === 0
+              ? await readFile(join(local, RELAY_GENERATED), 'utf-8').catch(() => ({ unreadable: said() }))
+              : /link_stat ".*" failed: No such file or directory/.test(fetched.output)
+                ? null
+                : { unreadable: said() }
+          const refusal = relayGuard(read, ctx.ownGeneration, destination.remotePath)
+          if (refusal) return refusal
+        } finally {
+          await rm(local, { recursive: true, force: true })
+        }
+      }
+
       // A dry run first, purely to know the total: without it the progress bar has no denominator,
       // and rsync itself reports none until it is finished.
       const planArgs = await buildArgs(ctx, connection, destination.remotePath, destination.deleteRemoved, excludePaths, env, true)

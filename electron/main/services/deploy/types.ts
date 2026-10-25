@@ -26,6 +26,12 @@ export interface DeployContext {
    * filter, so its --delete leaves the rest of the folder (counters/) alone.
    */
   onlyPaths?: string[]
+  /**
+   * Removing the relay: the generation of the upload it takes down. Before deleting, the adapter
+   * reads config.generated.php there over its own session and deletes nothing when the relay names
+   * another one or cannot be read (relayGuard.ts).
+   */
+  ownGeneration?: string
   emitProgress(processed: number, total: number, currentFile?: string): void
 }
 

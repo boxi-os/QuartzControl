@@ -731,7 +731,8 @@ export async function relayUpload(projectId: string, projectPath: string, source
       const operator = operatorStamp(settings, (await connectionsService.getRelaySecretInfo(projectId)).fingerprint)
       const counterDir = settings.counterDir.trim()
       const server = await serverOf(target)
-      await writeRelayFile(projectPath, { ...file, removedAt: undefined, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configReadable: settings.configReadable, operator, ...(counterDir ? { counterDir } : {}), ...(server ? { server } : {}) } })
+      const generation = typeof generated.json.generation === 'string' ? generated.json.generation : undefined
+      await writeRelayFile(projectPath, { ...file, removedAt: undefined, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configReadable: settings.configReadable, operator, ...(counterDir ? { counterDir } : {}), ...(server ? { server } : {}), ...(generation ? { generation } : {}) } })
     }
     const warnings = strings(generated.json.warnings)
     const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)
@@ -782,7 +783,9 @@ const RELAY_REMOVED = ['send.php', 'config.php', 'config.generated.php']
  * could be uploaded and never removed (mail test 2026-10-25, finding 7). Where it was is the last
  * upload's location, not the settings: a target changed since then is refused with the old place,
  * as QuartzControl no longer has the way there, and so is a connection that reaches another server
- * now (serverOf). The stored addresses and secrets stay.
+ * now (serverOf). And only this upload's relay goes: the adapter reads config.generated.php there
+ * first and deletes nothing when it names another generation (deploy/relayGuard.ts). The stored
+ * addresses and secrets stay.
  */
 export async function relayRemove(projectPath: string): Promise<DeployResult> {
   const file = await readRelayFile(projectPath)
@@ -808,7 +811,7 @@ export async function relayRemove(projectPath: string): Promise<DeployResult> {
     return { success: false, output: mainT('relayRemoveServer', { login, then: last.server, now: server ?? '', path: posix.join(where, subdir) }) }
   }
   return withTempDir(async (dir) => {
-    const result = await runDirectoryUpload(projectPath, target.id, dir, subdir, `relay-${target.id}`, RELAY_REMOVED)
+    const result = await runDirectoryUpload(projectPath, target.id, dir, subdir, `relay-${target.id}`, RELAY_REMOVED, last.generation)
     if (!result.success) return result
     // "never uploaded" would not be true now.
     const { lastUpload: _removed, ...rest } = file

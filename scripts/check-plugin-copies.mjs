@@ -34,7 +34,9 @@
 //                         shared/formUsages.ts); wo eine Meldung des Plugins steht (FORM_KEYS,
 //                         PART_OF, NO_FIELDS), welchen Eintrag von `texts` der Abschnitt Texte
 //                         schreibt (entryKey gegen wording) und welche Texte das Relay selbst
-//                         schreibt (RELAY_OWN_WORDS gegen send.php); dazu Quartz' Slug-Regel aus
+//                         schreibt (RELAY_OWN_WORDS gegen send.php), und die Origin-Regel des
+//                         Relays (shared/relayOrigin.ts gegen qf_origin_allowed, von PHP
+//                         ausgeführt; ohne PHP nicht geprüft); dazu Quartz' Slug-Regel aus
 //                         dem Projekt (@quartz-community/utils) gegen quartzSlug. Was das Plugin über eine
 //                         Definition urteilt, schreibt die App nicht ab: sie fragt es (dist/cli.js)
 //
@@ -42,6 +44,7 @@
 // ist nicht „alles gut“). Rückgabewert 1, sobald eine Antwort abweicht.
 
 import fs from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import os from 'node:os'
 import path from 'node:path'
 import esbuild from 'esbuild'
@@ -689,6 +692,48 @@ function tally(label, cases, diffs) {
       }
       tally('Teile der Meldungen und Texte (FORM_KEYS, PART_OF, NO_FIELDS, entryKey, RELAY_OWN_WORDS)', cases, diffs)
     }
+
+    // Die Origin-Regel des Relays (seit dem Review 2026-11-04, N3): originListed in
+    // shared/relayOrigin.ts sagt nach dem Hochladen, ob eine abgewiesene Origin gelistet war.
+    // Dagegen qf_origin_allowed aus send.php, ausgeschnitten und von PHP mit denselben Fällen
+    // ausgeführt (qf_request_origin liefert die Origin des Falls). Ohne PHP nicht geprüft.
+    {
+      const relayOrigin = await load(path.join(APP_DIR, 'shared/relayOrigin.ts'), 'app-relay-origin')
+      const php = path.join(dir, 'relay/php/send.php')
+      const fn = fs.existsSync(php) ? /\nfunction qf_origin_allowed\([\s\S]*?\n\}\n/.exec(fs.readFileSync(php, 'utf-8'))?.[0] : undefined
+      const A = 'https://a.example'
+      const probes = [
+        [[], A], [[A], A], [['https://A.EXAMPLE'], A], [[`${A}/`], A], [[A], `${A}/`], [[`${A}//`], A],
+        [['https://b.example', A], A], [['https://b.example'], A], [[A], `${A}:8443`], [[`${A}:443`], A],
+        [['http://a.example'], A], [[` ${A}`], A], [[A], ''], [[], ''],
+        [['https://BÜCHER.example'], 'https://bücher.example'], [['https://xn--bcher-kva.example'], 'https://XN--BCHER-KVA.example']
+      ]
+      const label = 'Origin-Regel des Relays (originListed gegen qf_origin_allowed)'
+      const program = `function qf_request_origin(): string { return $GLOBALS['qf_case_origin']; }\n${fn}\n$out = [];\nforeach (json_decode(file_get_contents('php://stdin'), true) as [$allowed, $origin]) { $GLOBALS['qf_case_origin'] = $origin; $out[] = qf_origin_allowed(['allowedOrigins' => $allowed]); }\necho json_encode($out);`
+      let theirs = null
+      let failed = fn ? null : 'qf_origin_allowed in relay/php/send.php nicht gefunden'
+      if (fn) {
+        try {
+          theirs = JSON.parse(execFileSync('php', ['-r', program], { input: JSON.stringify(probes), encoding: 'utf-8' }))
+        } catch (err) {
+          failed = err.code === 'ENOENT' ? 'PHP fehlt' : `qf_origin_allowed lief nicht: ${String(err.stderr || err.message).trim().split('\n')[0]}`
+        }
+      }
+      // Nur ein fehlendes PHP ist „nicht geprüft“; eine umbenannte oder kaputte Funktion ist eine
+      // Abweichung, wie bei RELAY_OWN_WORDS.
+      if (failed === 'PHP fehlt') {
+        unchecked++
+        report.push(`  ${label}: PHP fehlt — nicht geprüft`)
+      } else if (!theirs) tally(label, probes.length, [failed])
+      else {
+        const diffs = []
+        probes.forEach(([allowed, origin], i) => {
+          const ours = relayOrigin.originListed(allowed, origin)
+          if (ours !== theirs[i]) diffs.push(`${show(allowed)} gegen ${show(origin)}: App ${ours ? 'gelistet' : 'nicht gelistet'}, Relay ${theirs[i] ? 'erlaubt' : 'weist ab'}`)
+        })
+        tally(label, probes.length, diffs)
+      }
+    }
   }
 
   // Quartz' Slug-Regel, gegen die Fassung im Projekt (@quartz-community/utils).
@@ -710,6 +755,7 @@ function tally(label, cases, diffs) {
 console.log(`Projekt: ${PROJECT}`)
 console.log(report.join('\n'))
 console.log('')
-if (unchecked) console.log(`${unchecked} Plugin${unchecked === 1 ? '' : 's'} nicht geprüft.`)
+// Ein Plugin, das fehlt, oder eine Prüfung ohne ihr Werkzeug (PHP, @quartz-community/utils).
+if (unchecked) console.log(`${unchecked}× nicht geprüft, oben genannt.`)
 console.log(differences ? `✗ ${differences} Abweichung${differences === 1 ? '' : 'en'}.` : '✓ keine Abweichung.')
 process.exit(differences ? 1 : 0)

@@ -11,6 +11,7 @@ import { runDirectoryUpload } from './deploy'
 import { readJsonFile, writeJsonFile } from './jsonStore'
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
 import { getTarget, listTargets, saveTarget } from './publishTargetsService'
+import { originListed } from '@shared/relayOrigin'
 import { isNewerVersion } from '@shared/semver'
 import { pluginPackageDir } from './pluginSchemaService'
 import { runCommand } from './runCommand'
@@ -553,13 +554,6 @@ function phpMessage(body: string): string | null {
 }
 
 const RELAY_ASK_AGAIN_MS = 3000
-
-/** Whether the relay's list allows `origin`, by send.php's rule (qf_origin_allowed): case aside,
- *  without a trailing slash, an empty list allows any. */
-function originListed(allowed: string[], origin: string): boolean {
-  const bare = (o: string): string => o.replace(/\/+$/, '').toLowerCase()
-  return allowed.length === 0 || allowed.some((a) => bare(a) === bare(origin))
-}
 
 /** What the relay answers a `GET ?challenge=` with when it refuses (send.php). */
 const RELAY_GET_ERRORS = ['unknown_form', 'origin', 'secret_config', 'mbstring_config']

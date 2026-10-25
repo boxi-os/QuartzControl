@@ -121,7 +121,12 @@ Wörtlich aus `CLAUDE.md` hierher gezogen am 2026-10-16, damit `CLAUDE.md` nicht
   nur auf `noFields`), welchen Eintrag von `texts` der Abschnitt Texte schreibt (`entryKey` gegen
   `wording()`, je Eintrag und Seitensprache) und welche Texte das Relay selbst schreibt
   (`RELAY_OWN_WORDS` gegen die `$words` in `qf_serialize`, `send.php` gelesen, nicht geladen):
-  326 Fälle, alle gleich; Gegenprobe mit fünf eingebauten Abweichungen, alle fünf gemeldet. Was
+  326 Fälle, alle gleich; Gegenprobe mit fünf eingebauten Abweichungen, alle fünf gemeldet. Seit
+  dem Review 2026-11-04 (N3) auch die Origin-Regel des Relays: `originListed`
+  (`shared/relayOrigin.ts`, entscheidet den Satz nach einer abgewiesenen Origin) gegen
+  `qf_origin_allowed`, aus `send.php` ausgeschnitten und von PHP mit 16 Fällen ausgeführt; ohne
+  PHP „nicht geprüft“. Beim ersten Lauf (0.5.16) wich ein Fall ab: `strcasecmp` kennt nur ASCII,
+  `toLowerCase` hielt „BÜCHER“ für „bücher“; seither gleich. Was
   das Plugin über eine Definition urteilt, steht hier nicht: Das fragt der Reiter das Plugin selbst
   (`dist/cli.js check`).
 - `npm run check:inline-svg -- [projektpfad]` — der SVG-Bereiniger (`src/utils/inlineSvg.ts`, „Als Code einfügen“

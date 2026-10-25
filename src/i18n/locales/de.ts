@@ -1562,7 +1562,7 @@ export default {
       statusCurrent: 'hochgeladen am {{date}}, aktuell',
       statusChanged: 'seit dem Hochladen am {{date}} geändert',
       panelChanged: 'Relay seit dem Hochladen geändert',
-      statusMoved: 'Ziel oder Ordner geändert seit dem Hochladen am {{date}}',
+      statusMoved: 'Ziel, Zugang oder Ordner geändert seit dem Hochladen am {{date}}',
       statusBroken: 'kann gerade nicht erzeugt werden',
       noStorage: 'Auf diesem System kann QuartzControl keine Zugangsdaten verschlüsselt speichern. Adressen und Secrets lassen sich deshalb nicht hinterlegen; „Als Ordner speichern“ schreibt Platzhalter.',
       target: 'Ziel',

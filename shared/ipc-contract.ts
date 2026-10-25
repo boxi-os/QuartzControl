@@ -670,6 +670,9 @@ export interface RelayLastUpload {
   /** The counterDir that upload wrote into config.php, when one was set: removing the relay names
    *  where the counts stay. */
   counterDir?: string
+  /** user@host of the connection that upload went through; absent for a folder target and before
+   *  2026-10-25. A connection rewritten to another server keeps its id and the location. */
+  server?: string
 }
 
 export interface RelayConflict {

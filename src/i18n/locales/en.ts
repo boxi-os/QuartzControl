@@ -1557,7 +1557,7 @@ export default {
       statusCurrent: 'uploaded on {{date}}, current',
       statusChanged: 'changed since the upload on {{date}}',
       panelChanged: 'Relay changed since the upload',
-      statusMoved: 'target or folder changed since the upload on {{date}}',
+      statusMoved: 'target, login or folder changed since the upload on {{date}}',
       statusBroken: 'cannot be made right now',
       noStorage: 'On this system QuartzControl cannot store credentials encrypted. Addresses and secrets therefore cannot be kept; “Save as folder” writes placeholders.',
       target: 'Target',

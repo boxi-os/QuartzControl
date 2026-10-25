@@ -215,6 +215,17 @@ export async function saveRelaySettings(projectPath: string, settings: RelaySett
   await writeRelayFile(projectPath, { ...file, settings })
 }
 
+/**
+ * The account a relay upload reaches through the target's connection, as user@host. A connection
+ * rewritten to another server keeps its id, and so the location: the status said nothing, and
+ * removing deleted on the new server at the same path (review 2026-11-04, N4b). The port is left
+ * out, as a new port mostly reaches the same server.
+ */
+async function serverOf(target: PublishTarget): Promise<string | undefined> {
+  const connection = target.connectionId ? await connectionsService.getConnection(target.connectionId) : null
+  return connection && 'host' in connection ? `${connection.username}@${connection.host.trim().toLowerCase()}` : undefined
+}
+
 /** Where a relay upload lands, as one string: a change of it means the remote has not seen this relay. */
 function locationOf(target: PublishTarget, subdir: string): string {
   const d = target.destination
@@ -327,7 +338,7 @@ export async function relayState(projectId: string, projectPath: string, source:
     ...(generated.ok
       ? { currentHash: typeof generated.json.hash === 'string' ? generated.json.hash : null, siteOrigin: typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : null, relayForms: strings(generated.json.forms), recipientNames: strings(generated.json.recipients) }
       : { currentHash: null, siteOrigin: null, relayForms: [], recipientNames: [], hashProblem: generated.reason }),
-    ...(target && file.lastUpload ? { moved: file.lastUpload.location !== locationOf(target, settings.subdir) } : {}),
+    ...(target && file.lastUpload ? { moved: file.lastUpload.location !== locationOf(target, settings.subdir) || (file.lastUpload.server !== undefined && file.lastUpload.server !== (await serverOf(target))) } : {}),
     // The switch is written at once, the mode only by the next upload (review 2026-10-29, M4).
     ...(file.lastUpload?.configReadable !== undefined && file.lastUpload.configReadable !== settings.configReadable ? { configModeChanged: true } : {}),
     ...(file.lastUpload?.operator !== undefined && file.lastUpload.operator !== operatorStamp(settings, info.fingerprint) ? { operatorChanged: true } : {})
@@ -725,7 +736,8 @@ export async function relayUpload(projectId: string, projectPath: string, source
     if (result.success && typeof generated.json.hash === 'string') {
       const operator = operatorStamp(settings, (await connectionsService.getRelaySecretInfo(projectId)).fingerprint)
       const counterDir = settings.counterDir.trim()
-      await writeRelayFile(projectPath, { ...file, removedAt: undefined, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configReadable: settings.configReadable, operator, ...(counterDir ? { counterDir } : {}) } })
+      const server = await serverOf(target)
+      await writeRelayFile(projectPath, { ...file, removedAt: undefined, lastUpload: { at: new Date().toISOString(), hash: generated.json.hash, targetId: target.id, location, configReadable: settings.configReadable, operator, ...(counterDir ? { counterDir } : {}), ...(server ? { server } : {}) } })
     }
     const warnings = strings(generated.json.warnings)
     const origin = typeof generated.json.siteOrigin === 'string' ? generated.json.siteOrigin : (settings.allowedOrigins[0] ?? null)
@@ -775,7 +787,8 @@ const RELAY_REMOVED = ['send.php', 'config.php', 'config.generated.php']
  * mod_php they are the web server's files, which the account often cannot delete at all. A relay
  * could be uploaded and never removed (mail test 2026-10-25, finding 7). Where it was is the last
  * upload's location, not the settings: a target changed since then is refused with the old place,
- * as QuartzControl no longer has the way there. The stored addresses and secrets stay.
+ * as QuartzControl no longer has the way there, and so is a connection that reaches another server
+ * now (serverOf). The stored addresses and secrets stay.
  */
 export async function relayRemove(projectPath: string): Promise<DeployResult> {
   const file = await readRelayFile(projectPath)
@@ -793,6 +806,12 @@ export async function relayRemove(projectPath: string): Promise<DeployResult> {
     const path = type === 'folder' ? join(where, subdir) : posix.join(where, subdir)
     const login = connectionId && connectionId !== (target.connectionId ?? '') ? (await connectionsService.getConnection(connectionId))?.name : undefined
     return { success: false, output: mainT('relayRemoveMoved', { target: target.name, path, login: login ? mainT('relayRemoveMovedLogin', { name: login }) : '' }) }
+  }
+  const server = await serverOf(target)
+  if (last.server !== undefined && last.server !== server) {
+    const where = last.location.split('|').slice(2, -1).join('|')
+    const login = (await connectionsService.getConnection(target.connectionId ?? ''))?.name ?? ''
+    return { success: false, output: mainT('relayRemoveServer', { login, then: last.server, now: server ?? '', path: posix.join(where, subdir) }) }
   }
   return withTempDir(async (dir) => {
     const result = await runDirectoryUpload(projectPath, target.id, dir, subdir, `relay-${target.id}`, RELAY_REMOVED)

@@ -55,8 +55,8 @@ Aufgesetzt wurde es wie in `scripts/build-example-template.mjs`: `git clone` von
 IPC-Pfade wie ein Klick.
 
 **Der Handbuch-Vault hat ein privates Remote**, `boxi-os/QuartzControl-Handbuch` (am 2026-09-18
-nachgesehen; bis zum 2026-09-07 lag er nur auf dieser Maschine) — wie der Example-Vault, der nach
-`boxi-os/Quartz-Example-Vault` (privat) gepusht wird. Veröffentlicht wird der Text nicht über
+nachgesehen; bis zum 2026-09-07 lag er nur auf dieser Maschine); der Example-Vault liegt dagegen
+öffentlich in `boxi-os/Quartz-Example-Template`. Veröffentlicht wird der Text nicht über
 dieses Repo, sondern als Website über `QuartzControl-Web`; seit dem 2026-09-18 ist das die einzige
 veröffentlichte Fassung.
 

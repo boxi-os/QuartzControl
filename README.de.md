@@ -142,10 +142,11 @@ Ein Hobbyprojekt, aus Spaß, technischem Interesse und für den eigenen Gebrauch
 manuelle Konfiguration von Quartz hat mich an meine Grenzen gebracht, sodass ich QuartzControl ins
 Leben gerufen habe. Da es sich für mich selbst als sehr nützlich erwiesen hat, möchte ich es der
 Allgemeinheit zur Verfügung stellen … vielleicht findet es ja der eine oder die andere genauso
-nützlich wie ich. Im Zuge von QuartzControl sind außerdem drei Plugins entstanden:
+nützlich wie ich. Im Zuge von QuartzControl sind außerdem vier Plugins entstanden:
 [quartz-layout-box](https://github.com/boxi-os/quartz-layout-box),
-[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage) und
-[quartz-navigations](https://github.com/boxi-os/quartz-navigations), die ich euch ebenfalls
+[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage),
+[quartz-navigations](https://github.com/boxi-os/quartz-navigations) und
+[quartz-forms](https://github.com/boxi-os/quartz-forms), die ich euch ebenfalls
 gerne zur Verfügung stelle. Darüber hinaus stelle ich eine Beispiel-Vorlage bereit, die eine
 komplette Konfiguration umfasst und als Basis für ein eigenes Website-Design dienen kann.
 
@@ -175,10 +176,13 @@ Hinzu kommen meine persönlichen Testläufe mit der App — und vielleicht auch 
   Weiterleitungen
 - **[quartz-navigations](https://github.com/boxi-os/quartz-navigations)** — Quartz-Plugin,
   Navigationen aus der Ordnerstruktur des Contents: Menüleiste, Akkordeon, Sitemap, Blättern
+- **[quartz-forms](https://github.com/boxi-os/quartz-forms)** — Quartz-Plugin, Formulare für eine
+  statische Website: im Browser geprüft, auf Wunsch mit OpenPGP verschlüsselt, zugestellt über ein
+  PHP-Skript auf dem eigenen Webspace oder einen Formular-Dienst
 - **[quartzcontrol-templates](https://github.com/boxi-os/quartzcontrol-templates)** —
   Vorlagenpakete, die die App beim Anlegen eines Projekts holt
 
-Alle drei Plugins funktionieren unabhängig von QuartzControl in jedem Quartz-5-Projekt.
+Alle vier Plugins funktionieren unabhängig von QuartzControl in jedem Quartz-5-Projekt.
 
 ## Lizenz
 

@@ -136,10 +136,11 @@ installer for a version that does not work.
 A hobby project, written for fun, out of technical curiosity, and for my own use. Configuring
 Quartz by hand pushed me to my limits, which is how QuartzControl came about. Since it has turned
 out to be genuinely useful to me, I would like to make it available to everyone … maybe someone
-else will find it as useful as I do. Three plugins came out of the same work:
+else will find it as useful as I do. Four plugins came out of the same work:
 [quartz-layout-box](https://github.com/boxi-os/quartz-layout-box),
-[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage) and
-[quartz-navigations](https://github.com/boxi-os/quartz-navigations), which I am happy to share
+[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage),
+[quartz-navigations](https://github.com/boxi-os/quartz-navigations) and
+[quartz-forms](https://github.com/boxi-os/quartz-forms), which I am happy to share
 as well. On top of that there is an example template with a complete configuration, meant as a
 starting point for a design of your own.
 
@@ -168,10 +169,13 @@ On top of that come my own test runs with the app — and maybe soon yours … f
   redirects
 - **[quartz-navigations](https://github.com/boxi-os/quartz-navigations)** — Quartz plugin,
   navigations from the content folder structure: menu bar, sidebar accordion, sitemap, pager
+- **[quartz-forms](https://github.com/boxi-os/quartz-forms)** — Quartz plugin, forms for a static
+  website: checked in the browser, encrypted with OpenPGP if wanted, delivered by a PHP script on
+  your own web space or by a form service
 - **[quartzcontrol-templates](https://github.com/boxi-os/quartzcontrol-templates)** — template
   packages the app fetches when creating a project
 
-All three plugins work in any Quartz 5 project, independently of QuartzControl.
+All four plugins work in any Quartz 5 project, independently of QuartzControl.
 
 ## Licence
 

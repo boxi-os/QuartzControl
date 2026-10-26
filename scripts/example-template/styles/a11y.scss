@@ -89,6 +89,14 @@
     display: none !important;
   }
 
+  // The columns' strips (layout.scss) stand beside columns that are gone, and in the block below
+  // their 100vmax shadow runs free: the right one covered two thirds of a printed page at 1456px
+  // (sixty-first review, aside 6).
+  .qgframe-grid::before,
+  .qgframe-grid::after {
+    content: none !important;
+  }
+
   .page,
   #quartz-body,
   .qgframe-grid {

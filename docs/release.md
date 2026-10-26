@@ -457,7 +457,7 @@ klebende Spalte, die vier Flächen) überall außer in `qc-basic` und der Exampl
    Element und Pseudo-Element vergleichen und jede geänderte Eigenschaft einzeln lesen.
 4. Veröffentlicht wird `QuartzControl-Web` mit Punkt 9, die Plugin-Website mit Punkt 7b.
 
-**Stand 2026-10-26:** erledigt, die Pakete stammen von 19:11. Beide Websites sind importiert und
+**Stand 2026-10-26:** erledigt. Die Pakete wurden um 19:11 exportiert und um 19:46 nach der Druckregel für die Streifen (61. Review, nebenbei 6) ein zweites Mal; mit dem zweiten Export wurde nur `styles` erneut importiert. Beide Websites sind importiert und
 gebaut, je fünf Seiten auf drei Breiten in hell und dunkel aufgenommen. Gemessen hat sich keine
 Farbe geändert. Die linke Spalte steht jetzt auf `static` → `sticky`, der Innenabstand oben ist
 14 statt 4 px, und der Verlauf unter dem Kopf ist ein Border-Image statt eines `::after`. Neu sind

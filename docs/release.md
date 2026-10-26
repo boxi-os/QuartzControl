@@ -473,7 +473,23 @@ Projekt gleichen Namens, `https://boxi-os.github.io/quartz-plugins/`, ein Ordner
 statt dreier Plugin-Links und eines vierten für Forms gibt es einen: „Plugins“. Damit bleiben vier
 Stellen: `plugins.mjs` (umgestellt), `quartz-plugins-handbuch` (umgestellt), `QuartzControl-Web` und
 `QuartzControl-Handbuch` (beide von Hand, am Release-Tag). Die drei alten Plugin-Projekte fallen
-weg; eine Website `boxi-os.github.io/quartz-forms` hat es nie gegeben. `qc-basic` installiert quartz-forms seit dem
+weg; eine Website `boxi-os.github.io/quartz-forms` hat es nie gegeben.
+
+`plugins.mjs` erreicht ein Projekt erst über einen Lauf: Die Example-Werkstatt bekommt den Footer
+mit `npm run template:example -- --only 4` (seit dem 2026-10-26 umgestellt), die Varianten mit
+ihrem Export (Punkt 4). Und nicht nur Footer nennen die Plugin-Websites: Der Text des
+App-Handbuchs verlinkt sie auch (Startseite, 4.8; seit dem 61. Review, M2, umgestellt). Kein
+Prüfskript liest diese Links. Am Release-Tag muss deshalb dieser Aufruf still bleiben:
+
+    grep -rnE 'github\.io/quartz-(layout-box|multilanguage|navigations|forms)/' \
+      ~/Obsidian/QuartzProjekte/QuartzControl-Handbuch ~/Obsidian/QuartzProjekte/Example \
+      ~/Obsidian/QuartzProjekte/quartz-plugins-handbuch \
+      ~/Documents/QuartzProjekte/{Example,QuartzControl-Web,QuartzControl-Handbuch,quartz-plugins-handbuch}/quartz.config.yaml \
+      --include='*.md' --include='*.yaml' | grep -v '/private/'
+
+Bis die beiden Footer von Hand umgestellt sind, findet er genau deren sechs Zeilen (gemessen am
+2026-10-26); jede andere Zeile ist ein Link, der nach Punkt 9 über eine Weiterleitung oder ins
+Leere geht. `qc-basic` installiert quartz-forms seit dem
 2026-10-22 mit einem Formular `kontakt`, das nichts sendet (`basic.mjs`, `forms()`); die
 App 1.1 holt `qc-basic.qtpl` online aus dem Vorlagen-Repo, also geht dieses Paket **erst mit 1.2
 und erst, wenn quartz-forms öffentlich ist,** dorthin, sonst scheitert dort jeder Import am

@@ -82,13 +82,13 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 Einundsechzig Review-Runden sind abgearbeitet (die letzte am 2026-10-26 auf `feat/1.2`, die
 letzte vor 1.2: Vorlage, gemeinsame Plugin-Website, Ablauf des Release-Tags; alles Gewählte
-behoben; die achtundvierzigste bis dreiundfünfzigste von einem anderen Modell geschrieben). Veröffentlicht ist `1.1.1` (2026-10-22), davor `1.1.0` (2026-10-18). Was aus jeder Runde wurde und was noch
+behoben; die achtundvierzigste bis dreiundfünfzigste von einem anderen Modell geschrieben). Veröffentlicht ist `1.2.0` (2026-10-26), davor `1.1.1` (2026-10-22) und `1.1.0` (2026-10-18). Was aus jeder Runde wurde und was noch
 ungelesen ist, steht in [`docs/reviews.md`](docs/reviews.md); die früheren Stand-Absätze dieser
 Datei (Releases, Alpha-Test, Gruppe D, offene Punkte) wörtlich in [`docs/stand.md`](docs/stand.md).
 Was aus einer Runde dauerhaft gilt, steht als Regel in `docs/conventions.md`, nicht in der Chronik.
 
-Seit dem 2026-10-19 gibt es zwei Linien: Bugfixes für 1.1 auf `fix/1.1.x`, neue Features auf
-`feat/1.2`; die Fix-Linie wird in die Feature-Linie gemergt, nie umgekehrt
+Seit dem 2026-10-19 gibt es zwei Linien, seit dem 2026-10-26 diese: Bugfixes für 1.2 auf `fix/1.2.x`, neue
+Features auf `feat/1.3`; die Fix-Linie wird in die Feature-Linie gemergt, nie umgekehrt
 ([`docs/release.md`](docs/release.md), Punkt 2).
 
 **Arbeitsregel** für eine Review-Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,

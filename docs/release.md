@@ -1,6 +1,28 @@
 # Vor einem Release
 
-> **Zuletzt durchlaufen für 1.1.1 am 2026-10-22** (annotierter Tag `v1.1.1` auf `d452ea22`, Branch
+> **Zuletzt durchlaufen für 1.2.0 am 2026-10-26** (annotierter Tag `v1.2.0` auf `73d6f1c3`, Branch
+> `release/1.2.0` von `feat/1.2`; `main` und `feat/1.2` per Fast-Forward dorthin, `fix/1.2.x` und
+> `feat/1.3` von dort). Zehn Pakete, neun auf einer Maschine ihrer Architektur gestartet (macOS x64
+> nicht; statisch: `Info.plist` 1.2.0, App und git x86_64, Signatur gültig), jedes mit Wegwerf-Profil
+> und 1.2.0 im User-Agent, Node 24.18.1, npm 11.17.0, die sechs Linux-Starts mit `gnome_libsecret`.
+> Digests der Release-Seite = `shasum` über `release/`. quartz-forms öffentlich (README ohne
+> „private“, `6724046`), danach die Plugin-Website über ein neues Ziel „GitHub Pages“ (282 Seiten, 630
+> Dateien; GitHub schaltet Pages für `gh-pages` selbst ein), die 198 Ziele der Weiterleitungen online
+> mit 200, dann die drei Weiterleitungs-Websites (je ein Commit auf `gh-pages`) und neun Stichproben
+> im Browser, README-Commits, die vier alten Vault-Repos archiviert. Vorlagen-Repo `5925840`,
+> `--check-sync` für `basic` und `example` Exit 0. QuartzControl-Web gegen `gh-pages` 327 geändert,
+> 15 neu, 5 entfallen (Screenshots, CSS-Hash), veröffentlicht als `c208c3bb`, byte-gleich mit dem
+> Bau; alle 36 Pfade und die zwei alten mit 200. Fünf Dinge für das nächste Mal: **Die Werkstätten
+> heben ihre Plugins nicht selbst** (Punkt 4a, jetzt mit dem Befehl), **die Pakete unter
+> `scripts/example-template/pakete/` zieht kein Lauf nach** (ebenda), **eine Szene kann seit Wochen
+> kaputt sein**, ohne dass es auffällt, weil `--scenes` nur vor einem Release läuft (die
+> Snapshot-Szene seit dem 2026-10-08), **die Sicherheitsprüfung von Claude Code lehnt ab, was etwas
+> öffentlich macht oder ausrollt** (Sichtbarkeit eines Repos, Archivieren, das Veröffentlichen von
+> QuartzControl-Web), und der Nutzer führt diese Befehle selbst aus, und **`busctl … Locked` sagt auf
+> beiden VMs nach dem Hochfahren `true`, auch wenn der Schlüsselbund beim ersten Zugriff aufgeht**
+> (die Abfrage am Bildschirm beantworten; der erste Start auf debian-vm wartete darauf 3½ Minuten).
+>
+> Davor **1.1.1 am 2026-10-22** (annotierter Tag `v1.1.1` auf `d452ea22`, Branch
 > `release/1.1.1` von `fix/1.1.x`; `fix/1.1.x` und `main` per Fast-Forward dorthin, danach in
 > `feat/1.2` gemergt). Zehn Pakete, neun auf einer Maschine ihrer Architektur gestartet (macOS x64
 > nicht; statisch: `Info.plist` 1.1.1, App und git x86_64), jedes mit Wegwerf-Profil und 1.1.1 im
@@ -123,7 +145,8 @@ der Deploy-Branch, erwartet.
 
 **Zwei Linien nach einem Release.** Fixes für die veröffentlichte Fassung liegen auf
 `fix/<major>.<minor>.x`, neue Features auf `feat/<nächste>`; beide zweigen vom selben Punkt ab
-(seit 2026-10-19: `fix/1.1.x` und `feat/1.2` vom letzten Commit auf `feat/1.1`). Die Fix-Linie wird in die
+(seit 2026-10-19: `fix/1.1.x` und `feat/1.2` vom letzten Commit auf `feat/1.1`; seit 2026-10-26:
+`fix/1.2.x` und `feat/1.3` von `v1.2.0`). Die Fix-Linie wird in die
 Feature-Linie **gemergt**, nie umgekehrt und nicht per Cherry-Pick, spätestens nach jedem
 Fix-Release. Ein Fix-Release entsteht aus der Fix-Linie (`release/<fassung>`, Tag, `main` per
 Fast-Forward). Bei einem Fix-Release zeigt die Schleife oben die Feature-Linie mit `+` — erwartet;

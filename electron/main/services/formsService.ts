@@ -807,8 +807,11 @@ export async function relayRemove(projectPath: string): Promise<DeployResult> {
   const server = await serverOf(target)
   if (last.server !== undefined && last.server !== server) {
     const where = last.location.split('|').slice(2, -1).join('|')
-    const login = (await connectionsService.getConnection(target.connectionId ?? ''))?.name ?? ''
-    return { success: false, output: mainT('relayRemoveServer', { login, then: last.server, now: server ?? '', path: posix.join(where, subdir) }) }
+    const path = posix.join(where, subdir)
+    const connection = await connectionsService.getConnection(target.connectionId ?? '')
+    // A deleted login has neither a name nor a server to name (review 2026-11-05, N1).
+    if (!connection) return { success: false, output: mainT('relayRemoveLoginGone', { target: target.name, then: last.server, path }) }
+    return { success: false, output: mainT('relayRemoveServer', { login: connection.name, then: last.server, now: server ?? '', path }) }
   }
   return withTempDir(async (dir) => {
     const result = await runDirectoryUpload(projectPath, target.id, dir, subdir, `relay-${target.id}`, RELAY_REMOVED, last.generation)

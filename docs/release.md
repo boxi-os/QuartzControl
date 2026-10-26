@@ -165,9 +165,8 @@ Seit 1.1 hängen App, Vorlage und Handbuch an Fassungen der eigenen Plugins
   Snippet-Auswahl. Auch die Texte des Formulars stehen dort (`x-quartz-l10n`).
 - **quartz-forms hat einen eigenen Reiter**, und der ist gegen eine Fassung abgeschrieben
   (`FORMS_READ_AGAINST` in `formsOptions.ts`, geprüft von `check:plugin-copies`); was er über eine
-  Definition urteilt, fragt er das installierte Plugin (`dist/cli.js`). Das Repository ist privat
-  bis zum Release 1.2 und wird vor allem anderen dieses Punkts öffentlich, mit einer Fassung, die
-  die MIT-Lizenz trägt (die erste ist `v0.5.16`).
+  Definition urteilt, fragt er das installierte Plugin (`dist/cli.js`). Das Repository ist seit
+  dem Release 1.2 öffentlich (2026-10-26); die erste Fassung mit der MIT-Lizenz ist `v0.5.16`.
 - **Die Vorlage installiert, was auf `main` liegt, und das ist entschieden.** `plugins.json` des
   Pakets nennt sie als `github:boxi-os/<name>` ohne Ref (`qc-basic` alle vier, die anderen
   Varianten die ersten drei); ein Import holt den Stand von `main`
@@ -198,6 +197,7 @@ werden (nur `forms.inline.ts`, nichts davon ist abgeschrieben). **Stand 2026-10-
 danach nur `e2afa20` (`AGENTS.md`, wann eine Fassung minor ist), gepusht, noch privat.
 **Stand 2026-10-25, abends:** `v0.6.0` (`c126612`) mit dem Schalter `envelopeSender` (60. Review,
 M3); die App liest gegen sie, `check:plugin-copies` ohne Abweichung; gepusht, noch privat.
+**Stand 2026-10-26:** öffentlich, die README ohne „private“ (`6724046`), sonst wie am Vorabend.
 
 **Jede neue Fassung braucht auch die App.** Der Editor eines Plugins ist gegen eine Fassung gelesen
 (`*_READ_AGAINST` in `src/routes/Plugins/`) und kennt die mit demselben Code (`*_SAME_CODE`); jede
@@ -210,7 +210,11 @@ Commit nach `v0.2.0` (`85428bf`, Test und README), gepusht; navigations auf `v0.
 gepusht. Werkstätten (Example, basic, doku, plugin) und die vier Websites stehen seit dem
 2026-10-18 über die Updates-Seite auf 0.4.3, die vier Vorlagen sind danach neu gebaut (`88e45037`).
 Die Websites kamen von 0.3.2 und sind seither nicht neu gebaut: vor ihrer Veröffentlichung
-(Punkt 9) bauen und gegen `gh-pages` vergleichen.
+(Punkt 9) bauen und gegen `gh-pages` vergleichen. **Stand 2026-10-26:** Seit 1.2 gibt es zwei
+Websites, QuartzControl-Web und die Plugin-Website; beide sind auf layout-box 0.4.2,
+multilanguage 0.2.0 und navigations 0.4.3 gebaut und veröffentlicht, die Plugin-Website auch auf
+quartz-forms 0.6.0. Die Werkstätten stehen auf denselben Fassungen, `basic` mit quartz-forms 0.6.0
+(Punkt 4a).
 
 ## 3. Das Handbuch steht online auf dem Stand der Fassung
 
@@ -222,10 +226,11 @@ müssen dort existieren — nach einer Umbenennung im Vault alle 36 prüfen (sie
 
 **Für 1.1: Kapitel 4.7 heißt neu.** Aus `4-gestaltung/07-layout-global-und-seitentypen` wurde
 `4-gestaltung/07-layout-komponenten-anordnen` (en: `07-layout-arranging-components`), und
-`handbookPages.ts` nennt seit `6e06a333` den neuen Pfad. Bis QuartzControl-Web am Release-Tag
-veröffentlicht ist, antwortet er dort mit 404 — am 2026-10-18 gemessen, die übrigen 34 mit 200. Der
-alte Pfad, den 1.0.x öffnet, steht als `aliases:` auf der neuen Seite und wird zur Weiterleitung.
-Nach dem Veröffentlichen (Punkt 9) alle Pfade der Tabelle und die zwei alten:
+`handbookPages.ts` nennt seit `6e06a333` den neuen Pfad. Bis QuartzControl-Web mit 1.1
+veröffentlicht war, antwortete er dort mit 404 (am 2026-10-18 gemessen, die übrigen 34 mit 200);
+seither mit 200. Der alte Pfad, den 1.0.x öffnet, steht als `aliases:` auf der neuen Seite und ist
+eine Weiterleitung (das PDF-Skript überspringt sie seit `d2f5e0fc`). Nach jedem Veröffentlichen
+(Punkt 9) alle Pfade der Tabelle und die zwei alten:
 
     for p in $(grep -o "'\(en/\)\?[0-9]-[a-z0-9/-]*'" src/data/handbookPages.ts | tr -d "'") \
         4-gestaltung/07-layout-global-und-seitentypen en/4-design/07-layout-global-and-page-types; do
@@ -450,7 +455,11 @@ die drei Kopien gegeneinander, nicht das Repo gegen die Kopien — eine Drift, d
 Hand: die `key:`-Liste aus `variables.mjs` gegen den `css-vars`-Block der Werkstatt (am 2026-09-20
 vor dem Ausrollen 45 gegen 50, Differenz genau die fünf Schriften).
 
-**Offen für das nächste Release (Stand 2026-10-10): der Pfeil an externen Links.** Im Repo steht
+**Erledigt: der Pfeil an externen Links** (Stand 2026-10-26 nachgeprüft: kein `content.scss` im
+Repo, in der Example-Werkstatt, in QuartzControl-Web, der Plugin-Website oder dem Handbuch-Projekt
+setzt noch ein `↗`; die Pakete tragen den Stand seit dem Neubau für 1.1.0). Hier stand bis zum
+2026-10-26 „Offen für das nächste Release (Stand 2026-10-10)“, über zwei Releases hinweg. Der Absatz
+von damals: Im Repo steht
 seither nur noch Quartz' eigenes Symbol (crawl-links, `externalLinkIcon`), gedämpft — vorher
 setzte `content.scss` ein zweites `↗` per `::after` daneben. Die Werkstatt (Example), die vier
 Pakete und die Websites tragen noch beide Pfeile; das Repo ist hier also *vorn*, und ein
@@ -513,31 +522,32 @@ sich täglich: Am 2026-09-20, zwei Tage nach dem Lauf davor, waren 1945 von 1946
 verschoben — und dabei **keine Familie dazugekommen, keine weggefallen, keine Kategorie geändert**.
 Wer den Diff liest, liest also eine Rangliste, nicht einen Zuwachs.
 
-## 5. Der Footer steht an sechs Stellen gleich
+## 5. Der Footer steht an jeder Stelle gleich
 
-Die Links auf Quartz, QuartzControl, Example und die Plugin-Handbücher stehen in
+Die vier Links (Quartz, QuartzControl, Example, Plugins) stehen in
 `scripts/example-template/plugins.mjs` (daraus Example-Projekt und Vorlage) und von Hand in der
-`quartz.config.yaml` von fünf Projekten, die nicht versioniert sind:
+`quartz.config.yaml` von drei Projekten, die nicht versioniert sind:
 
 - `QuartzControl-Web`
 - `QuartzControl-Handbuch` (nur noch Quelle des PDFs; online geht `QuartzControl-Web`)
-- `quartz-layout-box-handbuch`
-- `quartz-multilanguage-handbuch`
-- `quartz-navigations-handbuch`
+- `quartz-plugins-handbuch`
 
-Seit dem 2026-10-19 gibt es eine siebte Stelle, `quartz-forms-handbuch` (privat bis 1.2). **Seit
+Bis 1.1 waren es sechs Stellen: statt der Plugin-Website die drei Projekte
+`quartz-layout-box-handbuch`, `quartz-multilanguage-handbuch` und `quartz-navigations-handbuch`.
+Seit dem 2026-10-19 gab es eine siebte Stelle, `quartz-forms-handbuch` (nie veröffentlicht). **Seit
 dem 2026-10-26 sind die vier Plugin-Handbücher eine Website** (`quartz-plugins-handbuch`, Vault und
 Projekt gleichen Namens, `https://boxi-os.github.io/quartz-plugins/`, ein Ordner je Plugin), und
 statt dreier Plugin-Links und eines vierten für Forms gibt es einen: „Plugins“. Damit bleiben vier
 Stellen: `plugins.mjs` (umgestellt), `quartz-plugins-handbuch` (umgestellt), `QuartzControl-Web` und
-`QuartzControl-Handbuch` (beide von Hand, am Release-Tag). Die drei alten Plugin-Projekte fallen
-weg; eine Website `boxi-os.github.io/quartz-forms` hat es nie gegeben.
+`QuartzControl-Handbuch` (beide von Hand, umgestellt am Release-Tag von 1.2). Die drei alten
+Plugin-Projekte fallen weg, ihre Websites leiten weiter (Punkt 7b); eine Website
+`boxi-os.github.io/quartz-forms` hat es nie gegeben.
 
 `plugins.mjs` erreicht ein Projekt erst über einen Lauf: Die Example-Werkstatt bekommt den Footer
 mit `npm run template:example -- --only 4` (seit dem 2026-10-26 umgestellt), die Varianten mit
 ihrem Export (Punkt 4). Und nicht nur Footer nennen die Plugin-Websites: Der Text des
 App-Handbuchs verlinkt sie auch (Startseite, 4.8; seit dem 61. Review, M2, umgestellt). Kein
-Prüfskript liest diese Links. Am Release-Tag muss deshalb dieser Aufruf still bleiben:
+Prüfskript liest diese Links. Vor jedem Veröffentlichen muss deshalb dieser Aufruf still bleiben:
 
     grep -rnE 'github\.io/quartz-(layout-box|multilanguage|navigations|forms)/' \
       ~/Obsidian/QuartzProjekte/QuartzControl-Handbuch ~/Obsidian/QuartzProjekte/Example \
@@ -545,18 +555,16 @@ Prüfskript liest diese Links. Am Release-Tag muss deshalb dieser Aufruf still b
       ~/Documents/QuartzProjekte/{Example,QuartzControl-Web,QuartzControl-Handbuch,quartz-plugins-handbuch}/quartz.config.yaml \
       --include='*.md' --include='*.yaml' | grep -v '/private/'
 
-Bis die beiden Footer von Hand umgestellt sind, findet er genau deren sechs Zeilen (gemessen am
-2026-10-26); jede andere Zeile ist ein Link, der nach Punkt 7b über eine Weiterleitung oder ins
-Leere geht. `qc-basic` installiert quartz-forms seit dem
-2026-10-22 mit einem Formular `kontakt`, das nichts sendet (`basic.mjs`, `forms()`); die
-App 1.1 holt `qc-basic.qtpl` online aus dem Vorlagen-Repo, also geht dieses Paket **erst mit 1.2
-und erst, wenn quartz-forms öffentlich ist,** dorthin, sonst scheitert dort jeder Import am
-privaten Repository. Die Reihenfolge am Release-Tag: quartz-forms öffentlich (Repository und
-Handbuch-Website, Punkt 2b), dann die Footer, dann das Paket ins Vorlagen-Repo (Punkt 8).
+Bis die beiden Footer von Hand umgestellt waren, fand er genau deren sechs Zeilen; seit dem
+Release-Tag von 1.2 (2026-10-26) ist er still. Jede Zeile, die er findet, ist ein Link, der über
+eine Weiterleitung oder ins Leere geht. `qc-basic` installiert quartz-forms seit dem 2026-10-22 mit
+einem Formular `kontakt`, das nichts sendet (`basic.mjs`, `forms()`); deshalb ging dieses Paket
+erst mit 1.2 ins Vorlagen-Repo, nachdem quartz-forms öffentlich war, denn die App 1.1 holt
+`qc-basic.qtpl` online, und vorher scheiterte dort jeder Import am privaten Repository.
 
 Am 2026-09-14 trugen alle sechs dieselben sechs Links. Ein neues Plugin oder eine neue Website
-heißt: alle sechs anfassen, Vorlage neu exportieren (Punkt 4), die vier Websites neu
-veröffentlichen. Der Footer des damals mitgelieferten Handbuchs hatte bis `f61333b` zwei Links, während
+heißt: alle Stellen oben anfassen, Vorlage neu exportieren (Punkt 4), die Websites neu
+veröffentlichen (seit 1.2 zwei: QuartzControl-Web und die Plugin-Website). Der Footer des damals mitgelieferten Handbuchs hatte bis `f61333b` zwei Links, während
 die Vorlage vier trug — genau die Drift, die eine Liste an sechs Orten erzeugt.
 
 ## 6. Die Pakete entstehen, starten und bekommen einen Tag
@@ -565,10 +573,12 @@ die Vorlage vier trug — genau die Drift, die eine Liste an sechs Orten erzeugt
 `CLAUDE.md`). Für Beta 2 waren das zehn Pakete: dmg und zip je
 für arm64 und x64, AppImage und deb je für arm64 und x86_64, Flatpak für aarch64 und x86_64.
 
-**Kein Vorab-Paket von 1.2 geht an jemanden, solange quartz-forms privat ist.** Die mitgelieferte
-`qc-basic.qtpl` installiert es seit dem 2026-10-22; bis dahin scheitert jeder Import mit dem
+**Ein Plugin, das ein mitgeliefertes Paket installiert, ist öffentlich, bevor ein Paket der App
+jemanden erreicht.** Für 1.2 war das quartz-forms: Die mitgelieferte `qc-basic.qtpl` installiert es
+seit dem 2026-10-22, und solange das Repository privat war, scheiterte jeder Import mit dem
 Basis-Template erst nach dem Klick (`pluginInstallFailed:quartz-forms`), und die Beispielseiten
-kommen mit einem nackten Codeblock (neunundfünfzigstes Review, Niedrig 4).
+kamen mit einem nackten Codeblock (neunundfünfzigstes Review, Niedrig 4). Öffentlich seit dem
+2026-10-26.
 
 **Jedes Paket wird auf einer Maschine seiner Architektur einmal gestartet**, und zwar bevor die
 Release-Seite steht. Beta 1 hat gezeigt, warum: Ihr arm64-AppImage startete auf keiner Debian-VM
@@ -715,28 +725,32 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
 
 ## 7b. Die Plugin-Website ist online, bevor etwas auf sie zeigt
 
-Die Plugin-Website (`quartz-plugins-handbuch`, seit 1.2) geht am Release-Tag zum ersten Mal
-online. Das geschieht nach quartz-forms (Punkt 2b) und vor dem Paket im Vorlagen-Repo (Punkt 8),
-denn dessen Footer zeigen auf sie. Bis zum 61. Review (N3) stand dieser Ablauf unter Punkt 9 und
-damit hinter dem Punkt, der ihn voraussetzt. Ablauf:
+Die Plugin-Website (`quartz-plugins-handbuch`, `https://boxi-os.github.io/quartz-plugins/`) ist seit
+dem Release 1.2 online (2026-10-26). Bei jedem Release wird sie gebaut, gegen `gh-pages` verglichen
+und veröffentlicht wie QuartzControl-Web (Ziel „GitHub Pages“ im Projekt, `origin` ist das
+öffentliche `boxi-os/quartz-plugins`; das Vault-Repository `boxi-os/quartz-plugins-handbuch` ist
+privat), und zwar vor dem Paket im Vorlagen-Repo (Punkt 8), denn dessen Footer zeigen auf sie. Ein
+neues Plugin bekommt dort einen Ordner, keine eigene Website. Bis zum 61. Review (N3) stand dieser
+Punkt unter Punkt 9 und damit hinter dem Punkt, der ihn voraussetzt.
 
-1. Das öffentliche Repository `boxi-os/quartz-plugins` (nur für `gh-pages`) ist seit dem
-   2026-10-26 angelegt, leer, und im Projekt als `origin` eingetragen; das Vault-Repository ist
-   privat (`boxi-os/quartz-plugins-handbuch`, gepusht). Am Release-Tag: Ziel „GitHub Pages“ auf der
-   Veröffentlichen-Seite anlegen, bauen und veröffentlichen wie die anderen Websites.
-2. Erst wenn die neue Adresse antwortet, die drei alten Websites ersetzen: Für jede ist
-   `gh-pages` des Plugin-Repositorys ab dann eine Weiterleitungs-Website, gebaut mit
+Am ersten Tag lief es so, und so läuft es wieder, wenn eine Website umzieht:
+
+1. Ziel „GitHub Pages“ anlegen, bauen, veröffentlichen. GitHub schaltete Pages für den neuen
+   Branch `gh-pages` selbst ein; die Adresse antwortete nach der ersten Bereitstellung.
+2. Erst wenn die neue Adresse antwortet, die alten Websites ersetzen: `gh-pages` der drei
+   Plugin-Repositorys ist seither eine Weiterleitungs-Website, gebaut mit
    `node private/redirects/make-redirects.mjs <plugin> <gh-pages-Klon> <public> <aus>` aus dem
    Vault. Das Skript bricht ab, wenn ein Ziel im neuen Bau fehlt; also gegen den Bau laufen lassen,
    der veröffentlicht wurde. `<aus>` ist ein neuer Ordner; einen, der nicht leer ist, lehnt das Skript ab.
-   Dessen Inhalt kommt als gewöhnlicher Commit auf den Klon von `gh-pages`, ohne `--force` und
-   ohne verwaisten Branch, so bleibt die alte Website in der Geschichte des Branches. **Rückweg:**
-   `git -C <klon> revert --no-edit HEAD` und pushen, dann steht die alte Website wieder da. Danach je Website drei Stichproben im Browser (Startseite, eine Seite
-   mit `#Anker`, eine englische). Am selben Tag die README-Commits pushen, die auf die neue Adresse
-   zeigen (layout-box `6fecd5a`, multilanguage `b7f89a8`, lokal seit dem 2026-10-26); vorher
-   zeigten sie auf eine Website, die es noch nicht gibt.
-3. Die vier alten Vault-Repositories (`quartz-*-handbuch`) archivieren; ihre Geschichte steht im
-   neuen Vault unter den Ordnern der Plugins.
+   Dessen Inhalt kam als gewöhnlicher Commit auf den Klon von `gh-pages`, ohne `--force` und ohne
+   verwaisten Branch, so bleibt die alte Website in der Geschichte des Branches. **Rückweg:**
+   `git -C <klon> revert --no-edit HEAD` und pushen, dann steht die alte Website wieder da. Vorher
+   alle Ziele der Weiterleitungen online abgefragt (198, alle mit 200), danach je Website drei
+   Stichproben im Browser (Startseite, eine Seite mit `#Anker`, eine englische). Am selben Tag die
+   README-Commits gepusht, die auf die neue Adresse zeigen (layout-box `6fecd5a`, multilanguage
+   `b7f89a8`).
+3. Die vier alten Vault-Repositories (`quartz-*-handbuch`) sind archiviert; ihre Geschichte steht
+   im neuen Vault unter den Ordnern der Plugins.
 
 ## 8. `latest.json` nennt die neue Fassung
 
@@ -766,4 +780,4 @@ Die Kopie dieser Dateien im Handbuch-Vault unter `private/snippets/` wird mitgez
 (`diff -r` gegen den Schnipselordner des Projekts muss still bleiben). Veröffentlicht wird die Website erst zusammen mit dem Release,
 nicht vorher — sonst beschreibt sie eine Fassung, die es zum Herunterladen noch nicht gibt.
 
-**Die Plugin-Website** geht schon in Punkt 7b online, vor `latest.json` und dem Basis-Template.
+**Die Plugin-Website** wird in Punkt 7b veröffentlicht, vor `latest.json` und dem Basis-Template.

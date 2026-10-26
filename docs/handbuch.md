@@ -288,9 +288,9 @@ englische Kennung und der Verweis der Einstellungen öffnen je die erwartete Adr
 
 `npm run build:handbook` gibt es weiter, aber nur noch als Quelle für das PDF (unten).
 
-Was vor einem Release am Handbuch hängt — der Footer, der an sechs Stellen gleich stehen muss, und
-Band und Download-Kasten von `QuartzControl-Web`, die dieselben Seiten mit einer Fassungsnummer
-veröffentlicht —, steht in [`release.md`](release.md).
+Was vor einem Release am Handbuch hängt — der Footer, der an jeder Stelle gleich stehen muss, und
+die zwei Kästen von `QuartzControl-Web`, die die Fassungsnummer nennen („Über dieses Handbuch“ und
+der Download-Kasten) —, steht in [`release.md`](release.md).
 
 ## Als PDF
 

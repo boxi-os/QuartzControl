@@ -63,7 +63,11 @@ const PROPS = [
 function probe(value) {
   const v = String(value).trim()
   // A keyword gets another keyword: the font fallback below is not a position, so the browser
-  // dropped it and the two column tokens read as dead until 2026-10-26.
+  // dropped it and the two column tokens read as dead until 2026-10-26. Only these five are
+  // known. Any other keyword, `none` included, still gets the fallback, which the property drops
+  // for its initial value; where that equals today's value the token reads as dead, whatever it
+  // does (sixty-first review, aside 7). --tpl-col-left-height and -mask measure only because their
+  // defaults stopped being `none`.
   if (/^(static|relative|absolute|fixed|sticky)$/.test(v)) return v === 'static' ? 'sticky' : 'static'
   if (/^#|^rgb|^var\(--/.test(v)) return 'magenta'
   if (/rem$|px$|em$|%$|^calc|^min\(/.test(v)) return '77px'

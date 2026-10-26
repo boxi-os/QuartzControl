@@ -455,7 +455,7 @@ klebende Spalte, die vier Flächen) überall außer in `qc-basic` und der Exampl
 3. Bauen, dann `node scripts/styles-snapshot.mjs --site --serve <public> --pages …` vor und nach
    dem Import. Ändert sich der Aufbau (neue Pseudo-Elemente), vergleicht `--diff` nicht. Dann je
    Element und Pseudo-Element vergleichen und jede geänderte Eigenschaft einzeln lesen.
-4. Veröffentlicht wird mit Punkt 9.
+4. Veröffentlicht wird `QuartzControl-Web` mit Punkt 9, die Plugin-Website mit Punkt 7b.
 
 **Stand 2026-10-26:** erledigt, die Pakete stammen von 19:11. Beide Websites sind importiert und
 gebaut, je fünf Seiten auf drei Breiten in hell und dunkel aufgenommen. Gemessen hat sich keine
@@ -516,7 +516,7 @@ Prüfskript liest diese Links. Am Release-Tag muss deshalb dieser Aufruf still b
       --include='*.md' --include='*.yaml' | grep -v '/private/'
 
 Bis die beiden Footer von Hand umgestellt sind, findet er genau deren sechs Zeilen (gemessen am
-2026-10-26); jede andere Zeile ist ein Link, der nach Punkt 9 über eine Weiterleitung oder ins
+2026-10-26); jede andere Zeile ist ein Link, der nach Punkt 7b über eine Weiterleitung oder ins
 Leere geht. `qc-basic` installiert quartz-forms seit dem
 2026-10-22 mit einem Formular `kontakt`, das nichts sendet (`basic.mjs`, `forms()`); die
 App 1.1 holt `qc-basic.qtpl` online aus dem Vorlagen-Repo, also geht dieses Paket **erst mit 1.2
@@ -683,6 +683,31 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
   Am 2026-09-16 gegengeprüft: die zehn Zeilen auf der Seite von Beta 2 stimmen mit
   `shasum -a 256` über die Dateien in `release/` überein.
 
+## 7b. Die Plugin-Website ist online, bevor etwas auf sie zeigt
+
+Die Plugin-Website (`quartz-plugins-handbuch`, seit 1.2) geht am Release-Tag zum ersten Mal
+online. Das geschieht nach quartz-forms (Punkt 2b) und vor dem Paket im Vorlagen-Repo (Punkt 8),
+denn dessen Footer zeigen auf sie. Bis zum 61. Review (N3) stand dieser Ablauf unter Punkt 9 und
+damit hinter dem Punkt, der ihn voraussetzt. Ablauf:
+
+1. Das öffentliche Repository `boxi-os/quartz-plugins` (nur für `gh-pages`) ist seit dem
+   2026-10-26 angelegt, leer, und im Projekt als `origin` eingetragen; das Vault-Repository ist
+   privat (`boxi-os/quartz-plugins-handbuch`, gepusht). Am Release-Tag: Ziel „GitHub Pages“ auf der
+   Veröffentlichen-Seite anlegen, bauen und veröffentlichen wie die anderen Websites.
+2. Erst wenn die neue Adresse antwortet, die drei alten Websites ersetzen: Für jede ist
+   `gh-pages` des Plugin-Repositorys ab dann eine Weiterleitungs-Website, gebaut mit
+   `node private/redirects/make-redirects.mjs <plugin> <gh-pages-Klon> <public> <aus>` aus dem
+   Vault. Das Skript bricht ab, wenn ein Ziel im neuen Bau fehlt; also gegen den Bau laufen lassen,
+   der veröffentlicht wurde. `<aus>` ist ein eigener, neuer Ordner, nie der Klon oder `public/`.
+   Dessen Inhalt kommt als gewöhnlicher Commit auf den Klon von `gh-pages`, ohne `--force` und
+   ohne verwaisten Branch, so bleibt die alte Website in der Geschichte des Branches. **Rückweg:**
+   `git -C <klon> revert --no-edit HEAD` und pushen, dann steht die alte Website wieder da. Danach je Website drei Stichproben im Browser (Startseite, eine Seite
+   mit `#Anker`, eine englische). Am selben Tag die README-Commits pushen, die auf die neue Adresse
+   zeigen (layout-box `6fecd5a`, multilanguage `b7f89a8`, lokal seit dem 2026-10-26); vorher
+   zeigten sie auf eine Website, die es noch nicht gibt.
+3. Die vier alten Vault-Repositories (`quartz-*-handbuch`) archivieren; ihre Geschichte steht im
+   neuen Vault unter den Ordnern der Plugins.
+
 ## 8. `latest.json` nennt die neue Fassung
 
 Der Hinweis auf eine neuere Fassung auf der Startseite liest
@@ -711,21 +736,4 @@ Die Kopie dieser Dateien im Handbuch-Vault unter `private/snippets/` wird mitgez
 (`diff -r` gegen den Schnipselordner des Projekts muss still bleiben). Veröffentlicht wird die Website erst zusammen mit dem Release,
 nicht vorher — sonst beschreibt sie eine Fassung, die es zum Herunterladen noch nicht gibt.
 
-**Die Plugin-Website** (`quartz-plugins-handbuch`, seit 1.2) geht am selben Tag zum ersten Mal
-online, nach quartz-forms (Punkt 2b) und vor dem Paket im Vorlagen-Repo (Punkt 8), denn die
-Footer zeigen auf sie. Ablauf:
-
-1. Das öffentliche Repository `boxi-os/quartz-plugins` (nur für `gh-pages`) ist seit dem
-   2026-10-26 angelegt, leer, und im Projekt als `origin` eingetragen; das Vault-Repository ist
-   privat (`boxi-os/quartz-plugins-handbuch`, gepusht). Am Release-Tag: Ziel „GitHub Pages“ auf der
-   Veröffentlichen-Seite anlegen, bauen und veröffentlichen wie die anderen Websites.
-2. Erst wenn die neue Adresse antwortet, die drei alten Websites ersetzen: Für jede ist
-   `gh-pages` des Plugin-Repositorys ab dann eine Weiterleitungs-Website, gebaut mit
-   `node private/redirects/make-redirects.mjs <plugin> <gh-pages-Klon> <public> <aus>` aus dem
-   Vault. Das Skript bricht ab, wenn ein Ziel im neuen Bau fehlt; also gegen den Bau laufen lassen,
-   der veröffentlicht wurde. Danach je Website drei Stichproben im Browser (Startseite, eine Seite
-   mit `#Anker`, eine englische). Am selben Tag die README-Commits pushen, die auf die neue Adresse
-   zeigen (layout-box `6fecd5a`, multilanguage `b7f89a8`, lokal seit dem 2026-10-26); vorher
-   zeigten sie auf eine Website, die es noch nicht gibt.
-3. Die vier alten Vault-Repositories (`quartz-*-handbuch`) archivieren; ihre Geschichte steht im
-   neuen Vault unter den Ordnern der Plugins.
+**Die Plugin-Website** geht schon in Punkt 7b online, vor `latest.json` und dem Basis-Template.

@@ -22,6 +22,10 @@ const GENERATION = /'generation' => '([0-9a-f]{16})'/
 export function relayGuard(read: GeneratedRead, own: string, folder: string): DeployResult | null {
   if (read === null) return null
   if (typeof read !== 'string') return { success: false, output: mainT('relayRemoveUnverified', { path: folder, reason: read.unreadable }) }
-  if (GENERATION.exec(read)?.[1] === own) return null
+  const generation = GENERATION.exec(read)?.[1]
+  if (generation === own) return null
+  // Without the line nobody knows whose relay it is: "another relay" named a cause that is not
+  // known (review 2026-11-05, N6). Refused all the same.
+  if (generation === undefined) return { success: false, output: mainT('relayRemoveNoGeneration', { path: folder }) }
   return { success: false, output: mainT('relayRemoveForeign', { path: folder }) }
 }

@@ -77,15 +77,32 @@ body.pdf pre code { white-space: pre-wrap !important; overflow-wrap: anywhere; }
 .cover-meta { font-size: 11pt; color: #555; }
 `
 
+// Eine alte Adresse, die eine Seite unter `aliases:` behält, baut Quartz als eigene HTML-Datei, die
+// nur aus einem `meta refresh` besteht - kein <article>, nichts zu drucken. Seit 1.1 steht eine
+// davon im Kapitel 4 (die alte Adresse von 4.7), und bis zum 2026-10-26 brach jeder Lauf an ihr mit
+// „Cannot read properties of null (reading 'cloneNode')“ ab. Übersprungen wird nur, was beides ist:
+// Weiterleitung und ohne <article>; jede andere Seite ohne <article> bricht weiter ab.
+function isRedirect(file) {
+  const html = fs.readFileSync(file, 'utf-8')
+  return /<meta http-equiv="refresh"/i.test(html) && !/<article[\s>]/i.test(html)
+}
+
 function outline(site) {
   if (!fs.existsSync(path.join(site, 'index.html'))) {
     throw new Error(`Kein gebautes Handbuch in ${site} — zuerst \`npm run build:handbook\``)
+  }
+  const redirects = []
+  const notRedirect = (dir) => (f) => {
+    if (!isRedirect(path.join(site, dir, f))) return true
+    redirects.push(path.join(dir, f))
+    return false
   }
   const numeric = (a, b) => a.localeCompare(b, 'de', { numeric: true })
   const pages = (dir) =>
     fs
       .readdirSync(path.join(site, dir))
       .filter((f) => f.endsWith('.html'))
+      .filter(notRedirect(dir))
       .map((f) => f.slice(0, -5))
       .sort((a, b) => (a === 'index' ? -1 : b === 'index' ? 1 : numeric(a, b)))
       .map((f) => `${dir}/${f}`)
@@ -94,7 +111,11 @@ function outline(site) {
     .filter((e) => e.isDirectory() && /^\d+-/.test(e.name))
     .map((e) => e.name)
     .sort(numeric)
-  const top = fs.readdirSync(site).filter((f) => f.endsWith('.html') && f !== 'index.html' && f !== '404.html').map((f) => f.slice(0, -5))
+  const top = fs
+    .readdirSync(site)
+    .filter((f) => f.endsWith('.html') && f !== 'index.html' && f !== '404.html')
+    .filter(notRedirect('.'))
+    .map((f) => f.slice(0, -5))
   const unknown = top.filter((p) => !APPENDIX.includes(p))
   const gone = APPENDIX.filter((p) => !top.includes(p))
   if (unknown.length || gone.length) {
@@ -104,11 +125,12 @@ function outline(site) {
         (gone.length ? ` — eingetragen, aber nicht gebaut: ${gone.join(', ')}` : '')
     )
   }
-  return [
+  const parts = [
     { kind: 'start', pages: ['index'] },
     ...chapters.map((dir) => ({ kind: 'chapter', pages: pages(dir) })),
     { kind: 'appendix', pages: APPENDIX }
   ]
+  return { parts, redirects }
 }
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json' }
@@ -195,7 +217,7 @@ function pdfPageCount(file) {
 }
 
 export async function buildHandbookPdf({ site = SITE, out = OUT } = {}) {
-  const parts = outline(site)
+  const { parts, redirects } = outline(site)
   const server = await serve(site)
   const origin = `http://127.0.0.1:${server.address().port}`
   let browser
@@ -264,6 +286,7 @@ ${sections.join('\n')}
     console.log(
       `[handbuch-pdf] ${sourcePages} Quellseiten → ${pdfPageCount(out) ?? '?'} PDF-Seiten, ` +
         `${counted.links} interne Verweise mit Ziel, ${counted.images} Bilder, ` +
+        (redirects.length ? `${redirects.length} ${redirects.length === 1 ? 'Weiterleitung' : 'Weiterleitungen'} übersprungen (${redirects.join(', ')}), ` : '') +
         `${(fs.statSync(out).size / 1024 / 1024).toFixed(1)} MB → ${path.relative(ROOT, out)}`
     )
     return out

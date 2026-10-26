@@ -21,6 +21,9 @@ export const FORMS_READ_AGAINST = '0.6.0'
 export const FORMS_LAYOUT_SINCE = '0.4.0'
 /** `dist/cli.js texts`, the plugin's wording of every text, came with this version. */
 export const FORMS_TEXTS_SINCE = '0.5.9'
+/** The relay's `envelopeSender` came with this version; an older plugin drops the key without a
+ *  word, and the relay goes on as before (review 2026-11-05, N2). */
+export const FORMS_ENVELOPE_SENDER_SINCE = '0.6.0'
 
 type Options = Record<string, unknown>
 

@@ -1611,6 +1611,7 @@ export default {
       counterDirHint: 'An absolute path on the server, best outside the web root. Empty: “counters” next to send.php.',
       envelopeSender: 'Sender as envelope sender (-f)',
       envelopeSenderHint: 'SPF then checks the sender’s domain. Turn it off when the host refuses mails with “-f”; it then sets its own envelope sender.',
+      envelopeSenderOlder: 'quartz-forms knows this switch only from {{since}}; {{installed}} is installed.',
       configReadable: 'config.php readable by the web server (0644)',
       configReadableHint: "Only needed when the host runs PHP as the web server's user; other accounts on the server can then read the addresses and the secret too, and anyone on the web where PHP does not run. QuartzControl sets the relay's permissions again on every upload.",
       checkOk: 'The relay answers at {{url}}.',

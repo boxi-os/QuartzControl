@@ -1616,6 +1616,7 @@ export default {
       counterDirHint: 'Ein absoluter Pfad auf dem Server, am besten außerhalb des Web-Verzeichnisses. Leer: „counters“ neben send.php.',
       envelopeSender: 'Absender als Umschlag-Absender (-f)',
       envelopeSenderHint: 'Dann prüft SPF die Domain des Absenders. Ausschalten, wenn der Hoster Mails mit „-f“ ablehnt; er setzt dann seinen eigenen Umschlag-Absender ein.',
+      envelopeSenderOlder: 'Den Schalter kennt quartz-forms erst ab {{since}}; installiert ist {{installed}}.',
       configReadable: 'config.php für den Webserver lesbar (0644)',
       configReadableHint: 'Nur nötig, wenn PHP beim Hoster als Webserver-Benutzer läuft; dann können auch andere Accounts auf dem Server Adressen und Secret lesen, und wo PHP nicht läuft, jeder im Web. QuartzControl setzt die Rechte des Relays bei jedem Hochladen neu.',
       checkOk: 'Das Relay antwortet unter {{url}}.',

@@ -4,13 +4,15 @@ import type { TFunction } from 'i18next'
 import { FolderDown, KeyRound, Send, Trash2, Upload } from 'lucide-react'
 import type { PluginSource, RelayCheck, RelaySettings, RelayState } from '@shared/ipc-contract'
 import { relaySubdir, rsyncUnsafeChar } from '@shared/remotePath'
+import { isNewerVersion } from '@shared/semver'
 import { Badge, Button, DIVIDED_ROWS, Field, FieldGroup, IconButton, Select, SegmentedControl, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { announce } from '../../state/announcer'
 import { confirmDialog } from '../../utils/confirm'
 import { useProject } from '../ProjectLayout'
 import { DraftInput } from './DraftInput'
-import type { CaptchaNeeds } from './formsOptions'
+import { FORMS_ENVELOPE_SENDER_SINCE, type CaptchaNeeds } from './formsOptions'
+import { NoEffect } from './NoEffect'
 
 /**
  * The quartz-forms relay (plan 1.2, phase 7): where it goes, what it is told, and the upload.
@@ -29,6 +31,7 @@ export function RelaySection({
   siteBase,
   neededRecipients,
   captcha,
+  installed,
   onTransportUrl,
   onOpenTransport,
   onChanged
@@ -47,6 +50,8 @@ export function RelaySection({
   neededRecipients: string[]
   /** Which captcha secrets the relay needs (captchaNeeds), read from the config. */
   captcha: CaptchaNeeds
+  /** The installed quartz-forms (packageVersion), undefined while unknown. */
+  installed: string | undefined
   onTransportUrl: (url: string) => void
   /** Opens the "Versand" section, where the send.php address is typed. */
   onOpenTransport: () => void
@@ -451,12 +456,17 @@ export function RelaySection({
               checked={s.configReadable}
               onChange={(on) => void save({ configReadable: on })}
             />
-            <Toggle
-              label={t('formsEditor.relay.envelopeSender')}
-              hint={t('formsEditor.relay.envelopeSenderHint')}
-              checked={s.envelopeSender}
-              onChange={(on) => void save({ envelopeSender: on })}
-            />
+            <div className="flex flex-col gap-1">
+              <Toggle
+                label={t('formsEditor.relay.envelopeSender')}
+                hint={t('formsEditor.relay.envelopeSenderHint')}
+                checked={s.envelopeSender}
+                onChange={(on) => void save({ envelopeSender: on })}
+              />
+              {installed !== undefined && isNewerVersion(FORMS_ENVELOPE_SENDER_SINCE, installed) && (
+                <NoEffect reason={t('formsEditor.relay.envelopeSenderOlder', { since: FORMS_ENVELOPE_SENDER_SINCE, installed })} />
+              )}
+            </div>
             <div className="flex flex-col items-start gap-1">
               <Button
                 variant="ghost"

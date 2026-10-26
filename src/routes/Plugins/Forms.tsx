@@ -489,6 +489,7 @@ export default function Forms({ onShowAllOptions }: { onShowAllOptions: (stickyK
               probe={relayProbe(forms, options)}
               siteBase={siteBaseOf(config)}
               captcha={captchaNeeds(options, resolvedGlobal(schema, options, 'spam'))}
+              installed={installedVersion}
               neededRecipients={[
                 ...new Set(
                   forms

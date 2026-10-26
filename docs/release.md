@@ -467,9 +467,13 @@ Die Links auf Quartz, QuartzControl, Example und die Plugin-Handbücher stehen i
 - `quartz-multilanguage-handbuch`
 - `quartz-navigations-handbuch`
 
-Seit dem 2026-10-19 gibt es eine siebte Stelle, `quartz-forms-handbuch` (privat bis 1.2). **Vor
-dem Release 1.2** bekommen alle sieben einen Link „Forms“ auf `https://boxi-os.github.io/quartz-forms/`,
-sobald Repository und Website öffentlich sind. `qc-basic` installiert quartz-forms seit dem
+Seit dem 2026-10-19 gibt es eine siebte Stelle, `quartz-forms-handbuch` (privat bis 1.2). **Seit
+dem 2026-10-26 sind die vier Plugin-Handbücher eine Website** (`quartz-plugins-handbuch`, Vault und
+Projekt gleichen Namens, `https://boxi-os.github.io/quartz-plugins/`, ein Ordner je Plugin), und
+statt dreier Plugin-Links und eines vierten für Forms gibt es einen: „Plugins“. Damit bleiben vier
+Stellen: `plugins.mjs` (umgestellt), `quartz-plugins-handbuch` (umgestellt), `QuartzControl-Web` und
+`QuartzControl-Handbuch` (beide von Hand, am Release-Tag). Die drei alten Plugin-Projekte fallen
+weg; eine Website `boxi-os.github.io/quartz-forms` hat es nie gegeben. `qc-basic` installiert quartz-forms seit dem
 2026-10-22 mit einem Formular `kontakt`, das nichts sendet (`basic.mjs`, `forms()`); die
 App 1.1 holt `qc-basic.qtpl` online aus dem Vorlagen-Repo, also geht dieses Paket **erst mit 1.2
 und erst, wenn quartz-forms öffentlich ist,** dorthin, sonst scheitert dort jeder Import am
@@ -662,3 +666,21 @@ Schnipselpaare nennen die Fassung ausdrücklich:
 Die Kopie dieser Dateien im Handbuch-Vault unter `private/snippets/` wird mitgezogen
 (`diff -r` gegen den Schnipselordner des Projekts muss still bleiben). Veröffentlicht wird die Website erst zusammen mit dem Release,
 nicht vorher — sonst beschreibt sie eine Fassung, die es zum Herunterladen noch nicht gibt.
+
+**Die Plugin-Website** (`quartz-plugins-handbuch`, seit 1.2) geht am selben Tag zum ersten Mal
+online, nach quartz-forms (Punkt 2b) und vor dem Paket im Vorlagen-Repo (Punkt 8), denn die
+Footer zeigen auf sie. Ablauf:
+
+1. Öffentliches Repository `boxi-os/quartz-plugins` anlegen (nur für `gh-pages`), im Projekt als
+   `origin` eintragen, Ziel „GitHub Pages“ auf der Veröffentlichen-Seite, bauen und veröffentlichen
+   wie die anderen Websites. Das Vault-Repository ist privat (`boxi-os/quartz-plugins-handbuch`).
+2. Erst wenn die neue Adresse antwortet, die drei alten Websites ersetzen: Für jede ist
+   `gh-pages` des Plugin-Repositorys ab dann eine Weiterleitungs-Website, gebaut mit
+   `node private/redirects/make-redirects.mjs <plugin> <gh-pages-Klon> <public> <aus>` aus dem
+   Vault. Das Skript bricht ab, wenn ein Ziel im neuen Bau fehlt; also gegen den Bau laufen lassen,
+   der veröffentlicht wurde. Danach je Website drei Stichproben im Browser (Startseite, eine Seite
+   mit `#Anker`, eine englische). Am selben Tag die README-Commits pushen, die auf die neue Adresse
+   zeigen (layout-box `6fecd5a`, multilanguage `b7f89a8`, lokal seit dem 2026-10-26); vorher
+   zeigten sie auf eine Website, die es noch nicht gibt.
+3. Die vier alten Vault-Repositories (`quartz-*-handbuch`) archivieren; ihre Geschichte steht im
+   neuen Vault unter den Ordnern der Plugins.

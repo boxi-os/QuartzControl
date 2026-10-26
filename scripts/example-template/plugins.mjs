@@ -444,14 +444,16 @@ export const PLUGIN_PATCHES = {
     // Navigations link went in the same day, its repository was still private and the address
     // answered 404 - the link went in ahead of it on purpose. Later that day repository and site
     // were published; measured without a login on 2026-09-14, all six addresses answer 200.
+    // Since 1.2 the plugin handbooks are one site with a folder per plugin, quartz-forms included,
+    // so the three plugin links became one. The old addresses redirect page by page (the generator
+    // is in the handbook vault, private/redirects/), which keeps the footers of sites made from an
+    // older template working.
     options: {
       links: {
         Quartz: 'https://quartz.jzhao.xyz/',
         QuartzControl: 'https://boxi-os.github.io/QuartzControl/',
         Example: 'https://boxi-os.github.io/Quartz-Example-Template/',
-        'Layout Box': 'https://boxi-os.github.io/quartz-layout-box/',
-        Multilanguage: 'https://boxi-os.github.io/quartz-multilanguage/',
-        Navigations: 'https://boxi-os.github.io/quartz-navigations/'
+        Plugins: 'https://boxi-os.github.io/quartz-plugins/'
       }
     },
     layout: { position: 'footer', priority: 20 }

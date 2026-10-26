@@ -446,7 +446,14 @@ klebende Spalte, die vier Flächen) überall außer in `qc-basic` und der Exampl
 
 1. `npm run template:example -- --variant plugin`, dann `--variant doku`, jeder Lauf ganz (die
    Werkstätten sind Kopien, die der Lauf selbst schreibt), und für das Example `--only 9,10`.
-   Phase 11 muss „Build grün“ und 0 Warnungen sagen.
+   Phase 11 muss „Build grün“ und 0 Warnungen sagen. Danach `doku.qtpl` und `plugin.qtpl` nach
+   `scripts/example-template/pakete/` kopieren und die Tabelle im README dort nachziehen; am
+   2026-10-26 lagen sie dort noch vom 2026-10-18, zwei Exporte später.
+   **Vorher die eigenen Plugins jeder Werkstatt heben** (`npx quartz plugin install --latest
+   quartz-layout-box quartz-multilanguage quartz-navigations`, in `basic` auch `quartz-forms`).
+   Kein Lauf tut das, denn ein Import behält ein Plugin, das schon liegt: `doku` und `plugin`
+   standen bis zum 2026-10-26 auf layout-box 0.3.1 und multilanguage 0.1.2, `basic` auf
+   quartz-forms 0.5.15.
 2. Je Website den Dry-Run lesen. Importiert werden nur die Bausteine `styles` und `cssVariables`
    mit „Paket gewinnt“, nie `plugins`, `static` oder `frames` (Absätze oben). Vorher die
    Stylesheets der Website mit `cmp` gegen das **alte** Paket halten: Sind sie gleich, verliert der

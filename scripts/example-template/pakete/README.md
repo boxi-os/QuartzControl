@@ -6,8 +6,18 @@ Dateien sind seither die einzige Fassung, und deshalb liegen sie hier.
 
 | Datei | Name im Paket | exportiert | Inhalt |
 | --- | --- | --- | --- |
-| `doku.qtpl` | Doku | 2026-10-18 16:45 | 4 Frames, 51 Plugins (37 aktiv), 12 Stylesheets, 66 CSS-Variablen, 3 Schriftdateien, 3 Gruppen, 7 Seitentypen |
-| `plugin.qtpl` | Doku (Plugin) | 2026-10-18 16:45 | dasselbe, 36 statt 37 aktive Plugins (ohne Graphansicht) |
+| `doku.qtpl` | Doku | 2026-10-26 20:06 | 4 Frames, 51 Plugins (37 aktiv), 13 Stylesheets, 70 CSS-Variablen, 3 Schriftdateien, 3 Gruppen, 7 Seitentypen |
+| `plugin.qtpl` | Doku (Plugin) | 2026-10-26 20:06 | dasselbe, 36 statt 37 aktive Plugins (ohne Graphansicht) |
+
+Neu exportiert für 1.2.0 (`--only 9,10,11`, Manifest `appVersion 1.2.0`), nachdem die Werkstätten
+ihre eigenen Plugins auf die veröffentlichten Fassungen gehoben hatten (layout-box 0.3.1 → 0.4.2,
+multilanguage 0.1.2 → 0.2.0; sie standen seit dem 2026-09-21 dort, weil ein Import ein vorhandenes
+Plugin behält). Gegen die Exporte von 19:46 desselben Tages, die in QuartzControl-Web und die
+Plugin-Website importiert sind, unterscheidet sich nur `manifest.json`. Die Kopien hier waren bis
+dahin die vom 2026-10-18; die Exporte von 19:11 und 19:46 (61. Review, M1 und nebenbei 6) waren
+nur neben den Projekten liegen geblieben, wie schon einmal (siehe unten). Gegen den 2026-10-18 neu:
+die klebende linke Spalte und die vier Flächen (`bb1a1cd3`), `plugin-forms.scss` und vier
+CSS-Variablen.
 
 Neu exportiert für 1.1.0 (`--only 9,10` aus den Werkstätten, Manifest `appVersion 1.1.0`). Bis
 dahin lag hier die Fassung vom 2026-09-21 (`1.0.0-rc.1`, 31 Stylesheets); die Exporte für die

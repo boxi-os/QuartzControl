@@ -698,7 +698,7 @@ damit hinter dem Punkt, der ihn voraussetzt. Ablauf:
    `gh-pages` des Plugin-Repositorys ab dann eine Weiterleitungs-Website, gebaut mit
    `node private/redirects/make-redirects.mjs <plugin> <gh-pages-Klon> <public> <aus>` aus dem
    Vault. Das Skript bricht ab, wenn ein Ziel im neuen Bau fehlt; also gegen den Bau laufen lassen,
-   der veröffentlicht wurde. `<aus>` ist ein eigener, neuer Ordner, nie der Klon oder `public/`.
+   der veröffentlicht wurde. `<aus>` ist ein neuer Ordner; einen, der nicht leer ist, lehnt das Skript ab.
    Dessen Inhalt kommt als gewöhnlicher Commit auf den Klon von `gh-pages`, ohne `--force` und
    ohne verwaisten Branch, so bleibt die alte Website in der Geschichte des Branches. **Rückweg:**
    `git -C <klon> revert --no-edit HEAD` und pushen, dann steht die alte Website wieder da. Danach je Website drei Stichproben im Browser (Startseite, eine Seite

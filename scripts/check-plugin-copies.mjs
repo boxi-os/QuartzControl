@@ -41,7 +41,8 @@
 //                         Definition urteilt, schreibt die App nicht ab: sie fragt es (dist/cli.js)
 //
 // Ein Plugin, das im Projekt fehlt, wird nicht geprüft, und das Skript sagt es („kann nicht prüfen“
-// ist nicht „alles gut“). Rückgabewert 1, sobald eine Antwort abweicht.
+// ist nicht „alles gut“). Rückgabewert 1, sobald eine Antwort abweicht, sonst 3, wenn etwas nicht
+// geprüft wurde: Ohne PHP endete der Lauf mit „✓ keine Abweichung“ und 0 (61. Review, nebenbei 3).
 
 import fs from 'node:fs'
 import { execFileSync } from 'node:child_process'
@@ -757,5 +758,6 @@ console.log(report.join('\n'))
 console.log('')
 // Ein Plugin, das fehlt, oder eine Prüfung ohne ihr Werkzeug (PHP, @quartz-community/utils).
 if (unchecked) console.log(`${unchecked}× nicht geprüft, oben genannt.`)
-console.log(differences ? `✗ ${differences} Abweichung${differences === 1 ? '' : 'en'}.` : '✓ keine Abweichung.')
-process.exit(differences ? 1 : 0)
+if (differences) console.log(`✗ ${differences} Abweichung${differences === 1 ? '' : 'en'}.`)
+else console.log(unchecked ? '– keine Abweichung im Geprüften, aber nicht alles geprüft.' : '✓ keine Abweichung.')
+process.exit(differences ? 1 : unchecked ? 3 : 0)

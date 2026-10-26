@@ -105,7 +105,8 @@ Wörtlich aus `CLAUDE.md` hierher gezogen am 2026-10-16, damit `CLAUDE.md` nicht
   der gelesenen Version) wichen 20 von 637 Antworten ab, alle seither in den Abschriften behoben
   (641 Fälle; seit quartz-layout-box 0.4.1 645, die Abschrift fragt dort die installierte
   Version; seit dem 2026-10-10 dazu die acht Platzhalter, die „Zusätzliche Inhalte“ anbietet,
-  gegen `placeholders.ts` in beide Richtungen). Ein fehlendes Plugin zählt als „nicht geprüft“
+  gegen `placeholders.ts` in beide Richtungen). Ein fehlendes Plugin zählt als „nicht geprüft“,
+  und ein Lauf mit „nicht geprüft“ endet mit 3 statt 0 (Abweichung: 1).
   Seit 1.2 (2026-10-19) auch quartz-forms: die vier Vorlagen, Kennungs- und Feldnamen-Regel,
   reservierte Namen, `isPersonalField`, das Zusammenlegen mit Vorlage und globalem Versand und die
   Erkennung einer Einbindung (`shared/formUsages.ts`), dazu Quartz' Slug-Regel aus dem

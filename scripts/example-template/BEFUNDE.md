@@ -2152,3 +2152,9 @@ Brotkrumen, Suchergebnisse, Sprachumschalter, Titel und Datum, Zeilenabstände, 
   `--tpl-col-left-position`, `--tpl-col-left-height`, `--tpl-col-left-mask`,
   `--tpl-col-right-position`) sind in **beiden** Ständen ohne Wirkung auf den besuchten Seiten.
   Offen und nicht Teil dieses Umbaus.
+  **Nachtrag 2026-10-26:** Höhe, Maske und `--tpl-space-2xl` wirken seit `bb1a1cd3`. Die beiden
+  `position`-Tokens waren eine Lücke des Instruments: `probe('sticky')` gab eine Schrift zurück, die
+  der Browser als Position verwirft, und `position` stand nicht in `PROPS`. Mit beidem nachgezogen
+  je 13 — auf jeder der 13 Seiten in Desktop-Breite die Spalte (`.qgframe-area-left` bzw. `-right`,
+  sticky → static), auf dem Smartphone nichts. Die übrigen Zahlen schwanken zwischen zwei Läufen
+  derselben Fassung um bis zu 18, alle in dieselbe Richtung (das Rauschen wird je Seite abgezogen).

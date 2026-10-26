@@ -56,12 +56,15 @@ const PROPS = [
   'height', 'minHeight', 'minWidth', 'maxWidth', 'maxHeight', 'boxShadow', 'outlineColor', 'outlineWidth',
   'outlineOffset', 'opacity', 'transitionDuration', 'maskImage', 'fill', 'stroke', 'textDecorationColor',
   'textUnderlineOffset', 'flexBasis', 'gridTemplateColumns', 'inset', 'top', 'backdropFilter',
-  'backgroundSize', 'transform', 'insetBlockStart', 'insetBlockEnd'
+  'backgroundSize', 'transform', 'insetBlockStart', 'insetBlockEnd', 'position'
 ]
 
 /** A probe value unmistakably different from the current one, matched to its shape. */
 function probe(value) {
   const v = String(value).trim()
+  // A keyword gets another keyword: the font fallback below is not a position, so the browser
+  // dropped it and the two column tokens read as dead until 2026-10-26.
+  if (/^(static|relative|absolute|fixed|sticky)$/.test(v)) return v === 'static' ? 'sticky' : 'static'
   if (/^#|^rgb|^var\(--/.test(v)) return 'magenta'
   if (/rem$|px$|em$|%$|^calc|^min\(/.test(v)) return '77px'
   if (/^[\d.]+$/.test(v)) return '3.7'

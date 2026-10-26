@@ -671,9 +671,10 @@ nicht vorher — sonst beschreibt sie eine Fassung, die es zum Herunterladen noc
 online, nach quartz-forms (Punkt 2b) und vor dem Paket im Vorlagen-Repo (Punkt 8), denn die
 Footer zeigen auf sie. Ablauf:
 
-1. Öffentliches Repository `boxi-os/quartz-plugins` anlegen (nur für `gh-pages`), im Projekt als
-   `origin` eintragen, Ziel „GitHub Pages“ auf der Veröffentlichen-Seite, bauen und veröffentlichen
-   wie die anderen Websites. Das Vault-Repository ist privat (`boxi-os/quartz-plugins-handbuch`).
+1. Das öffentliche Repository `boxi-os/quartz-plugins` (nur für `gh-pages`) ist seit dem
+   2026-10-26 angelegt, leer, und im Projekt als `origin` eingetragen; das Vault-Repository ist
+   privat (`boxi-os/quartz-plugins-handbuch`, gepusht). Am Release-Tag: Ziel „GitHub Pages“ auf der
+   Veröffentlichen-Seite anlegen, bauen und veröffentlichen wie die anderen Websites.
 2. Erst wenn die neue Adresse antwortet, die drei alten Websites ersetzen: Für jede ist
    `gh-pages` des Plugin-Repositorys ab dann eine Weiterleitungs-Website, gebaut mit
    `node private/redirects/make-redirects.mjs <plugin> <gh-pages-Klon> <public> <aus>` aus dem

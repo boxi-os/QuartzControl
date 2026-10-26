@@ -174,6 +174,23 @@ Vier Dinge, die dabei zu wissen sind:
 sieht sie nicht, und der Hauptprozess wartet auf ihre Antwort. Wer eine davon im Handbuch zeigen
 will, nimmt sie mit dem Bildschirmfoto des Systems auf und notiert den Weg dorthin hier.
 
+**Der Reiter „Formulare“ mit einem Formular** (`plugins-formulare-beispiel-hell.png`, Kapitel
+4.8, seit 1.2). Das Handbuch-Projekt hat quartz-forms nicht, ein gewöhnlicher Lauf nimmt dort also
+„quartz-forms ist nicht installiert“ auf. Das Bild entsteht gegen eine Wegwerf-Kopie der Werkstatt
+`basic-vorlage`, die unter dem Namen `QuartzControl-Handbuch` in einem eigenen Ordner liegt, damit
+`shootProject()` sie wählt und die Seitenleiste aussieht wie auf den anderen Bildern. In der Kopie
+sendet das Formular `kontakt` über das Relay (`transport: {kind: relay, url:
+https://www.example.com/formulare/send.php}`, `recipient: kontakt`, `baseUrl: www.example.com`),
+und ihre Plugins stehen auf den veröffentlichten Fassungen (sonst steht der Hinweis „Dieser Editor
+kennt …“ im Bild):
+
+    QUARTZCONTROL_PROJECT_ROOT=~/Documents/QuartzProjekte/werkstatt/handbuch-formulare \
+      npm run screenshots -- --demo --lang de --only formulare --out <scratch>
+
+Danach `plugins-formulare-hell.png` unter dem Namen oben in den Vault kopieren, je Sprache. Den
+Relay-Abschnitt selbst zeigt kein Bild: Die Auswahl im Reiter steht im Sticky-State, nicht in der
+Adresse, und eine Szene dafür schlüge in jedem Lauf gegen das Handbuch-Projekt fehl.
+
 **Fehlerzustände.** Ein SCSS-Fehler oder ein fehlgeschlagener Build ließe sich herstellen, indem
 man das Projekt kaputtmacht — und ein abgebrochener Lauf ließe es kaputt. Auch das bleibt Handarbeit
 oder braucht ein Wegwerf-Projekt.

@@ -110,10 +110,21 @@ export const SCENES = [
     caption: 'Ein neues Frame anlegen.'
   },
   {
+    // Seit 365e2992 (2026-10-08) gibt es keinen Button „Vergleichen“ mehr: Wer eine Zeile wählt,
+    // sieht rechts den Vergleich. Bis zum 2026-10-26 suchte die Szene den Button, und der Lauf brach
+    // an dem Schlüssel ab, den es nicht mehr gab.
     name: 'snapshot-vergleich',
     route: '/backups',
-    click: 'backups.compare',
-    wait: 3000,
+    act: async (page) => {
+      const row = page.locator('li[data-selectable] button[aria-pressed]').first()
+      try {
+        await row.click({ timeout: 8000 })
+      } catch {
+        return false
+      }
+      await page.waitForTimeout(3000)
+      return true
+    },
     caption: 'Ein Snapshot gegen den heutigen Stand.'
   },
   {

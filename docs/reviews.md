@@ -3469,3 +3469,75 @@ liegen, kein Geheimnis; steht in der Matrix), N9 (`field-sizing`), N10 (Bild fü
 (quartz-forms), die Ausnahme für erzeugte Dateien in `AGENTS.md`; aus der Abarbeitung die rohen
 Zeilen des Ordner-Ziels bei einem Ordner ohne `x` oder ohne `r` und von rsync bei 311, und der
 Grenzfall 711 in `closedFolder` (Kommentar). Nichts gepusht.
+
+**Das einundsechzigste Review** ([`REVIEW-2026-11-05.md`](REVIEW-2026-11-05.md), Auftrag
+[`REVIEW-2026-11-05-auftrag.md`](REVIEW-2026-11-05-auftrag.md), `feat/1.2` bei `cc0e6c9a`, die
+letzte Runde vor 1.2. Gelesen wurden:
+- die Abarbeitung des sechzigsten Reviews,
+- die Vorlage mit klebender Spalte,
+- die gemeinsame Plugin-Website samt Weiterleitungen,
+- `release.md` als Ablauf des Release-Tags,
+- 1.2 aus Sicht eines Nutzers von 1.1.1.
+
+Geschrieben von Claude Fable 5.1 als frisch gestarteter Subagent, ohne den Verlauf der Sitzung:
+0 Hoch, 2 Mittel, 6 Niedrig, 11 nebenbei. Das Urteil: mit 1.2 veröffentlichen, nachdem M2 behoben
+und M1 entschieden ist. Das Entfernen des Relays löscht auf allen vier Wegen nur das Eigene,
+gemessen auf `debian-vm` mit zehn Szenen je Weg.
+
+Abgearbeitet am 2026-10-26 auf `feat/1.2`, ein Befund je Commit. Gemessen wurde mit dem Geschirr
+des Reviews (Bündel von `formsService` und `deploy/` mit Stubs, `debian-vm`), an der gebauten App
+mit Wegwerf-Profil und an den gebauten Websites. Der Nutzer hat alle Niedrig gewählt und dazu
+Nebenbei 3, 5, 6 und 7:
+
+- **M2** `a8462881`: Punkt 5 nennt jede Stelle, die die alten Plugin-Websites verlinkt, samt einem
+  `grep` für den Release-Tag. Umgestellt sind:
+  - die sechs Links im App-Handbuch (Vault `0044553`), darunter einer auf
+    `boxi-os.github.io/quartz-forms/`, das es nie gab;
+  - der Footer der Example-Werkstatt (`--only 4`).
+- **M1** `2181657d`: `doku`, `plugin` und `example` sind neu exportiert, und
+  `QuartzControl-Web` und die Plugin-Website tragen den Vorlagenstand von `bb1a1cd3`. Importiert
+  wurden nur die Bausteine `styles` und `cssVariables`, nachdem Dry-Run und `cmp` gegen das alte
+  Paket gelesen waren. Der Ablauf steht als neuer Punkt 4a in `release.md`. Gemessen: keine Farbe
+  geändert, die linke Spalte klebt, die Flächen sind neu.
+- **N1** `6f82f52e`: Ist der Zugang des Ziels gelöscht, sagt das Entfernen das mit einem eigenen
+  Satz statt „The login “” points to  instead of …“.
+- **N2** `cd398ef5`: Unter quartz-forms 0.6.0 trägt der Schalter „Umschlag-Absender“ die Plakette
+  „wirkt nicht“ mit Grund (`FORMS_ENVELOPE_SENDER_SINCE`).
+- **N6** `bba67591`: Für eine `config.generated.php` ohne Kennung sagt das Entfernen „konnte nicht
+  geprüft werden“ statt „ein anderes Relay“. Auf allen vier Wegen gemessen.
+- **N3** `4623b200`: Der Ablauf der Plugin-Website ist Punkt 7b, zwischen Release-Seite und
+  `latest.json`, mit einem Rückweg für `gh-pages` (Revert eines gewöhnlichen Commits).
+- **N5**, Plugin-Vault `a883d58`: Die zwei über Zeilen gebrochenen Wikilinks zeigen in
+  `multilanguage/`.
+- **N4**, Plugin-Vault `de3c278`: Die Plugin-Website hat keine Tag-Seiten mehr. Die Tags sind aus
+  allen 282 Seiten genommen, denn die Ordnerseiten verlinken sie und `folder-page` kennt keine
+  Option dagegen. `tag-page` ist im Projekt aus, und alte Tag-Adressen führen zum Anfang ihres
+  Handbuchs. Nebenbei 8 (RSS voller Tag-Seiten) erledigt sich damit.
+- **Nebenbei 3** `b8356dab`: `check:plugin-copies` endet mit 3, wenn etwas nicht geprüft wurde.
+- **Nebenbei 5**, Vault `7aa49e7`, und `0829df3a`: `make-redirects.mjs` leert keinen Ordner mehr
+  und lehnt einen ab, der nicht leer ist.
+- **Nebenbei 6** `5baaee9c`: Im Druck fallen die Streifen der Spalten weg. Gemessen deckte der
+  rechte bei 1456 px zwei Drittel der Seite, mehr als das Review sah. Die Varianten sind ein zweites
+  Mal exportiert und importiert.
+- **Nebenbei 7** `87995ea9`: ein Satz zur Grenze von `probe()` in `check:tokens`.
+
+Vor dem Review lag schon `bffc618b`: `check:tokens` sieht die beiden Positions-Tokens. Am selben
+Tag kam quartz-forms 0.6.0 ins Projekt der Plugin-Website.
+
+Nicht gewählt sind die Nebenbei-Punkte 1, 2, 4, 9, 10 und 11:
+- `send.php` als Ordner antwortet auf vier Wegen dreierlei;
+- SFTP sagt bei abgelehntem Port leer „getConnection:“;
+- ein Anker geht ohne JavaScript über `meta refresh` verloren;
+- die Brotkrumen auf `en/`;
+- die Schreibweise des Hosts in `serverOf`;
+- der Hinweis für das nächste Geschirr.
+
+Aus der Abarbeitung kamen dazu, alle nur genannt und nicht behoben:
+- der Absatz „Offen für das nächste Release: der Pfeil an externen Links“ in Punkt 4 war schon
+  vorher erledigt (kein `↗` mehr im Bau);
+- die Plugin-Website hält ihre Variablen noch in `custom.scss` (Form 1.0), `QuartzControl-Web` in
+  `_quartzcontrol.scss`;
+- `QuartzControl-Handbuch` (nur Quelle des PDFs) ist nicht nachgezogen;
+- `doku` bringt jetzt auch `plugin-forms.scss` nach `QuartzControl-Web`.
+
+Nichts gepusht, nichts veröffentlicht.

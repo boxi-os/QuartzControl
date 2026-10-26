@@ -435,6 +435,34 @@ Pakete und die Websites tragen noch beide Pfeile; das Repo ist hier also *vorn*,
 oben. Gemessen an der gebauten Example-Website, Regel im Browser getauscht (nicht am Bau): das
 `::after` ist `none`, das Symbol `rgb(95, 95, 95)` statt `rgb(23, 23, 26)`.
 
+## 4a. Die Varianten und die Websites tragen den Vorlagenstand der Basis
+
+Punkt 4 baut nur `basic`. Die drei anderen Varianten entstehen aus demselben Repo, und zwei Websites
+stehen auf ihnen: `QuartzControl-Web` auf `doku`, `quartz-plugins-handbuch` auf `plugin` (ohne
+Graph). Hat sich seit dem letzten Export etwas unter `scripts/example-template/` geändert, kommen
+sie mit; `--check-sync` sieht diese Drift nicht. Am 2026-10-26 fehlte so `bb1a1cd3` (die
+klebende Spalte, die vier Flächen) überall außer in `qc-basic` und der Example-Werkstatt
+(61. Review, M1).
+
+1. `npm run template:example -- --variant plugin`, dann `--variant doku`, jeder Lauf ganz (die
+   Werkstätten sind Kopien, die der Lauf selbst schreibt), und für das Example `--only 9,10`.
+   Phase 11 muss „Build grün“ und 0 Warnungen sagen.
+2. Je Website den Dry-Run lesen. Importiert werden nur die Bausteine `styles` und `cssVariables`
+   mit „Paket gewinnt“, nie `plugins`, `static` oder `frames` (Absätze oben). Vorher die
+   Stylesheets der Website mit `cmp` gegen das **alte** Paket halten: Sind sie gleich, verliert der
+   Import nichts. Unter `cssVariables` dürfen nur die Tokens kollidieren, die die Vorlage geändert
+   hat.
+3. Bauen, dann `node scripts/styles-snapshot.mjs --site --serve <public> --pages …` vor und nach
+   dem Import. Ändert sich der Aufbau (neue Pseudo-Elemente), vergleicht `--diff` nicht. Dann je
+   Element und Pseudo-Element vergleichen und jede geänderte Eigenschaft einzeln lesen.
+4. Veröffentlicht wird mit Punkt 9.
+
+**Stand 2026-10-26:** erledigt, die Pakete stammen von 19:11. Beide Websites sind importiert und
+gebaut, je fünf Seiten auf drei Breiten in hell und dunkel aufgenommen. Gemessen hat sich keine
+Farbe geändert. Die linke Spalte steht jetzt auf `static` → `sticky`, der Innenabstand oben ist
+14 statt 4 px, und der Verlauf unter dem Kopf ist ein Border-Image statt eines `::after`. Neu sind
+die Flächen als Pseudo-Elemente. Dasselbe Ergebnis wie an der Basis-Werkstatt in `bb1a1cd3`.
+
 ## 4b. Die Liste der Google-Schriften ist nicht älter als das Release
 
     npm run fetch:google-fonts

@@ -3565,8 +3565,15 @@ Nichts gepusht, nichts veröffentlicht.
   Speichern.
 - **Nebenbei 11** `0cc91eb9`: Die Meldung „mainT(…) resolved before refreshMainLanguage()“ sagt
   jetzt auch, dass ein Messskript `refreshMainLanguage()` vorher aufruft.
-- **Nebenbei 9** (Brotkrumen auf `en/`): gehört quartz-multilanguage; der Nutzer will es dort lösen,
-  als eigene Runde mit Plan.
+- **Nebenbei 9** (Brotkrumen auf `en/`): in quartz-multilanguage gelöst, Weg A des Plans (im
+  Browser), vom Nutzer gewählt samt „Start“ und „Home“. `v0.3.0` (`c6b882c`, `4d74d9f`): Das
+  Skript lässt die Brotkrumen an der Startseite der Seitensprache beginnen, benennt sie aus den
+  Sprachtexten des Plugins und blendet eine Spur aus, die nur zur Seite selbst führt; ein eigener
+  `rootName` bleibt auf Seiten der Standardsprache. In Chrome an einem Bau der Plugin-Website
+  gemessen: vorher `en/forms/` „Home(/quartz-plugins/) › Four plugins for Quartz › Forms“, nachher
+  „Home(/quartz-plugins/en/) › Forms“, `forms/` „Start › Forms“, `en/` ohne Spur, ebenso nach
+  SPA-Navigation; ohne JavaScript unverändert. Handbuch 1.3 und 9.3 (Plugin-Vault `ca39b0b`). Die
+  App liest gegen 0.3.0 (`35474aff`, 0.2.0 als gleicher Code, an der gebauten App gemessen).
 
 Aus der Abarbeitung, nur genannt:
 - rsync lässt einen Ordner `send.php` mit Inhalt still liegen und sagt Erfolg; einen leeren löscht

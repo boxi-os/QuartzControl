@@ -3541,3 +3541,42 @@ Aus der Abarbeitung kamen dazu, alle nur genannt und nicht behoben:
 - `doku` bringt jetzt auch `plugin-forms.scss` nach `QuartzControl-Web`.
 
 Nichts gepusht, nichts veröffentlicht.
+
+**Nachtrag 2026-11-04, die nicht gewählten Nebenbei-Punkte des einundsechzigsten.** Der Nutzer hat
+1, 2, 4, 9, 10 und 11 nachträglich gewählt. Abgearbeitet auf `fix/1.2.x`, ein Punkt je Commit:
+
+- **Nebenbei 1** `baeccfd4`, `ce11bbbb`: `send.php` als Ordner heißt auf dem Ordner-Ziel, über SFTP
+  und über FTP jetzt gleich: „send.php konnte auf dem Server nicht gelöscht werden (dort ist ein
+  Ordner dieses Namens).“, Fehlschlag, der Ordner bleibt, das Manifest behält ihn. Vorher brach das
+  Ordner-Ziel mit dem rohen `ERR_FS_EISDIR` ab, FTP sagte „entfernt“ (`DELE` und `SIZE` antworten
+  550 auch für einen Ordner; jetzt fragt `CWD`), SFTP nannte „delete: Failure“. Gemessen am Bündel
+  (Ordner-Ziel lokal) und auf `debian-vm` (vsftpd, OpenSSH), je ein leerer Ordner, einer mit Inhalt
+  und eine Datei; Gegenprobe mit fehlendem `send.php`.
+- **Nebenbei 2** `fb547808`: SFTP sagt bei einem abgelehnten Port „… hat die Verbindung auf Port N
+  abgelehnt“ (`sshPortRefused`). Ursache genauer als im Review: Nur ein Hostname mit mehreren
+  Adressen lässt Node einen `AggregateError` ohne Text werfen; mit IP-Literal stand der Grund da.
+  Gemessen am Bündel gegen diesen Mac (sshd aus), nicht auf der VM.
+- **Nebenbei 4** `60cfa3a2`, Plugin-Vault `0d933e9`: nur Text. Die Stichprobe in `release.md` sagt,
+  dass der Anker nur mit JavaScript mitkommt; der Kopf von `make-redirects.mjs` sagte „anchor
+  included“ ohne Bedingung.
+- **Nebenbei 10** `d3b1f23f`: Der Host eines SSH- oder FTP-Zugangs wird beim Speichern im
+  Hauptprozess getrimmt. Das Formular ließ „  DEBIAN.LOCAL “ durch, anders als das Review vermutete;
+  an der gebauten App gemessen. Ein früher gespeicherter Zugang behält den Leerraum bis zum nächsten
+  Speichern.
+- **Nebenbei 11** `0cc91eb9`: Die Meldung „mainT(…) resolved before refreshMainLanguage()“ sagt
+  jetzt auch, dass ein Messskript `refreshMainLanguage()` vorher aufruft.
+- **Nebenbei 9** (Brotkrumen auf `en/`): gehört quartz-multilanguage; der Nutzer will es dort lösen,
+  als eigene Runde mit Plan.
+
+Aus der Abarbeitung, nur genannt:
+- rsync lässt einen Ordner `send.php` mit Inhalt still liegen und sagt Erfolg; einen leeren löscht
+  es (gemessen auf `debian-vm`, Matrix nachgezogen).
+- `404.html` der Weiterleitungen schickt eine unbekannte `tags/…`-Adresse nach
+  `quartz-plugins/tags/…`, das es seit N4 nicht mehr gibt; die Seitenweiterleitungen führen Tags
+  schon zum Anfang des Handbuchs (gelesen, nicht gemessen).
+- `saveConnectionInput` nimmt einen Host aus Leerzeichen an (`min(1)` vor dem Trimmen); das Formular
+  lässt ihn nicht durch.
+- Der Merge von `fix/1.2.x` nach `feat/1.3` hat einen Konflikt in `release.md` (Absatz der
+  Weiterleitungen, auf `feat/1.3` schon in der Vergangenheitsform).
+
+Nichts gepusht.

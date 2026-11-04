@@ -23,6 +23,7 @@ import type {
   SnapshotKind,
   SyncOptions,
   SavePublishTargetInput,
+  SaveBookInput,
   DeployProgressEvent,
   CssVariableOverride,
   TemplateConflictStrategy,
@@ -215,6 +216,12 @@ const api: QuartzGuiApi = {
     save: (projectPath: string, input: SavePublishTargetInput) =>
       ipcRenderer.invoke(IPC.publishTargetSave, projectPath, input),
     delete: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.publishTargetDelete, projectPath, id)
+  },
+  books: {
+    list: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.booksList, args),
+    read: (args: { projectPath: string; id: string }) => ipcRenderer.invoke(IPC.booksRead, args),
+    save: (args: { projectPath: string; book: SaveBookInput }) => ipcRenderer.invoke(IPC.booksSave, args),
+    delete: (args: { projectPath: string; id: string }) => ipcRenderer.invoke(IPC.booksDelete, args)
   },
   deploy: {
     diff: (projectPath: string, targetId: string, outputDir?: string) =>

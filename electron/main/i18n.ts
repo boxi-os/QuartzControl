@@ -461,6 +461,11 @@ const STRINGS = {
     sftpModesUnfinished:
       '{{count}} von {{total}} früher hochgeladenen Dateien auf 0644 gesetzt, dann brach die Verbindung ab. Die übrigen {{left}} prüft erst der nächste Upload, bis dahin können sie für jeden Account des Servers beschreibbar bleiben.\n',
 
+    // Documents - books
+    bookNotAnObject: 'Die Datei enthält kein Buch (kein JSON-Objekt).',
+    bookUnreadable:
+      '{{file}} konnte nicht gelesen werden ({{reason}}). Die Datei bleibt, wie sie ist; QuartzControl schreibt sie erst wieder, wenn sie lesbar ist.',
+    bookPathBlocked: 'Der Ordner {{dir}} oder die Buchdatei darin ist eine Verknüpfung. QuartzControl schreibt Bücher nur als echte Datei im Projekt.',
     // Publishing - folder
     folderOverlapsBuild:
       'Der Zielordner ({{dest}}) liegt im Build-Ordner ({{build}}) oder umgekehrt. Bitte einen davon unabhängigen Ordner wählen.',
@@ -900,6 +905,11 @@ const STRINGS = {
     sftpModesRefused: 'The server refuses chmod: {{count}} of {{total}} files uploaded earlier stay writable by every account on the server.\n',
     sftpModesUnfinished:
       'Set {{count}} of {{total}} files uploaded earlier to 0644, then the connection broke. The next upload checks the other {{left}}; until then they may stay writable by every account on the server.\n',
+
+    bookNotAnObject: 'The file holds no book (not a JSON object).',
+    bookUnreadable:
+      '{{file}} could not be read ({{reason}}). The file stays as it is; QuartzControl writes it again only once it is readable.',
+    bookPathBlocked: 'The folder {{dir}} or the book file in it is a link. QuartzControl writes books only as a real file in the project.',
 
     folderOverlapsBuild:
       'The target folder ({{dest}}) is inside the build folder ({{build}}) or the other way round. Please pick a folder independent of it.',

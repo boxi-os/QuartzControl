@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { isWritableCssValue } from '@shared/cssVariables'
 import { relaySubdir, remotePathProblem } from '@shared/remotePath'
 import { isLocaleCode, TEMPLATE_PART_IDS, type TemplatePartId } from '@shared/ipc-contract'
+import { BOOK_ID, BOOK_MAX_ENTRIES } from '@shared/bookDefinition'
 
 // Validation for everything crossing the IPC boundary. The renderer is not a trust boundary the
 // main process can rely on: contextIsolation keeps *our* preload honest, but any script execution
@@ -560,6 +561,34 @@ export const savePublishTargetInput = z.looseObject({
 })
 
 export const excludePaths = z.array(z.string().max(4096)).max(100_000)
+
+// ── books (document export) ─────────────────────────────────────────────────
+// The book's own fields are checked on the way in so a broken renderer cannot write an unreadable
+// file; on the way out of the file, shared/bookDefinition.ts normalises instead (a person or a
+// merge may have edited it). looseObject throughout: a key a newer version wrote must survive.
+export const bookId = z.string().regex(BOOK_ID, 'not a book id')
+const bookSlug = z.string().min(1).max(1024)
+const bookText = z.string().max(500)
+const bookEntry = z.union([z.looseObject({ slug: bookSlug }), z.looseObject({ heading: bookText.min(1) })])
+const saveBook = z.looseObject({
+  id: bookId.optional(),
+  title: bookText,
+  subtitle: bookText,
+  author: bookText,
+  language: bookText,
+  root: z.string().max(1024),
+  order: z.array(bookEntry).max(BOOK_MAX_ENTRIES).nullable(),
+  excluded: z.array(bookSlug).max(BOOK_MAX_ENTRIES),
+  coverImage: bookText,
+  toc: z.boolean(),
+  tagIndex: z.boolean(),
+  backlinks: z.boolean(),
+  outsideLinks: z.enum(['site', 'text']),
+  pdf: z.looseObject({ pageSize: z.enum(['A4', 'A5', 'Letter']), landscape: z.boolean() })
+})
+export const booksListArgs = z.looseObject({ projectPath: absolutePath })
+export const bookArgs = z.looseObject({ projectPath: absolutePath, id: bookId })
+export const bookSaveArgs = z.looseObject({ projectPath: absolutePath, book: saveBook })
 
 export const serverOptions = z.looseObject({
   port: z.number().int().min(1).max(65535),

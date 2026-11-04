@@ -1354,6 +1354,54 @@ export interface DeployResult {
   output: string
 }
 
+/** The formats a document export writes - see docs/decisions/export.md. */
+export type DocumentFormat = 'pdf' | 'epub' | 'html'
+
+/** One entry in a book's own order: a page of the built site by its slug, or an interposed
+ *  heading that is not a page (the handbook's „Anhang“). */
+export type BookEntry = { slug: string } | { heading: string }
+
+export type BookPageSize = 'A4' | 'A5' | 'Letter'
+
+/**
+ * What goes into one exported document and in which order. Stored in the project, versioned, as
+ * quartz-books/<id>.json (shared/bookDefinition.ts) - not in .quartz-gui/, which is gitignored, so
+ * a book would not travel with Git-Sync. The id is the file name and is not repeated inside.
+ */
+export interface BookDefinition {
+  id: string
+  title: string
+  subtitle: string
+  author: string
+  /** A language code of quartz-multilanguage; '' = the site's own language. */
+  language: string
+  /** The folder slug the book is taken from; '' = the whole site. */
+  root: string
+  /** null follows the site's navigation as it is built; a list is the book's own order. */
+  order: BookEntry[] | null
+  /** Slugs left out, in either mode. */
+  excluded: string[]
+  /** Project-relative path of the cover picture; '' = the project picture. */
+  coverImage: string
+  toc: boolean
+  /** A register of the site's tags at the end of the document. */
+  tagIndex: boolean
+  /** "Links to this page" at the end of each page, restricted to pages in the book. */
+  backlinks: boolean
+  /** A link to a page outside the book: to that page on the published site, or plain text. */
+  outsideLinks: 'site' | 'text'
+  pdf: { pageSize: BookPageSize; landscape: boolean }
+}
+
+export type SaveBookInput = Omit<BookDefinition, 'id'> & { id?: string }
+
+export interface BookListing {
+  books: BookDefinition[]
+  /** Files in quartz-books/ that exist but could not be read - left where they are (a versioned
+   *  file with a merge conflict in it is the user's to fix, not something to move aside). */
+  unreadable: { id: string; reason: string }[]
+}
+
 /**
  * The independent slices a Vorlagen-Paket can carry. Each one is a *self-contained* piece of the
  * project's appearance: it owns everything needed to reproduce itself, so any subset can be
@@ -1827,6 +1875,11 @@ export const IPC = {
   publishTargetSave: 'publishTargets:save',
   publishTargetDelete: 'publishTargets:delete',
 
+  booksList: 'books:list',
+  booksRead: 'books:read',
+  booksSave: 'books:save',
+  booksDelete: 'books:delete',
+
   deployDiff: 'deploy:diff',
   deployRun: 'deploy:run',
   deployForgetManifest: 'deploy:forgetManifest',
@@ -2294,6 +2347,14 @@ export interface QuartzGuiApi {
     list(projectPath: string): Promise<PublishTarget[]>
     save(projectPath: string, input: SavePublishTargetInput): Promise<PublishTarget>
     delete(projectPath: string, id: string): Promise<void>
+  }
+  /** The books a document target exports (bookService). */
+  books: {
+    list(input: { projectPath: string }): Promise<BookListing>
+    read(input: { projectPath: string; id: string }): Promise<BookDefinition | null>
+    /** Without an id, a new book whose id is derived from its title. */
+    save(input: { projectPath: string; book: SaveBookInput }): Promise<BookDefinition>
+    delete(input: { projectPath: string; id: string }): Promise<void>
   }
   deploy: {
     /** What this target would upload/delete. Manifest-based for sftp/ftp/folder, a real remote

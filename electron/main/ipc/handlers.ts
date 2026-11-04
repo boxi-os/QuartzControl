@@ -11,6 +11,7 @@ import type {
   QuartzConfig,
   SaveConnectionInput,
   SavePublishTargetInput,
+  SaveBookInput,
   ServerOptions,
   Settings,
   SyncOptions,
@@ -40,6 +41,7 @@ import * as localizationService from '../services/localizationService'
 import * as updateService from '../services/updateService'
 import * as connectionsService from '../services/connectionsService'
 import * as publishTargetsService from '../services/publishTargetsService'
+import * as bookService from '../services/bookService'
 import * as githubService from '../services/githubService'
 import * as deployService from '../services/deploy'
 import { forgetManifest } from '../services/deploy/manifest'
@@ -435,6 +437,13 @@ export function registerIpcHandlers(): void {
   handle(IPC.publishTargetDelete, t([s.absolutePath, s.uuid]), (projectPath, id) =>
     publishTargetsService.deleteTarget(projectPath, id)
   )
+
+  handle(IPC.booksList, t([s.booksListArgs]), ({ projectPath }) => bookService.listBooks(projectPath))
+  handle(IPC.booksRead, t([s.bookArgs]), ({ projectPath, id }) => bookService.readBook(projectPath, id))
+  handle(IPC.booksSave, t([s.bookSaveArgs]), ({ projectPath, book }) =>
+    bookService.saveBook(projectPath, book as SaveBookInput)
+  )
+  handle(IPC.booksDelete, t([s.bookArgs]), ({ projectPath, id }) => bookService.deleteBook(projectPath, id))
 
   handle(IPC.deployDiff, t([s.absolutePath, s.uuid, s.buildOutputDir.optional()]), (projectPath, targetId, outputDir) =>
     deployService.previewDeploy(projectPath, targetId, outputDir)

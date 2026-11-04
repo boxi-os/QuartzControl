@@ -79,3 +79,33 @@ KaTeX-CSS und `copy-tex.js` von jsdelivr, `d3` für den Graphen und **das Plausi
 
 Das Handbuch-PDF sah trotz gesperrtem KaTeX-CSS fehlerfrei aus, weil es keine Formeln hat. Die
 Regel muss deshalb an einem Projekt mit Formeln gemessen werden.
+
+### Das Buch liegt versioniert im Projekt, und Unlesbares bleibt liegen (2026-11-05)
+
+Ein Buch ist `quartz-books/<id>.json` im Projektwurzelordner (`shared/bookDefinition.ts`,
+`bookService.ts`), nicht in `.quartz-gui/`. Der Grund: `.quartz-gui/` ist gitignoriert, ein Buch
+käme mit Git-Sync also nicht mit, und es beschreibt Inhalt (welche Seiten, welche Reihenfolge),
+keine Einstellung dieses Rechners. Außerhalb von `content/` und `static/` baut und veröffentlicht
+Quartz es nicht; Snapshots (`BASE_EXCLUDES` nennt den Ordner nicht) und Projektkopien
+(`duplicateService` `SKIP` ebenso wenig) nehmen es mit.
+
+**Gelesen wird nicht über `jsonStore.readJsonFile`**, obwohl die Regel „JSON-Stores nur über
+`jsonStore.ts`“ das verlangt. jsonStore benennt eine unlesbare Datei in `<name>.corrupt-<zeit>` um.
+Bei einer versionierten Datei mit Merge-Konflikt landete die Umbenennung samt Kopie im nächsten
+Commit des Nutzers. Ein unlesbares Buch bleibt deshalb liegen, wird mit Grund gelistet
+(`BookListing.unreadable`), und ein Speichern unter seiner Kennung wird abgelehnt, bis es wieder
+lesbar ist. Geschrieben wird weiter über `writeFileAtomic`.
+
+Gemessen an der gebauten App mit einem Playwright-Skript im Scratchpad (Wegwerfprofil,
+Wegwerfprojekt):
+
+- Eine Liste in einem Projekt ohne Bücher legt keinen Ordner an.
+- Zweimal derselbe Titel ergibt `handbuch-fuer-einsteiger` und `handbuch-fuer-einsteiger-2`.
+- Eine doppelte Seite in `order` behält ihren ersten Platz.
+- Ein unbekannter Schlüssel (`future`) übersteht das Speichern.
+- `kaputt.json` mit `<<<<<<< HEAD` steht unter `unreadable`, und Speichern darüber wird abgelehnt;
+  die Datei ist danach unverändert.
+- `Notizen.json` (keine gültige Kennung) wird übergangen.
+- Die Kennung `../x` und `toc: 'ja'` scheitern am zod-Schema.
+- `quartz-books` als Verknüpfung in einen anderen Ordner: Das Speichern wird abgelehnt, und der
+  Ordner bleibt leer.

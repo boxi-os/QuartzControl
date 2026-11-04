@@ -250,6 +250,12 @@ const MISSING_PARENT = /\bmkdir "(.*)" failed: No such file or directory/
 // before 3.2.4 without "[generator] ". The name is relative to the transfer's folder.
 const DELETE_REFUSED = /delete_file: unlink\((.*)\) failed: (.*?)(?: \(\d+\))?$/gm
 
+// The receiver's line for a folder with content where the relay put a file. rsync leaves it, as
+// SFTP and FTP do, but with exit 0, and the run said success with send.php/ still there (debian-vm,
+// rsync 3.5.0 as receiver, openrsync and rsync 3.5.0 as sender; review 2026-11-05, nebenbei). Its
+// content is not the relay's, so it is not deleted; an empty folder rsync deletes itself.
+const NON_EMPTY_FOLDER = /^cannot delete non-empty directory: (.*)$/gm
+
 function remoteSpec(connection: SshConnection, remotePath: string): string {
   // openrsync has no --protect-args, so a remote path is expanded once more by the remote shell.
   // Whitespace there would silently split into two arguments; refused rather than guessed at.
@@ -430,10 +436,15 @@ export const rsyncAdapter: DeployAdapter = {
         .join('\n')
       // Removing the relay: a refused deletion in the sentences SFTP and FTP say. Raw, the panel showed
       // the three rsync lines and ".d..t.... ./", without saying the relay was still there (M1).
-      const refused = ctx.onlyPaths && result.code !== 0 ? [...result.output.matchAll(DELETE_REFUSED)] : []
+      const refused = !ctx.onlyPaths
+        ? []
+        : [
+            ...(result.code !== 0 ? [...result.output.matchAll(DELETE_REFUSED)].map(([, path, reason]) => ({ path, reason })) : []),
+            ...[...result.output.matchAll(NON_EMPTY_FOLDER)].map(([, path]) => ({ path, reason: mainT('deleteIsFolder') }))
+          ]
       if (refused.length > 0) {
         const removed = result.entries.filter((entry) => entry.status === 'removed').map((entry) => `✗ ${entry.path}\n`)
-        const said = refused.map(([, path, reason]) => mainT('relayRemoveRefused', { path, reason }))
+        const said = refused.map(({ path, reason }) => mainT('relayRemoveRefused', { path, reason }))
         return { success: false, output: [...removed, ...said, mainT('relayRemoveRefusedRest')].join('') }
       }
       return {

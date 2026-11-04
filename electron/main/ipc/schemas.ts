@@ -478,7 +478,9 @@ export const saveConnectionInput = z.looseObject({
   id: uuid.optional(),
   kind: z.enum(['ssh', 'ftp', 'github', 'webhook']),
   name: z.string().min(1).max(200),
-  host: z.string().min(1).max(255).optional(),
+  // Trimmed before min(1): saveConnection trims the host, and "   " was stored as "" (review
+  // 2026-11-05, nebenbei; the form lets no such host through).
+  host: z.string().trim().min(1).max(255).optional(),
   port: z.number().int().min(1).max(65535).optional(),
   username: z.string().max(255).optional(),
   authMethod: z.enum(['password', 'privateKey', 'agent']).optional(),

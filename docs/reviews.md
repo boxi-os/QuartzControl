@@ -3577,12 +3577,17 @@ Nichts gepusht, nichts veröffentlicht.
 
 Aus der Abarbeitung, nur genannt:
 - rsync lässt einen Ordner `send.php` mit Inhalt still liegen und sagt Erfolg; einen leeren löscht
-  es (gemessen auf `debian-vm`, Matrix nachgezogen).
+  es (gemessen auf `debian-vm`, Matrix nachgezogen). Am 2026-11-05 behoben (`fe490b69`): Die Zeile
+  „cannot delete non-empty directory“ des Empfängers ist jetzt eine abgelehnte Löschung im Satz
+  der anderen Wege.
 - `404.html` der Weiterleitungen schickt eine unbekannte `tags/…`-Adresse nach
   `quartz-plugins/tags/…`, das es seit N4 nicht mehr gibt; die Seitenweiterleitungen führen Tags
   schon zum Anfang des Handbuchs (gelesen, nicht gemessen).
 - `saveConnectionInput` nimmt einen Host aus Leerzeichen an (`min(1)` vor dem Trimmen); das Formular
-  lässt ihn nicht durch.
+  lässt ihn nicht durch. Am 2026-11-05 behoben (`b3ec89fc`), an der gebauten App gemessen.
+- `404.html` der Weiterleitungen (oben): nach Absprache nicht behoben. Es trifft nur Adressen, die
+  die alten Websites nie hatten, und ein Fix bräuchte neue Weiterleitungen und je einen Commit auf
+  `gh-pages` der vier Plugin-Repositories.
 - Der Merge von `fix/1.2.x` nach `feat/1.3` hat einen Konflikt in `release.md` (Absatz der
   Weiterleitungen, auf `feat/1.3` schon in der Vergangenheitsform).
 

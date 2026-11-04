@@ -390,6 +390,7 @@ const STRINGS = {
     relayRemoveLoginGone: 'Der Zugang des Ziels „{{target}}“ ist gelöscht. Das Relay liegt noch auf {{then}} unter „{{path}}“: Lösche send.php, config.php und config.generated.php dort selbst.',
     relayRemoveGone: 'Unter „{{path}}“ lag kein Relay mehr.\n',
     relayRemoveRefused: '{{path}} konnte auf dem Server nicht gelöscht werden ({{reason}}).\n',
+    deleteIsFolder: 'dort ist ein Ordner dieses Namens',
     relayRemoveUnchecked: 'Ob {{path}} auf dem Server noch liegt, konnte nicht geprüft werden: Der Zugang darf den Ordner „{{folder}}“ nicht öffnen ({{reason}}).\n',
     relayRemoveUncheckedMany: 'Ob {{paths}} auf dem Server noch liegen, konnte nicht geprüft werden: Der Zugang darf den Ordner „{{folder}}“ nicht öffnen ({{reason}}).\n',
     relayRemoveRefusedRest: 'Das Relay ist damit nicht vom Server entfernt. Lösche diese Dateien dort selbst, oder erlaube dem Zugang das Löschen in diesem Ordner und versuche es noch einmal.',
@@ -479,6 +480,8 @@ const STRINGS = {
     // Publishing - SSH
     sshNoConnection: 'Für dieses Ziel ist kein SSH-Zugang hinterlegt.',
     sshSilent: '{{host}} hat rund {{seconds}} s lang nicht geantwortet, deshalb wurde die Verbindung beendet. Versuche es noch einmal.',
+    sshPortRefused: '{{host}} hat die Verbindung auf Port {{port}} abgelehnt. Prüfe den Port im Zugang und ob dort ein SSH-Server läuft.',
+    sshUnreached: '{{host}} konnte auf Port {{port}} nicht erreicht werden ({{code}}).',
     sshNoAgent: 'Kein SSH-Agent gefunden (SSH_AUTH_SOCK ist nicht gesetzt).',
     sshNoPrivateKey: 'Für diesen Zugang ist kein privater Schlüssel hinterlegt.',
 
@@ -830,6 +833,7 @@ const STRINGS = {
     relayRemoveLoginGone: 'The login of the target “{{target}}” has been deleted. The relay is still on {{then}} under “{{path}}”: delete send.php, config.php and config.generated.php there yourself.',
     relayRemoveGone: 'There was no relay under “{{path}}” any more.\n',
     relayRemoveRefused: '{{path}} could not be deleted on the server ({{reason}}).\n',
+    deleteIsFolder: 'a folder of that name is there',
     relayRemoveUnchecked: 'Whether {{path}} is still on the server could not be checked: the login may not open the folder “{{folder}}” ({{reason}}).\n',
     relayRemoveUncheckedMany: 'Whether {{paths}} are still on the server could not be checked: the login may not open the folder “{{folder}}” ({{reason}}).\n',
     relayRemoveRefusedRest: 'So the relay is not removed from the server. Delete these files there yourself, or allow the login to delete in this folder and try again.',
@@ -913,6 +917,8 @@ const STRINGS = {
 
     sshNoConnection: 'No SSH credential is set for this target.',
     sshSilent: '{{host}} did not answer for about {{seconds}} s, so the connection was ended. Try again.',
+    sshPortRefused: '{{host}} refused the connection on port {{port}}. Check the port in the login and whether an SSH server runs there.',
+    sshUnreached: '{{host}} could not be reached on port {{port}} ({{code}}).',
     sshNoAgent: 'No SSH agent found (SSH_AUTH_SOCK is not set).',
     sshNoPrivateKey: 'No private key is stored for this credential.',
 
@@ -1014,7 +1020,7 @@ export function mainLanguage(): 'de' | 'en' {
   // Hinweis darauf - genau der Bug vom 2026-09-02, nur eine Tür weiter.
   if (!refreshed) {
     console.error(
-      'mainLanguage() resolved before refreshMainLanguage(); this answer is frozen in the default language. Call it inside a function, not at module scope.'
+      'mainLanguage() resolved before refreshMainLanguage(); this answer is frozen in the default language. Call it inside a function, not at module scope; a script that loads a service without the app calls refreshMainLanguage() first.'
     )
   }
   return language
@@ -1031,9 +1037,11 @@ export function mainT(key: MainStringKey, vars?: Record<string, string | number>
   // above for the life of the process. That is not a hypothetical: two module-level constants
   // (rsync's blocker table, githubService's NO_TOKEN) were evaluated when handlers.ts imported
   // their file and answered in English on a German app until 2026-09-02. English on purpose - it
-  // describes a bug in this app, not something a user typed.
+  // describes a bug in this app, not something a user typed. A measuring bundle of a service, run
+  // without whenReady, hits it on every call; the second half of the line says what to do there
+  // (review 2026-11-05, nebenbei 11).
   if (!refreshed) {
-    console.error(`mainT('${key}') resolved before refreshMainLanguage(); this string is frozen in the default language. Call it inside a function, not at module scope.`)
+    console.error(`mainT('${key}') resolved before refreshMainLanguage(); this string is frozen in the default language. Call it inside a function, not at module scope; a script that loads a service without the app calls refreshMainLanguage() first.`)
   }
   const template: string = STRINGS[language][key]
   if (!vars) return template

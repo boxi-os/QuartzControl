@@ -330,7 +330,10 @@ export async function saveConnection(input: SaveConnectionInput): Promise<Connec
   }
 
   if (input.kind === 'ssh') {
-    stored.host = input.host
+    // Trimmed here, for every caller: the form let "  DEBIAN.LOCAL " through, serverOf compares the
+    // trimmed name, and the adapters connected to the one with spaces, "getaddrinfo ENOTFOUND"
+    // (review 2026-11-05, nebenbei 10). The case stays; DNS does not mind it.
+    stored.host = input.host.trim()
     stored.port = input.port
     stored.username = input.username
     stored.authMethod = input.authMethod
@@ -338,7 +341,7 @@ export async function saveConnection(input: SaveConnectionInput): Promise<Connec
     // A key read from a file is never copied into the store; a pasted one has no path.
     if (input.authMethod === 'agent' || input.keyPath) stored.encryptedSecret = input.secret ? encrypt(input.secret) : undefined
   } else if (input.kind === 'ftp') {
-    stored.host = input.host
+    stored.host = input.host.trim()
     stored.port = input.port
     stored.username = input.username
     stored.secure = input.secure

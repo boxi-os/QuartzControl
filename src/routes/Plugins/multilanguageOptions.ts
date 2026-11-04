@@ -2,7 +2,7 @@ import { quartzPluginName } from '@shared/quartzPluginName'
 import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 import { fieldText, type FormLanguage } from '../../components/PluginOptionsForm/text'
 
-// What the Mehrsprachigkeit editor needs to know about quartz-multilanguage 0.2.0, read from its
+// What the Mehrsprachigkeit editor needs to know about quartz-multilanguage 0.3.0, read from its
 // options.ts rather than its README: a language is a string (its code) or an object with `code`;
 // codes are trimmed and lower-cased; no usable language means `en`; a `defaultLanguage` that is
 // empty or not among the languages means the first one; an empty `publishLanguages` means all of
@@ -10,7 +10,11 @@ import { fieldText, type FormLanguage } from '../../components/PluginOptionsForm
 
 export const MULTILANGUAGE_PLUGIN = 'quartz-multilanguage'
 /** The version whose options.ts the defaults below are read from. */
-export const MULTILANGUAGE_READ_AGAINST = '0.2.0'
+export const MULTILANGUAGE_READ_AGAINST = '0.3.0'
+/** Versions whose options.ts is the same as that one's (`git diff v0.2.0 v0.3.0 -- src/options.ts`
+ *  is empty; 0.3.0 changed the browser script and its texts, the breadcrumbs). No note for them,
+ *  as for quartz-navigations. A new release goes here only after the same diff. */
+export const MULTILANGUAGE_SAME_CODE = ['0.2.0'] as const
 
 type Options = Record<string, unknown>
 export type LanguageEntry = Record<string, unknown> & { code: string }

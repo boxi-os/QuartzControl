@@ -21,6 +21,7 @@ import {
   LANGUAGE_KEYS,
   MULTILANGUAGE_PLUGIN,
   MULTILANGUAGE_READ_AGAINST,
+  MULTILANGUAGE_SAME_CODE,
   UNKNOWN_GROUP,
   codeProblem,
   defaultLanguageOf,
@@ -353,7 +354,7 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
       }
     >
       <InfoNote>{t('multilanguageEditor.intro')}</InfoNote>
-      <ReadAgainstNote plugin={MULTILANGUAGE_PLUGIN} readAgainst={MULTILANGUAGE_READ_AGAINST} installed={schemaQuery.data?.packageVersion} />
+      <ReadAgainstNote plugin={MULTILANGUAGE_PLUGIN} readAgainst={MULTILANGUAGE_READ_AGAINST} sameCode={MULTILANGUAGE_SAME_CODE} installed={schemaQuery.data?.packageVersion} />
       {message && (
         <p role="alert" className="text-ui text-red-600 dark:text-red-400">
           {message}

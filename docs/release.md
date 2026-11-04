@@ -746,9 +746,11 @@ Am ersten Tag lief es so, und so läuft es wieder, wenn eine Website umzieht:
    verwaisten Branch, so bleibt die alte Website in der Geschichte des Branches. **Rückweg:**
    `git -C <klon> revert --no-edit HEAD` und pushen, dann steht die alte Website wieder da. Vorher
    alle Ziele der Weiterleitungen online abgefragt (198, alle mit 200), danach je Website drei
-   Stichproben im Browser (Startseite, eine Seite mit `#Anker`, eine englische). Am selben Tag die
-   README-Commits gepusht, die auf die neue Adresse zeigen (layout-box `6fecd5a`, multilanguage
-   `b7f89a8`).
+   Stichproben im Browser (Startseite, eine Seite mit `#Anker`, eine englische). Den Anker trägt nur
+   das Skript der Seite weiter; ohne JavaScript landet sie oben auf der neuen Seite, und `404.html`
+   verlinkt nur den Anfang des Handbuchs (61. Review, nebenbei 4). Mit JavaScript prüfen, ohne ist
+   das kein Fehler. Am selben Tag die README-Commits gepusht, die auf die neue Adresse zeigen
+   (layout-box `6fecd5a`, multilanguage `b7f89a8`).
 3. Die vier alten Vault-Repositories (`quartz-*-handbuch`) sind archiviert; ihre Geschichte steht
    im neuen Vault unter den Ordnern der Plugins.
 

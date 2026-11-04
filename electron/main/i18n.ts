@@ -480,6 +480,8 @@ const STRINGS = {
     // Publishing - SSH
     sshNoConnection: 'Für dieses Ziel ist kein SSH-Zugang hinterlegt.',
     sshSilent: '{{host}} hat rund {{seconds}} s lang nicht geantwortet, deshalb wurde die Verbindung beendet. Versuche es noch einmal.',
+    sshPortRefused: '{{host}} hat die Verbindung auf Port {{port}} abgelehnt. Prüfe den Port im Zugang und ob dort ein SSH-Server läuft.',
+    sshUnreached: '{{host}} konnte auf Port {{port}} nicht erreicht werden ({{code}}).',
     sshNoAgent: 'Kein SSH-Agent gefunden (SSH_AUTH_SOCK ist nicht gesetzt).',
     sshNoPrivateKey: 'Für diesen Zugang ist kein privater Schlüssel hinterlegt.',
 
@@ -915,6 +917,8 @@ const STRINGS = {
 
     sshNoConnection: 'No SSH credential is set for this target.',
     sshSilent: '{{host}} did not answer for about {{seconds}} s, so the connection was ended. Try again.',
+    sshPortRefused: '{{host}} refused the connection on port {{port}}. Check the port in the login and whether an SSH server runs there.',
+    sshUnreached: '{{host}} could not be reached on port {{port}} ({{code}}).',
     sshNoAgent: 'No SSH agent found (SSH_AUTH_SOCK is not set).',
     sshNoPrivateKey: 'No private key is stored for this credential.',
 

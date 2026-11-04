@@ -114,6 +114,20 @@ function loginRefused(connection: SshConnection, error: string): string | null {
   return mainT('rsyncKeyRejected', { user: connection.username, host: connection.host, identity: connection.keyPath })
 }
 
+// A host name that resolves to more than one address (localhost, most hosts with IPv6) makes Node
+// try each and throw an AggregateError, whose message is empty: a port that refuses said only
+// "Error: getConnection: ", in 1.1.1 as well (debian-vm port 2222, review 2026-11-05, nebenbei 2;
+// with an IP literal the reason is there). The code is still set, so the sentence comes from it; a
+// refused port gets it with an IP literal too, the raw line underneath where it says something.
+function unreached(connection: SshConnection, err: unknown): string | null {
+  const code = (err as { code?: unknown }).code
+  const raw = String(err)
+  const empty = /getConnection:\s*$/.test(raw)
+  if (code === 'ECONNREFUSED') return `${mainT('sshPortRefused', { host: connection.host, port: connection.port })}${empty ? '' : `\n\n${raw}`}`
+  if (typeof code !== 'string' || !empty) return null
+  return mainT('sshUnreached', { host: connection.host, port: connection.port, code })
+}
+
 export const sftpAdapter: DeployAdapter = {
   async preview(ctx): Promise<DeployDiffEntry[]> {
     return diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)
@@ -333,7 +347,7 @@ export const sftpAdapter: DeployAdapter = {
       const silent = wentSilent || /Keepalive timeout/.test(String(err)) ? `${mainT('sshSilent', { host: connection.host, seconds: SSH_SILENT_SECONDS })}\n\n` : ''
       const refusal = loginRefused(connection, String(err))
       const refused = refusal ? `${refusal}\n\n` : ''
-      return { success: false, output: `${output}\n${hostKeyRejection ?? `${silent}${refused}${String(err)}`}` }
+      return { success: false, output: `${output}\n${hostKeyRejection ?? `${silent}${refused}${unreached(connection, err) ?? String(err)}`}` }
     } finally {
       client.end().catch(() => {})
     }

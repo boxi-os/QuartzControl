@@ -166,9 +166,14 @@ export const folderAdapter: DeployAdapter = {
             if (ctx.onlyPaths) missing++
             else output += `✗ ${relPath}\n`
           } else {
-            if (code !== 'EACCES' && code !== 'EPERM') throw err
+            // A folder where a file was published is not deleted either: it ended the run with a raw
+            // "SystemError [ERR_FS_EISDIR]: Path is a directory …" after config.php had gone, for a
+            // send.php that was a folder (review 2026-11-05, nebenbei 1). Said as over SFTP and FTP.
+            const isFolder = code === 'ERR_FS_EISDIR' || code === 'EISDIR'
+            if (!isFolder && code !== 'EACCES' && code !== 'EPERM') throw err
             kept.push(relPath)
-            output += mainT(ctx.onlyPaths ? 'relayRemoveRefused' : 'deployDeleteRefused', { path: relPath, reason: (err as Error).message.split(',')[0] })
+            const reason = isFolder ? mainT('deleteIsFolder') : (err as Error).message.split(',')[0]
+            output += mainT(ctx.onlyPaths ? 'relayRemoveRefused' : 'deployDeleteRefused', { path: relPath, reason })
           }
         }
         processed++

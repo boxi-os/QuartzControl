@@ -709,7 +709,9 @@ damit hinter dem Punkt, der ihn voraussetzt. Ablauf:
    Dessen Inhalt kommt als gewöhnlicher Commit auf den Klon von `gh-pages`, ohne `--force` und
    ohne verwaisten Branch, so bleibt die alte Website in der Geschichte des Branches. **Rückweg:**
    `git -C <klon> revert --no-edit HEAD` und pushen, dann steht die alte Website wieder da. Danach je Website drei Stichproben im Browser (Startseite, eine Seite
-   mit `#Anker`, eine englische). Am selben Tag die README-Commits pushen, die auf die neue Adresse
+   mit `#Anker`, eine englische). Den Anker trägt nur das Skript der Seite weiter; ohne JavaScript
+   landet sie oben auf der neuen Seite, und `404.html` verlinkt nur den Anfang des Handbuchs (61.
+   Review, nebenbei 4). Mit JavaScript prüfen, ohne ist das kein Fehler. Am selben Tag die README-Commits pushen, die auf die neue Adresse
    zeigen (layout-box `6fecd5a`, multilanguage `b7f89a8`, lokal seit dem 2026-10-26); vorher
    zeigten sie auf eine Website, die es noch nicht gibt.
 3. Die vier alten Vault-Repositories (`quartz-*-handbuch`) archivieren; ihre Geschichte steht im

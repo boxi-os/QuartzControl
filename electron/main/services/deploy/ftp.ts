@@ -280,7 +280,23 @@ export const ftpAdapter: DeployAdapter = {
               }
             ))
           const closed = gone ? await closedFolder(posix.dirname(remotePath)) : null
-          if (closed) {
+          // DELE and SIZE both answer 550 for a folder as well: a send.php that was a folder was said
+          // removed and stayed (vsftpd, review 2026-11-04, N8, and 2026-11-05, nebenbei 1). A folder
+          // is what CWD can enter.
+          const folder =
+            gone && !closed &&
+            (await client.cd(remotePath).then(
+              () => true,
+              (cdErr: unknown) => {
+                if (!(cdErr instanceof FTPError)) throw cdErr
+                return false
+              }
+            ))
+          if (folder) {
+            await client.cd(start)
+            kept.push(relPath)
+            output += mainT(ctx.onlyPaths ? 'relayRemoveRefused' : 'deployDeleteRefused', { path: relPath, reason: mainT('deleteIsFolder') })
+          } else if (closed) {
             kept.push(relPath)
             const entry = unchecked.get(closed.folder) ?? { reason: closed.reason, paths: [] }
             entry.paths.push(relPath)

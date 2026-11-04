@@ -273,7 +273,14 @@ export const sftpAdapter: DeployAdapter = {
             else output += `✗ ${relPath}\n`
           } else {
             kept.push(relPath)
-            output += mainT(ctx.onlyPaths ? 'relayRemoveRefused' : 'deployDeleteRefused', { path: relPath, reason: (err as Error).message })
+            // The server's sentence for a folder is "delete: Failure …", which names no cause
+            // (OpenSSH, review 2026-11-05, nebenbei 1). Said as for the folder target and FTP.
+            const folder = await client.stat(posix.join(root, relPath)).then(
+              (s) => s.isDirectory,
+              () => false
+            )
+            const reason = folder ? mainT('deleteIsFolder') : (err as Error).message
+            output += mainT(ctx.onlyPaths ? 'relayRemoveRefused' : 'deployDeleteRefused', { path: relPath, reason })
           }
         }
         processed++

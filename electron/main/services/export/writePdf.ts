@@ -1,4 +1,5 @@
 import { PDFArray, PDFDict, PDFDocument, PDFName } from 'pdf-lib'
+import { REGISTER_SLUG } from '@shared/exportModel'
 import { mainT } from '../../i18n'
 import type { ExportWindow } from './exportWindow'
 import type { SiteServer } from './siteServer'
@@ -112,7 +113,8 @@ export async function writePdf(win: ExportWindow, server: SiteServer, parts: Doc
 
   let bytes = await print()
   let passes = 1
-  if (parts.toc) {
+  // Page numbers stand in the contents and in the register of tags.
+  if (parts.toc || parts.pages.some((p) => p.slug === REGISTER_SLUG)) {
     let numbers = destinations(await PDFDocument.load(bytes, { updateMetadata: false }))
     for (;;) {
       signal?.throwIfAborted()

@@ -70,6 +70,11 @@ blockquote.callout { border-left-width: 4px; background: #f5f5f5; }
 .callout-title { font-weight: bold; }
 .callout-icon, .callout-fold { display: none; }
 .qc-replaced { font-style: italic; }
+.qc-backlinks { margin-top: 1.5em; padding-top: 0.5em; border-top: 1px solid #ccc; font-size: 0.9em; }
+.qc-backlinks-title { font-weight: bold; margin: 0 0 0.3em; }
+.qc-register dt { font-weight: bold; margin-top: 0.6em; }
+.qc-register dd { margin-left: 1.2em; }
+.qc-register-entry { display: block; }
 .index-heading { font-weight: bold; margin-top: 1.2em; }
 math[display="block"] { display: block; margin: 0.8em auto; }
 .qc-formula-block { text-align: center; margin: 0.8em 0; }

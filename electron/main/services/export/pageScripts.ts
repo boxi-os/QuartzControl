@@ -384,7 +384,8 @@ export function imagesSettled(timeoutMs: number): Promise<number> {
 /** Writes the page numbers the first pass found into the table of contents. */
 export function fillPageNumbers(numbers: Record<string, number>): number {
   let filled = 0
-  for (const n of document.querySelectorAll<HTMLElement>('.qc-toc .n[data-anchor]')) {
+  // The contents and the register alike.
+  for (const n of document.querySelectorAll<HTMLElement>('.n[data-anchor]')) {
     const page = numbers[n.dataset.anchor!]
     if (page === undefined) continue
     n.textContent = String(page)
@@ -613,6 +614,8 @@ export function epubChapters(input: { chapters: EpubChapterInput[]; imageNames: 
     div.querySelectorAll('svg style').forEach((st) => {
       st.textContent = (st.textContent ?? '').replace(/@font-face\s*\{[^}]*url\(\s*["']?https?:[^}]*\}/g, '')
     })
+    // The register's page numbers are the PDF's; a reader has no pages.
+    div.querySelectorAll('.qc-pageno').forEach((e) => e.remove())
     // What XHTML or the ePub schema does not take, and nothing in a document needs.
     div.querySelectorAll('*').forEach((el) => {
       for (const attr of [...el.attributes]) {

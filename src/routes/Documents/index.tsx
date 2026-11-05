@@ -167,6 +167,8 @@ export default function Documents(): JSX.Element {
           <TextInput value={draft.coverImage} placeholder="quartz/static/icon.png" onChange={(e) => update({ coverImage: e.target.value })} />
         </Field>
         <Toggle label={t('documents.fields.toc')} hint={t('documents.fields.tocHint')} checked={draft.toc} onChange={(toc) => update({ toc })} />
+        <Toggle label={t('documents.fields.backlinks')} hint={t('documents.fields.backlinksHint')} checked={draft.backlinks} onChange={(backlinks) => update({ backlinks })} />
+        <Toggle label={t('documents.fields.tagIndex')} hint={t('documents.fields.tagIndexHint')} checked={draft.tagIndex} onChange={(tagIndex) => update({ tagIndex })} />
         <FieldGroup label={t('documents.fields.outsideLinks')}>
           <SegmentedControl
             label={t('documents.fields.outsideLinks')}

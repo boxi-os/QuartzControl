@@ -366,3 +366,21 @@ zuerst keine sichtbare Beschriftung und steht jetzt in einer `FieldGroup`.
 
 Die Kennung eines Buchs (sein Dateiname) entsteht aus dem ersten Titel und bleibt, wenn der Titel
 sich ändert: Ein Ziel nennt sein Buch über diese Kennung.
+
+### Register und „Verweise auf diese Seite“ (2026-11-05)
+
+Beides kommt aus dem, was Quartz selbst aufgezeichnet hat (`contentIndex.json`: `links` und
+`tags` je Seite, dieselbe Quelle, aus der die Backlinks-Komponente der Website liest), gezählt nur
+innerhalb des Buchs (`backlinksInBook`, `tagRegister` in `shared/exportModel.ts`). Beides wird vor
+den Schreibern in die gesammelten Seiten geschrieben, so dass PDF, ePub und HTML es gleich
+bekommen: die Verweise als `<aside>` am Ende einer Seite, das Register als eine weitere Seite am
+Ende des Dokuments (Kennung `__quartzcontrol/register`, die keine Quartz-Seite haben kann). Seine
+Seitenzahlen trägt im PDF der zweite Durchgang ein wie im Inhaltsverzeichnis; ePub und HTML
+lassen sie weg.
+
+Gemessen an der gebauten App (Example, beide Extras an): 682 Verweise, Register mit 35
+Schlagwörtern, PDF 287 Seiten mit Lesezeichen 9/46/252/260/23 (das Register ist der eine neue
+Eintrag auf Ebene 1), kein Platzhalter `000` übrig (`pdftotext`). Stichprobe: Das Register nennt
+„6.1 – Etwas ändern“ mit 231, und Seite 231 beginnt mit dieser Seite und endet mit „Verweise auf
+diese Seite“ (5 – Die Gestaltung, 6 – Anpassen, 7.1 – Glossar). ePub: epubcheck 0 Fehler,
+0 Warnungen. HTML: 1983 interne Verweise, keiner ohne Ziel, keine Netzanfrage.

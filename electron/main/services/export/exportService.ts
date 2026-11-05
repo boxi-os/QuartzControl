@@ -3,14 +3,14 @@ import { existsSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { basename, extname, join } from 'path'
 import type { BookDefinition, DocumentFormat, SitePages } from '@shared/ipc-contract'
-import { insideRoot, pageDepth, resolveOrder } from '@shared/exportModel'
+import { anchorFor, backlinksInBook, insideRoot, pageDepth, REGISTER_SLUG, resolveOrder, tagRegister } from '@shared/exportModel'
 import { getPrefs } from '../projectPrefsService'
 import { resolveBuildDir } from '../projectDirs'
 import { appWindows } from '../../appWindows'
-import { mainT } from '../../i18n'
+import { mainT, mainTIn } from '../../i18n'
 import { readConfig } from '../configService'
 import { containedPath } from '../templatePackage/shared'
-import { collectPages, effectiveRoot, pagesInLanguage, readNavigationOrder, readSiteFacts } from './collect'
+import { collectPages, type CollectedPage, effectiveRoot, pagesInLanguage, readNavigationOrder, readSiteFacts } from './collect'
 import { openExportWindow, type ExportWindow } from './exportWindow'
 import { serveSiteCopy, type SiteServer } from './siteServer'
 import { printWidthPx } from './documentHtml'
@@ -55,6 +55,67 @@ function stopAllWhenAppCloses(): void {
       if (appWindows().length === 0) for (const c of running.values()) c.abort()
     })
   }
+}
+
+function escHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+/**
+ * The two extras of a book, written into the collected pages before any writer sees them, so the
+ * PDF, the ePub and the HTML get them alike:
+ *  - "Links to this page" at the end of each page that has any, from Quartz's own record of links
+ *    (contentIndex.json), counted within the book;
+ *  - the register of tags as one more page at the end. Its page numbers stand in `.qc-pageno`
+ *    spans the PDF's second pass fills (writePdf) and the reader formats drop (epubChapters).
+ * No h1-h6 in either but the register's own title, so the outline gains exactly one entry.
+ */
+function addBacklinksAndRegister(
+  pages: CollectedPage[],
+  items: { kind: string }[],
+  book: BookDefinition,
+  facts: { pages: Map<string, { title: string; tags: string[]; links: string[] }> },
+  lang: string
+): { backlinks: number; tags: number } {
+  const slugs = pages.map((p) => p.slug)
+  const titleOf = new Map(pages.map((p) => [p.slug, p.title]))
+  const link = (slug: string): string => `<a href="#${anchorFor(slug)}">${escHtml(titleOf.get(slug) ?? slug)}</a>`
+  let backlinks = 0
+  if (book.backlinks) {
+    const refs = backlinksInBook(slugs, (s) => facts.pages.get(s)?.links ?? [])
+    for (const page of pages) {
+      const from = refs.get(page.slug) ?? []
+      if (!from.length) continue
+      backlinks += from.length
+      page.html += `<aside class="qc-backlinks"><p class="qc-backlinks-title">${escHtml(mainTIn(lang, 'docBacklinks'))}</p><ul>${from.map((s) => `<li>${link(s)}</li>`).join('')}</ul></aside>`
+    }
+  }
+  let tags = 0
+  if (book.tagIndex) {
+    const register = tagRegister(slugs, (s) => facts.pages.get(s)?.tags ?? [], lang)
+    tags = register.length
+    if (register.length) {
+      const html = `<dl class="qc-register">${register
+        .map(
+          (r) =>
+            `<dt>${escHtml(r.tag)}</dt><dd>${r.pages
+              .map((s) => `<span class="qc-register-entry">${link(s)}<span class="qc-pageno n" data-anchor="${anchorFor(s)}">000</span></span>`)
+              .join('')}</dd>`
+        )
+        .join('')}</dl>`
+      pages.push({
+        slug: REGISTER_SLUG,
+        title: mainTIn(lang, 'docRegister'),
+        lang,
+        html,
+        images: [],
+        level: 1,
+        counts: { outsideLinks: 0, textLinks: 0, forms: 0, frames: 0, media: 0, canvases: 0, unrenderedDiagrams: 0 }
+      })
+      items.push({ kind: 'page', slug: REGISTER_SLUG, level: 1 } as never)
+    }
+  }
+  return { backlinks, tags }
 }
 
 const COVER_TYPES: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.svg': 'image/svg+xml' }
@@ -124,6 +185,10 @@ export async function exportBook(opts: {
       signal,
       onPage: (done, total, slug) => opts.onProgress(done, total, slug)
     })
+    const lang0 = pages[0]?.lang || book.language || 'en'
+    const extras = addBacklinksAndRegister(pages, resolved.items, book, facts, lang0)
+    if (extras.backlinks) report.push(mainT('exportReportBacklinks', { count: extras.backlinks }))
+    if (extras.tags) report.push(mainT('exportReportRegister', { count: extras.tags }))
     const stylesheets = await win.run(() => [...document.querySelectorAll('head link[rel="stylesheet"]')].map((l) => (l as HTMLLinkElement).href), [])
     const lang = pages[0]?.lang || book.language || 'en'
     const title = book.title || config?.configuration?.pageTitle || basename(opts.projectPath)

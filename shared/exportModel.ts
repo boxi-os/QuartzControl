@@ -150,3 +150,35 @@ export function outsideUrl(baseUrl: string | undefined, slug: string, hash: stri
   const path = slug === 'index' ? '' : slug.endsWith('/index') ? slug.slice(0, -'index'.length) : slug
   return `https://${host}/${path.split('/').map(encodeURIComponent).join('/')}${hash}`
 }
+
+/** A link as contentIndex.json stores it, as a slug: a folder link (`4-gestaltung/`) is its index. */
+export function linkSlug(link: string): string {
+  const s = link.replace(/^\/+/, '').split('#')[0]
+  return s === '' || s.endsWith('/') ? `${s}index` : s
+}
+
+/**
+ * Which pages of the book link to each page of the book, in book order. From the links Quartz
+ * itself recorded (contentIndex.json) - the same source the site's Backlinks component reads -
+ * restricted to the book, because a backlink into a page the reader does not have leads nowhere.
+ */
+export function backlinksInBook(slugs: string[], linksOf: (slug: string) => string[]): Map<string, string[]> {
+  const inBook = new Set(slugs)
+  const out = new Map<string, string[]>(slugs.map((s) => [s, []]))
+  for (const from of slugs) {
+    const targets = new Set(linksOf(from).map(linkSlug))
+    for (const to of targets) if (to !== from && inBook.has(to)) out.get(to)!.push(from)
+  }
+  return out
+}
+
+/** The tags of the book's pages, each with its pages in book order, sorted for `locale`. */
+export function tagRegister(slugs: string[], tagsOf: (slug: string) => string[], locale: string): { tag: string; pages: string[] }[] {
+  const byTag = new Map<string, string[]>()
+  for (const slug of slugs) for (const tag of new Set(tagsOf(slug))) byTag.set(tag, [...(byTag.get(tag) ?? []), slug])
+  const collator = new Intl.Collator(locale || undefined, { numeric: true, sensitivity: 'base' })
+  return [...byTag].map(([tag, pages]) => ({ tag, pages })).sort((a, b) => collator.compare(a.tag, b.tag))
+}
+
+/** The slug the register stands under in the document: a name no Quartz page can have. */
+export const REGISTER_SLUG = '__quartzcontrol/register'

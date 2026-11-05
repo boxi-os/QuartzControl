@@ -83,7 +83,19 @@ export function problemText(problems: DocumentProblems): string | null {
   return found.map(([kind, list]) => `${label[kind]} (${list.length}):\n` + list.slice(0, 10).map((l) => `  ${l}`).join('\n')).join('\n')
 }
 
-export async function writePdf(win: ExportWindow, server: SiteServer, parts: DocumentParts, meta: PdfMeta, signal?: AbortSignal): Promise<PdfResult> {
+/**
+ * `otherFormats`: the target also writes the ePub or the HTML. Content past the print edge is the
+ * PDF's problem only - a reader reflows - and the message then says that the other formats are
+ * written without the PDF.
+ */
+export async function writePdf(
+  win: ExportWindow,
+  server: SiteServer,
+  parts: DocumentParts,
+  meta: PdfMeta,
+  opts: { signal?: AbortSignal; otherFormats?: boolean } = {}
+): Promise<PdfResult> {
+  const { signal } = opts
   const width = printWidthPx(parts.pageSize, parts.landscape)
   win.win.setContentSize(width, 1000)
   const wc = win.win.webContents
@@ -95,7 +107,10 @@ export async function writePdf(win: ExportWindow, server: SiteServer, parts: Doc
   signal?.throwIfAborted()
   const problems = await win.run(findDocumentProblems, [])
   const text = problemText(problems)
-  if (text) throw new Error(mainT('exportProblems', { problems: text }))
+  if (text) {
+    const onlyEdge = !problems.deadLinks.length && !problems.brokenImages.length
+    throw new Error(mainT('exportProblems', { problems: text }) + (onlyEdge && opts.otherFormats ? `\n${mainT('exportEdgePdfOnly')}` : ''))
+  }
   if (unloaded) throw new Error(mainT('exportImagesPending', { count: unloaded }))
 
   const paper = PAGE_MM[parts.pageSize]

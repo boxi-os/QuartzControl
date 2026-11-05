@@ -235,7 +235,7 @@ export async function exportBook(opts: {
           landscape: book.pdf.landscape
         },
         { title, subtitle: book.subtitle, author: book.author, keywords: [], lang },
-        signal
+        { signal, otherFormats: opts.formats.some((f) => f !== 'pdf') }
       )
       files.push({ name: `${book.id}.pdf`, bytes: Buffer.from(pdf.bytes) })
       report.push(mainT('exportReportPdf', { pages: pdf.pages, outline: pdf.outline.join('/'), mb: mb(pdf.bytes.length) }))

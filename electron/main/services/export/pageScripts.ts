@@ -345,8 +345,7 @@ export function findDocumentProblems(): DocumentProblems {
   const width = document.body.clientWidth
   const where = (el: Element): string =>
     el.closest('.doc-page')?.querySelector('.page-title')?.textContent ?? (el.closest('.qc-toc') ? 'toc' : '?')
-  const visibleRight = (el: Element): number => {
-    let right = el.getBoundingClientRect().right
+  const visibleRight = (el: Element, right: number): number => {
     for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
       const o = getComputedStyle(a)
       if (/(hidden|clip)/.test(o.overflowX) || /(hidden|clip)/.test(o.overflow)) right = Math.min(right, a.getBoundingClientRect().right)
@@ -355,11 +354,23 @@ export function findDocumentProblems(): DocumentProblems {
   }
   const over = new Set<Element>()
   const overflow: string[] = []
+  // An inline element counts with what it holds, not with its padding: Quartz pads links
+  // (0.1rem each side) to give them a background, and a line may end in that padding. gui-test's
+  // footnote back-link "↩³" reached 1.16 px past the edge with its padding and ended 0.4 px inside
+  // it without (review of 2026-11-06, M4); every export of that site stopped at it.
+  // Pictures, SVG, formulas and form fields hold nothing a range could measure; they count whole.
+  const range = document.createRange()
+  const replaced = /^(IMG|VIDEO|AUDIO|CANVAS|IFRAME|OBJECT|EMBED|INPUT|SELECT|TEXTAREA)$/
+  const box = (el: Element): DOMRect => {
+    if (!(el instanceof HTMLElement) || replaced.test(el.tagName) || getComputedStyle(el).display !== 'inline') return el.getBoundingClientRect()
+    range.selectNodeContents(el)
+    return range.getBoundingClientRect()
+  }
   for (const el of document.querySelectorAll('body *')) {
     if (el.closest('.cover')) continue
-    const r = el.getBoundingClientRect()
+    const r = box(el)
     if (!r.width) continue
-    const right = visibleRight(el)
+    const right = visibleRight(el, r.right)
     if (right <= width + 1) continue
     over.add(el)
     if (el.parentElement && over.has(el.parentElement)) continue

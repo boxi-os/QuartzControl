@@ -744,3 +744,24 @@ gui-test 0 Fehler, Example und Handbuch weiter 0 Fehler.
 
 Das Prüfskript `check:export`, das der Plan vorsah, gibt es nicht; die Gegenprobe ist bis dahin
 epubcheck auf debian-vm von Hand, mit gui-test als dritter Stichprobe neben Handbuch und Example.
+
+### Ein Pixel über dem Druckrand (2026-11-06, M4)
+
+Der Export von `gui-test` brach mit „Über den Druckrand (1): SVG mit CSS gestalten: <a> 1 px“ ab,
+für alle drei Formate. Gefunden mit einem Debug-Bau, der die Kette der Vorfahren mitschrieb: Der
+Rückverweis einer Fußnote „↩³“ endete bei 659,16 px in einem Druckbereich von 658 px. Davon waren
+1,6 px der Innenabstand des Links (Quartz polstert Links für ihren Hintergrund); der Text selbst
+endete bei 657,56 px. Im gedruckten PDF steht „↩2 ↩3“ in der nächsten Zeile, abgeschnitten wird nichts.
+
+Ob Chromium beim Drucken überhaupt in den Seitenrand malt, ist gemessen (`fix/clip/main.cjs`,
+`printToPDF` mit `@page`-Rand 20 mm, Zeilen 0 bis 90 px über der Breite, bei 600 dpi gerastert): Es
+schneidet am Inhaltsrand ab. Bei 1 px fehlt schon ein Hauch der hochgestellten „3“, ab 1,5 px
+sichtbar ein Stück. Eine Toleranz wäre also falsch. Richtig ist, ein Inline-Element an seinem
+Inhalt zu messen (Range über den Inhalt), nicht an seinem Polster. Bilder, SVG, Formeln und
+Formularfelder zählen weiter ganz.
+
+Nachher: gui-test mit allen drei Formaten 28,5 s, 323 Seiten. Gegenprobe in einer Kopie mit
+eingesetztem Überstand: Ein Link mit `white-space: nowrap` (341 px), `code` mit `pre` (252 px) und
+ein SVG mit 900 px Breite (242 px) werden weiter gemeldet. Example (287 Seiten) und Handbuch (143
+Seiten) unverändert. Bricht das PDF nur am Druckrand und schreibt das Ziel auch ePub oder HTML,
+sagt der Fehler jetzt dazu, dass die beiden ohne PDF geschrieben werden: Ein Reader bricht selbst um.

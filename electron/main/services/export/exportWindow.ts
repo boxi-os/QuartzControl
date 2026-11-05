@@ -90,11 +90,28 @@ export function openExportWindow(origin: string, size: { width: number; height: 
     if (!url.startsWith(`${origin}/`)) event.preventDefault()
   })
 
+  // A document is printed light, whatever the app or the system shows: Quartz picks its theme from
+  // localStorage `theme`, else prefers-color-scheme, and Mermaid renders its diagrams in that
+  // theme - collected in a dark app, every diagram came out dark (measured on Example,
+  // 2026-11-05). Both are set once, on the export's own origin, before the first page: the
+  // debugger has to attach after a first navigation (attached to the blank start page, its target
+  // was replaced by the load and the command failed with "target closed"), and every later page
+  // stays on that origin, in that renderer, with both settings.
+  let prepared: Promise<void> | null = null
+  const prepare = async (): Promise<void> => {
+    await win.loadURL(`${origin}/__quartzcontrol/start`)
+    if (!wc.debugger.isAttached()) wc.debugger.attach('1.3')
+    await wc.debugger.sendCommand('Emulation.setEmulatedMedia', { media: 'screen', features: [{ name: 'prefers-color-scheme', value: 'light' }] })
+    await wc.executeJavaScript(`localStorage.setItem('theme', 'light')`)
+  }
+
   return {
     win,
     refused,
     fetchedOutside: () => outside,
     async load(url) {
+      prepared ??= prepare()
+      await prepared
       await win.loadURL(url)
     },
     async run(fn, args, helpers = []) {

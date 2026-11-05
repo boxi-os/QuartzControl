@@ -86,7 +86,6 @@ export async function writePdf(win: ExportWindow, server: SiteServer, parts: Doc
   const width = printWidthPx(parts.pageSize, parts.landscape)
   win.win.setContentSize(width, 1000)
   const wc = win.win.webContents
-  if (!wc.debugger.isAttached()) wc.debugger.attach('1.3')
   // Measured at print media, as the handbook script did: the site's @media print rules apply, and
   // the widths the check sees are the ones that are printed.
   await wc.debugger.sendCommand('Emulation.setEmulatedMedia', { media: 'print', features: [{ name: 'prefers-color-scheme', value: 'light' }] })

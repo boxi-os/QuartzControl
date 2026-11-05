@@ -99,7 +99,11 @@ body.pdf pre code, body.pdf pre code * { white-space: pre-wrap !important; overf
 body.pdf pre code { display: block !important; min-width: 0 !important; width: auto !important; }
 body.pdf pre code > [data-line] { display: block !important; min-width: 0 !important; }
 body.pdf .qc-diagram { margin: 1em 0; text-align: center; }
-body.pdf .qc-diagram svg { max-width: 100% !important; height: auto !important; }
+/* A Mermaid diagram brings its natural width as an inline max-width and width="100%"; forcing
+   max-width here stretched every small diagram to the full line. Only one without its own limit
+   is held to the line. */
+body.pdf .qc-diagram svg { height: auto; }
+body.pdf .qc-diagram svg:not([style*="max-width"]) { max-width: 100%; }
 body.pdf .qc-replaced { font-style: italic; color: #555; }
 body.pdf .qc-unlinked { color: inherit; }
 .cover { height: 230mm; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }

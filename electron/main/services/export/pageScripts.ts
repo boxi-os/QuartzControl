@@ -20,7 +20,22 @@ export type NavigationSource = 'explorer' | 'quartz-navigations' | 'links' | 'no
 export function settlePage(opts: { navigation: boolean; timeoutMs: number }): Promise<{ unrenderedDiagrams: number; navigation: boolean }> {
   const started = Date.now()
   const navReady = (): boolean => !!document.querySelector('.explorer a[href], nav.quartz-nav a[href]')
-  const pendingDiagrams = (): number => [...document.querySelectorAll('article code.mermaid')].filter((c) => !c.querySelector('svg')).length
+  // Mermaid first puts an empty SVG into the block to measure text, and replaces it with the
+  // diagram later; only the finished one carries `aria-roledescription`. Taking the first SVG as
+  // done printed two diagrams of Example as empty 300×150 boxes and, in one run, lost the sequence
+  // diagram altogether. A diagram also counts as finished only once its size has stopped changing.
+  const diagrams = (): Element[] => [...document.querySelectorAll('article code.mermaid')]
+  const pendingNow = (): number => diagrams().filter((c) => !c.querySelector('svg[aria-roledescription]')).length
+  let lastShape = ''
+  let stableTicks = 0
+  const pendingDiagrams = (): number => {
+    if (diagrams().length === 0) return 0
+    const shape = diagrams().map((c) => c.querySelector('svg')?.querySelectorAll('*').length ?? -1).join(',')
+    stableTicks = shape === lastShape ? stableTicks + 1 : 0
+    lastShape = shape
+    const pending = pendingNow()
+    return pending > 0 || stableTicks < 3 ? Math.max(pending, 1) : 0
+  }
   return document.fonts.ready.then(
     () =>
       new Promise((resolve) => {
@@ -28,7 +43,7 @@ export function settlePage(opts: { navigation: boolean; timeoutMs: number }): Pr
           const done = pendingDiagrams() === 0 && (!opts.navigation || navReady())
           if (done || Date.now() - started > opts.timeoutMs) {
             resolve({
-              unrenderedDiagrams: pendingDiagrams(),
+              unrenderedDiagrams: pendingNow(),
               navigation: navReady()
             })
             return
@@ -154,8 +169,27 @@ export function extractArticle(
   }
 
   // Rendered diagrams become a figure with their SVG; the buttons Quartz puts around them go below.
+  // Mermaid measured its labels in the font of the code block it sat in; in the document the SVG
+  // inherits another one, and the labels were cut off ("Alle zwölf" of "Alle zwölf Bausteine?").
+  // So the font each text element had while it was measured is written onto it.
+  const liveCodes = source.querySelectorAll('code.mermaid')
+  art.querySelectorAll('code.mermaid').forEach((code, i) => {
+    const live = liveCodes[i]?.querySelector('svg[aria-roledescription]')
+    const copy = code.querySelector('svg[aria-roledescription]')
+    if (!live || !copy) return
+    const liveEls = [live, ...live.querySelectorAll('*')]
+    const copyEls = [copy, ...copy.querySelectorAll('*')]
+    liveEls.forEach((el, k) => {
+      const target = copyEls[k] as HTMLElement | SVGElement | undefined
+      if (!target || !('style' in target)) return
+      const cs = getComputedStyle(el)
+      for (const prop of ['font-family', 'font-size', 'font-weight', 'font-style', 'line-height', 'letter-spacing']) {
+        target.style.setProperty(prop, cs.getPropertyValue(prop))
+      }
+    })
+  })
   art.querySelectorAll('code.mermaid').forEach((code) => {
-    const svg = code.querySelector('svg')
+    const svg = code.querySelector('svg[aria-roledescription]')
     const holder = code.closest('pre') ?? code
     if (!svg) {
       counts.unrenderedDiagrams++
@@ -183,7 +217,12 @@ export function extractArticle(
     counts.canvases++
     c.replaceWith(note(say('canvas', pageUrl), pageUrl))
   })
-  art.querySelectorAll('[hidden], a[role="anchor"], .multilanguage-notice, script, style, noscript, template, dialog, button').forEach((e) => e.remove())
+  // Not the <style> inside an SVG: Mermaid styles its diagram there, and without it every shape
+  // printed as a black area (measured on Example's flowchart, 2026-11-05).
+  art.querySelectorAll('[hidden], a[role="anchor"], .multilanguage-notice, script, style, noscript, template, dialog, button').forEach((e) => {
+    if (e.tagName.toLowerCase() === 'style' && e.closest('svg')) return
+    e.remove()
+  })
   art.querySelectorAll('form').forEach((f) => {
     counts.forms++
     f.replaceWith(note(say('form', pageUrl), pageUrl))
@@ -208,7 +247,32 @@ export function extractArticle(
     if (h.id) n.id = anchorFor(args.slug, h.id)
     h.replaceWith(n)
   })
-  art.querySelectorAll('[id]:not(h1,h2,h3,h4,h5,h6,p.index-heading)').forEach((e) => (e.id = anchorFor(args.slug, e.id)))
+  // An SVG refers to its own ids - Mermaid's <style> by `#mermaid-0 .node`, markers and gradients
+  // by `url(#…)`, `href="#…"`. Its ids are renamed together with every reference to them, per SVG,
+  // so two diagrams that both call their root `mermaid-0` stay apart in one document.
+  art.querySelectorAll('svg').forEach((svg, n) => {
+    if (svg.parentElement?.closest('svg')) return
+    const renamed = new Map<string, string>()
+    for (const el of [svg, ...svg.querySelectorAll('[id]')]) {
+      if (!el.id) continue
+      const id = anchorFor(args.slug, `svg${n}-${el.id}`)
+      renamed.set(el.id, id)
+      el.id = id
+    }
+    if (!renamed.size) return
+    // Without `.` in the name: in CSS it starts a class (`#mermaid-0.flowchart` is the id plus a class).
+    const rewrite = (text: string): string => text.replace(/#([A-Za-z_][\w-]*)/g, (whole, id: string) => (renamed.has(id) ? '#' + renamed.get(id) : whole))
+    for (const el of [svg, ...svg.querySelectorAll('*')]) {
+      for (const attr of [...el.attributes]) {
+        if (attr.name === 'aria-labelledby' || attr.name === 'aria-describedby') attr.value = attr.value.split(/\s+/).map((t) => renamed.get(t) ?? t).join(' ')
+        else if (attr.name !== 'id' && attr.value.includes('#')) attr.value = rewrite(attr.value)
+      }
+    }
+    svg.querySelectorAll('style').forEach((st) => (st.textContent = rewrite(st.textContent ?? '')))
+  })
+  art.querySelectorAll('[id]:not(h1,h2,h3,h4,h5,h6,p.index-heading)').forEach((e) => {
+    if (!e.closest('svg')) e.id = anchorFor(args.slug, e.id)
+  })
 
   const images: string[] = []
   art.querySelectorAll('img').forEach((img) => {

@@ -210,3 +210,36 @@ unverändert.
 **Silbentrennung ist nicht eingebaut.** `hyphens: auto` trennt Deutsch nur unter macOS
 (Spike oben). Eine Trennung mit eigenen Mustern ist eine eigene Entscheidung, die das Handbuch-PDF
 bisher nicht brauchte.
+
+### Mermaid im Dokument: vier Fehler an einem Flussdiagramm (2026-11-05)
+
+Beim Ansehen der Example-PDF (Seite „Flussdiagramme“, `pdftoppm`) war jedes Diagramm eine schwarze
+Fläche. Vier Ursachen, je eine Korrektur, jede an der Seite als Bild nachgemessen:
+
+1. **Das Einsammeln entfernte jedes `<style>`**, auch das im SVG, in dem Mermaid seine Formen
+   gestaltet. Ein `<style>` innerhalb eines SVG bleibt jetzt.
+2. **Die `id`s im SVG bekamen das Seitenpräfix**, aber die Verweise darauf nicht
+   (`#mermaid-0 .node` im Style, `url(#…)` der Pfeilspitzen, `aria-labelledby`). Jetzt wird je SVG
+   jede `id` umbenannt und jeder Verweis mit, so dass zwei Diagramme mit derselben Wurzel-`id`
+   getrennt bleiben.
+3. **Dunkel gerendert:** Das Fenster erbte den Dark Mode, Quartz wählte das dunkle Theme und
+   Mermaid mit ihm. Das Exportfenster setzt vor der ersten Seite auf der eigenen Origin
+   `prefers-color-scheme: light` (über den Debugger, der erst nach einer ersten Navigation
+   angehängt werden kann; am leeren Startdokument scheiterte er mit „target closed“) und Quartz'
+   eigenes `localStorage.theme = 'light'`.
+4. **Beschriftungen abgeschnitten** („Alle zwölf“ statt „Alle zwölf Bausteine?“): Mermaid misst in
+   der Schrift des Codeblocks, im Dokument erbte das SVG eine andere. Die berechneten
+   Schriftwerte jedes Elements werden beim Einsammeln ans SVG geschrieben.
+
+Dazu die Größe: Die Druckregel `max-width: 100% !important` streckte jedes Diagramm auf volle
+Breite. Ein Mermaid-SVG bringt seine natürliche Breite als `max-width` im `style` mit, und die
+gilt jetzt.
+
+**Und ein Wettrennen:** Mermaid legt zuerst ein leeres Mess-SVG (300×150, ein Kind) in den Block
+und ersetzt es später. Das Warten nahm das erste SVG als fertig: gitGraph und Mindmap waren leere
+Kästen, und in einem Lauf fehlte das Sequenzdiagramm ganz; in einem anderen war sein Platz im
+Druck leer. Fertig ist ein Diagramm jetzt erst mit `aria-roledescription` (das trägt nur Mermaids
+Ergebnis) und wenn seine Elementzahl drei Takte (150 ms) gleich bleibt; Seiten ohne Diagramm
+warten nicht. Danach in zwei Läufen alle 12 Diagramme des Example vollständig (Zustand, Journey,
+gitGraph, zwei Flussdiagramme, Sequenz, Klasse, ER, Mindmap, Torte, Quadrant, Sankey), das
+Sequenzdiagramm im Druck sichtbar. Handbuch unverändert 132 Seiten, 10/47/244/4.

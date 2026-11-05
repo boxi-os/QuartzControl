@@ -242,8 +242,14 @@ export function extractArticle(
     m.replaceWith(note(say('media', url), url))
   })
 
-  art.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach((h) => {
-    const n = document.createElement(args.signpost ? 'p' : 'h' + Math.min(6, Number(h.tagName[1]) + args.level))
+  // The page's headings hang below its title (h<level>), counted from the page's own top level:
+  // a note that starts with "##" - Obsidian's usual, the title being the h1 - got h<level+2> and a
+  // gap under every title, in the tagged PDF, the ePub and the HTML (review of 2026-11-06, N4:
+  // 119 jumps in Example, 47 in the handbook; the handbook script had the same formula).
+  const headings = [...art.querySelectorAll('h1,h2,h3,h4,h5,h6')]
+  const top = Math.min(6, ...headings.map((h) => Number(h.tagName[1])))
+  headings.forEach((h) => {
+    const n = document.createElement(args.signpost ? 'p' : 'h' + Math.min(6, args.level + 1 + Number(h.tagName[1]) - top))
     if (args.signpost) n.className = 'index-heading'
     n.innerHTML = h.innerHTML
     if (h.id) n.id = anchorFor(args.slug, h.id)

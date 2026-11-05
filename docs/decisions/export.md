@@ -801,3 +801,17 @@ vorher 15 Kopien des Baus, bis zu 6 gleichzeitig; auf ext4 ohne Reflink wäre je
 Jetzt liest die Seite den Ordner erst, wenn das Tippen 500 ms ruht, den eines anderen Buchs sofort.
 Nachher: 1 Kopie; dieselben 75 Seiten danach; ein Wechsel auf ein Buch mit Ordner `svg` zeigt nach
 2,5 s seine 4 Seiten.
+
+### Überschriftenebenen ohne Lücke (2026-11-06, N4)
+
+Die Überschriften einer Seite rückten um die Ebene ihres Titels nach unten (`h` + n + Ebene). Eine
+Notiz, die mit `##` beginnt, wie in Obsidian üblich, weil der Titel das h1 ist, bekam unter jedem
+Titel eine Lücke (h1 → h3, h2 → h4), im getaggten PDF, im ePub und im HTML. Die Formel stand schon
+im alten Handbuch-Skript. Gezählt im exportierten HTML (`fix/jumps.mjs`: Stellen, an denen die Ebene
+um mehr als eins steigt): vorher gui-test 4, Example 119, Handbuch 47.
+
+Jetzt zählt jede Seite von ihrer eigenen obersten Ebene: Die erste Ebene des Inhalts steht eins
+unter dem Titel. Nachher 0 Sprünge in allen drei, epubcheck 0. Weil die Überschriften eine Stufe
+größer gesetzt werden, ändern sich die Referenzzahlen: Example 279 Seiten (vorher 287), Lesezeichen
+9/46/252/260/16/7; Handbuch 145 Seiten (vorher 143), Lesezeichen 13/53/235/4 wie zuvor; gui-test
+323 Seiten, 11/35/124/326/630/35.

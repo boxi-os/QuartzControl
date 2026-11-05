@@ -489,7 +489,8 @@ const STRINGS = {
     exportReportSource_explorer: '{{count}} Seiten, Reihenfolge aus dem Explorer der Website.',
     'exportReportSource_quartz-navigations': '{{count}} Seiten, Reihenfolge aus der Navigation der Website (quartz-navigations).',
     exportReportSource_links: '{{count}} Seiten, Reihenfolge aus der größten Linkliste der Startseite (weder Explorer noch quartz-navigations gefunden).',
-    exportReportSource_none: '{{count}} Seiten, ohne Navigation der Website (nur die eigene Reihenfolge des Buchs).',
+    exportReportSource_contentIndex:
+      '{{count}} Seiten. Die Startseite zeigt keine Navigation: Reihenfolge wie im Explorer ohne eigene Einstellungen, Ordner zuerst, dann nach Titel.',
     exportReportOwnOrder: '{{count}} Seiten in der eigenen Reihenfolge des Buchs.',
     exportReportMissing: '{{count}} Seiten der eigenen Reihenfolge gibt es im Build nicht mehr: {{pages}}',
     exportReportAppended: '{{count}} neue Seiten wurden am Ende angefügt: {{pages}}',
@@ -1001,7 +1002,8 @@ const STRINGS = {
     exportReportSource_explorer: '{{count}} pages, order from the site’s Explorer.',
     'exportReportSource_quartz-navigations': '{{count}} pages, order from the site’s navigation (quartz-navigations).',
     exportReportSource_links: '{{count}} pages, order from the largest list of links on the start page (neither Explorer nor quartz-navigations found).',
-    exportReportSource_none: '{{count}} pages, without the site’s navigation (the book’s own order only).',
+    exportReportSource_contentIndex:
+      '{{count}} pages. The start page shows no navigation: order as in the Explorer without own settings, folders first, then by title.',
     exportReportOwnOrder: '{{count}} pages in the book’s own order.',
     exportReportMissing: '{{count}} pages of the own order are no longer in the build: {{pages}}',
     exportReportAppended: '{{count}} new pages were appended at the end: {{pages}}',

@@ -3639,6 +3639,8 @@ Aus der Abarbeitung, nur genannt:
 - Findet der Export keine Navigation (weder Explorer noch quartz-navigations noch eine Linkliste),
   enthält das Buch nur die Startseite und der Lauf meldet Erfolg („1 Seiten, ohne Navigation der
   Website“). Der Plan sah als Ersatz die Reihenfolge aus `contentIndex.json` vor (gemessen mit
-  einem Skript, das `href` aller Links verbiegt).
+  einem Skript, das `href` aller Links verbiegt). Danach behoben: die Standardsortierung des
+  Explorers aus `contentIndex.json`, im Handbuch und im Example Seite für Seite gleich der
+  gerenderten Navigation (`decisions/export.md`, „Ohne Navigation“).
 - `npm run smoke` stand zweimal still (0 % CPU, je über 9 Minuten), beide Male im selben
   Shell-Aufruf direkt nach Export-Läufen; allein gestartet lief er jedes Mal durch. Ursache offen.

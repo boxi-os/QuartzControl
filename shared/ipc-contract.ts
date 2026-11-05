@@ -1412,8 +1412,9 @@ export interface SitePageEntry {
 
 /** What the built site says about its pages, for the book editor (export/exportService.ts). */
 export interface SitePages {
-  /** Where the order was read: the Explorer, quartz-navigations, the largest list of links, none. */
-  source: 'explorer' | 'quartz-navigations' | 'links' | 'none'
+  /** Where the order was read: the Explorer, quartz-navigations, the largest list of links, or -
+   *  with none of them on the start page - the Explorer's default order from contentIndex.json. */
+  source: 'explorer' | 'quartz-navigations' | 'links' | 'contentIndex'
   /** quartz-multilanguage's languages; empty when the site has one. */
   languages: { code: string; label: string }[]
   defaultLanguage: string

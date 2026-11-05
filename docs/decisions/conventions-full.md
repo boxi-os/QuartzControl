@@ -506,8 +506,13 @@ Projektwurzel.
   Was die Website über sich weiß, fragt er sie: die gerenderte Navigation (Explorer und
   quartz-navigations sortieren verschieden, und beide lassen sich über das hinaus einstellen, was
   QuartzControl liest), `contentIndex.json` für Seiten, Tags und Links, `multilanguage.json` für
-  die Sprache. PDF, ePub und HTML kommen aus einem Dokumentmodell; das HTML aus dem Inhalt, den
-  epubcheck für das ePub bestätigt. Messungen: `decisions/export.md`.
+  die Sprache. Ohne Navigation auf der Startseite enthielt ein Buch, das ihr folgt, nur die
+  Startseite, und der Lauf meldete Erfolg; seitdem gilt dort die Standardsortierung des Explorers,
+  aus `contentIndex.json` nachgerechnet (`explorerOrder` in `shared/exportModel.ts`), nur ohne
+  dessen Filter für Seiten namens `tags`: Die Tag-Übersichten lässt `readSiteFacts` schon weg, und
+  der Filter hätte im Example eine Inhaltsseite verschluckt. PDF, ePub und HTML kommen aus einem
+  Dokumentmodell; das HTML aus dem Inhalt, den epubcheck für das ePub bestätigt. Messungen:
+  `decisions/export.md`.
 - **Ein Hilfsfenster ist kein Fenster der App.** Mit dem Exportfenster gab es zum ersten Mal ein
   zweites Fenster, und fünf Stellen meinten mit `BrowserWindow.getAllWindows()` „das Fenster der
   App“: die Logs gingen sonst per Broadcast in die Website des Nutzers, und ein Bestätigungsdialog

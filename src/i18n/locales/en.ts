@@ -2836,7 +2836,8 @@ export default {
       explorer: 'The order comes from the Explorer of the built site.',
       'quartz-navigations': 'The order comes from the navigation of the built site (quartz-navigations).',
       links: 'Neither Explorer nor quartz-navigations found: the order comes from the largest list of links on the start page.',
-      none: 'The site has no navigation to read an order from. Make an own order.'
+      contentIndex:
+        'The start page shows no navigation: the order is the Explorer’s without own settings, folders first, then by title. For another one, make an own order.'
     },
     fields: {
       title: 'Title',

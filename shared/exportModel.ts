@@ -68,6 +68,66 @@ export function isFolderIndex(slug: string): boolean {
   return slug === 'index' || slug.endsWith('/index')
 }
 
+/**
+ * The order Quartz's Explorer shows with its default options, from the pages in contentIndex.json
+ * order: the ersatz when the start page has no navigation to read (the book held only the start
+ * page before). Recomputed from `@quartz-community/explorer` as built (its `FileTrieNode` and
+ * the default `sortFn`/`filterFn`), not from what a project configured - a site with its own
+ * `sortFn` renders its Explorer, and then that is read instead.
+ *  - unlike the Explorer, a page named `tags` below the top level stays: the default filterFn
+ *    drops every node of that name to hide Quartz's tag listings, which `readSiteFacts` leaves out
+ *    already, and in Example it dropped the page about the Tags component;
+ *  - a folder's name is its index page's title, else the folder's name on disk (from `filePath`),
+ *    else its slug segment;
+ *  - in every folder, folders before pages, each by name, numeric and case-insensitive;
+ *  - depth first, a folder's own index page before its contents. The site's start page comes
+ *    first; the Explorer does not list it, and `resolveOrder` would put it there anyway.
+ */
+export function explorerOrder(pages: Iterable<{ slug: string; title: string; filePath?: string }>): string[] {
+  interface Node {
+    segment: string
+    folder: boolean
+    page?: { slug: string; title: string }
+    hint?: string
+    children: Node[]
+  }
+  const root: Node = { segment: '', folder: true, children: [] }
+  for (const p of pages) {
+    const parts = p.slug.split('/')
+    const fileParts = (p.filePath ?? '').split('/')
+    let node = root
+    for (const [i, segment] of parts.entries()) {
+      const rest = parts.length - i
+      if (rest === 1) {
+        if (segment === 'index') node.page ??= p
+        else node.children.push({ segment, folder: false, page: p, children: [] })
+        break
+      }
+      // Like the Explorer: any child of that name, a page of the same name included, becomes the
+      // folder.
+      let child = node.children.find((c) => c.segment === segment)
+      if (!child) {
+        child = { segment, folder: false, children: [] }
+        node.children.push(child)
+      }
+      child.folder = true
+      child.hint = fileParts[fileParts.length - rest] || undefined
+      node = child
+    }
+  }
+  const name = (n: Node): string => (n.page && n.page.title !== 'index' ? n.page.title : '') || n.hint || n.segment
+  const out: string[] = []
+  const walk = (n: Node): void => {
+    if (n.page) out.push(n.page.slug)
+    const sorted = [...n.children].sort((a, b) =>
+      a.folder === b.folder ? name(a).localeCompare(name(b), undefined, { numeric: true, sensitivity: 'base' }) : a.folder ? -1 : 1
+    )
+    for (const c of sorted) walk(c)
+  }
+  walk(root)
+  return out
+}
+
 /** One place in the resolved document: a page with its heading level, or an interposed heading. */
 export type DocItem =
   | { kind: 'page'; slug: string; level: number }

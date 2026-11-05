@@ -1,7 +1,7 @@
 import { existsSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import { anchorFor, outsideUrl, slugFromPathname, type DocItem } from '@shared/exportModel'
+import { anchorFor, explorerOrder, outsideUrl, slugFromPathname, type DocItem } from '@shared/exportModel'
 import { mainT, mainTIn } from '../../i18n'
 import type { ExportWindow } from './exportWindow'
 import { extractArticle, readNavigation, settlePage, type ExtractedPage, type NavigationSource } from './pageScripts'
@@ -15,7 +15,7 @@ import { extractArticle, readNavigation, settlePage, type ExtractedPage, type Na
  */
 export interface SiteFacts {
   /** Every content page that has an HTML file in the build. */
-  pages: Map<string, { title: string; tags: string[]; links: string[] }>
+  pages: Map<string, { title: string; filePath?: string; tags: string[]; links: string[] }>
   /** quartz-multilanguage's languages; empty when the plugin is not in the build. */
   languages: { code: string; home: string; locale?: string; label: string }[]
   defaultLanguage: string
@@ -36,7 +36,7 @@ export async function readSiteFacts(root: string): Promise<SiteFacts> {
     if (errorCode(err) === 'ENOENT') throw new Error(mainT('exportNoContentIndex'))
     throw new Error(mainT('exportBrokenContentIndex', { reason: String(err) }))
   }
-  let index: Record<string, { title?: unknown; tags?: unknown; links?: unknown }>
+  let index: Record<string, { title?: unknown; filePath?: unknown; tags?: unknown; links?: unknown }>
   try {
     index = JSON.parse(raw)
     if (!index || typeof index !== 'object' || Array.isArray(index)) throw new Error('not an object')
@@ -52,6 +52,7 @@ export async function readSiteFacts(root: string): Promise<SiteFacts> {
     if (!existsSync(join(root, `${slug}.html`))) continue
     pages.set(slug, {
       title: typeof entry?.title === 'string' ? entry.title : slug,
+      filePath: typeof entry?.filePath === 'string' ? entry.filePath : undefined,
       tags: Array.isArray(entry?.tags) ? entry.tags.filter((t): t is string => typeof t === 'string') : [],
       links: Array.isArray(entry?.links) ? entry.links.filter((l): l is string => typeof l === 'string') : []
     })
@@ -91,7 +92,8 @@ export function pagesInLanguage(facts: SiteFacts, language: string): Set<string>
 }
 
 export interface NavigationOrder {
-  source: NavigationSource
+  /** 'contentIndex' when the start page shows no navigation: the Explorer's default order. */
+  source: Exclude<NavigationSource, 'none'> | 'contentIndex'
   /** Pages in the order the navigation shows them, each once, only pages of the build. */
   slugs: string[]
   /** Whether the navigation had rendered by the time the page was read. */
@@ -117,12 +119,18 @@ export function effectiveRoot(facts: SiteFacts, root: string, language: string):
   return home.endsWith('/index') ? home.slice(0, -'/index'.length) : ''
 }
 
-/** The site's order, read from the navigation on the start page of the language. */
+/**
+ * The site's order, read from the navigation on the start page of the language. Without one, the
+ * order Quartz's Explorer would show with its defaults, from contentIndex.json: a book that
+ * follows the navigation held only the start page, and the run said it had succeeded (found while
+ * working through the sixty-second review).
+ */
 export async function readNavigationOrder(win: ExportWindow, origin: string, facts: SiteFacts, language: string): Promise<NavigationOrder> {
   const home = languageHome(facts, language)
   await win.load(`${origin}/${home}`)
   const settled = await win.run(settlePage, [{ navigation: true, timeoutMs: SETTLE_MS }])
   const nav = await win.run(readNavigation, [])
+  if (nav.source === 'none') return { source: 'contentIndex', slugs: explorerOrder([...facts.pages].map(([slug, p]) => ({ slug, ...p }))), complete: true }
   const seen = new Set<string>()
   const slugs: string[] = []
   for (const href of nav.hrefs) {

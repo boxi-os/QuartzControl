@@ -141,7 +141,9 @@ Begründung.
 - **Ein Dokument entsteht aus der gebauten Website, nicht aus dem Markdown.** Der Export
   (`services/export/`) lädt eine Kopie des Builds in ein unsichtbares Fenster und nimmt je Seite
   den Artikel; Reihenfolge, Sprache, Tags und Links sagt die Website selbst (gerenderte Navigation,
-  `contentIndex.json`, `multilanguage.json`). PDF, ePub und HTML kommen aus einem Dokumentmodell.
+  `contentIndex.json`, `multilanguage.json`). Zeigt die Startseite keine Navigation, gilt die
+  Standardsortierung des Explorers aus `contentIndex.json` (`explorerOrder`), und der Bericht sagt
+  es. PDF, ePub und HTML kommen aus einem Dokumentmodell.
 - **Ein Hilfsfenster ist kein Fenster der App.** Broadcast, Menü-Events, Theme und Dialog-Eltern
   fragen `appWindows()`/`dialogParent()` (`appWindows.ts`), nie `BrowserWindow.getAllWindows()`.
   Das Exportfenster: unsichtbar, Sandbox, kein Preload, eigene Sitzung im Speicher.

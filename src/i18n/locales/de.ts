@@ -2848,7 +2848,8 @@ export default {
       explorer: 'Die Reihenfolge kommt aus dem Explorer der gebauten Website.',
       'quartz-navigations': 'Die Reihenfolge kommt aus der Navigation der gebauten Website (quartz-navigations).',
       links: 'Weder Explorer noch quartz-navigations gefunden: Die Reihenfolge kommt aus der größten Linkliste der Startseite.',
-      none: 'Die Website hat keine Navigation, aus der sich eine Reihenfolge lesen ließe. Lege eine eigene Reihenfolge an.'
+      contentIndex:
+        'Die Startseite zeigt keine Navigation: Die Reihenfolge ist die des Explorers ohne eigene Einstellungen, Ordner zuerst, dann nach Titel. Eine andere legst du als eigene Reihenfolge an.'
     },
     fields: {
       title: 'Titel',

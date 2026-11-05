@@ -815,3 +815,34 @@ unter dem Titel. Nachher 0 Sprünge in allen drei, epubcheck 0. Weil die Übersc
 größer gesetzt werden, ändern sich die Referenzzahlen: Example 279 Seiten (vorher 287), Lesezeichen
 9/46/252/260/16/7; Handbuch 145 Seiten (vorher 143), Lesezeichen 13/53/235/4 wie zuvor; gui-test
 323 Seiten, 11/35/124/326/630/35.
+
+### Ohne Navigation: die Reihenfolge des Explorers aus `contentIndex.json` (2026-11-06)
+
+Beim Abarbeiten des zweiundsechzigsten Reviews aufgefallen: Findet der Export auf der Startseite
+weder Explorer noch quartz-navigations noch eine Linkliste, enthält ein Buch, das der Navigation
+folgt, nur die Startseite, und der Lauf meldet Erfolg. Gemessen an einer Kopie des Handbuchs, deren
+`public/index.html` keinen Explorer mehr hat (Klasse umbenannt, `nav`/`aside` zu `div`), über die
+gebaute App (`fix/nonav.sh`, `fix/navorder.mjs` im Scratchpad der Runde): vorher „1 Seiten, ohne
+Navigation der Website“, ein PDF mit 7 Seiten und 2 Lesezeichen; im Editor stand eine Seite in der
+Navigation, 55 daneben. Nur den Explorer zu entfernen, ergibt im Handbuch dasselbe: Quartz 5 setzt
+die Seitenleisten nicht in `nav`, `aside` oder `.sidebar`, die Linklisten-Regel greift dort nicht.
+
+Der Plan sah als Ersatz `contentIndex.json` mit der Standardsortierung des Explorers vor.
+`explorerOrder` (`shared/exportModel.ts`) rechnet sie aus `@quartz-community/explorer` nach, wie es
+gebaut im Projekt liegt: der Baum aus den Slugs, der Name eines Ordners aus dem Titel seiner
+Indexseite, sonst aus `filePath`, dann das Segment; in jedem Ordner Ordner vor Seiten, beide nach
+Name, numerisch und ohne Groß-/Kleinschreibung; der Ordner selbst vor seinem Inhalt. Die Quelle
+heißt `contentIndex`, der Bericht und der Editor sagen den Satz dazu.
+
+Nachher, dieselbe Kopie: 56 Seiten, Reihenfolge Seite für Seite gleich der des gerenderten
+Explorers im unveränderten Handbuch, das PDF gleich (145 Seiten, 13/53/235/4). Im Example
+(quartz-navigations, beide Startseiten ohne Navigation) zuerst 136 von 137 Seiten je Sprache: Der
+Standardfilter des Explorers wirft jeden Knoten namens `tags` weg, und das traf
+`5-gestaltung/02-ueber-dem-inhalt/tags`, die Seite über die Tags-Komponente. Der Filter soll Quartz'
+Tag-Übersichten verstecken, und die lässt `readSiteFacts` schon weg; `explorerOrder` filtert
+deshalb nicht. Danach 137 von 137, Deutsch wie Englisch (ab `en/index`), Seite für Seite gleich der
+Reihenfolge von quartz-navigations, weil die Zahlenpräfixe dort wie im Explorer sortieren. Das PDF
+des Example ohne Navigation: 279 Seiten, 9/46/252/260/16/7, die Referenzzahlen mit Navigation.
+
+Preis: Ein Lauf ohne Navigation wartet wie vorher bis zu 15 s auf eine Navigation, die nicht kommt
+(`settlePage`); das Handbuch braucht 24 s statt 9 s.

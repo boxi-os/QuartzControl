@@ -72,7 +72,7 @@ dahin gilt der Fall als geduldet.
 | Reihenfolge aus Explorer oder quartz-navigations | unterstützt | gemessen an Handbuch und Example |
 | eine andere Navigation | geduldet | die größte Linkliste der Startseite, der Bericht sagt es |
 | Website, die Schriften oder KaTeX von einem CDN lädt | unterstützt | braucht beim Export Netz, der Bericht sagt es |
-| Dokumente mit der Website hochladen (SFTP, FTP, Ordner, Git-Branch) | unterstützt | Ordner gemessen; SFTP, FTP, rsync und Git-Branch sehen denselben Staging-Ordner, nicht einzeln gemessen |
+| Dokumente mit der Website hochladen (SFTP, rsync, FTP, Ordner, Git-Branch) | unterstützt | alle fünf gemessen 2026-11-05 (SFTP, rsync, FTP auf `debian-vm`, Git-Branch in ein lokales Bare-Repo): hochladen, bitgleich, nach dem Abschalten entfernt |
 
 ## Relay (quartz-forms)
 

@@ -600,3 +600,41 @@ Dass Reste des abgeschossenen Laufs die Ursache waren, ist eine Vermutung. Abges
 ließen drei Kopien des Builds in `/tmp` liegen (je 70 MB); die App räumt solche Kopien beim
 nächsten Start weg, sobald sie älter als eine Stunde sind; hier von Hand gelöscht. Beim ersten
 Start mit frischem Profil fragte GNOME nach dem Passwort für den Schlüsselbund (`safeStorage`).
+
+### Dokumente mitladen über SFTP, rsync, FTP und Git-Branch (2026-11-05)
+
+Gemessen an der gebauten App (macOS, Wegwerfprofil, per Playwright über `window.quartzGui`) mit
+einem Wegwerfprojekt aus dem Example-Build (641 Dateien), einem Buch mit Inhaltsverzeichnis und
+einem Dokument-Ziel (PDF, ePub, HTML), dazu vier Website-Ziele mit „Dokumente mitladen“ und
+„Entfernte Dateien löschen“:
+
+- SFTP und rsync auf `debian-vm` als Nutzer `boxi` mit Schlüsseldatei (`~/qc13/…`); ein eigener
+  Schlüssel für den Testhoster `qchost` ließ sich nicht hinterlegen (die Rechteprüfung der Sitzung
+  lehnte das Eintragen in `authorized_keys` ab);
+- FTP auf `debian-vm` (vsftpd) als `qchost` nach `/srv/qc/www/qc13-ftp`;
+- Git-Branch in ein lokales Bare-Repo als `origin`, Branch `pages`.
+
+Der Host-Schlüssel wurde beim ersten SSH-Kontakt über den gestubbten Dialog angenommen, wie ein
+Nutzer es täte.
+
+| | SFTP | rsync | FTP | Git-Branch |
+|---|---|---|---|---|
+| Vorschau nennt `downloads/` (3 Dateien neu) | ja | ja | ja | ja |
+| Lauf, Dateien danach am Ziel | 644 | 644 | 644 | 644 |
+| Dokumente bitgleich (SHA-256), Modus | ja, 0644 | ja, 0644 | ja, 0644 | ja |
+| Staging-Ordner nach dem Lauf entfernt | ja | ja | ja | ja |
+| Mitladen aus: Vorschau nennt 3 Dateien „entfernt“ | ja | ja (+ Ordner) | ja | ja |
+| danach am Ziel | 641, leerer Ordner `downloads/` bleibt | 641, Ordner weg | 641, leerer Ordner bleibt | 641 |
+
+Der erste SFTP-Lauf brauchte 128 s für 644 Dateien, rsync 3,7 s, FTP 2,8 s, Git-Branch 4,0 s.
+
+Die Hinweise des Staging, gemessen über FTP mit einem fehlenden Dokument (HTML weggenommen) und
+einem Build, der neuer ist als die übrigen (`touch public/index.html`): Hochgeladen wurden nur PDF
+und ePub, und die Ausgabe sagte „mitladen.pdf ist älter als der Build. Für den neuen Stand zuerst
+„Buch“ exportieren.“ (ebenso für das ePub) und „mitladen.html fehlt: Das Ziel „Buch“ hat es noch
+nicht geschrieben. Erst dort exportieren.“
+
+Nebenbei, nicht behoben: Beide Hinweise stehen nur in der Ausgabe nach dem Lauf, nicht in der
+Vorschau davor; wer ein veraltetes Dokument nicht hochladen will, erfährt es erst danach. Und SFTP
+und FTP lassen nach dem Abschalten einen leeren Ordner `downloads/` auf dem Server stehen (rsync
+und Git-Branch nicht).

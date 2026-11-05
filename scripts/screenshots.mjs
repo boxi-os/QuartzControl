@@ -49,6 +49,36 @@ const SCALE_WIDTH = 1920
 // weniger. 68 Kartenbilder in voller Breite waren die Hälfte der 27 MB des ersten Laufs.
 const CARD_SCALE_WIDTH = 1400
 
+// Der Home-Pfad dieses Rechners kommt nicht ins Handbuch. --demo erfindet Zugänge und Ziele, nimmt
+// aber gegen echte Projekte auf, und deren Pfade standen in 41 Bildern je Sprache im Klartext
+// (Seitenleiste, Startseite, Content-Ordner, Build-Ausgabe; gezählt am 2026-11-05 per Texterkennung).
+// Ersetzt statt verwischt: Ein unscharfer Pfad in fast jedem Bild sieht nach Versteckspiel aus, ein
+// fremder Benutzername wie ein anderer Rechner.
+//
+// Ersetzt wird im DOM unmittelbar vor jeder Aufnahme, in Textknoten und in Wert und Platzhalter von
+// Eingabefeldern: Die Seite weiß, wo ein Pfad steht, das fertige PNG nicht mehr. React sieht davon
+// nichts und schreibt beim nächsten Render den echten Wert zurück, deshalb vor jeder Aufnahme neu.
+// Nur ganze Pfadsegmente: `/Users/boxi-os` bliebe stehen.
+const HOME = os.homedir()
+const HOME_SHOWN = process.platform === 'darwin' ? '/Users/demo' : '/home/demo'
+
+async function maskHome(page) {
+  await page.evaluate(
+    ({ home, shown }) => {
+      const re = new RegExp(home.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\w.-])', 'g')
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (n.nodeValue.includes(home)) n.nodeValue = n.nodeValue.replace(re, shown)
+      }
+      for (const el of document.querySelectorAll('input, textarea')) {
+        if (el.value.includes(home)) el.value = el.value.replace(re, shown)
+        if (el.placeholder.includes(home)) el.placeholder = el.placeholder.replace(re, shown)
+      }
+    },
+    { home: HOME, shown: HOME_SHOWN }
+  )
+}
+
 function userDataDir() {
   if (process.platform === 'darwin') return path.join(os.homedir(), 'Library/Application Support/QuartzControl')
   if (process.platform === 'win32') return path.join(os.homedir(), 'AppData/Roaming/QuartzControl')
@@ -242,9 +272,12 @@ for (const [scheme, media] of SCHEMES) {
     const shoot = async (name, target) => {
       const file = path.join(outDir, `szene-${slug(name)}-${scheme}.png`)
       if (target) {
+        await target.scrollIntoViewIfNeeded().catch(() => {})
+        await maskHome(page)
         await target.screenshot({ path: file })
         scaleDown(file, CARD_SCALE_WIDTH)
       } else {
+        await maskHome(page)
         await page.screenshot({ path: file })
         scaleDown(file)
       }
@@ -284,6 +317,7 @@ for (const [scheme, media] of SCHEMES) {
     if (!settled) console.warn(`  ! ${label}: nach 30 s steht noch ein Lade-Platzhalter im Bild`)
 
     const file = path.join(outDir, `${slug(label)}-${scheme}.png`)
+    await maskHome(page)
     await page.screenshot({ path: file })
     scaleDown(file)
     written.push([path.basename(file), Math.round(fs.statSync(file).size / 1024)])
@@ -316,6 +350,8 @@ for (const [scheme, media] of SCHEMES) {
         const el = await page.$(`[data-shot="${i}"]`)
         if (!el) continue
         const cardFile = path.join(outDir, `${slug(label)}--${slug(title)}-${scheme}.png`)
+        await el.scrollIntoViewIfNeeded().catch(() => {})
+        await maskHome(page)
         await el.screenshot({ path: cardFile })
         scaleDown(cardFile, CARD_SCALE_WIDTH)
         written.push([path.basename(cardFile), Math.round(fs.statSync(cardFile).size / 1024)])

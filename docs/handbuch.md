@@ -104,7 +104,11 @@ beide importieren — sonst zeigt das Handbuch Bildschirme, die der Smoke-Test n
   oder Ctrl+C; bis zum Review 2026-09-19 blieben die Demo-Ziele liegen und überschrieben ein
   gleichnamiges echtes. Das Buch liegt ebenso im echten Projekt, in `quartz-books/`, und
   `lendProjectBooks()` stellt den Ordner auf dieselbe Weise zurück: Was der Lauf angelegt hat,
-  geht, was er geändert hat, bekommt seine Bytes zurück. Ohne `--demo` wird gegen das echte Profil aufgenommen — dann zeigen die Bilder, was auf
+  geht, was er geändert hat, bekommt seine Bytes zurück. Weil die Projekte echt sind, stand ihr
+  Pfad samt Benutzername in 41 Bildern je Sprache; seit dem 2026-11-05 ersetzt `maskHome()` den
+  Home-Pfad vor jeder Aufnahme im DOM durch `/Users/demo` (Textknoten, Wert und Platzhalter von
+  Eingabefeldern). Geprüft wird das am fertigen Bild per Texterkennung (Vision), nicht am Skript.
+  Ohne `--demo` wird gegen das echte Profil aufgenommen — dann zeigen die Bilder, was auf
   diesem Rechner eingerichtet ist.
 - 1440 × 900, Vorgabe hell (`--scheme dunkel` oder `beide`). `emulateMedia` wird hier ausdrücklich
   gesetzt; im Smoke-Test steht dort bewusst `null`, weil er das Schema des Systems treffen soll.

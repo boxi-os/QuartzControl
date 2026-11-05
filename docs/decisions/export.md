@@ -166,3 +166,47 @@ Meldung weiter; erst so war die `.base`-Seite zu finden.
 Theme-Farbe, macOS-`activate` und die Eltern der nativen Dialoge fragten
 `BrowserWindow.getAllWindows()`. Mit dem Exportfenster gingen sonst die Logs der App in die
 Website, und ein Bestätigungsdialog konnte an einem Fenster hängen, das niemand sieht.
+
+### Der PDF-Schreiber (2026-11-05)
+
+`documentHtml.ts` setzt das Dokument zusammen (Deckblatt, Inhaltsverzeichnis, Seiten mit den
+Stylesheets der Website und den Druckregeln des alten Skripts); `writePdf.ts` prüft und druckt.
+Gemessen mit demselben esbuild-Bündel in Electron 43.4.1, Ausgabe gelesen mit pdf-lib und
+`pdfinfo`, Seiten als Bild mit `pdftoppm` angesehen.
+
+| | Handbuch (eigene Reihenfolge) | Example de | Example en |
+|---|---|---|---|
+| PDF-Seiten | 132 (129 + 3 Seiten Inhalt) | 265 | 250 |
+| Lesezeichen je Ebene | 10/47/244/4 | 8/46/252/260/23 | 8/46/253/260/23 |
+| Durchgänge | 2 | 2 | 2 |
+| geprüfte Verweise / Bilder | 410 / 46 | 990 / 9 | 1080 / 9 |
+| Einsammeln / Schreiben | 4,3 s / 4,1 s | 14,4 s / 6,9 s | 14,6 s / 6,9 s |
+
+**Seitenzahlen im Inhaltsverzeichnis über benannte Ziele.** Chromium schreibt für jeden Anker, auf
+den ein Link zeigt, einen Eintrag in `/Dests` des Katalogs (am Handbuch: 91 Einträge, jeder mit
+der richtigen Seite). Das Inhaltsverzeichnis verlinkt jede Seite, also kennt der erste Druck alle
+Seiten; der zweite trägt sie ein. Platzhalter `000` in einer Spalte fester Breite: In allen drei
+Läufen hat sich kein Ziel verschoben (zwei Durchgänge). Kapitel 4.6 steht im Verzeichnis auf
+Seite 60 und im PDF auf Seite 60.
+
+**Kopf- und Fußzeile kommen aus `@page`-Randboxen** (Titel links, „Seite / Seiten“ rechts, nicht
+auf dem Deckblatt), mit `preferCSSPageSize`. Das Inhaltsverzeichnis hat keine Überschrift aus
+`h1`–`h6`, damit es nicht als Lesezeichen erscheint; die Lesezeichen des Handbuchs bleiben
+10/47/244/4.
+
+**Metadaten setzt pdf-lib** (Titel, Betreff = Untertitel, Autor, Schlüsselwörter, Creator
+„QuartzControl“, Sprache). Danach ist das PDF weiter getaggt und hat dieselben Lesezeichen
+(`pdfinfo`, pdf-lib).
+
+**Die Randprüfung zählt nur Sichtbares.** Im Example meldete die Prüfung des alten Skripts
+KaTeX-Pfade mit 6500 px: KaTeX zeichnet dehnbare Zeichen als 400em breite SVG-Pfade in einer Box
+mit `overflow: hidden`. Jetzt begrenzt jeder Vorfahr mit `hidden`/`clip`, was zählt, und von einem
+überstehenden Teilbaum wird nur das äußerste Element genannt. Übrig blieben fünf echte Funde, alle
+Codeblöcke: Die Example-Vorlage gibt `pre > code` ein Grid mit `min-width: max-content` (für das
+waagrechte Rollen auf der Website), dann bricht keine Zeile um (7–75 px über dem Rand). Die
+Druckregel setzt `display: block` und `min-width: 0`; danach 0 Funde, und das Handbuch-PDF ist
+unverändert.
+
+**Silbentrennung ist nicht eingebaut.** `hyphens: auto` trennt Deutsch nur unter macOS
+(Spike oben). Eine Trennung mit eigenen Mustern ist eine eigene Entscheidung, die das Handbuch-PDF
+bisher nicht brauchte.

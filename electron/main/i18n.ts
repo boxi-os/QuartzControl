@@ -476,6 +476,13 @@ const STRINGS = {
     exportBrokenContentIndex: 'static/contentIndex.json im Build konnte nicht gelesen werden ({{reason}}).',
     exportNoArticle: 'Die Seite {{slug}} hat im Build keinen Artikel.',
     exportPageFailed: 'Die Seite {{slug}} konnte nicht geladen werden ({{reason}}).',
+    exportProblems: 'Das Dokument wäre fehlerhaft, deshalb wurde nichts geschrieben:\n{{problems}}',
+    exportProblemOverflow: 'Über den Druckrand',
+    exportProblemDeadLinks: 'Verweise ohne Ziel',
+    exportProblemImages: 'Bilder, die nicht geladen haben',
+    exportImagesPending: '{{count}} Bilder sind nach einer Minute noch nicht geladen. Ohne Netz fehlen Bilder, die die Website von anderswo lädt.',
+    exportTocUnstable: 'Die Seitenzahlen im Inhaltsverzeichnis kamen nach drei Durchgängen nicht zur Ruhe.',
+    docContents: 'Inhalt',
     // Documents - books
     bookNotAnObject: 'Die Datei enthält kein Buch (kein JSON-Objekt).',
     bookUnreadable:
@@ -934,6 +941,13 @@ const STRINGS = {
     exportBrokenContentIndex: 'static/contentIndex.json in the build could not be read ({{reason}}).',
     exportNoArticle: 'The page {{slug}} has no article in the build.',
     exportPageFailed: 'The page {{slug}} could not be loaded ({{reason}}).',
+    exportProblems: 'The document would be faulty, so nothing was written:\n{{problems}}',
+    exportProblemOverflow: 'Past the print edge',
+    exportProblemDeadLinks: 'Links without a target',
+    exportProblemImages: 'Pictures that did not load',
+    exportImagesPending: '{{count}} pictures have not loaded after a minute. Without a network, pictures the site loads from elsewhere are missing.',
+    exportTocUnstable: 'The page numbers in the table of contents did not settle after three passes.',
+    docContents: 'Contents',
     bookNotAnObject: 'The file holds no book (not a JSON object).',
     bookUnreadable:
       '{{file}} could not be read ({{reason}}). The file stays as it is; QuartzControl writes it again only once it is readable.',

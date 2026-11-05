@@ -257,3 +257,74 @@ export function extractArticle(
 
   return { slug: args.slug, title, lang: document.documentElement.lang, html: art.innerHTML, images, counts }
 }
+
+export interface DocumentProblems {
+  /** `<page title>: <tag> <px> px` for content that runs past the printable width. */
+  overflow: string[]
+  /** In-document links whose anchor does not exist. */
+  deadLinks: string[]
+  /** Pictures that did not load. */
+  brokenImages: string[]
+  counted: { links: number; images: number }
+}
+
+/**
+ * Checks the assembled document at print width for what one cannot see in a finished PDF any
+ * more: content past the right edge, links without a target, pictures that did not load. From the
+ * handbook script's `findProblems`, with one difference measured on Example (2026-11-05): an
+ * element is only a problem where it is *visible* past the edge. KaTeX draws stretchy symbols as
+ * 400em-wide SVG paths inside a box with `overflow: hidden`; the old check reported them at
+ * 6500 px. A clipping ancestor (`hidden`/`clip`) now limits what counts, and of an overflowing
+ * subtree only the outermost element is named.
+ */
+export function findDocumentProblems(): DocumentProblems {
+  const width = document.body.clientWidth
+  const where = (el: Element): string =>
+    el.closest('.doc-page')?.querySelector('.page-title')?.textContent ?? (el.closest('.qc-toc') ? 'toc' : '?')
+  const visibleRight = (el: Element): number => {
+    let right = el.getBoundingClientRect().right
+    for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+      const o = getComputedStyle(a)
+      if (/(hidden|clip)/.test(o.overflowX) || /(hidden|clip)/.test(o.overflow)) right = Math.min(right, a.getBoundingClientRect().right)
+    }
+    return right
+  }
+  const over = new Set<Element>()
+  const overflow: string[] = []
+  for (const el of document.querySelectorAll('body *')) {
+    if (el.closest('.cover')) continue
+    const r = el.getBoundingClientRect()
+    if (!r.width) continue
+    const right = visibleRight(el)
+    if (right <= width + 1) continue
+    over.add(el)
+    if (el.parentElement && over.has(el.parentElement)) continue
+    overflow.push(`${where(el)}: <${el.tagName.toLowerCase()}> ${Math.round(right - width)} px`)
+  }
+  const ids = new Set([...document.querySelectorAll('[id]')].map((e) => e.id))
+  const internal = [...document.querySelectorAll('a[href^="#"]')]
+  const deadLinks = internal.filter((a) => !ids.has(a.getAttribute('href')!.slice(1))).map((a) => `${where(a)}: ${a.getAttribute('href')}`)
+  const brokenImages = [...document.images].filter((i) => !i.complete || i.naturalWidth === 0).map((i) => `${where(i)}: ${i.getAttribute('src')}`)
+  return { overflow, deadLinks, brokenImages, counted: { links: internal.length, images: document.images.length } }
+}
+
+/** Waits until every picture of the assembled document has loaded or failed. */
+export function imagesSettled(timeoutMs: number): Promise<number> {
+  const pending = [...document.images].filter((i) => !i.complete)
+  return Promise.race([
+    Promise.all(pending.map((i) => new Promise((r) => { i.addEventListener('load', r, { once: true }); i.addEventListener('error', r, { once: true }) }))).then(() => 0),
+    new Promise<number>((r) => setTimeout(() => r(pending.filter((i) => !i.complete).length), timeoutMs))
+  ]).then(() => document.fonts.ready).then(() => [...document.images].filter((i) => !i.complete).length)
+}
+
+/** Writes the page numbers the first pass found into the table of contents. */
+export function fillPageNumbers(numbers: Record<string, number>): number {
+  let filled = 0
+  for (const n of document.querySelectorAll<HTMLElement>('.qc-toc .n[data-anchor]')) {
+    const page = numbers[n.dataset.anchor!]
+    if (page === undefined) continue
+    n.textContent = String(page)
+    filled++
+  }
+  return filled
+}

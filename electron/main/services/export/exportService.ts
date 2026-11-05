@@ -53,8 +53,14 @@ export function cancelExport(targetId: string): boolean {
   return true
 }
 
+// Each window once: hooked again on every export, a session of many exports gathered as many
+// listeners on each window (review of 2026-11-06, nebenbei 1).
+const hooked = new WeakSet<Electron.BrowserWindow>()
+
 function stopAllWhenAppCloses(): void {
   for (const win of appWindows()) {
+    if (hooked.has(win)) continue
+    hooked.add(win)
     win.once('closed', () => {
       if (appWindows().length === 0) for (const c of running.values()) c.abort()
     })

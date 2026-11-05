@@ -3000,6 +3000,16 @@ export default {
       documentBookHint: 'Welche Seiten in welcher Reihenfolge, steht im Buch. Die Dateien heißen wie das Buch.',
       documentNoBooks: 'Dieses Projekt hat noch kein Buch. Bücher entstehen auf der Seite „Dokumente“.',
       documentFormats: 'Formate',
+      withDocuments: 'Dokumente mit hochladen',
+      withDocumentsHint: 'Die zuletzt exportierten Dateien dieser Dokument-Ziele gehen mit der Website hoch, in den Ordner downloads/. Mit dem Link darunter lassen sie sich auf einer Seite anbieten.',
+      withDocumentsNoBaseUrl: 'Für einen vollständigen Link braucht die Konfiguration eine Basis-URL.',
+      copyLink: 'Kopieren',
+      linkCopied: 'Link in die Zwischenablage kopiert.',
+      downloadLink: {
+        pdf: 'Als PDF herunterladen',
+        epub: 'Als ePub herunterladen',
+        html: 'Als HTML-Datei herunterladen'
+      },
       format: {
         pdf: 'PDF',
         epub: 'ePub',

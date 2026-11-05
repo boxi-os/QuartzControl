@@ -48,6 +48,8 @@ const SKIP = new Set([
   // The dev server's log files. They describe a server that ran in the original, in a directory
   // buildService truncates at every start anyway.
   '.quartz-gui/logs',
+  // A publish's build plus documents (deploy/staging.ts), normally gone after the run.
+  '.quartz-gui/staging',
   // The quartz-forms relay's settings: they name one of the original's publish targets (which the
   // copy does not get, above) and what was last uploaded there. The relay's secrets are keyed by
   // project id in the app's store, so the copy has none either and starts the relay afresh.

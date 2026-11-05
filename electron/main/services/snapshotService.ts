@@ -118,6 +118,9 @@ function isSnapshotWorthy(entryName: string): boolean {
   // The dev server's own output, which buildService tails: transient, truncated at every start,
   // and nothing anyone would restore a project to.
   if (entryName === 'logs') return false
+  // A build plus documents, made fresh for every publish of a target that takes documents along
+  // (deploy/staging.ts) and removed after it.
+  if (entryName === 'staging') return false
   return !entryName.startsWith('deploy-manifest-')
 }
 

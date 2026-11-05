@@ -384,3 +384,33 @@ Eintrag auf Ebene 1), kein Platzhalter `000` übrig (`pdftotext`). Stichprobe: D
 „6.1 – Etwas ändern“ mit 231, und Seite 231 beginnt mit dieser Seite und endet mit „Verweise auf
 diese Seite“ (5 – Die Gestaltung, 6 – Anpassen, 7.1 – Glossar). ePub: epubcheck 0 Fehler,
 0 Warnungen. HTML: 1983 interne Verweise, keiner ohne Ziel, keine Netzanfrage.
+
+### Dokumente mit der Website hochladen (2026-11-05)
+
+Ein Website-Ziel (SFTP, FTP, Ordner, Git-Branch) nennt in `withDocuments` Dokument-Ziele, deren
+zuletzt geschriebene Dateien mit hochgehen, unter `downloads/`. `deploy/staging.ts` baut dafür vor
+jedem Diff und jedem Lauf `.quartz-gui/staging/<ziel>`: die Dateien des Builds als Hardlinks
+(eine Kopie, wo der Build auf einem anderen Laufwerk liegt), die Dokumente als Kopien. Jeder
+Adapter sieht so einen gewöhnlichen Build-Ordner; in `public/` wird nichts geschrieben, weil dieser
+Ordner seinen eigenen Schreiber hat. Danach wird der Staging-Ordner entfernt. Er ist in
+`isSnapshotWorthy()` und in `SKIP` (`duplicateService`) eingetragen.
+
+Statt eines Snippets für quartz-layout-box, wie geplant, bietet das Formular je Datei einen
+Markdown-Link mit voller Adresse aus `baseUrl` zum Kopieren an. Er braucht kein Plugin, und ein
+Link, der mit `/downloads/` beginnt, bräche auf einer Website unter einem Unterpfad (GitHub Pages:
+`/<repo>/`).
+
+Gemessen an der gebauten App (Wegwerfprojekt, ein Dokument-Ziel mit PDF und ePub, ein Ordner-Ziel
+mit „Dokumente mit hochladen“ und `deleteRemoved`):
+
+- Diff: `downloads/handbuch.epub` und `.pdf` als „Neu“, zusammen mit 641 Dateien des Builds.
+- Lauf: beide Dateien im Zielordner unter `downloads/`, der Staging-Ordner danach leer.
+- Build neuer als die Dokumente (`index.html` per `utimes` eine Minute später): Der Lauf beginnt mit
+  „handbuch.pdf ist älter als der Build. Für den neuen Stand zuerst … exportieren.“, für beide
+  Dateien.
+- Mitladen aus: Der Diff zeigt beide als „Entfernt“, der Lauf löscht sie im Ziel.
+
+**Ein Fehler beim Ansehen des Formulars:** „Bearbeiten“ baute den Entwurf Feld für Feld
+(`draftOf`) und ließ `withDocuments` aus. Der Schalter stand auf aus, und das nächste Speichern
+hätte die Dokumente still abgeschaltet. `draftOf` übernimmt das Feld jetzt; danach steht der
+Schalter an, mit beiden Links.

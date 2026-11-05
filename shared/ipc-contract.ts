@@ -1328,6 +1328,8 @@ export interface PublishTarget {
   destination: PublishDestination
   /** Build-output paths never uploaded or deleted, carried between runs. */
   excludes: string[]
+  /** Document targets whose files go up with the site under downloads/ (deploy/staging.ts). */
+  withDocuments?: string[]
 }
 
 export type SavePublishTargetInput = Omit<PublishTarget, 'id' | 'excludes'> & {

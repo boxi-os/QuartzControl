@@ -2987,6 +2987,16 @@ export default {
       documentBookHint: 'Which pages in which order is in the book. The files are named after the book.',
       documentNoBooks: 'This project has no book yet. Books are made on the “Documents” page.',
       documentFormats: 'Formats',
+      withDocuments: 'Upload documents too',
+      withDocumentsHint: 'The files these document targets last exported go up with the site, into the folder downloads/. The link below offers them on a page.',
+      withDocumentsNoBaseUrl: 'A full link needs a base URL in the configuration.',
+      copyLink: 'Copy',
+      linkCopied: 'Link copied to the clipboard.',
+      downloadLink: {
+        pdf: 'Download as PDF',
+        epub: 'Download as ePub',
+        html: 'Download as HTML file'
+      },
       format: {
         pdf: 'PDF',
         epub: 'ePub',

@@ -16,6 +16,7 @@ import { webhookAdapter } from './webhook'
 import { rsyncAdapter } from './rsync'
 import { gitBranchAdapter } from './gitBranch'
 import { documentAdapter } from './document'
+import { stageWithDocuments } from './staging'
 import { mainT } from '../../i18n'
 import { remotePathProblem } from '@shared/remotePath'
 import { reanchorTildeManifest } from './manifest'
@@ -99,9 +100,17 @@ async function assertBuildExists(ctx: DeployContext): Promise<void> {
 export async function previewDeploy(projectPath: string, targetId: string, outputDir?: string): Promise<DeployDiffEntry[]> {
   const { ctx, adapter } = await makeContext(projectPath, targetId, outputDir)
   await assertBuildExists(ctx)
-  const hidden = new Set(persistentExcludes(ctx))
-  const diff = await adapter.preview(ctx)
-  return hidden.size === 0 ? diff : diff.filter((entry) => !hidden.has(entry.path))
+  // A target that takes documents along is diffed against the build plus the documents, the same
+  // folder its run uploads - otherwise the confirmation would count without them.
+  const staging = await stageWithDocuments(projectPath, ctx.target, ctx.buildDir)
+  try {
+    if (staging) ctx.buildDir = staging.dir
+    const hidden = new Set(persistentExcludes(ctx))
+    const diff = await adapter.preview(ctx)
+    return hidden.size === 0 ? diff : diff.filter((entry) => !hidden.has(entry.path))
+  } finally {
+    await staging?.remove()
+  }
 }
 
 export async function runDeploy(
@@ -111,14 +120,20 @@ export async function runDeploy(
   excludePaths: string[]
 ): Promise<DeployResult> {
   const { ctx, adapter } = await makeContext(projectPath, targetId, outputDir)
+  let staging: Awaited<ReturnType<typeof stageWithDocuments>> = null
   try {
     await assertBuildExists(ctx)
-    return await adapter.run(ctx, [...new Set([...excludePaths, ...persistentExcludes(ctx)])])
+    staging = await stageWithDocuments(projectPath, ctx.target, ctx.buildDir)
+    if (staging) ctx.buildDir = staging.dir
+    const result = await adapter.run(ctx, [...new Set([...excludePaths, ...persistentExcludes(ctx)])])
+    return staging?.notes.length ? { ...result, output: [...staging.notes, '', result.output].join('\n') } : result
   } catch (err) {
     // An adapter's setup failures (no connection configured, no SSH agent, an unreadable key file)
     // are thrown rather than returned, so they arrive as one message in the same output panel the
     // transfer errors use instead of as an unhandled rejection.
     return { success: false, output: String(err instanceof Error ? err.message : err) }
+  } finally {
+    await staging?.remove()
   }
 }
 

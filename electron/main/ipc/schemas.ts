@@ -563,7 +563,8 @@ export const savePublishTargetInput = z.looseObject({
   name: z.string().min(1).max(200),
   connectionId: uuid.optional(),
   destination: publishDestination,
-  excludes: z.array(z.string().max(4096)).max(100_000).optional()
+  excludes: z.array(z.string().max(4096)).max(100_000).optional(),
+  withDocuments: z.array(uuid).max(20).optional()
 })
 
 export const excludePaths = z.array(z.string().max(4096)).max(100_000)

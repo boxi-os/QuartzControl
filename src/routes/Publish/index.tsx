@@ -47,7 +47,7 @@ import { rsyncBlockReason } from '@shared/rsyncSupport'
 import { remotePathProblem, rsyncUnsafeChar } from '@shared/remotePath'
 import { TAB_ICONS } from '../navConfig'
 import GithubPages from './GithubPages'
-import DocumentFields from './DocumentFields'
+import DocumentFields, { WithDocumentsFields } from './DocumentFields'
 import HandbookLink from '../../components/HandbookLink'
 
 // GitHub Pages used to be a built-in choice that bypassed the target list entirely. It is now a
@@ -215,7 +215,9 @@ export default function Publish(): JSX.Element {
       name: target.name,
       connectionId: target.connectionId,
       destination: target.destination,
-      excludes: target.excludes
+      excludes: target.excludes,
+      // Without it, opening a target and saving it switched its documents off without a word.
+      withDocuments: target.withDocuments
     }
   }
 
@@ -678,6 +680,14 @@ export default function Publish(): JSX.Element {
                   }
                 />
               </Field>
+            )}
+            {targetDraft.destination.type !== 'document' && targetDraft.destination.type !== 'webhook' && (
+              <WithDocumentsFields
+                targets={targets.flatMap((tg) => (tg.destination.type === 'document' ? [{ id: tg.id, name: tg.name, destination: tg.destination }] : []))}
+                selected={targetDraft.withDocuments ?? []}
+                baseUrl={config?.configuration?.baseUrl}
+                onChange={(withDocuments) => setTargetDraft((prev) => (prev ? { ...prev, withDocuments } : prev))}
+              />
             )}
             {'deleteRemoved' in targetDraft.destination && (
               <div className="flex items-end pb-1.5">

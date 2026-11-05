@@ -83,7 +83,11 @@ export async function saveTarget(projectPath: string, input: SavePublishTargetIn
     name: input.name,
     connectionId: input.connectionId,
     destination: input.destination,
-    excludes: input.excludes ?? (index !== -1 ? all[index].excludes : [])
+    excludes: input.excludes ?? (index !== -1 ? all[index].excludes : []),
+    // Only a target that uploads a folder takes documents along; a document target never itself.
+    ...(input.withDocuments?.length && input.destination.type !== 'document' && input.destination.type !== 'webhook'
+      ? { withDocuments: input.withDocuments }
+      : {})
   }
   const movedAway = index !== -1 && locationKey(all[index]) !== locationKey(target)
   if (index !== -1) all[index] = target

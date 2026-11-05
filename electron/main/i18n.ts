@@ -485,6 +485,7 @@ const STRINGS = {
     docContents: 'Inhalt',
     docFormulaAlt: 'Formel',
     exportFormulaNotDrawn: 'Eine Formel konnte nicht als Bild gezeichnet werden.',
+    exportHtmlTooLarge: 'Die HTML-Datei würde etwa {{mb}} MB groß, mehr als {{max}} MB. Bilder machen sie so groß; als ePub oder PDF geht es.',
     docAccessibilitySummary:
       'Gegliedert mit Überschriften und einem Inhaltsverzeichnis. Ob jedes Bild einen Alternativtext hat, ist nicht geprüft.',
     exportEpubNotWellFormed: 'Ein Kapitel des ePub ist kein wohlgeformtes XHTML:\n{{files}}',
@@ -956,6 +957,7 @@ const STRINGS = {
     docContents: 'Contents',
     docFormulaAlt: 'Formula',
     exportFormulaNotDrawn: 'A formula could not be drawn as a picture.',
+    exportHtmlTooLarge: 'The HTML file would be about {{mb}} MB, more than {{max}} MB. Pictures make it that large; as an ePub or a PDF it works.',
     docAccessibilitySummary:
       'Structured with headings and a table of contents. Whether every picture has an alternative text is not checked.',
     exportEpubNotWellFormed: 'A chapter of the ePub is not well-formed XHTML:\n{{files}}',

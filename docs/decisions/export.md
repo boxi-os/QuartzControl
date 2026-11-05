@@ -284,3 +284,29 @@ Angesehen in Chromium (die Kapitel-Dateien als `file://`, gedruckt mit `pdftoppm
 Sequenzdiagramm. Codezeilen standen zentriert, weil Quartz Codeblöcke in `<figure>` legt; zentriert
 wird jetzt nur `figure.qc-diagram`. **Nicht in einem Reader angesehen** (Apple Books, Thorium,
 Calibre): Das steht für die Messung an der gebauten App aus.
+
+### Das Offline-HTML, und ein Wettrennen beim Zeichnen der Formeln (2026-11-05)
+
+`writeHtml.ts` setzt den Inhalt zusammen, den auch das ePub bekommt
+(`writeEpub.prepareBookContent`, danach `packEpub` bzw. `packHtml`): Kapitel, Navigation, Bilder
+als `data:`-URI, keine Skripte, keine Stylesheets der Website. So gilt für das HTML, was epubcheck
+für das ePub bestätigt hat, und KaTeX braucht keine Schriften vom CDN. Über 200 MB (geschätzt vor
+dem Kodieren) wird abgelehnt.
+
+Geprüft in einem Electron-Fenster, das jede Anfrage außer `file:` und `data:` sperrt und zählt:
+
+| | Handbuch | Example de |
+|---|---|---|
+| Größe | 18,0 MB | 1,7 MB |
+| Netzanfragen | 0 | 0 |
+| Bilder / davon nicht geladen | 46 / 0 | 19 / 0 |
+| interne Verweise / ohne Ziel | 410 / 0 | 1073 / 0 |
+| Skripte | 0 | 0 |
+
+**Die Formelbilder waren teils falsch.** Beim Ansehen des HTML stand unter „Zu breite Formeln“ die
+Matrix davor. `capturePage` nimmt das zuletzt gemalte Bild, und direkt nach dem Austausch der
+Formel war das noch die vorige. Jetzt wird nach dem Austausch zwei Animationsframes gewartet.
+Vorher hatten von den zehn PNGs des Example mehrere die Größe ihres Vorgängers; danach sind alle
+zehn verschieden, die breite Formel als Bild angesehen (vollständig). Das ePub aus dem vorigen
+Abschnitt hatte denselben Fehler, epubcheck kann ihn nicht sehen. Nach der Korrektur: Handbuch und
+Example de wieder je 0 Fehler, 0 Warnungen.

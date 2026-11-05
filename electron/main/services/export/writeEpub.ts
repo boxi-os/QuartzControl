@@ -50,7 +50,8 @@ const IMAGE_TYPES: Record<string, string> = {
   '.webp': 'image/webp'
 }
 
-const STYLE = `
+/** The reader stylesheet, also the offline HTML's (writeHtml.ts). */
+export const STYLE = `
 body { margin: 0 4%; line-height: 1.5; }
 h1, h2, h3, h4, h5, h6 { line-height: 1.25; page-break-after: avoid; break-after: avoid; }
 h1 { font-size: 1.6em; margin: 0 0 0.8em; }
@@ -79,7 +80,7 @@ nav ol { list-style: none; padding-left: 1.2em; }
 .cover .subtitle { font-size: 1.2em; }
 `
 
-function esc(text: string): string {
+export function esc(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
@@ -99,7 +100,7 @@ function epubDate(d: Date): string {
 }
 
 /** The navigation list, nested by level: a level deeper opens a list inside the previous item. */
-function navList(entries: { href: string; title: string; level: number }[]): string {
+export function navList(entries: { href: string; title: string; level: number }[]): string {
   let out = ''
   const stack: number[] = []
   for (const e of entries) {
@@ -149,17 +150,17 @@ const FORMULA_ZOOM = 3
 const BASE_PX = 16
 
 /**
- * Draws every formula as a PNG and returns, per picture, the CSS that gives it the size it had on
- * the website in em - so it grows with the reader's font size instead of staying in pixels.
+ * Draws every formula as a PNG and returns, per picture, its bytes and the CSS that gives it the
+ * size it had on the website in em - so it grows with the reader's font size instead of staying in
+ * pixels.
  */
 async function drawFormulas(
   win: ExportWindow,
   server: SiteServer,
   stylesheets: string[],
   formulas: { name: string; html: string; display: boolean }[],
-  entries: ZipEntry[],
   signal?: AbortSignal
-): Promise<Map<string, string>> {
+): Promise<Map<string, { data: Buffer; style: string }>> {
   const head = stylesheets.map((h) => `<link rel="stylesheet" href="${esc(h)}">`).join('')
   await win.load(
     server.setDocument(
@@ -172,7 +173,7 @@ async function drawFormulas(
   const [oldWidth, oldHeight] = win.win.getContentSize()
   win.win.setContentSize(3000, 2000)
   wc.setZoomFactor(FORMULA_ZOOM)
-  const sizes = new Map<string, string>()
+  const out = new Map<string, { data: Buffer; style: string }>()
   try {
     for (const f of formulas) {
       signal?.throwIfAborted()
@@ -180,10 +181,15 @@ async function drawFormulas(
         (html: string) => {
           const box = document.getElementById('f')!
           box.innerHTML = html
-          return document.fonts.ready.then(() => {
-            const r = box.getBoundingClientRect()
-            return { x: r.x, y: r.y, width: r.width, height: r.height }
-          })
+          // capturePage takes the last frame painted. Without waiting for two animation frames it
+          // was still the previous formula: the wide polynomial of Example came out as the matrix
+          // before it.
+          return document.fonts.ready
+            .then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
+            .then(() => {
+              const r = box.getBoundingClientRect()
+              return { x: r.x, y: r.y, width: r.width, height: r.height }
+            })
         },
         [f.html]
       )
@@ -198,34 +204,53 @@ async function drawFormulas(
       if (image.isEmpty() || (rect.x + rect.width) * FORMULA_ZOOM > 3000 || (rect.y + rect.height) * FORMULA_ZOOM > 2000) {
         throw new Error(mainT('exportFormulaNotDrawn'))
       }
-      entries.push({ name: `OEBPS/${f.name}`, data: image.toPNG() })
       const em = (px: number): string => `${(px / BASE_PX).toFixed(3)}em`
-      sizes.set(f.name, f.display ? `width:${em(rect.width)};max-width:100%` : `height:${em(rect.height)};vertical-align:middle`)
+      out.set(f.name, {
+        data: image.toPNG(),
+        style: f.display ? `width:${em(rect.width)};max-width:100%` : `height:${em(rect.height)};vertical-align:middle`
+      })
     }
   } finally {
     wc.setZoomFactor(1)
     win.win.setContentSize(oldWidth, oldHeight)
   }
-  return sizes
+  return out
 }
 
-export async function writeEpub(win: ExportWindow, server: SiteServer, parts: EpubParts, signal?: AbortSignal): Promise<EpubResult> {
+/**
+ * The book's content in the form a reader takes, shared by the ePub and the offline HTML: chapters
+ * as XHTML bodies, the navigation, and every picture (the site's own, the formulas, the cover) as
+ * bytes under the name the chapters use. The offline HTML is made from this rather than from the
+ * print document because this is the form epubcheck has passed: no site stylesheet, no script, no
+ * KaTeX HTML that needs fonts from a CDN.
+ */
+export interface BookContent {
+  chapters: { file: string; title: string; body: string; hasMath: boolean; hasSvg: boolean }[]
+  nav: { href: string; title: string; level: number }[]
+  /** `images/…` → bytes and media type. */
+  assets: Map<string, { data: Buffer; type: string }>
+  cover: { name: string; data: Buffer; type: string } | null
+  formulas: number
+  counts: EpubResult['counts']
+}
+
+export async function prepareBookContent(win: ExportWindow, server: SiteServer, parts: EpubParts, signal?: AbortSignal): Promise<BookContent> {
   const byslug = new Map(parts.pages.map((p) => [p.slug, p]))
   const inputs: EpubChapterInput[] = []
-  const navEntries: { href: string; title: string; level: number }[] = []
+  const nav: BookContent['nav'] = []
   parts.items.forEach((item, index) => {
     const file = `text/c${String(inputs.length + 1).padStart(4, '0')}.xhtml`
     if (item.kind === 'heading') {
       const anchor = headingAnchor(index)
       inputs.push({ file, anchor, level: 1, title: item.text, html: '' })
-      navEntries.push({ href: `${file}#${anchor}`, title: item.text, level: 1 })
+      nav.push({ href: `${file}#${anchor}`, title: item.text, level: 1 })
       return
     }
     const page = byslug.get(item.slug)
     if (!page) return
     const anchor = anchorFor(page.slug)
     inputs.push({ file, slug: page.slug, anchor, level: page.level, title: page.title, html: page.html })
-    navEntries.push({ href: `${file}#${anchor}`, title: page.title, level: page.level })
+    nav.push({ href: `${file}#${anchor}`, title: page.title, level: page.level })
   })
 
   // A page of the site's own, so that relative addresses in the chapters resolve against it.
@@ -239,6 +264,48 @@ export async function writeEpub(win: ExportWindow, server: SiteServer, parts: Ep
     throw new Error(mainT('exportEpubNotWellFormed', { files: broken.map((c) => `${c.file}: ${c.parseError}`).slice(0, 5).join('\n') }))
   }
 
+  const assets: BookContent['assets'] = new Map()
+  const images = new Map<string, string>()
+  for (const c of result.chapters) for (const img of c.images) images.set(img.name, img.url)
+  for (const [name, url] of images) {
+    const type = IMAGE_TYPES[extname(name).toLowerCase()]
+    const data = await readSiteFile(server, url)
+    // The page showed this picture from the build, so it is in the copy; one that is not means the
+    // copy and the pages disagree, and the book would carry a reference to nothing.
+    if (!data || !type) throw new Error(mainT('exportEpubImageMissing', { url: new URL(url).pathname }))
+    assets.set(name, { data, type })
+  }
+
+  if (result.formulas.length) {
+    const drawn = await drawFormulas(win, server, parts.stylesheets, result.formulas, signal)
+    for (const [name, f] of drawn) assets.set(name, { data: f.data, type: 'image/png' })
+    for (const c of result.chapters) {
+      c.body = c.body.replace(/data-qc-formula="([^"]+)"/g, (_whole, name: string) => {
+        const f = drawn.get(name)
+        return f ? `style="${f.style}"` : ''
+      })
+    }
+  }
+
+  let cover: BookContent['cover'] = null
+  if (parts.coverImage) {
+    const ext = extname(new URL(parts.coverImage).pathname).toLowerCase()
+    const type = IMAGE_TYPES[ext]
+    const data = type ? await readSiteFile(server, parts.coverImage) : null
+    if (type && data) cover = { name: `images/cover${ext}`, data, type }
+  }
+
+  return {
+    chapters: result.chapters.map((c, i) => ({ file: c.file, title: inputs[i].title, body: c.body, hasMath: c.hasMath, hasSvg: c.hasSvg })),
+    nav,
+    assets,
+    cover,
+    formulas: result.formulas.length,
+    counts: result.counts
+  }
+}
+
+export function packEpub(content: BookContent, parts: EpubParts): EpubResult {
   const entries: ZipEntry[] = [
     { name: 'mimetype', data: Buffer.from('application/epub+zip'), store: true },
     {
@@ -252,65 +319,39 @@ export async function writeEpub(win: ExportWindow, server: SiteServer, parts: Ep
   const manifest: string[] = ['<item id="style" href="style.css" media-type="text/css"/>']
   const spine: string[] = []
 
-  // Pictures, once each, from the copy of the build.
-  const images = new Map<string, string>()
-  for (const c of result.chapters) for (const img of c.images) images.set(img.name, img.url)
   let n = 0
-  for (const [name, url] of images) {
-    const type = IMAGE_TYPES[extname(name).toLowerCase()]
-    const data = await readSiteFile(server, url)
-    // The page showed this picture from the build, so it is in the copy; one that is not means the
-    // copy and the pages disagree, and the book would carry a reference to nothing.
-    if (!data || !type) throw new Error(mainT('exportEpubImageMissing', { url: new URL(url).pathname }))
-    entries.push({ name: `OEBPS/${name}`, data })
-    manifest.push(`<item id="img${++n}" href="${esc(name)}" media-type="${type}"/>`)
+  for (const [name, asset] of content.assets) {
+    entries.push({ name: `OEBPS/${name}`, data: asset.data })
+    manifest.push(`<item id="img${++n}" href="${esc(name)}" media-type="${asset.type}"/>`)
   }
 
-  // Formulas as pictures, drawn in the export window with the site's own KaTeX stylesheet.
-  if (result.formulas.length) {
-    const sizes = await drawFormulas(win, server, parts.stylesheets, result.formulas, entries, signal)
-    for (const c of result.chapters) {
-      c.body = c.body.replace(/data-qc-formula="([^"]+)"/g, (_whole, name: string) => {
-        const size = sizes.get(name)
-        return size ? `style="${size}"` : ''
-      })
-    }
-    result.formulas.forEach((f, i) => manifest.push(`<item id="f${i + 1}" href="${esc(f.name)}" media-type="image/png"/>`))
+  let coverPicture = ''
+  if (content.cover) {
+    entries.push({ name: `OEBPS/${content.cover.name}`, data: content.cover.data })
+    manifest.push(`<item id="cover-image" href="${esc(content.cover.name)}" media-type="${content.cover.type}" properties="cover-image"/>`)
+    coverPicture = `<img src="../${esc(content.cover.name)}" alt=""/>`
   }
-
-  // Cover: the picture (when it is the site's own and a type an ePub takes) and a page with the title.
-  let coverPage = ''
-  if (parts.coverImage) {
-    const ext = extname(new URL(parts.coverImage).pathname).toLowerCase()
-    const type = IMAGE_TYPES[ext]
-    const data = type ? await readSiteFile(server, parts.coverImage) : null
-    if (type && data) {
-      entries.push({ name: `OEBPS/images/cover${ext}`, data })
-      manifest.push(`<item id="cover-image" href="images/cover${ext}" media-type="${type}" properties="cover-image"/>`)
-      coverPage = `<img src="../images/cover${ext}" alt=""/>`
-    }
-  }
-  const coverBody = `<section class="cover" epub:type="cover">${coverPage}<p class="title">${esc(parts.title)}</p>${parts.subtitle ? `<p class="subtitle">${esc(parts.subtitle)}</p>` : ''}${parts.author ? `<p class="author">${esc(parts.author)}</p>` : ''}</section>`
+  const coverBody = `<section class="cover" epub:type="cover">${coverPicture}<p class="title">${esc(parts.title)}</p>${parts.subtitle ? `<p class="subtitle">${esc(parts.subtitle)}</p>` : ''}${parts.author ? `<p class="author">${esc(parts.author)}</p>` : ''}</section>`
   entries.push({ name: 'OEBPS/text/cover.xhtml', data: Buffer.from(xhtml(parts.lang, parts.title, coverBody)) })
   manifest.push('<item id="cover" href="text/cover.xhtml" media-type="application/xhtml+xml"/>')
   spine.push('<itemref idref="cover"/>')
 
   const contents = mainTIn(parts.lang, 'docContents')
-  const nav = `<nav epub:type="toc" id="toc"><h1>${esc(contents)}</h1>${navList(navEntries.map((e) => ({ ...e, href: e.href.replace(/^text\//, '') })))}</nav>`
+  const nav = `<nav epub:type="toc" id="toc"><h1>${esc(contents)}</h1>${navList(content.nav.map((e) => ({ ...e, href: e.href.replace(/^text\//, '') })))}</nav>`
   entries.push({ name: 'OEBPS/text/nav.xhtml', data: Buffer.from(xhtml(parts.lang, contents, nav)) })
   manifest.push('<item id="nav" href="text/nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>')
   spine.push('<itemref idref="nav"/>')
 
-  result.chapters.forEach((c, i) => {
+  content.chapters.forEach((c, i) => {
     const id = `c${i + 1}`
-    entries.push({ name: `OEBPS/${c.file}`, data: Buffer.from(xhtml(parts.lang, inputs[i].title, c.body)) })
+    entries.push({ name: `OEBPS/${c.file}`, data: Buffer.from(xhtml(parts.lang, c.title, c.body)) })
     const props = [c.hasMath ? 'mathml' : '', c.hasSvg ? 'svg' : ''].filter(Boolean).join(' ')
     manifest.push(`<item id="${id}" href="${c.file}" media-type="application/xhtml+xml"${props ? ` properties="${props}"` : ''}/>`)
     spine.push(`<itemref idref="${id}"/>`)
   })
 
-  const hasMath = result.chapters.some((c) => c.hasMath)
-  const visual = images.size > 0 || result.formulas.length > 0 || result.chapters.some((c) => c.hasSvg)
+  const hasMath = content.chapters.some((c) => c.hasMath)
+  const visual = content.assets.size > 0 || content.chapters.some((c) => c.hasSvg)
   const features = ['structuralNavigation', 'tableOfContents', 'readingOrder', ...(hasMath ? ['MathML'] : [])]
   const opf = `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="book-id" xml:lang="${esc(parts.lang)}">
@@ -341,8 +382,12 @@ ${spine.join('\n')}
   entries.push({ name: 'OEBPS/content.opf', data: Buffer.from(opf) })
   return {
     bytes: createZip(entries, parts.modified),
-    chapters: result.chapters.length,
-    images: images.size,
-    counts: result.counts
+    chapters: content.chapters.length,
+    images: content.assets.size - content.formulas,
+    counts: content.counts
   }
+}
+
+export async function writeEpub(win: ExportWindow, server: SiteServer, parts: EpubParts, signal?: AbortSignal): Promise<EpubResult> {
+  return packEpub(await prepareBookContent(win, server, parts, signal), parts)
 }

@@ -28,7 +28,10 @@ export interface ExportWindow {
    *  picture is a request like any other - a counter pixel on the site counts every exported page
    *  as a visit, and a script of the site can put what it read into the picture's address. */
   readonly fetched: Map<string, number>
-  load(url: string): Promise<void>
+  /** Addresses whose loading was stopped at LOAD_TIMEOUT_MS (what had not arrived is missing). */
+  readonly unfinished: string[]
+  /** False when the page did not finish loading in time; it was stopped and stands as it is. */
+  load(url: string): Promise<boolean>
   /** Runs a self-contained function (see pageScripts.ts) with JSON-serialisable arguments and
    *  further functions passed as source. */
   run<T>(fn: (...args: never[]) => T | Promise<T>, args: unknown[], helpers?: ((...a: never[]) => unknown)[]): Promise<T>
@@ -36,13 +39,26 @@ export interface ExportWindow {
 }
 
 const OUTSIDE_TYPES = new Set(['stylesheet', 'font', 'image'])
+
+/**
+ * How long a page may take to load. `loadURL` waits for the load event, and that waits for every
+ * picture: one from a host that accepts and never answers held the export without end, and "Export
+ * abbrechen" with it (review of 2026-11-06, M2: no return 240 s after the cancel). Chromium has no
+ * overall deadline for a connection that stays silent. After this the loading is stopped and the
+ * page is read as it stands; the PDF's picture check names what is missing.
+ */
+const LOAD_TIMEOUT_MS = 60_000
 const MERMAID = /\/mermaid[@/.-]/
 
 /**
  * `offscreen`: rendered without a window on screen, for drawing formulas and diagrams (see
  * drawPictures in writeEpub.ts) - a hidden window on Linux paints no frames.
  */
-export function openExportWindow(origin: string, size: { width: number; height: number }, opts: { offscreen?: boolean } = {}): ExportWindow {
+export function openExportWindow(
+  origin: string,
+  size: { width: number; height: number },
+  opts: { offscreen?: boolean; signal?: AbortSignal } = {}
+): ExportWindow {
   const partition = `quartzcontrol-export-${randomUUID()}`
   const ses = session.fromPartition(partition, { cache: false })
   const refused = new Map<string, number>()
@@ -100,6 +116,25 @@ export function openExportWindow(origin: string, size: { width: number; height: 
     if (!url.startsWith(`${origin}/`)) event.preventDefault()
   })
 
+  // A cancel ends whatever the window is waiting for at once - a load, a script, a print - and the
+  // window with it; checking the signal between steps waited for the step (M2 above).
+  const { signal } = opts
+  const close = (): void => {
+    if (!win.isDestroyed()) win.destroy()
+    void ses.clearStorageData().catch(() => undefined)
+  }
+  signal?.addEventListener('abort', close, { once: true })
+  const untilCancelled = <T>(work: Promise<T>): Promise<T> => {
+    if (!signal) return work
+    return new Promise<T>((resolve, reject) => {
+      const onAbort = (): void => reject(signal.reason)
+      if (signal.aborted) onAbort()
+      signal.addEventListener('abort', onAbort, { once: true })
+      work.then(resolve, reject).finally(() => signal.removeEventListener('abort', onAbort))
+    })
+  }
+  const unfinished: string[] = []
+
   // A document is printed light, whatever the app or the system shows: Quartz picks its theme from
   // localStorage `theme`, else prefers-color-scheme, and Mermaid renders its diagrams in that
   // theme - collected in a dark app, every diagram came out dark (measured on Example,
@@ -119,23 +154,40 @@ export function openExportWindow(origin: string, size: { width: number; height: 
     win,
     refused,
     fetched,
+    unfinished,
     async load(url) {
       prepared ??= prepare()
-      await prepared
-      await win.loadURL(url)
+      await untilCancelled(prepared)
+      const loading = win.loadURL(url).then(() => true)
+      let timer: NodeJS.Timeout | undefined
+      const late = new Promise<false>((resolve) => {
+        timer = setTimeout(() => resolve(false), LOAD_TIMEOUT_MS)
+      })
+      try {
+        const loaded = await untilCancelled(Promise.race([loading, late]))
+        if (!loaded) {
+          // Stopping rejects the pending load with ERR_ABORTED; nobody waits for it any more.
+          loading.catch(() => undefined)
+          wc.stop()
+          unfinished.push(url)
+        }
+        return loaded
+      } finally {
+        clearTimeout(timer)
+      }
     },
     async run(fn, args, helpers = []) {
       const call = `(${fn.toString()})(${[...args.map((a) => JSON.stringify(a)), ...helpers.map((h) => `(${h.toString()})`)].join(', ')})`
       // executeJavaScript reports a throw in the page as "Script failed to execute" and drops the
       // message, so the page catches it and hands it back.
       const wrapped = `(async () => { try { return { ok: true, value: await ${call} } } catch (e) { return { ok: false, error: String((e && e.message) || e) } } })()`
-      const r = (await wc.executeJavaScript(wrapped)) as { ok: true; value: never } | { ok: false; error: string }
+      const r = (await untilCancelled(wc.executeJavaScript(wrapped))) as { ok: true; value: never } | { ok: false; error: string }
       if (!r.ok) throw new Error(r.error)
       return r.value
     },
     close() {
-      if (!win.isDestroyed()) win.destroy()
-      void ses.clearStorageData().catch(() => undefined)
+      signal?.removeEventListener('abort', close)
+      close()
     }
   }
 }

@@ -169,7 +169,7 @@ export async function exportBook(opts: {
     const baseUrl = config?.configuration?.baseUrl
     server = await serveSiteCopy(opts.buildDir)
     const facts = await readSiteFacts(server.root)
-    win = openExportWindow(server.origin, { width: printWidthPx(book.pdf.pageSize, book.pdf.landscape), height: 1000 })
+    win = openExportWindow(server.origin, { width: printWidthPx(book.pdf.pageSize, book.pdf.landscape), height: 1000 }, { signal })
     signal.throwIfAborted()
 
     const nav = await readNavigationOrder(win, server.origin, facts, book.language)
@@ -192,6 +192,9 @@ export async function exportBook(opts: {
       onPage: (done, total, slug) => opts.onProgress(done, total, slug)
     })
     const lang0 = pages[0]?.lang || book.language || 'en'
+    // Read right after collecting: the pages of the site, not the documents the writers load later.
+    const unfinished = win.unfinished.map((u) => new URL(u).pathname.slice(1))
+    if (unfinished.length) report.push(mainT('exportReportUnfinished', { count: unfinished.length, pages: unfinished.slice(0, 5).join(', ') }))
     const extras = addBacklinksAndRegister(pages, resolved.items, book, facts, lang0)
     if (extras.backlinks) report.push(mainT('exportReportBacklinks', { count: extras.backlinks }))
     if (extras.tags) report.push(mainT('exportReportRegister', { count: extras.tags }))

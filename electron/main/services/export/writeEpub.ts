@@ -187,7 +187,7 @@ async function drawPictures(
   signal?: AbortSignal
 ): Promise<Map<string, { data: Buffer; style: string }>> {
   const head = stylesheets.map((h) => `<link rel="stylesheet" href="${esc(h)}">`).join('')
-  const drawWin = openExportWindow(server.origin, { width: DRAW_W, height: DRAW_H }, { offscreen: true })
+  const drawWin = openExportWindow(server.origin, { width: DRAW_W, height: DRAW_H }, { offscreen: true, signal })
   // Created at the size of the screen on Linux (1280 x 800 on the VM, the pictures came out cut
   // off at that edge); set afterwards, the size holds, and capturePage takes all of it.
   drawWin.win.setContentSize(DRAW_W, DRAW_H)

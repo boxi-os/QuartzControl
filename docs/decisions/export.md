@@ -709,3 +709,21 @@ Zwei Dinge geändert:
 
 Nachher: 9 Anfragen, `t=` leer (die Datei gibt es in der Kopie nicht), der Bericht sagt „Stylesheets,
 Schriften oder Bilder kamen aus dem Netz: cdn.jsdelivr.net, cdnjs.cloudflare.com, 127.0.0.1:48621“.
+
+### Abbrechen, während eine Seite lädt (2026-11-06, M2)
+
+Das Review setzte in eine Kopie von `gui-test` ein Bild von einem Server, der Verbindungen annimmt
+und nie antwortet (`harness/hang-server.mjs`). Vorher: Der Export stand bei Seite 26 still,
+„Export abbrechen“ nach 12 s antwortete `true`, und `deploy.run` war 240 s später nicht zurück
+(Skript `fix/m2.sh`). `loadURL` wartet auf das Load-Ereignis, das auf jedes Bild, und das Signal
+wurde nur zwischen den Schritten gefragt; Chromium kennt für eine schweigende Verbindung keine
+Gesamtfrist. Bis zum Ende der App sagte jeder weitere Klick „Für dieses Ziel läuft schon ein Export“.
+
+Jetzt beendet ein Abbruch das Fenster sofort und mit ihm, worauf es gerade wartet (Laden, Skript,
+Druck); und eine Seite darf 60 s laden, dann wird sie angehalten und gelesen, wie sie dasteht.
+Nachher: Rückkehr 0,5 s nach dem Abbruch mit „Der Export wurde abgebrochen. Es wurde nichts
+geschrieben.“ Ohne Abbruch, nur ePub und HTML: 79 s, der Bericht nennt
+`grundlagen/farben` als nicht fertig geladen. Mit PDF: nach 138 s (60 s die Seite, 60 s das
+Gesamtdokument) bricht der Export mit „Bilder, die nicht geladen haben (1): Farben in CSS:
+http://127.0.0.1:48622/hang.png“ ab, der Satz, den die Prüfung des PDFs schon hatte. Example
+unverändert: 287 Seiten, Lesezeichen 9/46/252/260/23, 29,8 s.

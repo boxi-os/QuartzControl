@@ -14,6 +14,9 @@ ordinary Quartz files.
 
 > **Version 1.3.0.** Runs on macOS and Linux; Windows is deliberately absent (see below). Feedback
 > is welcome — an issue is the easiest way.
+>
+> 1.3 is the last release with new features. From here on QuartzControl only gets fixes for
+> critical bugs.
 
 ## What it does
 

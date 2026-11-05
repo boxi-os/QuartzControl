@@ -84,14 +84,17 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 Zweiundsechzig Review-Runden sind abgearbeitet (die letzte am 2026-11-06 auf `feat/1.3`: der
 Export als PDF, ePub und Offline-HTML; alles Gewählte behoben; davor die letzte vor 1.2 am
-2026-10-26; die achtundvierzigste bis dreiundfünfzigste von einem anderen Modell geschrieben). Veröffentlicht ist `1.2.0` (2026-10-26), davor `1.1.1` (2026-10-22) und `1.1.0` (2026-10-18). Was aus jeder Runde wurde und was noch
+2026-10-26; die achtundvierzigste bis dreiundfünfzigste von einem anderen Modell geschrieben). Veröffentlicht ist `1.3.0` (2026-11-06), davor `1.2.0` (2026-10-26), `1.1.1` (2026-10-22) und `1.1.0` (2026-10-18). Was aus jeder Runde wurde und was noch
 ungelesen ist, steht in [`docs/reviews.md`](docs/reviews.md); die früheren Stand-Absätze dieser
 Datei (Releases, Alpha-Test, Gruppe D, offene Punkte) wörtlich in [`docs/stand.md`](docs/stand.md).
 Was aus einer Runde dauerhaft gilt, steht als Regel in `docs/conventions.md`, nicht in der Chronik.
 
-Seit dem 2026-10-19 gibt es zwei Linien, seit dem 2026-10-26 diese: Bugfixes für 1.2 auf `fix/1.2.x`, neue
-Features auf `feat/1.3`; die Fix-Linie wird in die Feature-Linie gemergt, nie umgekehrt
-([`docs/release.md`](docs/release.md), Punkt 2).
+**Seit 1.3.0 (2026-11-06) ist QuartzControl in Wartung:** nur noch Fixes für kritische Fehler, auf
+`fix/1.3.x`, keine Feature-Linie mehr; `feat/1.3` wird nicht fortgeführt. Ein Befund, der nicht
+kritisch ist, wird notiert, nicht behoben, auch auf der Stufe „Unterstützt“ der
+[`support-matrix.md`](docs/support-matrix.md). Ein Fix-Release entsteht wie bisher aus der
+Fix-Linie ([`docs/release.md`](docs/release.md), Punkt 2). Bis 1.3 gab es zwei Linien (Bugfixes auf
+`fix/<fassung>.x`, Features auf `feat/<nächste>`, die Fix-Linie in die Feature-Linie gemergt).
 
 **Arbeitsregel** für eine Review-Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was nebenbei auffällt, wird gesammelt und

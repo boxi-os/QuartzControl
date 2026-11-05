@@ -7,6 +7,10 @@ Befunde des 56. hingen an Fixes des 55., und viele Funde betrafen Konfiguratione
 stand, ob QuartzControl sie überhaupt bedienen will. Diese Datei sagt das jetzt. Die Stufe eines
 Falls entscheidet, was mit einem Befund geschieht.
 
+**Seit 1.3.0 (2026-11-06) ist QuartzControl in Wartung.** Behoben werden nur noch kritische
+Fehler, auf `fix/1.3.x`. Die Stufen unten gelten weiter und sagen, was QuartzControl bedienen will;
+ein Befund, der nicht kritisch ist, wird aber auf jeder Stufe nur notiert.
+
 ## Die drei Stufen
 
 - **Unterstützt:** gemessen (an der gebauten App gegen einen echten Server, wo es geht). Jeder

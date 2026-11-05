@@ -1,6 +1,24 @@
 # Vor einem Release
 
-> **Zuletzt durchlaufen für 1.2.0 am 2026-10-26** (annotierter Tag `v1.2.0` auf `73d6f1c3`, Branch
+> **Zuletzt durchlaufen für 1.3.0 am 2026-11-06** (annotierter Tag `v1.3.0` auf `830b465e`, Branch
+> `release/1.3.0` von `feat/1.3`; `main` und `feat/1.3` per Fast-Forward dorthin, `fix/1.3.x` von
+> dort, **keine neue Feature-Linie: QuartzControl ist seither in Wartung**, nur kritische Fixes).
+> Zehn Pakete, neun auf einer Maschine ihrer Architektur gestartet (macOS x64 nicht; statisch:
+> `Info.plist` 1.3.0, App und git x86_64, Signatur gültig), jedes mit Wegwerf-Profil und 1.3.0 im
+> User-Agent, Node 24.18.1, npm 11.17.0, die sechs Linux-Starts mit `gnome_libsecret`. Digests der
+> Release-Seite = `shasum` über `release/`. Plugins seit 1.2 unverändert bis auf multilanguage
+> 0.3.0 (nur Breadcrumbs; die Werkstatt `basic` darauf gehoben); unter `scripts/example-template/`
+> nichts seit dem letzten Export, also nur das Basis-Template neu gebaut (Manifest 1.3.0).
+> Google-Schriften 1959 (neun neu). Vorlagen-Repo `6bf1484`, `--check-sync` für `basic` Exit 0. Die
+> Plugin-Website stand seit dem 2026-11-04 auf dem Stand ihres Vaults und wurde nicht neu
+> veröffentlicht. Alle 38 Pfade aus `handbookPages.ts` schon vor dem Release mit 200 (die Website
+> trug 1.3-Kapitel einen Tag vorher). Drei Dinge für das nächste Mal: **`eval` der
+> Sitzungsumgebung auf einer VM setzt `PWD` auf das Home** — danach absolute Pfade; **ein erster
+> Starttest auf debian-vm blieb ohne Ausgabe** (Ursache nicht geklärt), ein zweiter Start antwortete
+> per CDP nach 25 s; **zsh teilt eine Dateiliste in einer Variablen nicht**, `shasum` bekommt die
+> Namen ausgeschrieben.
+>
+> Davor **1.2.0 am 2026-10-26** (annotierter Tag `v1.2.0` auf `73d6f1c3`, Branch
 > `release/1.2.0` von `feat/1.2`; `main` und `feat/1.2` per Fast-Forward dorthin, `fix/1.2.x` und
 > `feat/1.3` von dort). Zehn Pakete, neun auf einer Maschine ihrer Architektur gestartet (macOS x64
 > nicht; statisch: `Info.plist` 1.2.0, App und git x86_64, Signatur gültig), jedes mit Wegwerf-Profil
@@ -152,6 +170,9 @@ Fix-Release. Ein Fix-Release entsteht aus der Fix-Linie (`release/<fassung>`, Ta
 Fast-Forward). Bei einem Fix-Release zeigt die Schleife oben die Feature-Linie mit `+` — erwartet;
 bei einem Feature-Release darf die Fix-Linie keines zeigen. So lief es schon bei 1.0.1 und 1.0.2
 (`fix/1.0.x` von `v1.0.0`, später in die 1.1-Linie gemergt).
+
+**Seit 1.3.0 gibt es nur noch die Fix-Linie** (`fix/1.3.x` von `v1.3.0`). Ein Fix-Release
+entsteht wie oben aus ihr; eine Feature-Linie, in die zu mergen wäre, gibt es nicht mehr.
 
 ## 2b. Die eigenen Plugins sind vor der App veröffentlicht
 

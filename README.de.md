@@ -14,6 +14,9 @@ kann — die Dateien bleiben normale Quartz-Dateien.
 
 > **Version 1.3.0.** Läuft auf macOS und Linux; Windows fehlt bewusst (siehe unten). Rückmeldungen
 > sind willkommen — am liebsten als Issue.
+>
+> 1.3 ist die letzte Fassung mit neuen Funktionen. Danach bekommt QuartzControl nur noch Fixes für
+> kritische Fehler.
 
 ## Was die App kann
 

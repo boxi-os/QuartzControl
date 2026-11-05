@@ -41,6 +41,15 @@ function idOf(entry: BookEntry): string {
   return id
 }
 
+/** A renamed heading is a new object (the draft is never mutated) that keeps the old one's id:
+ *  with a new id it got a new React key on every keystroke, the row was mounted afresh and the
+ *  focus fell to <body> after the first letter (review of 2026-11-06, M5). */
+function renamed(entry: BookEntry, heading: string): BookEntry {
+  const next: BookEntry = { heading }
+  ids.set(next, idOf(entry))
+  return next
+}
+
 export default function PageOrder({ order, excluded, site, onChange }: PageOrderProps): JSX.Element {
   const { t } = useTranslation()
   const listRef = useRef<HTMLUListElement>(null)
@@ -152,7 +161,7 @@ export default function PageOrder({ order, excluded, site, onChange }: PageOrder
                 last={i === order.length - 1}
                 onMove={(by) => move(i, i + by)}
                 onLeaveOut={(leave) => 'slug' in entry && setExcluded(entry.slug, leave)}
-                onRename={(heading) => onChange({ order: order.map((e, j) => (j === i ? { heading } : e)), excluded })}
+                onRename={(heading) => onChange({ order: order.map((e, j) => (j === i ? renamed(e, heading) : e)), excluded })}
                 onRemove={() => {
                   onChange({ order: order.filter((_, j) => j !== i), excluded })
                   announce(t('documents.pages.removedAnnounce', { name: label(entry) }))

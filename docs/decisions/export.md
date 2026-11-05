@@ -765,3 +765,14 @@ eingesetztem Überstand: Ein Link mit `white-space: nowrap` (341 px), `code` mit
 ein SVG mit 900 px Breite (242 px) werden weiter gemeldet. Example (287 Seiten) und Handbuch (143
 Seiten) unverändert. Bricht das PDF nur am Druckrand und schreibt das Ziel auch ePub oder HTML,
 sagt der Fehler jetzt dazu, dass die beiden ohne PDF geschrieben werden: Ein Reader bricht selbst um.
+
+### Eine Zwischenüberschrift umbenennen (2026-11-06, M5)
+
+In der Seite „Dokumente“ verlor das Feld einer Zwischenüberschrift nach der ersten Taste den Fokus.
+`PageOrder.tsx` gibt jeder Überschrift beim ersten Sehen eine Kennung (`WeakMap` am Objekt), und
+das Umbenennen baute je Taste ein neues Objekt: neue Kennung, neuer React-`key`, die Zeile wurde
+neu gemountet. Gemessen mit echten Tasten an der gebauten App (`fix/m5.mjs`: „Eigene Reihenfolge“,
+„+ Zwischenüberschrift“, ins Feld klicken, „ B2“ tippen): vorher „Anhang “ und der Fokus auf
+`BODY`, nachher „Anhang B2“ und der Fokus im Feld. Die Messung vom 2026-11-05 setzte den Text mit
+einem einzigen `fill` und konnte das nicht sehen. Das umbenannte Objekt übernimmt jetzt die
+Kennung des alten.

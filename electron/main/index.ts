@@ -36,6 +36,7 @@ import { mainT } from './i18n'
 import { applyAppMenu, APP_NAME } from './menu'
 import { applyStoredTheme, windowBackgroundColor } from './theme'
 import { initialWindowBounds, initialWindowMode, loadWindowState, MIN_SIZE, trackWindowState } from './services/windowState'
+import { appWindows, dialogParent } from './appWindows'
 
 const isMac = process.platform === 'darwin'
 
@@ -266,7 +267,7 @@ app.whenReady().then(async () => {
   void sweepRelayTempDirs().catch((error) => console.error('[main] relay temp sweep failed:', error))
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (appWindows().length === 0) createWindow()
   })
 })
 
@@ -336,7 +337,7 @@ async function promptAboutRunningServers(servers: { projectId: string; port: num
   // Cancel sits at index 0 with cancelId 0, so both Escape and Return - which on macOS takes the
   // first button whatever defaultId says (measured, see the dialog.confirm handler) - answer
   // "don't quit". The other two both quit; their labels say what becomes of the servers.
-  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  const win = dialogParent()
   const options = {
     type: 'question' as const,
     buttons: [mainT('confirmCancel'), mainT('orphanKeepRunning'), mainT('quitStopServers')],

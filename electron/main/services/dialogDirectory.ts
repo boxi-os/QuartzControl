@@ -4,6 +4,7 @@ import { realpath } from 'fs/promises'
 import { dirname, join, sep } from 'path'
 import { readJsonFileOr, writeJsonFile } from './jsonStore'
 import { listProjects } from './projectStore'
+import { dialogParent } from '../appWindows'
 
 // Where an open or save dialog starts when its caller names no folder of its own: the folder the
 // last dialog ended in, otherwise Documents. Without a defaultPath (or with a bare file name, which
@@ -75,7 +76,7 @@ export function rememberDialogResult(chosen: string): void {
 // window takes no clicks. Without a window the panel floated free, and a second click on the same
 // button opened a second one beside it (Nutzerbefund 2026-10-14).
 function parentWindow(): BrowserWindow | undefined {
-  return BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  return dialogParent()
 }
 
 export function showOpenDialog(options: OpenDialogOptions): Promise<OpenDialogReturnValue> {

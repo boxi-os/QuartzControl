@@ -109,3 +109,60 @@ Wegwerfprojekt):
 - Die Kennung `../x` und `toc: 'ja'` scheitern am zod-Schema.
 - `quartz-books` als Verknüpfung in einen anderen Ordner: Das Speichern wird abgelehnt, und der
   Ordner bleibt leer.
+
+### Die Seiten einsammeln: Navigation, Sprache, Fremdes (2026-11-05)
+
+`electron/main/services/export/`: `siteServer.ts` (Kopie des Baus, per `COPYFILE_FICLONE`
+geklont, über `127.0.0.1:0`), `exportWindow.ts` (unsichtbar, Sandbox, kein Preload, eigene
+Sitzung im Speicher), `pageScripts.ts` (Code, der in der Website läuft), `collect.ts`; die reinen
+Regeln in `shared/exportModel.ts`. Gemessen mit einem esbuild-Bündel dieser Module, das in Electron
+43.4.1 läuft (Scratchpad, CommonJS, Ausnahmen abgefangen, damit kein Fehlerdialog erscheint), gegen
+Kopien von `resources/handbook` (Explorer) und `Example/public` vom 2026-11-04
+(quartz-navigations, Deutsch und Englisch, Mermaid, KaTeX, bases-page, Canvas, Excalidraw).
+
+**Reihenfolge aus der gerenderten Navigation.** Handbuch: `.explorer`, 56 Seiten, die Startseite
+listet der Explorer nicht (sie wird vorangestellt). Example: `nav.quartz-nav`, 137 Seiten je
+Sprache, alle Ordner aufgeklappt im DOM. Mit der Reihenfolge des alten Skripts als eigener
+Reihenfolge (Kapitel numerisch, „Anhang“ als Zwischenüberschrift, drei Anhangsseiten) ergibt das
+Handbuch-PDF wieder **10/47/244/4** Lesezeichen und 128 Seiten, also 129 mit Deckblatt wie vorher.
+In der Reihenfolge des Explorers stehen die drei Anhangsseiten nach Titel sortiert auf Ebene 1
+(12/53/235/4); dafür gibt es die eigene Reihenfolge.
+
+**Tag-Seiten sind keine Buchseiten.** `contentIndex.json` führt `tags/<tag>` mit einer erfundenen
+`filePath` `tags/<tag>.md`; ohne Filter standen 18 davon als „nicht in der Navigation“ im
+Handbuch.
+
+**Die Sprache sagt die Website selbst.** quartz-multilanguage schreibt `static/multilanguage.json`
+mit `languages[].home` und `pages[slug].lang`. Ein englisches Buch im Example beginnt bei
+`en/index`. Von der Wurzel der Website gezählt stand jede Seite eine Ebene zu tief (`en/index` h2,
+ihre Seiten h3); gezählt wird deshalb ab dem Ordner der Startseite der Sprache
+(`effectiveRoot`). Danach haben Deutsch und Englisch dieselbe Gliederung (8/46/252–253/260/23).
+
+**Seiten anderer Plugins:** Eine `.base`-Seite von bases-page hat kein `<article>`, der Lauf brach
+an ihr ab. Ihr `.bases-page` gilt jetzt als Artikel, die aktive Ansicht bleibt, die Reiter gehen.
+Eine Excalidraw-Zeichnung bleibt als SVG. Ein Canvas wird zu einem Satz mit Adresse, weil eine
+verschiebbare Fläche aus positionierten Karten auf Papier kein Layout hat. Formulare, eingebettete
+Rahmen und Videos werden ebenso ersetzt; der Satz steht in der Sprache des Dokuments
+(`mainTIn`), nicht in der der App.
+
+**Bilder werden beim Einsammeln nicht abgewartet.** Ein `loading="lazy"`-Bild lädt in einem
+Fenster, das niemand rollt, nie. Das Warten darauf kostete im Example 45 s für 137 Seiten, ohne es
+sind es 15 s. Ob jedes Bild ankommt, prüft das zusammengesetzte Dokument; dort fehlte keines.
+
+**Fremde Anfragen** nach der Regel aus dem Spike: Mermaid-Skripte von cdnjs dürfen durch, alle
+Diagramme rendern (0 nicht gerendert). Gesperrt und gezählt: 169–171 Skripte von jsdelivr (KaTeX
+`copy-tex`, d3, pixi), 55–57 von Plausible (Handbuch), dazu ein eingebettetes PDF im Example als
+`subFrame`.
+
+**Ein Fehler in der Seite kommt mit seiner Meldung zurück.** `executeJavaScript` meldet einen
+Wurf nur als „Script failed to execute“. `ExportWindow.run` fängt ihn in der Seite und gibt die
+Meldung weiter; erst so war die `.base`-Seite zu finden.
+
+**Offen für den PDF-Schritt:** Die Randprüfung des alten Skripts meldet im Example 22 (de) bzw.
+27 (en) Elemente über dem Rand, darunter KaTeX-Pfade mit 6500 px, die ihr Elternelement abschneidet
+(Fehlalarm), und Codeblöcke mit 30–34 px (echt).
+
+**Das unsichtbare Fenster ist kein Fenster der App** (`appWindows.ts`). Broadcast, Menü-Events,
+Theme-Farbe, macOS-`activate` und die Eltern der nativen Dialoge fragten
+`BrowserWindow.getAllWindows()`. Mit dem Exportfenster gingen sonst die Logs der App in die
+Website, und ein Bestätigungsdialog konnte an einem Fenster hängen, das niemand sieht.

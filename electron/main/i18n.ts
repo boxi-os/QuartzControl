@@ -461,6 +461,21 @@ const STRINGS = {
     sftpModesUnfinished:
       '{{count}} von {{total}} früher hochgeladenen Dateien auf 0644 gesetzt, dann brach die Verbindung ab. Die übrigen {{left}} prüft erst der nächste Upload, bis dahin können sie für jeden Account des Servers beschreibbar bleiben.\n',
 
+    // Documents - text inside an exported document (mainTIn, in the document's language)
+    docForm: 'Hier steht auf der Website ein Formular: {{url}}',
+    docFormNoUrl: 'Hier steht auf der Website ein Formular.',
+    docFrame: 'Hier ist auf der Website ein Inhalt eingebettet: {{url}}',
+    docFrameNoUrl: 'Hier ist auf der Website ein Inhalt eingebettet.',
+    docMedia: 'Hier steht auf der Website ein Video oder eine Tonaufnahme: {{url}}',
+    docMediaNoUrl: 'Hier steht auf der Website ein Video oder eine Tonaufnahme.',
+    docCanvas: 'Diese Seite ist auf der Website eine Leinwand, die sich verschieben und vergrößern lässt: {{url}}',
+    docCanvasNoUrl: 'Diese Seite ist auf der Website eine Leinwand, die sich verschieben und vergrößern lässt.',
+    // Documents - export
+    exportNoContentIndex:
+      'Im Build fehlt static/contentIndex.json. QuartzControl liest daraus, welche Seiten es gibt; ohne das Plugin „ContentIndex“ kann kein Dokument entstehen.',
+    exportBrokenContentIndex: 'static/contentIndex.json im Build konnte nicht gelesen werden ({{reason}}).',
+    exportNoArticle: 'Die Seite {{slug}} hat im Build keinen Artikel.',
+    exportPageFailed: 'Die Seite {{slug}} konnte nicht geladen werden ({{reason}}).',
     // Documents - books
     bookNotAnObject: 'Die Datei enthält kein Buch (kein JSON-Objekt).',
     bookUnreadable:
@@ -906,6 +921,19 @@ const STRINGS = {
     sftpModesUnfinished:
       'Set {{count}} of {{total}} files uploaded earlier to 0644, then the connection broke. The next upload checks the other {{left}}; until then they may stay writable by every account on the server.\n',
 
+    docForm: 'On the website, there is a form here: {{url}}',
+    docFormNoUrl: 'On the website, there is a form here.',
+    docFrame: 'On the website, content is embedded here: {{url}}',
+    docFrameNoUrl: 'On the website, content is embedded here.',
+    docMedia: 'On the website, there is a video or an audio recording here: {{url}}',
+    docMediaNoUrl: 'On the website, there is a video or an audio recording here.',
+    docCanvas: 'On the website, this page is a canvas you can pan and zoom: {{url}}',
+    docCanvasNoUrl: 'On the website, this page is a canvas you can pan and zoom.',
+    exportNoContentIndex:
+      'The build has no static/contentIndex.json. QuartzControl reads from it which pages exist; without the “ContentIndex” plugin no document can be made.',
+    exportBrokenContentIndex: 'static/contentIndex.json in the build could not be read ({{reason}}).',
+    exportNoArticle: 'The page {{slug}} has no article in the build.',
+    exportPageFailed: 'The page {{slug}} could not be loaded ({{reason}}).',
     bookNotAnObject: 'The file holds no book (not a JSON object).',
     bookUnreadable:
       '{{file}} could not be read ({{reason}}). The file stays as it is; QuartzControl writes it again only once it is readable.',
@@ -1054,6 +1082,18 @@ export function mainT(key: MainStringKey, vars?: Record<string, string | number>
     console.error(`mainT('${key}') resolved before refreshMainLanguage(); this string is frozen in the default language. Call it inside a function, not at module scope; a script that loads a service without the app calls refreshMainLanguage() first.`)
   }
   const template: string = STRINGS[language][key]
+  if (!vars) return template
+  return template.replace(/\{\{(\w+)\}\}/g, (whole, name: string) => (name in vars ? String(vars[name]) : whole))
+}
+
+/**
+ * A string in a given language instead of the app's: for text that goes into something other
+ * people read - an exported document speaks the language of its pages, not of the app that wrote
+ * it. Anything but German is English, the same fallback the app itself has.
+ */
+export function mainTIn(lang: string, key: MainStringKey, vars?: Record<string, string | number>): string {
+  const which: 'de' | 'en' = lang.toLowerCase().startsWith('de') ? 'de' : 'en'
+  const template: string = STRINGS[which][key]
   if (!vars) return template
   return template.replace(/\{\{(\w+)\}\}/g, (whole, name: string) => (name in vars ? String(vars[name]) : whole))
 }

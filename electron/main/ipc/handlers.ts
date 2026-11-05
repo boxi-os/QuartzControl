@@ -1,4 +1,4 @@
-import { app, ipcMain, BrowserWindow, dialog, shell } from 'electron'
+import { app, ipcMain, dialog, shell } from 'electron'
 import { existsSync } from 'fs'
 import { join, resolve, sep } from 'path'
 import { z } from 'zod'
@@ -73,6 +73,7 @@ import { mainT, type MainStringKey } from '../i18n'
 import { handle, handleNoArgs } from './handle'
 import * as s from './schemas'
 import { clearLogHistory, logHistory, recordLogLine } from '../services/logBuffer'
+import { appWindows, dialogParent } from '../appWindows'
 
 const t = z.tuple
 
@@ -85,7 +86,7 @@ const t = z.tuple
 // which the renderer already had to satisfy to call the API at all.
 
 function broadcast(channel: string, ...args: unknown[]): void {
-  for (const win of BrowserWindow.getAllWindows()) {
+  for (const win of appWindows()) {
     win.webContents.send(channel, ...args)
   }
 }
@@ -759,7 +760,7 @@ export function registerIpcHandlers(): void {
     }
     // Attached to the window so it is a sheet on macOS and modal to the app elsewhere; without a
     // window it would float free and could end up behind the app.
-    const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+    const win = dialogParent()
     const { response } = win ? await dialog.showMessageBox(win, messageBox) : await dialog.showMessageBox(messageBox)
     if (response === 0) return 'cancel'
     return options.altLabel && response === 1 ? 'alt' : 'confirm'

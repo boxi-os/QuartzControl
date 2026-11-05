@@ -1,0 +1,114 @@
+import { BrowserWindow, session } from 'electron'
+import { randomUUID } from 'crypto'
+import { markHelperWindow } from '../../appWindows'
+
+/**
+ * The window a document export renders the user's site in: never shown, sandboxed, without the
+ * app's preload (the site must not see `window.quartzGui`), in its own in-memory session so the
+ * site's storage neither mixes with the app's nor outlives the run.
+ *
+ * What it may load from outside is a rule, not a blanket block - measured on 2026-11-05 (see
+ * docs/decisions/export.md): the handbook and Example load KaTeX's stylesheet from jsdelivr,
+ * Mermaid from cdnjs, d3/pixi for the graph, and the handbook Plausible's script. A block of all
+ * of it loses formulas and diagrams; letting all of it through counts every exported page as a
+ * visit and renders a graph nobody sees.
+ *
+ *  - from the export's own origin: everything;
+ *  - from outside: stylesheets, fonts and images (formulas, webfonts, a picture hotlinked in a
+ *    note), and scripts only when their address is Mermaid's;
+ *  - everything else from outside - other scripts, fetch/XHR, beacons, sockets, frames - is
+ *    refused and counted by host, so the run can say what was not loaded.
+ */
+
+export interface ExportWindow {
+  readonly win: BrowserWindow
+  /** Requests refused under the rule above, by `<resourceType> <host>`. */
+  readonly refused: Map<string, number>
+  /** Whether anything at all was fetched from outside (the run says it needed the network). */
+  readonly fetchedOutside: () => boolean
+  load(url: string): Promise<void>
+  /** Runs a self-contained function (see pageScripts.ts) with JSON-serialisable arguments and
+   *  further functions passed as source. */
+  run<T>(fn: (...args: never[]) => T | Promise<T>, args: unknown[], helpers?: ((...a: never[]) => unknown)[]): Promise<T>
+  close(): void
+}
+
+const OUTSIDE_TYPES = new Set(['stylesheet', 'font', 'image'])
+const MERMAID = /\/mermaid[@/.-]/
+
+export function openExportWindow(origin: string, size: { width: number; height: number }): ExportWindow {
+  const partition = `quartzcontrol-export-${randomUUID()}`
+  const ses = session.fromPartition(partition, { cache: false })
+  const refused = new Map<string, number>()
+  let outside = false
+  ses.webRequest.onBeforeRequest((details, callback) => {
+    const url = details.url
+    if (url.startsWith(`${origin}/`) || url === origin || url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('devtools:')) {
+      return callback({})
+    }
+    const allowed = OUTSIDE_TYPES.has(details.resourceType) || (details.resourceType === 'script' && MERMAID.test(url))
+    if (allowed) {
+      outside = true
+      return callback({})
+    }
+    let host = url
+    try {
+      host = new URL(url).host || url.slice(0, 40)
+    } catch {
+      // keep the raw prefix
+    }
+    const key = `${details.resourceType} ${host}`
+    refused.set(key, (refused.get(key) ?? 0) + 1)
+    callback({ cancel: true })
+  })
+  // No permission is ever granted: no notifications, camera, geolocation, clipboard.
+  ses.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
+
+  const win = new BrowserWindow({
+    show: false,
+    width: size.width,
+    height: size.height,
+    skipTaskbar: true,
+    webPreferences: {
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+      partition,
+      // A hidden window is throttled like a background tab; Mermaid's layout and the fonts would
+      // then crawl or stall.
+      backgroundThrottling: false,
+      spellcheck: false
+    }
+  })
+  markHelperWindow(win)
+  const wc = win.webContents
+  wc.setWindowOpenHandler(() => ({ action: 'deny' }))
+  wc.on('will-navigate', (event, url) => {
+    if (!url.startsWith(`${origin}/`)) event.preventDefault()
+  })
+  wc.on('will-redirect', (event, url) => {
+    if (!url.startsWith(`${origin}/`)) event.preventDefault()
+  })
+
+  return {
+    win,
+    refused,
+    fetchedOutside: () => outside,
+    async load(url) {
+      await win.loadURL(url)
+    },
+    async run(fn, args, helpers = []) {
+      const call = `(${fn.toString()})(${[...args.map((a) => JSON.stringify(a)), ...helpers.map((h) => `(${h.toString()})`)].join(', ')})`
+      // executeJavaScript reports a throw in the page as "Script failed to execute" and drops the
+      // message, so the page catches it and hands it back.
+      const wrapped = `(async () => { try { return { ok: true, value: await ${call} } } catch (e) { return { ok: false, error: String((e && e.message) || e) } } })()`
+      const r = (await wc.executeJavaScript(wrapped)) as { ok: true; value: never } | { ok: false; error: string }
+      if (!r.ok) throw new Error(r.error)
+      return r.value
+    },
+    close() {
+      if (!win.isDestroyed()) win.destroy()
+      void ses.clearStorageData().catch(() => undefined)
+    }
+  }
+}

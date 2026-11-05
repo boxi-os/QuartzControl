@@ -1,6 +1,7 @@
-import { BrowserWindow, nativeTheme } from 'electron'
+import { nativeTheme } from 'electron'
 import type { Settings } from '@shared/ipc-contract'
 import { getSettings } from './services/settingsService'
+import { appWindows } from './appWindows'
 
 // Light/dark/system lives in the main process rather than in the renderer, for one measured
 // reason: setting nativeTheme.themeSource also flips the *renderer's* `prefers-color-scheme`
@@ -28,7 +29,7 @@ export function applyTheme(theme: Settings['theme']): void {
   // BrowserWindow's `backgroundColor` is a creation-time option, so an already-open window keeps
   // the colour it was born with - visible as the old theme flashing through during a resize.
   const color = windowBackgroundColor()
-  for (const win of BrowserWindow.getAllWindows()) win.setBackgroundColor(color)
+  for (const win of appWindows()) win.setBackgroundColor(color)
 }
 
 /** Applied before the first window is created, so there is no frame in the wrong appearance. */

@@ -1,8 +1,9 @@
-import { app, BrowserWindow, dialog, shell, Menu, type MenuItemConstructorOptions } from 'electron'
+import { app, dialog, shell, Menu, type MenuItemConstructorOptions } from 'electron'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { IPC, type AppCommand } from '@shared/ipc-contract'
 import { mainLanguage, mainT, refreshMainLanguage } from './i18n'
+import { appWindows } from './appWindows'
 
 export const APP_NAME = 'QuartzControl'
 
@@ -106,7 +107,7 @@ const FEEDBACK_URL = 'https://github.com/boxi-os/QuartzControl/issues/new'
 // routes live in a HashRouter, so the only way across is an event the renderer listens for -
 // App.tsx installs exactly one listener for the app's lifetime.
 function navigateRenderer(hashPath: string): void {
-  for (const win of BrowserWindow.getAllWindows()) win.webContents.send(IPC.appNavigate, hashPath)
+  for (const win of appWindows()) win.webContents.send(IPC.appNavigate, hashPath)
 }
 
 // The other direction a menu item can go: not "move the router" but "act on what is on screen".
@@ -114,7 +115,7 @@ function navigateRenderer(hashPath: string): void {
 // every mount and every keystroke to know that, and the renderer already knows: a command nobody
 // has registered for does nothing.
 function commandRenderer(command: AppCommand): void {
-  for (const win of BrowserWindow.getAllWindows()) win.webContents.send(IPC.appCommand, command)
+  for (const win of appWindows()) win.webContents.send(IPC.appCommand, command)
 }
 
 // macOS puts About in the app menu and takes its content from the bundle; everywhere else it has

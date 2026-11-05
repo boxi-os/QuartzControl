@@ -3,6 +3,7 @@ import { existsSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { basename, extname, join } from 'path'
 import type { BookDefinition, DocumentFormat, SitePages } from '@shared/ipc-contract'
+import type { DocItem } from '@shared/exportModel'
 import { anchorFor, backlinksInBook, insideRoot, pageDepth, REGISTER_SLUG, resolveOrder, tagRegister } from '@shared/exportModel'
 import { getPrefs } from '../projectPrefsService'
 import { resolveBuildDir } from '../projectDirs'
@@ -65,6 +66,17 @@ function stopAllWhenAppCloses(): void {
       if (appWindows().length === 0) for (const c of running.values()) c.abort()
     })
   }
+}
+
+/** The PDF's keywords: the tags of the book's pages, most used first, at most 30. The field was
+ *  always empty, though the pages have tags (review of 2026-11-06, nebenbei 2). */
+function bookKeywords(items: DocItem[], facts: Awaited<ReturnType<typeof readSiteFacts>>): string[] {
+  const count = new Map<string, number>()
+  for (const item of items) {
+    if (item.kind !== 'page') continue
+    for (const tag of facts.pages.get(item.slug)?.tags ?? []) count.set(tag, (count.get(tag) ?? 0) + 1)
+  }
+  return [...count.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 30).map(([tag]) => tag)
 }
 
 function escHtml(text: string): string {
@@ -240,7 +252,7 @@ export async function exportBook(opts: {
           pageSize: book.pdf.pageSize,
           landscape: book.pdf.landscape
         },
-        { title, subtitle: book.subtitle, author: book.author, keywords: [], lang },
+        { title, subtitle: book.subtitle, author: book.author, keywords: bookKeywords(pageItems, facts), lang },
         { signal, otherFormats: opts.formats.some((f) => f !== 'pdf') }
       )
       files.push({ name: `${book.id}.pdf`, bytes: Buffer.from(pdf.bytes) })

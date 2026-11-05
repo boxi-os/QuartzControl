@@ -56,6 +56,22 @@ dahin gilt der Fall als geduldet.
 | Ordner-Ziel auf einem Wechsel- oder Netzlaufwerk | unterstützt | gemessen mit einem Disk-Image (`6dba3247`, `fde8d49e`): fehlt der Ordner oder enthält er keine der veröffentlichten Dateien (auch ein Mountpoint mit nur einer `.DS_Store`), lehnt ein schon veröffentlichtes Ziel ab; der Mountpoint unter Linux nur nachgestellt, ein Netzlaufwerk (SMB, NFS) nicht gemessen |
 | Ordner, den ein anderes Programm nach jedem Lauf leert | geduldet | gemessen (58. Review, N2): jeder Lauf lehnt ab, bis „Alles neu hochladen“ gewählt wird (Handbuch 6.5); mit 1.1.0 lief das. Stufe mit dem Nutzer eingeordnet (2026-10-22) |
 
+## Dokument (PDF, ePub, HTML) — seit 1.3
+
+| Fall | Stufe | Stand |
+|---|---|---|
+| Export auf macOS (PDF, ePub, HTML) | unterstützt | gemessen 2026-11-05 an der gebauten App und am Handbuch (`docs/decisions/export.md`) |
+| PDF auf Linux | unterstützt | Spike auf `debian-vm` (aarch64): dieselben Seiten und Lesezeichen wie auf macOS; der Export der App selbst dort noch nicht gemessen |
+| Silbentrennung | nicht unterstützt | `hyphens: auto` trennt Deutsch nur unter macOS; nicht eingebaut |
+| PDF/A, PDF/X, CMYK | nicht unterstützt | Chromium schreibt beides nicht |
+| ePub nach epubcheck 5.4.0 | unterstützt | Handbuch, Example de/en: 0 Fehler, 0 Warnungen |
+| ePub in Apple Books, Thorium, Calibre | Messung ausstehend | nur die Kapitel in Chromium angesehen |
+| ePub über Kindle (KDP) | geduldet | nicht gemessen; KDP nimmt ePub an |
+| Reihenfolge aus Explorer oder quartz-navigations | unterstützt | gemessen an Handbuch und Example |
+| eine andere Navigation | geduldet | die größte Linkliste der Startseite, der Bericht sagt es |
+| Website, die Schriften oder KaTeX von einem CDN lädt | unterstützt | braucht beim Export Netz, der Bericht sagt es |
+| Dokumente mit der Website hochladen (SFTP, FTP, Ordner, Git-Branch) | unterstützt | Ordner gemessen; SFTP, FTP, rsync und Git-Branch sehen denselben Staging-Ordner, nicht einzeln gemessen |
+
 ## Relay (quartz-forms)
 
 | Fall | Stufe | Stand |

@@ -33,6 +33,7 @@ import { announce } from '../../state/announcer'
 import { useProject } from '../ProjectLayout'
 import { TAB_ICONS } from '../navConfig'
 import PageOrder from './PageOrder'
+import HandbookLink from '../../components/HandbookLink'
 
 /**
  * Dokumente: the books of a project - which pages of the site go into a PDF, ePub or offline HTML,
@@ -217,7 +218,7 @@ export default function Documents(): JSX.Element {
 
   return (
     <div>
-      <PageHeader icon={TAB_ICONS.documents} title={t('documents.title')} description={t('documents.description')} status={null} />
+      <PageHeader icon={TAB_ICONS.documents} title={t('documents.title')} description={t('documents.description')} status={null} handbook={<HandbookLink page="documents" />} />
       <DetailLayout panel={panel} panelLabel={t('documents.settingsHeading')} panelWidth="wide" onDismiss={() => void select(null)}>
         <InfoNote>
           {t('documents.howItWorks')}{' '}

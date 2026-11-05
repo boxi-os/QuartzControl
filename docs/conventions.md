@@ -138,6 +138,19 @@ Begründung.
   `openHandbook()` (`menu.ts`) aus `HANDBOOK_URL` und einer Kennung aus
   `src/data/handbookPages.ts`; der Kanal ist `dialog.openHandbook`. Das Schema lässt nur
   `[A-Za-z0-9/_-]` zu.
+- **Ein Dokument entsteht aus der gebauten Website, nicht aus dem Markdown.** Der Export
+  (`services/export/`) lädt eine Kopie des Builds in ein unsichtbares Fenster und nimmt je Seite
+  den Artikel; Reihenfolge, Sprache, Tags und Links sagt die Website selbst (gerenderte Navigation,
+  `contentIndex.json`, `multilanguage.json`). PDF, ePub und HTML kommen aus einem Dokumentmodell.
+- **Ein Hilfsfenster ist kein Fenster der App.** Broadcast, Menü-Events, Theme und Dialog-Eltern
+  fragen `appWindows()`/`dialogParent()` (`appWindows.ts`), nie `BrowserWindow.getAllWindows()`.
+  Das Exportfenster: unsichtbar, Sandbox, kein Preload, eigene Sitzung im Speicher.
+- **Was das Exportfenster von außen lädt, ist eine Regel, kein Pauschalverbot.** Stylesheets,
+  Schriften, Bilder und Mermaid-Skripte ja; alles andere (Statistik, Graph, Beacons) wird gesperrt
+  und im Bericht gezählt. Gerendert wird hell.
+- **Wer ein gerendertes Ergebnis abholt, wartet, bis es fertig ist, nicht bis es da ist.** Mermaid
+  gilt erst mit `aria-roledescription` und drei gleichen Takten als fertig; `capturePage` erst zwei
+  Animationsframes nach dem Austausch.
 - **Fenster:** ein Fenster, `hiddenInset` nur auf macOS, `will-navigate` nur auf das eigene
   Dokument, `setWindowOpenHandler` nur für http(s), eine CSP ohne externe Hosts, und
   `nativeTheme.themeSource` wird vor `createWindow()` gesetzt.
@@ -366,7 +379,8 @@ Begründung.
   Anlegen eines Projekts. Bis dahin heißt „die Form von 1.0“: nur, was 1.0.x lesen kann (ein Wert
   „nur hell“ schreibt dort den dunklen ausdrücklich mit). Beim Zusammenführen wird die
   Ladereihenfolge neu gebildet.
-- **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen.
+- **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen. Ausnahme: eine
+  versionierte Datei (`quartz-books/`) bleibt unlesbar liegen und wird nicht überschrieben.
 - **Eine Datei, die leer ist, ist nicht dasselbe wie eine, die etwas anderes enthält.** Eine leere
   Config ist gültig. Syntaxfehler (`doc.errors`, `parseDocument` wirft nicht), kein Mapping und
   `plugins:` ohne Liste bekommen je einen Satz.

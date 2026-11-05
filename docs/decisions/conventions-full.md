@@ -499,6 +499,28 @@ Projektwurzel.
   durch, damit der Pfad die Website nicht verlässt. Ob die Seite existiert, wird nicht gefragt —
   wer ein Kapitel umbenennt, zieht die Tabelle nach und veröffentlicht die Website
   ([`release.md`](../release.md), Punkt 3).
+- **Ein Dokument entsteht aus der gebauten Website, nicht aus dem Markdown.** Eine zweite
+  Markdown-Umsetzung neben Quartz' eigener liefe auseinander (Callouts, Transklusionen, Plugins),
+  das Handbuch-Skript hatte das schon so entschieden. Der Export lädt eine Kopie des Builds (die
+  Dev-Vorschau schreibt `public/` um) in ein unsichtbares Fenster und nimmt je Seite den Artikel.
+  Was die Website über sich weiß, fragt er sie: die gerenderte Navigation (Explorer und
+  quartz-navigations sortieren verschieden, und beide lassen sich über das hinaus einstellen, was
+  QuartzControl liest), `contentIndex.json` für Seiten, Tags und Links, `multilanguage.json` für
+  die Sprache. PDF, ePub und HTML kommen aus einem Dokumentmodell; das HTML aus dem Inhalt, den
+  epubcheck für das ePub bestätigt. Messungen: `decisions/export.md`.
+- **Ein Hilfsfenster ist kein Fenster der App.** Mit dem Exportfenster gab es zum ersten Mal ein
+  zweites Fenster, und fünf Stellen meinten mit `BrowserWindow.getAllWindows()` „das Fenster der
+  App“: die Logs gingen sonst per Broadcast in die Website des Nutzers, und ein Bestätigungsdialog
+  konnte an einem Fenster hängen, das niemand sieht. `appWindows.ts` führt die Hilfsfenster.
+- **Was das Exportfenster von außen lädt, ist eine Regel, kein Pauschalverbot.** Gemessen am
+  Handbuch und am Example: KaTeX-CSS von jsdelivr, Mermaid von cdnjs, d3 und pixi für den Graphen,
+  Plausible. Ein Pauschalverbot verlor Formeln und Diagramme, gar keins zählte jede exportierte
+  Seite als Besuch. Hell, weil Quartz und Mermaid sonst dem Dark Mode der App folgen; gesetzt über
+  den Debugger erst nach einer ersten Navigation auf der eigenen Origin (davor „target closed“).
+- **Wer ein gerendertes Ergebnis abholt, wartet, bis es fertig ist, nicht bis es da ist.** Mermaid
+  setzt zuerst ein leeres Mess-SVG ein: Zwei Diagramme des Example waren leere Kästen, und das
+  Sequenzdiagramm fehlte in einem Lauf. `capturePage` nimmt das zuletzt gemalte Bild: Die breite
+  Formel kam als die Matrix davor heraus, und epubcheck sieht das nicht.
 - **Fenster:** ein Fenster, `hiddenInset` nur auf macOS, `will-navigate` erlaubt nur das eigene
   Dokument, `setWindowOpenHandler` gibt nur http(s) an den Browser, CSP ohne externe Hosts. Theme
   wird in Main über `nativeTheme.themeSource` gesetzt, *vor* `createWindow()`.
@@ -1334,6 +1356,10 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   desselben Moduls brechen den Bau (vierzigstes Review, Befund 2 und Schlussfrage).
 - **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen statt
   überschreiben.
+  **Ausnahme seit 1.3: die Bücher** (`quartz-books/<id>.json`, `bookService.ts`). Sie sind
+  versioniert; ein Merge-Konflikt umbenannt zu `<id>.json.corrupt-…` landete samt Kopie im nächsten
+  Commit des Nutzers. Ein unlesbares Buch bleibt deshalb liegen, wird mit Grund gelistet und nicht
+  überschrieben, bis es lesbar ist (`decisions/export.md`).
 - **Eine Datei, die leer ist, ist nicht dasselbe wie eine, die etwas anderes enthält — und „etwas
   anderes“ hat mehr als eine Form.** Eine leere `quartz.config.yaml` ist ein gültiges
   YAML-Dokument ohne Inhalt (`toJS()` sagt `null`) und wird gelesen wie ein Dokument ohne diese

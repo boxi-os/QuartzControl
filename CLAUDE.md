@@ -76,7 +76,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`publishing-and-credentials.md`](docs/decisions/publishing-and-credentials.md) - Handshake-Budget, Host-Keys, Excludes, Zugänge vs. Ziele, Manifeste, Ordner-Ziel, `quartz sync`, GitHub-API, `GIT_ASKPASS`, Branch-Adapter, rsync, Webhook, Schlüsseldateien, verschlüsselte Zugangsdaten
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
-- [`export.md`](docs/decisions/export.md) - PDF/ePub/HTML-Export (1.3): Vorher-Messung am Handbuch-Skript, `printToPDF` in Electron 43 auf macOS und Linux, Silbentrennung, fremde Anfragen im Exportfenster
+- [`export.md`](docs/decisions/export.md) - Zieltyp „Dokument“ (1.3): Vorher-Messung, `printToPDF` in Electron 43, Einsammeln aus der gebauten Website, Mermaid, PDF mit zwei Durchgängen, ePub und epubcheck, Offline-HTML, Seite „Dokumente“, Register/Backlinks, Download über Staging, Handbuch-PDF über den Export
 
 
 ## Stand und Reviews

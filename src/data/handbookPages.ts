@@ -30,6 +30,8 @@ export const HANDBOOK_PAGES = {
   preview: { de: '5-ansehen-und-bauen/01-die-vorschau', en: 'en/5-preview-and-build/01-the-preview' },
   publish: { de: '6-veroeffentlichen/01-zugaenge-und-ziele', en: 'en/6-publishing/01-connections-and-targets' },
   gitSync: { de: '6-veroeffentlichen/03-git-sync', en: 'en/6-publishing/03-git-sync' },
+  // Seit 1.3; bis die Website mit diesem Kapitel veröffentlicht ist, zeigt der Pfad die 404-Seite.
+  documents: { de: '6-veroeffentlichen/08-als-dokument', en: 'en/6-publishing/08-as-a-document' },
   snapshots: { de: '7-wartung/01-snapshots', en: 'en/7-maintenance/01-snapshots' },
   updates: { de: '7-wartung/03-updates', en: 'en/7-maintenance/03-updates' },
   settings: { de: '2-projekte/05-die-einstellungen', en: 'en/2-projects/05-the-settings' }

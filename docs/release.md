@@ -12,7 +12,8 @@
 > Google-Schriften 1959 (neun neu). Vorlagen-Repo `6bf1484`, `--check-sync` für `basic` Exit 0. Die
 > Plugin-Website stand seit dem 2026-11-04 auf dem Stand ihres Vaults und wurde nicht neu
 > veröffentlicht. Alle 38 Pfade aus `handbookPages.ts` schon vor dem Release mit 200 (die Website
-> trug 1.3-Kapitel einen Tag vorher). Drei Dinge für das nächste Mal: **`eval` der
+> trug 1.3-Kapitel einen Tag vorher), nach dem Veröffentlichen von QuartzControl-Web (`c14654fb`,
+> Download-Kasten und Notiz auf 1.3.0) wieder alle mit 200. Drei Dinge für das nächste Mal: **`eval` der
 > Sitzungsumgebung auf einer VM setzt `PWD` auf das Home** — danach absolute Pfade; **ein erster
 > Starttest auf debian-vm blieb ohne Ausgabe** (Ursache nicht geklärt), ein zweiter Start antwortete
 > per CDP nach 25 s; **zsh teilt eine Dateiliste in einer Variablen nicht**, `shasum` bekommt die

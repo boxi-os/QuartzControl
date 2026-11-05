@@ -70,7 +70,10 @@ function destinationTypeLabel(t: TFunction, type: PublishTarget['destination']['
   if (type === 'folder') return t('publish.targetForm.typeFolder')
   if (type === 'webhook') return t('publish.targetForm.typeWebhook')
   if (type === 'document') return t('publish.targetForm.typeDocument')
-  return t('publish.targetForm.typeGitBranch')
+  if (type === 'git-branch') return t('publish.targetForm.typeGitBranch')
+  // A type of a later version: 1.2.0 called a 1.3 document target "Git-Branch" (review of
+  // 2026-11-06, N3).
+  return t('publish.targetForm.typeUnknown', { type: String(type) })
 }
 
 /** Which connection kind a destination needs, or null when it needs none - a folder is reached

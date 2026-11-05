@@ -717,6 +717,17 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
     Schlüssel, SSH-Agent, zu viele Schlüssel im Agent), einen FTP-Server, der schweigt, und eine
     `PWD`-Antwort, die QuartzControl nicht lesen kann; ein absoluter FTP-Pfad fragt `PWD` nicht
     mehr.
+- **für 1.3 außerdem** (Stand 2026-11-06, zweiundsechzigstes Review, N3; gemessen an der gebauten
+  1.2.0 mit einer `publish-targets.json` aus 1.3):
+  - *Zurück zu 1.2.* 1.2.0 zeigt ein Ziel vom Typ „Dokument“ mit der Plakette „Git-Branch“ und
+    bietet das Formular eines Git-Branch-Ziels an; veröffentlichen lässt es sich dort nicht („Für
+    den Zieltyp „document“ gibt es noch keinen Adapter“). Ein Website-Ziel, das 1.2.0 speichert,
+    verliert „Dokumente mitladen“ still. Bücher (`quartz-books/`) lässt 1.2.0 in Ruhe. Seit 1.3
+    behält das Speichern Felder, die die Fassung nicht kennt, und ein unbekannter Zieltyp heißt
+    „unbekannt“; das hilft erst dem Rückweg von einer späteren Fassung. Der Satz: „Wer ein
+    Projekt auf mehreren Rechnern bearbeitet, aktualisiert alle auf 1.3, bevor er Dokumente
+    anlegt: 1.2 kann ein Dokument-Ziel nicht ausführen und vergisst beim Speichern eines
+    Website-Ziels, dass es Dokumente mitlädt.“
 - **die Prüfsummen** als eigener Abschnitt „Checksums (SHA-256)“:
 
       cd release && shasum -a 256 <die Paketdateien>

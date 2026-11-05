@@ -2992,6 +2992,7 @@ export default {
       typeFolder: 'Ordner',
       typeWebhook: 'Webhook',
       typeGitBranch: 'Git-Branch',
+      typeUnknown: 'Unbekannter Zieltyp „{{type}}“',
       typeDocument: 'Dokument (PDF, ePub, HTML)',
       documentFolder: 'Zielordner',
       documentBook: 'Buch',

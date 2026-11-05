@@ -78,7 +78,12 @@ function locationKey(target: Pick<PublishTarget, 'connectionId' | 'destination'>
 export async function saveTarget(projectPath: string, input: SavePublishTargetInput): Promise<PublishTarget> {
   const all = await listTargets(projectPath)
   const index = input.id ? all.findIndex((t) => t.id === input.id) : -1
+  // What a later version wrote into the entry and this one does not know stays: 1.2.0 saved a
+  // folder target field by field and dropped 1.3's withDocuments (review of 2026-11-06, N3).
+  const KNOWN = new Set(['id', 'name', 'connectionId', 'destination', 'excludes', 'withDocuments'])
+  const unknown = index !== -1 ? Object.fromEntries(Object.entries(all[index]).filter(([key]) => !KNOWN.has(key))) : {}
   const target: PublishTarget = {
+    ...unknown,
     id: index !== -1 ? all[index].id : randomUUID(),
     name: input.name,
     connectionId: input.connectionId,

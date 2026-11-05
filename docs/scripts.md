@@ -143,6 +143,23 @@ Wörtlich aus `CLAUDE.md` hierher gezogen am 2026-10-16, damit `CLAUDE.md` nicht
   Existiert, weil die erste Fassung eine Sperrliste
   auf dem XML-Parser war und die Website HTML liest: an ihr liefen 14 der 22 durch, zwei davon ohne
   Klick (zweiundvierzigstes Review)
+- `npm run check:export -- <projektpfad> [--epubcheck-ssh <host>:<jar> | --epubcheck-jar <pfad>]` —
+  der Export als PDF, ePub und Offline-HTML über die gebaute App: Kopie des Projekts (APFS-Klon),
+  Wegwerf-Profil, Bau, ein Buch über die ganze Website, ein Ziel „Dokument“, `deploy.run`. Geprüft
+  wird mit eigenen Lesern, nicht mit dem Code, der schreibt: das PDF mit pdf-lib und `pdfinfo`
+  (Seiten, Lesezeichen je Ebene, getaggt, Titel, Sprache, interne Verweise), das ePub aus den Bytes
+  (`mimetype` zuerst und ungepackt, Manifest, Spine, `nav`, keine fremden Ressourcen) und mit
+  epubcheck, das HTML in Chrome als `file://` mit gesperrtem Netz. epubcheck braucht Java; ohne
+  lauffähiges Java lokal geht es per ssh (`--epubcheck-ssh debian-vm:/home/boxi/epubcheck/epubcheck-5.4.0/epubcheck.jar`).
+  **Endet mit 3, wenn nichts falsch war, aber etwas nicht geprüft werden konnte** (kein epubcheck,
+  kein `pdfinfo`, kein Chrome), mit 1 bei einem Befund. `--files <ordner> --book <id>` prüft
+  vorhandene Dateien ohne Export. Existiert, weil der Plan des Exports es vorsah und es bis zum
+  62. Review fehlte (M3). Gegenprobe beim ersten Lauf (2026-11-05): ein PDF ohne Tags, Lesezeichen,
+  Titel und Sprache, ein ePub mit gepacktem `mimetype`, fehlendem Stylesheet und fremdem Bild, ein
+  HTML mit fremdem und fehlendem Bild — jeder eingebaute Fehler gefunden, beim ePub zusätzlich von
+  epubcheck (RSC-001, RSC-006, OPF-014); dabei stürzte die eigene Suche nach fremden Ressourcen an
+  der fehlenden Datei ab (behoben). Erste Läufe: gui-test 323 Seiten, Example 279, Handbuch 147,
+  epubcheck je 0 Fehler, 0 Warnungen
 - `npm run check:core-update` — der Plan, nach dem das Core-Update `package.json` und
   `package-lock.json` behandelt: vierzehn Fälle gegen `shared/packageJsonDeps.ts` (das Skript lädt die
   Datei, statt sie abzuschreiben), dazu die npm-Aufrufe, die daraus entstehen, und seit dem

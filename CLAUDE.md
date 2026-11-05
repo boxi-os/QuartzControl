@@ -27,6 +27,7 @@ startest oder seine Ausgabe deutest.**
 - `npm run check:option-schema -- <projekt>` — Schema-Leser der Plugin-Optionen gegen echte Plugins
 - `npm run check:plugin-copies -- <projekt>` — Abschriften der vier Plugin-Editoren gegen die installierten Plugins
 - `npm run check:inline-svg -- [projekt]` — SVG-Bereiniger gegen böse Eingaben in Chrome (braucht Chrome)
+- `npm run check:export -- <projekt> [--epubcheck-ssh host:jar]` — Export (PDF/ePub/HTML) über die gebaute App, eigene Leser + epubcheck; Exit 3 = nicht alles geprüft
 - `npm run check:core-update` — Plan des Core-Updates für `package.json`/Lockfile
 - `npm run check:i18n` — `t()`/`mainT()`-Schlüssel gegen `de.ts`/`en.ts`, Parität, ungenutzte Schlüssel
 - `npm run check:handbook` — Blockzitate des Handbuchs gegen die Sprachdateien

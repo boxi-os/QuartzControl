@@ -742,8 +742,36 @@ als erlaubt aufzählt, ein `span` mit seinem Inhalt (nur `id`, `class`, `lang`, 
 Das Wort selbst fehlt danach im ePub wie auf der Website, die es auch nicht zeigt. Nachher:
 gui-test 0 Fehler, Example und Handbuch weiter 0 Fehler.
 
-Das Prüfskript `check:export`, das der Plan vorsah, gibt es nicht; die Gegenprobe ist bis dahin
-epubcheck auf debian-vm von Hand, mit gui-test als dritter Stichprobe neben Handbuch und Example.
+Das Prüfskript `check:export`, das der Plan vorsah, gab es zu diesem Zeitpunkt nicht; die
+Gegenprobe war epubcheck auf debian-vm von Hand, mit gui-test als dritter Stichprobe neben Handbuch
+und Example. Seit dem 2026-11-05 gibt es es (nächster Abschnitt).
+
+### Das Prüfskript `check:export` (2026-11-05)
+
+`scripts/check-export.mjs` exportiert über die gebaute App in einer Kopie des Projekts (Buch über
+die ganze Website, Inhaltsverzeichnis, Register, Rückverweise, A4) und prüft jede Datei mit einem
+eigenen Leser: pdf-lib und `pdfinfo` fürs PDF, die Bytes und `unzip` fürs ePub, dazu epubcheck 5.4.0
+über ssh auf debian-vm (hier gibt es kein Java), Chrome mit gesperrtem Netz fürs HTML.
+
+Gegenprobe vor dem ersten echten Lauf (`--files`, Dateien aus einem gui-test-Export nachträglich
+beschädigt): PDF ohne `StructTreeRoot`/`MarkInfo`, `/Outlines`, Titel und `/Lang` → vier Befunde,
+`pdfinfo` widerspricht („Tagged no“); ePub mit gepacktem `mimetype`, gelöschtem `style.css` und
+einem `<img src="https://…">` → `mimetype`, Manifest, fremde Ressource, epubcheck mit RSC-001,
+RSC-006 und OPF-014; HTML mit fremdem und fehlendem Bild → Anfrage ins Netz, fehlende Datei, zwei
+Bilder ohne Inhalt. Dabei stürzte die Suche nach fremden Ressourcen an der fehlenden Datei ab; sie
+liest jetzt nur, was im Archiv steht.
+
+Erste Läufe (2026-11-05, gebaut aus `3d11aeff`):
+
+| Projekt | Reihenfolge | PDF-Seiten | Lesezeichen je Ebene | ePub-Kapitel | epubcheck | HTML-Bilder |
+|---|---|---:|---|---:|---|---:|
+| gui-test | quartz-navigations | 323 | 11/35/124/326/630/35 | 141 | 0 / 0 | 12 |
+| Example | quartz-navigations | 279 | 9/46/252/260/16/7 | 140 | 0 / 0 | 35 |
+| QuartzControl-Handbuch | explorer | 147 | 13/54/239/4 | 60 | 0 / 0 | 46 |
+
+Example trifft die Referenzzahl aus N4 (279). Das Handbuch hat 147 Seiten statt der dort notierten
+145; das Testbuch schaltet Register und Rückverweise ein, ob das Referenzbuch dasselbe tat, ist nicht
+nachgesehen.
 
 ### Ein Pixel über dem Druckrand (2026-11-06, M4)
 

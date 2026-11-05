@@ -263,7 +263,10 @@ nachzulesen ist und die Startseite des Handbuchs dorthin verweist. Was sich geä
 also in den Release-Notizen, nicht im Vault. Eine neue Seite des Handbuchs muss in
 `scripts/handbook.book.json` eingetragen werden, an ihrer Stelle (bis zum 2026-11-05 nur die
 Seiten auf oberster Ebene, in der Liste `APPENDIX`); `build:handbook-pdf` bricht sonst ab und nennt
-sie, und genau dafür ist es da.
+sie, und genau dafür ist es da. **Vor `build:handbook-pdf` kommt `npm run build:handbook`:** Das
+PDF liest `resources/handbook`, den letzten Bau, und der kennt ein Kapitel, das danach dazukam,
+nicht; für 1.3 brach es so an „6-veroeffentlichen/08-als-dokument“ ab (zweiundsechzigstes Review,
+nebenbei 10, gemessen an einer Kopie).
 
 **Die Handbuch-Website lädt ihre eigenen Schriften nur, wenn sie einmal gebaut wurde, seit die
 Schrift-URLs relativ sind.** `1df4ee4` schreibt `url("static/fonts/…")` statt

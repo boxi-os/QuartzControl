@@ -1,7 +1,7 @@
 import { randomBytes } from 'crypto'
 import { existsSync } from 'fs'
 import { mkdir, rename, rm, stat, writeFile } from 'fs/promises'
-import { isAbsolute, join, relative, resolve } from 'path'
+import { dirname, isAbsolute, join, relative, resolve } from 'path'
 import type { DeployDiffEntry, DocumentFormat } from '@shared/ipc-contract'
 import { mainT } from '../../i18n'
 import { readBook } from '../bookService'
@@ -49,6 +49,13 @@ export const documentAdapter: DeployAdapter = {
     const d = destination(ctx)
     const book = await readBook(ctx.projectPath, d.bookId)
     if (!book) return { success: false, output: mainT('exportBookMissing', { id: d.bookId }) }
+    // The folder itself is created, the folders above it are not: on a disk or share that is not
+    // connected that was a raw "EACCES: mkdir '/Volumes/…'" after the whole export, and under
+    // Linux the files would land in the bare mount point (review of 2026-11-06, nebenbei 12).
+    // Asked before the export, which can take minutes.
+    if (!existsSync(d.path) && !existsSync(dirname(resolve(d.path)))) {
+      return { success: false, output: mainT('exportFolderParentMissing', { path: d.path, parent: dirname(resolve(d.path)) }) }
+    }
     const outcome = await exportBook({
       targetId: ctx.target.id,
       projectPath: ctx.projectPath,
@@ -57,7 +64,9 @@ export const documentAdapter: DeployAdapter = {
       formats: d.formats,
       onProgress: (done, total, label) => ctx.emitProgress(done, total, label)
     })
-    await mkdir(d.path, { recursive: true })
+    await mkdir(d.path).catch((err: NodeJS.ErrnoException) => {
+      if (err.code !== 'EEXIST') throw err
+    })
     if (!(await stat(d.path)).isDirectory()) throw new Error(mainT('exportFolderNotFolder', { path: d.path }))
     const written: string[] = []
     for (const file of outcome.files) {

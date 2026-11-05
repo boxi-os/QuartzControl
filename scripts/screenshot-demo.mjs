@@ -11,7 +11,9 @@
 //
 // Das Profil ist ein Wegwerf-Verzeichnis, die Projekte sind es nicht: Die Ziele liegen in
 // `<projekt>/.quartz-gui/publish-targets.json` eines echten Projekts. Die Datei wird deshalb vor dem
-// Eintragen gemerkt und am Ende des Laufs zurückgeschrieben - siehe `lendProjectTargets()`.
+// Eintragen gemerkt und am Ende des Laufs zurückgeschrieben - siehe `lendProjectTargets()`. Dasselbe
+// gilt seit 1.3 für das Buch in `<projekt>/quartz-books/` (`lendProjectBooks()`): Die Seite
+// „Dokumente“ und ein Ziel der Art „Dokument“ zeigen ohne eines nichts.
 import { execFileSync } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
@@ -61,6 +63,32 @@ export const DEMO_TARGETS = [
     destination: { type: 'folder', path: path.join(os.homedir(), 'Documents/website-archiv'), deleteRemoved: false }
   }
 ]
+
+/**
+ * Das Buch der Seite „Dokumente“ und des Dokument-Ziels unten. Die Reihenfolge bleibt die der
+ * Website (`order: null`), damit das Bild zeigt, was ein neues Buch zeigt; Register und Verweise
+ * sind an, weil das Kapitel sie beschreibt.
+ */
+export const DEMO_BOOK = {
+  title: 'QuartzControl-Handbuch',
+  subtitle: 'Version 1.3',
+  author: 'Demo',
+  root: '',
+  order: null,
+  excluded: [],
+  coverImage: '',
+  toc: true,
+  tagIndex: true,
+  backlinks: true,
+  outsideLinks: 'site',
+  pdf: { pageSize: 'A4', landscape: false }
+}
+
+/** Das Dokument-Ziel; `bookId` setzt seedDemoProfile(), sobald das Buch angelegt ist. */
+export const DEMO_DOCUMENT_TARGET = {
+  name: 'Handbuch als PDF und ePub',
+  destination: { type: 'document', path: path.join(os.homedir(), 'Documents/handbuch-export'), bookId: '', formats: ['pdf', 'epub'] }
+}
 
 /** Welche Projekte in der Liste stehen sollen, in dieser Reihenfolge. */
 export const DEMO_PROJECTS = [projectPath('QuartzControl-Handbuch'), projectPath('Example')]
@@ -140,11 +168,87 @@ export async function seedDemoProfile(page, ipc) {
     await ipc(page, (a) => window.quartzGui.publishTargets.save(a.path, a.input), { path: project, input })
   }
 
+  // Das Buch über denselben Kanal wie „Neues Buch“, die Sprache aus der gebauten Website wie dort.
+  // Ein Buch gleichen Titels aus einem abgebrochenen Lauf wird überschrieben statt verdoppelt: Den
+  // Ordner gibt lendProjectBooks() ohnehin zurück.
+  lendProjectBooks(project)
+  const listing = await ipc(page, (a) => window.quartzGui.books.list({ projectPath: a.path }), { path: project })
+  const site = await ipc(page, (a) => window.quartzGui.books.sitePages({ projectPath: a.path, root: '', language: '' }), {
+    path: project
+  }).catch(() => null)
+  const sameTitle = listing.books.find((b) => b.title === DEMO_BOOK.title)
+  const book = await ipc(page, (a) => window.quartzGui.books.save({ projectPath: a.path, book: a.book }), {
+    path: project,
+    book: { ...DEMO_BOOK, language: site?.defaultLanguage ?? '', ...(sameTitle ? { id: sameTitle.id } : {}) }
+  })
+  if (!site) console.warn('  (Website nicht gebaut: Die Seite „Dokumente“ zeigt keine Seitenliste)')
+  const docInput = {
+    name: DEMO_DOCUMENT_TARGET.name,
+    destination: { ...DEMO_DOCUMENT_TARGET.destination, bookId: book.id }
+  }
+  if (idByName.has(docInput.name)) docInput.id = idByName.get(docInput.name)
+  await ipc(page, (a) => window.quartzGui.publishTargets.save(a.path, a.input), { path: project, input: docInput })
+
   console.log(
     `  Profil: ${registered.length} Projekte, ${saved.length} Zugänge, ` +
-      `${DEMO_TARGETS.length} Ziele in ${path.basename(project)}`
+      `${DEMO_TARGETS.length + 1} Ziele und ein Buch in ${path.basename(project)}`
   )
   return shot.id
+}
+
+/**
+ * Merkt sich den Ordner `quartz-books/` eines echten Projekts - jede Datei mit ihren Bytes, auch,
+ * dass er fehlt - und stellt diesen Stand wieder her, wenn der Prozess endet. Was der Lauf
+ * hinzugefügt hat, geht; was er geändert hat, bekommt seine Bytes zurück. Derselbe Weg wie
+ * lendProjectTargets() (`exit` und zwei Signale, synchron), aus denselben Gründen.
+ *
+ * Nur flache Dateien: Bücher sind `quartz-books/<id>.json`, ein Unterordner gehört nicht dazu und
+ * wird nicht angefasst.
+ */
+export function lendProjectBooks(project) {
+  const dir = path.join(project, 'quartz-books')
+  const hadDir = fs.existsSync(dir)
+  const before = new Map()
+  if (hadDir) {
+    for (const name of fs.readdirSync(dir)) {
+      const file = path.join(dir, name)
+      if (fs.lstatSync(file).isFile()) before.set(name, fs.readFileSync(file))
+    }
+  }
+  let restored = false
+  const restore = () => {
+    if (restored) return
+    restored = true
+    try {
+      if (fs.existsSync(dir)) {
+        for (const name of fs.readdirSync(dir)) {
+          const file = path.join(dir, name)
+          if (!before.has(name) && fs.lstatSync(file).isFile()) fs.rmSync(file)
+        }
+      }
+      for (const [name, bytes] of before) {
+        const file = path.join(dir, name)
+        if (fs.existsSync(file) && fs.readFileSync(file).equals(bytes)) continue
+        const tmp = `${file}.${process.pid}.tmp`
+        fs.writeFileSync(tmp, bytes)
+        fs.renameSync(tmp, file)
+      }
+      if (!hadDir) {
+        try {
+          fs.rmdirSync(dir)
+        } catch {
+          // nicht leer: Was dort sonst liegt, hat nicht dieser Lauf angelegt
+        }
+      }
+      console.log(`  Bücher in ${path.basename(project)} zurückgestellt (${hadDir ? 'vorheriger Stand' : 'Ordner entfernt'})`)
+    } catch (err) {
+      console.error(`  Bücher in ${path.basename(project)} NICHT zurückgestellt: ${err.message} - ${dir}`)
+    }
+  }
+  process.on('exit', restore)
+  process.once('SIGINT', () => process.exit(130))
+  process.once('SIGTERM', () => process.exit(143))
+  return restore
 }
 
 /**

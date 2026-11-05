@@ -7,6 +7,8 @@
 // nativen Bestätigungsdialoge. Sie sind Fenster des Betriebssystems, kein DOM - Playwright sieht
 // sie nicht, und der Hauptprozess würde auf ihre Antwort warten.
 
+import { DEMO_BOOK, DEMO_DOCUMENT_TARGET } from './screenshot-demo.mjs'
+
 /** Ein Dialog dieser App ist ein natives <dialog> mit showModal() - es gibt immer höchstens eines. */
 const DIALOG = 'dialog[open]'
 
@@ -18,6 +20,26 @@ const DIALOG = 'dialog[open]'
 function labelPattern(template) {
   const escaped = template.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   return new RegExp(`^${escaped.replace(/\\\{\\\{\w+\\\}\\\}/g, '.*')}$`)
+}
+
+/**
+ * Wählt in einer Liste mit Leiste (`SelectableRow`) die Zeile mit diesem Titel und wartet, bis die
+ * Leiste und was sie nachlädt stehen. Ohne Zeile `false`: Dann fehlt, was --demo anlegt.
+ */
+function selectRow(title, { wait = 3000, then = null } = {}) {
+  return async (page, t) => {
+    const row = page.locator('li[data-selectable] button[aria-pressed]', { hasText: title }).first()
+    try {
+      await row.click({ timeout: 8000 })
+      // Eine Leiste, die erst eine Zusammenfassung zeigt (Veröffentlichen), öffnet ihr Formular
+      // über einen Button; `then` ist dessen Schlüssel.
+      if (then) await page.getByRole('button', { name: t(then), exact: true }).first().click({ timeout: 8000 })
+    } catch {
+      return false
+    }
+    await page.waitForTimeout(wait)
+    return true
+  }
 }
 
 /**
@@ -54,6 +76,21 @@ export const SCENES = [
     route: '/publish',
     click: 'publish.newTarget',
     caption: 'Ein neues Ziel wird nicht in einem Dialog angelegt, sondern in einem Formular unter der Liste; die Art entscheidet, welche Felder folgen.'
+  },
+  {
+    // Die zwei Bilder zu 6.8: das Buch, das --demo im Projekt anlegt (und danach wieder wegnimmt),
+    // und das Dokument-Ziel, das auf es zeigt. Mit gewählter Zeile, weil die Seite sonst nur die
+    // Liste zeigt.
+    name: 'dokumente-buch',
+    route: '/documents',
+    act: selectRow(DEMO_BOOK.title),
+    caption: 'Ein Buch: links die Seiten in der Reihenfolge der Website, rechts Titel, Format und Extras.'
+  },
+  {
+    name: 'ziel-dokument',
+    route: '/publish',
+    act: selectRow(DEMO_DOCUMENT_TARGET.name, { then: 'common.edit' }),
+    caption: 'Ein Ziel der Art „Dokument“ mit Zielordner, Buch und Formaten.'
   },
   {
     name: 'formular-neuer-zugang',

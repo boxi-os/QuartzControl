@@ -96,13 +96,15 @@ beide importieren — sonst zeigt das Handbuch Bildschirme, die der Smoke-Test n
 - **`--demo` ist der Normalfall.** Es legt ein frisches Profil in einem Wegwerf-Verzeichnis an
   (`--user-data-dir`, nachgemessen: `app.getPath('userData')` folgt dem Schalter) und trägt über
   dieselben IPC-Pfade wie ein Klick ein, was auf den Bildern zu sehen sein soll — zwei Projekte,
-  drei Zugänge und drei Veröffentlichungsziele. Was es einträgt, steht in
+  drei Zugänge, vier Veröffentlichungsziele (seit 1.3 eines der Art „Dokument“) und ein Buch. Was es einträgt, steht in
   `scripts/screenshot-demo.mjs`; alle Namen liegen unter `example.com`, das RFC 2606 genau dafür
   freihält. Wegwerf ist dabei nur das Profil: Die Ziele liegen im ersten Projekt der Liste, einem
   echten (`QuartzControl-Handbuch`), in dessen `.quartz-gui/publish-targets.json`. Das Skript merkt
   sich die Datei — auch, dass sie fehlt — und schreibt sie am Ende zurück, auch nach einem Abbruch
   oder Ctrl+C; bis zum Review 2026-09-19 blieben die Demo-Ziele liegen und überschrieben ein
-  gleichnamiges echtes. Ohne `--demo` wird gegen das echte Profil aufgenommen — dann zeigen die Bilder, was auf
+  gleichnamiges echtes. Das Buch liegt ebenso im echten Projekt, in `quartz-books/`, und
+  `lendProjectBooks()` stellt den Ordner auf dieselbe Weise zurück: Was der Lauf angelegt hat,
+  geht, was er geändert hat, bekommt seine Bytes zurück. Ohne `--demo` wird gegen das echte Profil aufgenommen — dann zeigen die Bilder, was auf
   diesem Rechner eingerichtet ist.
 - 1440 × 900, Vorgabe hell (`--scheme dunkel` oder `beide`). `emulateMedia` wird hier ausdrücklich
   gesetzt; im Smoke-Test steht dort bewusst `null`, weil er das Schema des Systems treffen soll.
@@ -145,10 +147,11 @@ echten Server.
 
 `--scenes` nimmt auf, was eine Routenliste nicht trifft. Sie heißen im Plan „Handaufnahmen“, sind
 aber gescriptet (`scripts/screenshot-scenes.mjs`) — eine Handaufnahme ohne notierten Weg ist beim
-nächsten Mal keine, und ein geänderter Text macht sie still falsch. Zehn Stück: der Assistent, der
+nächsten Mal keine, und ein geänderter Text macht sie still falsch. Zwölf Stück: der Assistent, der
 Duplizieren-Dialog, der Content-Quelle-Dialog, die Formulare für Ziel, Zugang und Frame, der
-Frame-Editor beim Ziehen, der Snapshot-Vergleich, ein fertiger Build mit Konsolenausgabe und der
-laufende Dev-Server mit Live-Vorschau.
+Frame-Editor beim Ziehen, der Snapshot-Vergleich, ein fertiger Build mit Konsolenausgabe, der
+laufende Dev-Server mit Live-Vorschau und seit 1.3 das Demo-Buch auf der Seite „Dokumente“ und das
+Dokument-Ziel mit offenem Formular (Kapitel 6.8).
 
 Vier Dinge, die dabei zu wissen sind:
 

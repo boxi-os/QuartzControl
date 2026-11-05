@@ -454,8 +454,10 @@ und dunkel.
 Was stimmte: Deckblatt mit Bild, das eigene Inhaltsverzeichnis und das von Books (aus
 `nav.xhtml`, mit Ebenen und Seitenzahlen), Tabellen, Codeblöcke, Callouts, Formelbilder, Register
 und „Verweise auf diese Seite“, Bilder der Website. Die Fußnoten stehen nicht im Fließtext, Books
-erkennt sie also als `epub:type="footnote"`; das Popup selbst ließ sich per Skript nicht anklicken
-(`click at` meldete -25212) und ist **nicht ausgelöst**.
+erkennt sie also als `epub:type="footnote"`. Das Popup ließ sich mit `click at` von System Events
+nicht auslösen (-25212); nachgeholt mit einem echten Mausklick über `CGEvent` (siehe „Das ePub in
+Calibre“): Ein Klick auf die Fußnotenzahl öffnet die Fußnote als Popup über dem Text, samt dem
+Rücksprungpfeil, den Quartz an jede Fußnote hängt.
 
 Zwei Fehler, beide nur im Reader, nicht in Chromium und nicht in Safari:
 

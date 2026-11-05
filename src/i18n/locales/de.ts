@@ -2994,7 +2994,7 @@ export default {
       typeWebhook: 'Webhook',
       typeGitBranch: 'Git-Branch',
       typeUnknown: 'Unbekannter Zieltyp „{{type}}“',
-      typeDocument: 'Dokument (PDF, ePub, HTML)',
+      typeDocument: 'Dokument',
       documentFolder: 'Zielordner',
       documentBook: 'Buch',
       documentPickBook: '— Buch wählen —',

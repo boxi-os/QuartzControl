@@ -340,3 +340,29 @@ dieselbe Lücke hat die App aber, wenn sie mitten im Export beendet wird oder ab
 entfernt `sweepExportTempDirs` deshalb Kopien, die älter als eine Stunde sind (Muster:
 `sweepRelayTempDirs`). Gemessen mit `npm run smoke`: vorher 6 Kopien älter als eine Stunde, danach
 0, die jüngeren unberührt.
+
+### Die Seite „Dokumente“ (2026-11-05)
+
+Neue Seite in der Gruppe „Veröffentlichung“ zwischen Git-Sync und Veröffentlichen
+(`src/routes/Documents/`): links die Bücher (`SelectableRow`, Mülleimer mit Frage) und ihre Seiten,
+rechts das Buch (Titel, Untertitel, Autor, Sprache bei mehrsprachigen Websites, Ordner, Bild auf
+dem Deckblatt, Inhaltsverzeichnis, Verweise nach außen, Papierformat). Gespeichert wird
+ausdrücklich (Knopf oder Cmd+S), `dirty` per Vergleich mit dem Gelesenen, Verlassen fragt.
+
+Die Seiten liest der neue Kanal `books:sitePages` so, wie ein Export sie liest: Kopie des Builds,
+Exportfenster, gerenderte Navigation. Am Example 0,8 s. Zwei Modi wie in `resolveOrder`: der
+Navigation folgen (Häkchen lassen Seiten aus, Seiten außerhalb der Navigation werden genannt) oder
+eine eigene Reihenfolge (Drag mit `@dnd-kit` nach dem Muster von `FormFieldsEditor`, Pfeile,
+Zwischenüberschriften; neue Seiten der Navigation stehen als „wird am Ende angefügt“ darunter).
+
+Gemessen an der gebauten App mit Playwright (Wegwerfprofil und -projekt wie oben): Buch angelegt,
+1.2 abgewählt, auf eigene Reihenfolge gewechselt, 1.1 per Pfeil hinter 1.2, die Startseite per
+Tastatur zwei Plätze tiefer (Leertaste, zweimal Pfeil runter, Leertaste; angesagt „Example bei
+1.2 – Die Werkzeuge abgelegt.“), Zwischenüberschrift „Anhang“ angefügt, Titel und Autor gesetzt,
+gespeichert. Die Datei hat 138 Einträge in genau dieser Reihenfolge, `excluded` die abgewählte
+Seite. Hell und dunkel angesehen. Der erste Tastatur-Drag des Skripts blieb an seinem Platz,
+weil die Tasten ohne Pause kamen; mit 350 ms dazwischen trifft er. Die Auswahl der Verweise hatte
+zuerst keine sichtbare Beschriftung und steht jetzt in einer `FieldGroup`.
+
+Die Kennung eines Buchs (sein Dateiname) entsteht aus dem ersten Titel und bleibt, wenn der Titel
+sich ändert: Ein Ziel nennt sein Buch über diese Kennung.

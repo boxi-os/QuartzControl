@@ -24,6 +24,7 @@ export const PROJECT_ROUTES = [
   ['Plugins · Marktplatz', '/plugins?tab=marketplace'],
   ['Vorschau & Build', '/server'],
   ['Git-Sync', '/sync'],
+  ['Dokumente', '/documents'],
   ['Veröffentlichen', '/publish'],
   ['Updates', '/updates'],
   ['Snapshots', '/backups']

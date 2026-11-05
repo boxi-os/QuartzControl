@@ -189,6 +189,7 @@ export default function ProjectLayout(): JSX.Element {
       items: [
         { to: 'server', key: 'server', label: t('projectLayout.tabs.server') },
         { to: 'sync', key: 'sync', label: t('projectLayout.tabs.sync') },
+        { to: 'documents', key: 'documents', label: t('projectLayout.tabs.documents') },
         { to: 'publish', key: 'publish', label: t('projectLayout.tabs.publish') }
       ]
     },

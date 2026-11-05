@@ -1,6 +1,7 @@
 import {
   Archive,
   Blocks,
+  BookText,
   GitBranch,
   LayoutDashboard,
   LayoutGrid,
@@ -33,7 +34,8 @@ export const TAB_ICONS = {
   server: Server,
   sync: GitBranch,
   backups: Archive,
-  publish: CloudUpload
+  publish: CloudUpload,
+  documents: BookText
 } satisfies Record<string, LucideIcon>
 
 export type TabKey = keyof typeof TAB_ICONS

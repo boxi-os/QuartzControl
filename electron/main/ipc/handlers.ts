@@ -42,7 +42,7 @@ import * as updateService from '../services/updateService'
 import * as connectionsService from '../services/connectionsService'
 import * as publishTargetsService from '../services/publishTargetsService'
 import * as bookService from '../services/bookService'
-import { cancelExport } from '../services/export/exportService'
+import { cancelExport, readSitePages } from '../services/export/exportService'
 import * as githubService from '../services/githubService'
 import * as deployService from '../services/deploy'
 import { forgetManifest } from '../services/deploy/manifest'
@@ -446,6 +446,7 @@ export function registerIpcHandlers(): void {
     bookService.saveBook(projectPath, book as SaveBookInput)
   )
   handle(IPC.booksDelete, t([s.bookArgs]), ({ projectPath, id }) => bookService.deleteBook(projectPath, id))
+  handle(IPC.booksSitePages, t([s.bookSitePagesArgs]), ({ projectPath, root, language }) => readSitePages(projectPath, root, language))
 
   handle(IPC.deployDiff, t([s.absolutePath, s.uuid, s.buildOutputDir.optional()]), (projectPath, targetId, outputDir) =>
     deployService.previewDeploy(projectPath, targetId, outputDir)

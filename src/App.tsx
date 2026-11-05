@@ -19,6 +19,7 @@ import BuildServer from './routes/BuildServer'
 import GitSync from './routes/GitSync'
 import Backups from './routes/Backups'
 import Publish from './routes/Publish'
+import Documents from './routes/Documents'
 import Templates from './routes/Templates'
 
 export default function App(): JSX.Element {
@@ -93,6 +94,7 @@ export default function App(): JSX.Element {
           <Route path='server' element={<BuildServer />} />
           <Route path='sync' element={<GitSync />} />
           <Route path='backups' element={<Backups />} />
+          <Route path='documents' element={<Documents />} />
           <Route path='publish' element={<Publish />} />
           <Route path='templates' element={<Templates />} />
         </Route>

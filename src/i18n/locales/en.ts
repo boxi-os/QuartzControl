@@ -228,6 +228,7 @@ export default {
       sync: 'Git sync',
       backups: 'Snapshots',
       publish: 'Publish',
+      documents: 'Documents',
       templates: 'Templates'
     },
     groups: {
@@ -2807,6 +2808,75 @@ export default {
       movedHint:
         'A snapshot is taken automatically before every core and plugin update. They are managed under Snapshots, together with those from every other area.',
       openBackups: 'Go to Snapshots →'
+    }
+  },
+  documents: {
+    title: 'Documents',
+    description: 'Books made of the site’s pages: which pages go into a PDF, an ePub or an HTML file, in which order and under which title.',
+    howItWorks: 'A book is a file in the project (quartz-books/) and travels with Git-Sync. It is exported through a target of the type “Document”.',
+    toPublish: 'To Publish →',
+    booksHeading: 'Books',
+    newBook: 'New book',
+    newBookTitle: 'New book',
+    noBooks: 'No book yet. A new book follows the site’s navigation at first.',
+    noSelection: 'Pick a book on the left, and its title, author and PDF settings show here.',
+    settingsHeading: 'Book',
+    pagesHeading: 'Pages',
+    pagesLoading: 'QuartzControl is reading the pages from the build …',
+    toBuild: 'To Preview & Build →',
+    unsaved: 'Not saved',
+    discard: 'Discard',
+    confirmDiscard: 'The open book has unsaved changes. Switching now loses them.',
+    deleteBook: 'Delete book',
+    confirmDelete: 'Delete the book “{{name}}”? The file {{file}} is removed; a target that exports it no longer finds it.',
+    unreadable: '{{file}} could not be read ({{reason}}). The file stays as it is.',
+    savedAnnounce: 'Book “{{name}}” saved.',
+    createdAnnounce: 'Book “{{name}}” created.',
+    deletedAnnounce: 'Book “{{name}}” deleted.',
+    source: {
+      explorer: 'The order comes from the Explorer of the built site.',
+      'quartz-navigations': 'The order comes from the navigation of the built site (quartz-navigations).',
+      links: 'Neither Explorer nor quartz-navigations found: the order comes from the largest list of links on the start page.',
+      none: 'The site has no navigation to read an order from. Make an own order.'
+    },
+    fields: {
+      title: 'Title',
+      titleHint: 'Empty: the site’s title.',
+      subtitle: 'Subtitle',
+      author: 'Author',
+      language: 'Language',
+      languageDefault: 'The site’s main language ({{language}})',
+      root: 'Folder',
+      rootHint: 'Only the pages in this folder, e.g. “2-formatting”.',
+      rootPlaceholder: 'empty: the whole site',
+      cover: 'Picture on the cover',
+      coverHint: 'Path in the project. Empty: the project picture.',
+      toc: 'Table of contents',
+      tocHint: 'In the PDF with page numbers. ePub and HTML always have one.',
+      outsideLinks: 'Links to pages outside the book',
+      outsideSite: 'To the website',
+      outsideText: 'As text',
+      pageSize: 'Paper size (PDF)',
+      landscape: 'Landscape'
+    },
+    pages: {
+      followingHint: 'Follows the site’s navigation: {{count}} pages. Untick a page to leave it out.',
+      ownOrder: 'Own order',
+      ownHint: 'Own order: drag, or move with the arrows.',
+      followNavigation: 'Follow the navigation again',
+      addHeading: 'Heading',
+      newHeading: 'Appendix',
+      headingText: 'Text of the heading',
+      headingAddedAnnounce: 'Heading added at the end.',
+      movedAnnounce: '{{name}} is now at position {{n}} of {{count}}.',
+      removedAnnounce: '{{name}} removed.',
+      dragRow: 'Move {{name}}',
+      missingBadge: 'missing in the build',
+      appendedHeading: 'New in the navigation ({{count}})',
+      appendedBadge: 'appended at the end',
+      hiddenHeading: 'Not in the navigation ({{count}})',
+      hiddenHint: 'The site does not show these pages in its navigation. An own order can take them in.',
+      takeIn: 'Take in'
     }
   },
   publish: {

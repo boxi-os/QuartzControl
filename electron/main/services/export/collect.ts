@@ -17,7 +17,7 @@ export interface SiteFacts {
   /** Every content page that has an HTML file in the build. */
   pages: Map<string, { title: string; tags: string[]; links: string[] }>
   /** quartz-multilanguage's languages; empty when the plugin is not in the build. */
-  languages: { code: string; home: string; locale?: string }[]
+  languages: { code: string; home: string; locale?: string; label: string }[]
   defaultLanguage: string
   langOf: Map<string, string>
 }
@@ -61,13 +61,18 @@ export async function readSiteFacts(root: string): Promise<SiteFacts> {
   try {
     const ml = JSON.parse(await readFile(join(root, 'static', 'multilanguage.json'), 'utf-8')) as {
       defaultLanguage?: unknown
-      languages?: { code?: unknown; home?: unknown; locale?: unknown }[]
+      languages?: { code?: unknown; home?: unknown; locale?: unknown; native?: unknown; label?: unknown }[]
       pages?: Record<string, { lang?: unknown }>
     }
     if (Array.isArray(ml.languages)) {
       facts.languages = ml.languages
         .filter((l) => typeof l.code === 'string')
-        .map((l) => ({ code: l.code as string, home: typeof l.home === 'string' ? l.home : 'index', locale: typeof l.locale === 'string' ? l.locale : undefined }))
+        .map((l) => ({
+          code: l.code as string,
+          home: typeof l.home === 'string' ? l.home : 'index',
+          locale: typeof l.locale === 'string' ? l.locale : undefined,
+          label: typeof l.native === 'string' ? l.native : typeof l.label === 'string' ? l.label : (l.code as string)
+        }))
     }
     facts.defaultLanguage = typeof ml.defaultLanguage === 'string' ? ml.defaultLanguage : (facts.languages[0]?.code ?? '')
     for (const [slug, p] of Object.entries(ml.pages ?? {})) if (typeof p?.lang === 'string') facts.langOf.set(slug, p.lang)

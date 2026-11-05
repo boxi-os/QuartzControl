@@ -221,7 +221,8 @@ const api: QuartzGuiApi = {
     list: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.booksList, args),
     read: (args: { projectPath: string; id: string }) => ipcRenderer.invoke(IPC.booksRead, args),
     save: (args: { projectPath: string; book: SaveBookInput }) => ipcRenderer.invoke(IPC.booksSave, args),
-    delete: (args: { projectPath: string; id: string }) => ipcRenderer.invoke(IPC.booksDelete, args)
+    delete: (args: { projectPath: string; id: string }) => ipcRenderer.invoke(IPC.booksDelete, args),
+    sitePages: (args: { projectPath: string; root: string; language: string }) => ipcRenderer.invoke(IPC.booksSitePages, args)
   },
   deploy: {
     diff: (projectPath: string, targetId: string, outputDir?: string) =>

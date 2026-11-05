@@ -2,8 +2,10 @@ import { createHash } from 'crypto'
 import { existsSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { basename, extname, join } from 'path'
-import type { BookDefinition, DocumentFormat } from '@shared/ipc-contract'
-import { resolveOrder } from '@shared/exportModel'
+import type { BookDefinition, DocumentFormat, SitePages } from '@shared/ipc-contract'
+import { insideRoot, pageDepth, resolveOrder } from '@shared/exportModel'
+import { getPrefs } from '../projectPrefsService'
+import { resolveBuildDir } from '../projectDirs'
 import { appWindows } from '../../appWindows'
 import { mainT } from '../../i18n'
 import { readConfig } from '../configService'
@@ -207,5 +209,47 @@ export async function exportBook(opts: {
     running.delete(opts.targetId)
     win?.close()
     await server?.close().catch(() => undefined)
+  }
+}
+
+/**
+ * The pages of the current build for the book editor: in a root folder and a language, in the order
+ * the site's navigation shows them, then the pages it does not show. Read like an export reads
+ * them - a copy of the build, the export window, the navigation as rendered - so the editor offers
+ * exactly what an export would find.
+ */
+export async function readSitePages(projectPath: string, root: string, language: string): Promise<SitePages> {
+  const prefs = await getPrefs(projectPath)
+  const buildDir = resolveBuildDir(projectPath, prefs.outputDir || undefined)
+  if (!existsSync(buildDir)) throw new Error(mainT('deployNoBuild', { dir: buildDir }))
+  const server = await serveSiteCopy(buildDir)
+  let win: ExportWindow | null = null
+  try {
+    const facts = await readSiteFacts(server.root)
+    win = openExportWindow(server.origin, { width: 1200, height: 900 })
+    const nav = await readNavigationOrder(win, server.origin, facts, language)
+    const eff = effectiveRoot(facts, root, language)
+    const available = [...pagesInLanguage(facts, language)].filter((slug) => insideRoot(slug, eff))
+    const set = new Set(available)
+    const rootIndex = eff === '' ? 'index' : `${eff}/index`
+    const ordered = nav.slugs.filter((slug) => set.has(slug))
+    if (set.has(rootIndex) && !ordered.includes(rootIndex)) ordered.unshift(rootIndex)
+    const shown = new Set(ordered)
+    const rest = available.filter((slug) => !shown.has(slug)).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    const entry = (slug: string, inNavigation: boolean): SitePages['pages'][number] => ({
+      slug,
+      title: facts.pages.get(slug)?.title ?? slug,
+      depth: pageDepth(slug, eff),
+      inNavigation
+    })
+    return {
+      source: nav.source,
+      languages: facts.languages.map((l) => ({ code: l.code, label: l.label })),
+      defaultLanguage: facts.defaultLanguage,
+      pages: [...ordered.map((s) => entry(s, true)), ...rest.map((s) => entry(s, false))]
+    }
+  } finally {
+    win?.close()
+    await server.close().catch(() => undefined)
   }
 }

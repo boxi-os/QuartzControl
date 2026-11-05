@@ -231,6 +231,7 @@ export default {
       sync: 'Git-Sync',
       backups: 'Snapshots',
       publish: 'Veröffentlichen',
+      documents: 'Dokumente',
       templates: 'Vorlagen'
     },
     groups: {
@@ -2819,6 +2820,75 @@ export default {
       movedHint:
         'Vor jedem Kern- und Plugin-Update wird automatisch ein Snapshot angelegt. Verwaltet werden sie unter Snapshots, dort liegen auch die aller anderen Bereiche.',
       openBackups: 'Zu den Snapshots →'
+    }
+  },
+  documents: {
+    title: 'Dokumente',
+    description: 'Bücher aus den Seiten der Website: welche Seiten in ein PDF, ein ePub oder eine HTML-Datei kommen, in welcher Reihenfolge und unter welchem Titel.',
+    howItWorks: 'Ein Buch liegt als Datei im Projekt (quartz-books/) und reist mit Git-Sync mit. Exportiert wird es über ein Ziel vom Typ „Dokument“.',
+    toPublish: 'Zu Veröffentlichen →',
+    booksHeading: 'Bücher',
+    newBook: 'Neues Buch',
+    newBookTitle: 'Neues Buch',
+    noBooks: 'Noch kein Buch. Ein neues Buch folgt zuerst der Navigation der Website.',
+    noSelection: 'Wähle links ein Buch, dann stehen hier Titel, Autor und die Einstellungen für das PDF.',
+    settingsHeading: 'Buch',
+    pagesHeading: 'Seiten',
+    pagesLoading: 'QuartzControl liest die Seiten aus dem Build …',
+    toBuild: 'Zu Vorschau & Build →',
+    unsaved: 'Nicht gespeichert',
+    discard: 'Verwerfen',
+    confirmDiscard: 'Am geöffneten Buch gibt es ungespeicherte Änderungen. Wer jetzt wechselt, verliert sie.',
+    deleteBook: 'Buch löschen',
+    confirmDelete: 'Buch „{{name}}“ löschen? Die Datei {{file}} wird entfernt; ein Ziel, das es exportiert, findet es danach nicht mehr.',
+    unreadable: '{{file}} konnte nicht gelesen werden ({{reason}}). Die Datei bleibt, wie sie ist.',
+    savedAnnounce: 'Buch „{{name}}“ gespeichert.',
+    createdAnnounce: 'Buch „{{name}}“ angelegt.',
+    deletedAnnounce: 'Buch „{{name}}“ gelöscht.',
+    source: {
+      explorer: 'Die Reihenfolge kommt aus dem Explorer der gebauten Website.',
+      'quartz-navigations': 'Die Reihenfolge kommt aus der Navigation der gebauten Website (quartz-navigations).',
+      links: 'Weder Explorer noch quartz-navigations gefunden: Die Reihenfolge kommt aus der größten Linkliste der Startseite.',
+      none: 'Die Website hat keine Navigation, aus der sich eine Reihenfolge lesen ließe. Lege eine eigene Reihenfolge an.'
+    },
+    fields: {
+      title: 'Titel',
+      titleHint: 'Leer: der Titel der Website.',
+      subtitle: 'Untertitel',
+      author: 'Autor',
+      language: 'Sprache',
+      languageDefault: 'Hauptsprache der Website ({{language}})',
+      root: 'Ordner',
+      rootHint: 'Nur die Seiten in diesem Ordner, z. B. „2-formatierung“.',
+      rootPlaceholder: 'leer: die ganze Website',
+      cover: 'Bild auf dem Deckblatt',
+      coverHint: 'Pfad im Projekt. Leer: das Projektbild.',
+      toc: 'Inhaltsverzeichnis',
+      tocHint: 'Im PDF mit Seitenzahlen. ePub und HTML haben immer eins.',
+      outsideLinks: 'Verweise auf Seiten außerhalb des Buchs',
+      outsideSite: 'Auf die Website',
+      outsideText: 'Als Text',
+      pageSize: 'Papierformat (PDF)',
+      landscape: 'Querformat'
+    },
+    pages: {
+      followingHint: 'Folgt der Navigation der Website: {{count}} Seiten. Ein Haken weg lässt eine Seite aus.',
+      ownOrder: 'Eigene Reihenfolge',
+      ownHint: 'Eigene Reihenfolge: ziehen oder mit den Pfeilen verschieben.',
+      followNavigation: 'Wieder der Navigation folgen',
+      addHeading: 'Zwischenüberschrift',
+      newHeading: 'Anhang',
+      headingText: 'Text der Zwischenüberschrift',
+      headingAddedAnnounce: 'Zwischenüberschrift am Ende angefügt.',
+      movedAnnounce: '{{name}} steht jetzt an Stelle {{n}} von {{count}}.',
+      removedAnnounce: '{{name}} entfernt.',
+      dragRow: '{{name}} verschieben',
+      missingBadge: 'fehlt im Build',
+      appendedHeading: 'Neu in der Navigation ({{count}})',
+      appendedBadge: 'wird am Ende angefügt',
+      hiddenHeading: 'Nicht in der Navigation ({{count}})',
+      hiddenHint: 'Diese Seiten zeigt die Website nicht in ihrer Navigation. Mit einer eigenen Reihenfolge lassen sie sich aufnehmen.',
+      takeIn: 'Aufnehmen'
     }
   },
   publish: {

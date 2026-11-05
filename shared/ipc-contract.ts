@@ -1398,6 +1398,27 @@ export interface BookDefinition {
 
 export type SaveBookInput = Omit<BookDefinition, 'id'> & { id?: string }
 
+/** One page of the built site, as the book editor lists it. */
+export interface SitePageEntry {
+  slug: string
+  title: string
+  /** Below the book's root: 0 for its start page, 1 for a page or folder directly in it. */
+  depth: number
+  /** Whether the site's navigation shows it; a page it does not is offered, but not by default. */
+  inNavigation: boolean
+}
+
+/** What the built site says about its pages, for the book editor (export/exportService.ts). */
+export interface SitePages {
+  /** Where the order was read: the Explorer, quartz-navigations, the largest list of links, none. */
+  source: 'explorer' | 'quartz-navigations' | 'links' | 'none'
+  /** quartz-multilanguage's languages; empty when the site has one. */
+  languages: { code: string; label: string }[]
+  defaultLanguage: string
+  /** The navigation's order first, then the pages it does not show. */
+  pages: SitePageEntry[]
+}
+
 export interface BookListing {
   books: BookDefinition[]
   /** Files in quartz-books/ that exist but could not be read - left where they are (a versioned
@@ -1882,6 +1903,7 @@ export const IPC = {
   booksRead: 'books:read',
   booksSave: 'books:save',
   booksDelete: 'books:delete',
+  booksSitePages: 'books:sitePages',
 
   deployDiff: 'deploy:diff',
   deployRun: 'deploy:run',
@@ -2359,6 +2381,9 @@ export interface QuartzGuiApi {
     /** Without an id, a new book whose id is derived from its title. */
     save(input: { projectPath: string; book: SaveBookInput }): Promise<BookDefinition>
     delete(input: { projectPath: string; id: string }): Promise<void>
+    /** The pages of the current build in a root folder and language, in the site's own order.
+     *  Reads the build in the export window, so it takes a second or two. */
+    sitePages(input: { projectPath: string; root: string; language: string }): Promise<SitePages>
   }
   deploy: {
     /** What this target would upload/delete. Manifest-based for sftp/ftp/folder, a real remote

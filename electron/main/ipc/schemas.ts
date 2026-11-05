@@ -594,6 +594,7 @@ const saveBook = z.looseObject({
 })
 export const booksListArgs = z.looseObject({ projectPath: absolutePath })
 export const bookArgs = z.looseObject({ projectPath: absolutePath, id: bookId })
+export const bookSitePagesArgs = z.looseObject({ projectPath: absolutePath, root: z.string().max(1024), language: z.string().max(64) })
 export const exportCancelArgs = z.looseObject({ targetId: uuid })
 export const bookSaveArgs = z.looseObject({ projectPath: absolutePath, book: saveBook })
 

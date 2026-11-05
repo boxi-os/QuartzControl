@@ -143,16 +143,23 @@ function addBacklinksAndRegister(
 const COVER_TYPES: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.svg': 'image/svg+xml' }
 
 /** The cover picture: the book's own (a file in the project), else the build's static/icon.png -
- *  the project picture as the site shows it. */
-async function coverPicture(projectPath: string, buildRoot: string, book: BookDefinition): Promise<{ data: Buffer; type: string } | null> {
-  const candidates = book.coverImage ? [containedPath(projectPath, book.coverImage)] : [join(buildRoot, 'static', 'icon.png')]
+ *  the project picture as the site shows it. An own picture that is missing, outside the project
+ *  or of another type falls back to the project picture and says so: it gave no picture at all,
+ *  without a word (review of 2026-11-06, nebenbei 3). */
+async function coverPicture(
+  projectPath: string,
+  buildRoot: string,
+  book: BookDefinition
+): Promise<{ picture: { data: Buffer; type: string } | null; ownMissing: boolean }> {
+  const own = book.coverImage ? containedPath(projectPath, book.coverImage) : null
+  const candidates = [...(book.coverImage ? [own] : []), join(buildRoot, 'static', 'icon.png')]
   for (const file of candidates) {
     if (!file || !existsSync(file)) continue
     const type = COVER_TYPES[extname(file).toLowerCase()]
     if (!type) continue
-    return { data: await readFile(file), type }
+    return { picture: { data: await readFile(file), type }, ownMissing: !!book.coverImage && file !== own }
   }
-  return null
+  return { picture: null, ownMissing: !!book.coverImage }
 }
 
 /** A stable `urn:uuid:` per book and site, so a reader takes a new edition for the same book. */
@@ -219,7 +226,9 @@ export async function exportBook(opts: {
     const stylesheets = await win.run(() => [...document.querySelectorAll('head link[rel="stylesheet"]')].map((l) => (l as HTMLLinkElement).href), [])
     const lang = pages[0]?.lang || book.language || 'en'
     const title = book.title || config?.configuration?.pageTitle || basename(opts.projectPath)
-    const cover = await coverPicture(opts.projectPath, server.root, book)
+    const coverFound = await coverPicture(opts.projectPath, server.root, book)
+    const cover = coverFound.picture
+    if (coverFound.ownMissing) report.push(mainT('exportReportCoverMissing', { file: book.coverImage }))
     const sum = (k: keyof (typeof pages)[number]['counts']): number => pages.reduce((n, p) => n + p.counts[k], 0)
     const replaced = sum('forms') + sum('frames') + sum('media') + sum('canvases')
     if (replaced) report.push(mainT('exportReportReplaced', { count: replaced }))

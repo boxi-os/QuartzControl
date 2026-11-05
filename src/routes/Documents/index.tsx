@@ -150,7 +150,18 @@ export default function Documents(): JSX.Element {
 
   // The pages of the build, for the selected book's folder and language. A new read on every
   // change of those two, guarded against an older answer arriving last (useIpcQuery).
-  const root = draft?.root ?? ''
+  // The folder is typed: each keystroke was a read of its own - a copy of the build and a window
+  // for every letter, 15 copies and up to 6 at once for "quellen/artikel" (review of 2026-11-06,
+  // N2). It is read once the typing pauses; another book's folder at once.
+  const typedRoot = draft?.root ?? ''
+  const [settled, setSettled] = useState({ id: draft?.id, root: typedRoot })
+  useEffect(() => {
+    if (settled.id !== draft?.id) return void setSettled({ id: draft?.id, root: typedRoot })
+    if (settled.root === typedRoot) return
+    const timer = setTimeout(() => setSettled({ id: draft?.id, root: typedRoot }), 500)
+    return () => clearTimeout(timer)
+  }, [draft?.id, typedRoot, settled])
+  const root = settled.id === draft?.id ? settled.root : typedRoot
   const language = draft?.language ?? ''
   const site = useIpcQuery(
     () => (draft ? window.quartzGui.books.sitePages({ projectPath: project.path, root, language }) : Promise.resolve(null)),

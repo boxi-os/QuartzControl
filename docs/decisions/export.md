@@ -792,3 +792,12 @@ Jetzt: `link`, `meta`, `base` fallen beim Einsammeln wie `script`; ein Link, der
 `style`-Attributen (außer `data:` und `#…`) und SVG-`<image>` von anderswo; ein `data:`-Bild wird
 eine Datei des Buchs. Nachher: epubcheck 0 Fehler, 0 Anfragen, kein `javascript:`-Link, 2 Bilder im
 Buch statt 1. Example und Handbuch: epubcheck 0, das HTML 0 Anfragen, 0 kaputte Bilder, 0 tote Anker.
+
+### Das Feld „Ordner“ beim Tippen (2026-11-06, N2)
+
+Jede Taste im Feld „Ordner“ las den Bau neu: Kopie, Exportfenster, Navigation. Gemessen mit echten
+Tasten im Abstand von 150 ms an der gebauten App (`fix/n2.mjs`, „quellen/artikel“ in gui-test):
+vorher 15 Kopien des Baus, bis zu 6 gleichzeitig; auf ext4 ohne Reflink wäre jede eine volle Kopie.
+Jetzt liest die Seite den Ordner erst, wenn das Tippen 500 ms ruht, den eines anderen Buchs sofort.
+Nachher: 1 Kopie; dieselben 75 Seiten danach; ein Wechsel auf ein Buch mit Ordner `svg` zeigt nach
+2,5 s seine 4 Seiten.

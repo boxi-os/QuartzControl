@@ -519,3 +519,30 @@ Gegenprobe: epubcheck 5.4.0 0 Fehler, 0 Warnungen; Offline-HTML wie zuvor (17 Bi
 0 Netzanfragen, 0 tote Verweise). Calibres helles Thema nicht eigens angesehen. Nach dem Beenden
 lagen außerhalb des Scratchpads `~/Library/Preferences/net.kovidgoyal.calibre.plist` (Qt-Menü-
 Voreinstellungen) und `~/Library/Caches/calibre-ebook.com` (Qt-Shader-Cache); beide entfernt.
+
+### Das ePub in Thorium (2026-11-05)
+
+Gemessen mit Thorium Reader 3.5.1 (arm64, offizielles DMG von GitHub, signiert von European
+Digital Reading Lab und notarisiert, aus dem Scratchpad gestartet mit
+`--user-data-dir=<Scratchpad>`; den Start musste der Nutzer selbst auslösen, die automatische
+Freigabe lehnte das Ausführen des heruntergeladenen Programms ab) am Probebuch, im Motiv „Neutral“
+und „Nachtzeit“, Layout „Paginiert“.
+
+Was stimmte: Deckblatt, Tabellen, Code, Callouts (hell mit dem halbtransparenten Grau, im
+Nachtmotiv entfernt Thorium den Hintergrund selbst), Formeln und Diagramme als Bild auf weißem
+Grund, Register, das Inhaltsverzeichnis des Readers mit Ebenen. Ein Klick auf einen
+Fußnotenverweis öffnet die Fußnote als Popup (der erste Klick holte nur das Fenster nach vorn).
+
+Ein Schönheitsfehler: Die Überschrift „Verweise auf diese Seite“ stand unten in einer Spalte, ihre
+Liste oben in der nächsten. Sie ist ein `<p>`, und `break-after: avoid` galt nur für `h1`–`h6`.
+Jetzt auch für `.qc-backlinks-title`, die Schlagwörter des Registers (`dt`) und die
+Wegweiser-Überschriften (`.index-heading`), im PDF für `.qc-backlinks-title`; danach in Thorium
+zusammen. Handbuch-PDF unverändert (134 Seiten, Lesezeichen 10/48/248/4).
+
+Thorium zeigt Überschriften, die es als Sprungziel ansteuert, mit einem gepunkteten Rahmen; das ist
+Thoriums Fokusanzeige, nicht das Buch. „Gehe zu Seite“ ist ausgegraut, weil das ePub keine
+Seitenliste (`page-list`) hat.
+
+Gegenprobe: epubcheck 5.4.0 0 Fehler, 0 Warnungen; Offline-HTML unverändert. Nach dem Beenden lag
+außerhalb des Scratchpads nur `~/Library/Preferences/io.github.edrlab.thorium.plist` (Electron-
+Voreinstellungen zur Schreibrichtung); entfernt.

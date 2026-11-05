@@ -67,7 +67,7 @@ dahin gilt der Fall als geduldet.
 | ePub nach epubcheck 5.4.0 | unterstützt | Handbuch, Example de/en: 0 Fehler, 0 Warnungen |
 | ePub in Apple Books | unterstützt | gemessen 2026-11-05 (Bücher 9.0, hell und dunkel; Fußnoten-Popup ausgelöst); Diagramme dafür als Bild |
 | ePub in Calibre | unterstützt | gemessen 2026-11-05 (E-book viewer 9.17.0, dunkles Thema; Fußnoten-Popup ausgelöst) |
-| ePub in Thorium | Messung ausstehend | nicht angesehen |
+| ePub in Thorium | unterstützt | gemessen 2026-11-05 (Thorium 3.5.1, Neutral und Nachtzeit; Fußnoten-Popup ausgelöst) |
 | ePub über Kindle (KDP) | geduldet | nicht gemessen; KDP nimmt ePub an |
 | Reihenfolge aus Explorer oder quartz-navigations | unterstützt | gemessen an Handbuch und Example |
 | eine andere Navigation | geduldet | die größte Linkliste der Startseite, der Bericht sagt es |

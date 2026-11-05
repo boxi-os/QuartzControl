@@ -121,7 +121,7 @@ body.pdf .qc-unlinked { color: inherit; }
 .qc-toc .t { flex: 1 1 auto; }
 .qc-toc .n { flex: 0 0 auto; min-width: 3ch; text-align: right; font-variant-numeric: tabular-nums; }
 .qc-backlinks { margin-top: 1.6em; padding-top: 0.6em; border-top: 1px solid #ddd; font-size: 9.5pt; }
-.qc-backlinks-title { font-weight: 600; margin: 0 0 0.3em; }
+.qc-backlinks-title { font-weight: 600; margin: 0 0 0.3em; break-after: avoid; }
 .qc-backlinks ul { margin: 0; padding-left: 1.2em; }
 .qc-register dt { font-weight: 600; margin-top: 0.6em; break-after: avoid; }
 .qc-register dd { margin: 0 0 0 1.2em; }

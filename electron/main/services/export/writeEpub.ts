@@ -78,6 +78,7 @@ blockquote.callout { border-left-width: 4px; background: rgba(128, 128, 128, 0.1
 .qc-replaced { font-style: italic; }
 .qc-backlinks { margin-top: 1.5em; padding-top: 0.5em; border-top: 1px solid #ccc; font-size: 0.9em; }
 .qc-backlinks-title { font-weight: bold; margin: 0 0 0.3em; }
+.qc-backlinks-title, .qc-register dt, .index-heading { page-break-after: avoid; break-after: avoid; }
 .qc-register dt { font-weight: bold; margin-top: 0.6em; }
 .qc-register dd { margin-left: 1.2em; }
 .qc-register-entry { display: block; }

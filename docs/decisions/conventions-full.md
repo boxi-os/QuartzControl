@@ -521,6 +521,14 @@ Projektwurzel.
   setzt zuerst ein leeres Mess-SVG ein: Zwei Diagramme des Example waren leere Kästen, und das
   Sequenzdiagramm fehlte in einem Lauf. `capturePage` nimmt das zuletzt gemalte Bild: Die breite
   Formel kam als die Matrix davor heraus, und epubcheck sieht das nicht.
+- **Im ePub ist nur Text, was der Reader umgestalten darf.** Formeln und Diagramme (Mermaid,
+  Excalidraw) gehen in ePub und HTML als Bild (`drawPictures` in `export/writeEpub.ts`). Apple
+  Books setzt seine Schrift auf die HTML-Beschriftungen eines Mermaid-SVG, die Mermaid für die
+  Schrift der Website vermessen hatte („Rechteck“ abgeschnitten), und färbt im dunklen Thema
+  Beschriftungen weiß auf weißen Kästen; Excalidraws schwarze Pfeile verschwanden auf schwarzem
+  Grund. Dasselbe Kapitel in Safari war richtig. Aus demselben Grund fällt Quartz' Symbol hinter
+  externen Links weg: Books ignorierte seine Größe und setzte eine halbe leere Seite dahinter
+  (`docs/decisions/export.md`, „Das ePub in Apple Books“).
 - **Fenster:** ein Fenster, `hiddenInset` nur auf macOS, `will-navigate` erlaubt nur das eigene
   Dokument, `setWindowOpenHandler` gibt nur http(s) an den Browser, CSP ohne externe Hosts. Theme
   wird in Main über `nativeTheme.themeSource` gesetzt, *vor* `createWindow()`.

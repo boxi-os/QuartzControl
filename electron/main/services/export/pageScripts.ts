@@ -418,9 +418,20 @@ export interface EpubChapterOutput {
 
 export interface EpubChaptersResult {
   chapters: EpubChapterOutput[]
-  /** Formulas without MathML, to be drawn as pictures: their KaTeX HTML and the picture's name. */
-  formulas: { name: string; html: string; display: boolean }[]
-  counts: { externalImages: number; unsupportedImages: number; unresolvedLinks: number; footnotes: number; formulas: number }
+  /**
+   * What the caller draws as pictures, with the picture's name: formulas without MathML (their
+   * KaTeX HTML) and diagrams (their SVG).
+   */
+  drawings: Drawing[]
+  counts: { externalImages: number; unsupportedImages: number; unresolvedLinks: number; footnotes: number; formulas: number; diagrams: number }
+}
+
+export interface Drawing {
+  name: string
+  html: string
+  kind: 'formula' | 'diagram'
+  /** A formula set as its own block; a diagram is always one. */
+  display: boolean
 }
 
 /**
@@ -435,12 +446,27 @@ export interface EpubChaptersResult {
  *  - In-document links point at the file that holds their anchor.
  *  - Footnotes become what readers show as pop-ups: `epub:type="noteref"` on the reference and
  *    each note an `<aside epub:type="footnote">`.
+ *  - Diagrams become pictures (see below).
  */
-export function epubChapters(input: { chapters: EpubChapterInput[]; imageNames: Record<string, string>; imageExtensions: string[]; formulaAlt: string }): EpubChaptersResult {
+export function epubChapters(input: {
+  chapters: EpubChapterInput[]
+  imageNames: Record<string, string>
+  imageExtensions: string[]
+  formulaAlt: string
+  diagramAlt: string
+}): EpubChaptersResult {
   const XHTML = 'http://www.w3.org/1999/xhtml'
-  const counts = { externalImages: 0, unsupportedImages: 0, unresolvedLinks: 0, footnotes: 0, formulas: 0 }
+  const counts = { externalImages: 0, unsupportedImages: 0, unresolvedLinks: 0, footnotes: 0, formulas: 0, diagrams: 0 }
   const imageNames = new Map(Object.entries(input.imageNames))
-  const formulas: { name: string; html: string; display: boolean }[] = []
+  const drawings: Drawing[] = []
+  const picture = (name: string, alt: string, className: string): HTMLImageElement => {
+    const img = document.createElement('img')
+    img.setAttribute('src', `../${name}`)
+    img.setAttribute('alt', alt)
+    img.setAttribute('class', className)
+    img.setAttribute('data-qc-drawing', name)
+    return img
+  }
   let nextImage = imageNames.size
   const containers = input.chapters.map((c) => {
     const div = document.createElement('div')
@@ -480,13 +506,9 @@ export function epubChapters(input: { chapters: EpubChapterInput[]; imageNames: 
         // formula is drawn as a picture by the caller; its TeX source is not in the build, so the
         // alternative text can only say what it is.
         const display = k.classList.contains('katex-display')
-        const name = `images/f${String(formulas.length + 1).padStart(4, '0')}.png`
-        formulas.push({ name, html: k.outerHTML, display })
-        const img = document.createElement('img')
-        img.setAttribute('src', `../${name}`)
-        img.setAttribute('alt', input.formulaAlt)
-        img.setAttribute('class', display ? 'qc-formula qc-formula-display' : 'qc-formula')
-        img.setAttribute('data-qc-formula', name)
+        const name = `images/f${String(counts.formulas).padStart(4, '0')}.png`
+        drawings.push({ name, html: k.outerHTML, kind: 'formula', display })
+        const img = picture(name, input.formulaAlt, display ? 'qc-formula qc-formula-display' : 'qc-formula')
         if (display) {
           const p = document.createElement('p')
           p.className = 'qc-formula-block'
@@ -500,7 +522,26 @@ export function epubChapters(input: { chapters: EpubChapterInput[]; imageNames: 
       k.replaceWith(copy)
     })
 
-    div.querySelectorAll('img:not([data-qc-formula])').forEach((img) => {
+    // Diagrams (Mermaid, Excalidraw) are drawn as pictures as well. Measured in Apple Books
+    // (2026-11-05): the reader sets its own font on the HTML labels inside a Mermaid SVG, which
+    // Mermaid had sized for the site's font, so "Rechteck" and "Datenbank" were cut off; its dark
+    // theme coloured the labels white on Mermaid's white boxes, and Excalidraw's black arrows
+    // vanished on the black page. Safari showed the same chapter correctly - it is the reader's
+    // styling, which reaches into an SVG in the page but not into a picture.
+    div.querySelectorAll('figure.qc-diagram > svg').forEach((svg) => {
+      counts.diagrams++
+      const name = `images/d${String(counts.diagrams).padStart(4, '0')}.png`
+      drawings.push({ name, html: svg.outerHTML, kind: 'diagram', display: true })
+      const title = svg.querySelector(':scope > title')?.textContent?.trim()
+      svg.replaceWith(picture(name, title || input.diagramAlt, 'qc-diagram-picture'))
+    })
+
+    // The arrow Quartz puts after an external link is decoration (aria-hidden), sized by the
+    // site's stylesheet. Apple Books ignored its max-width and gave it half a page of height after
+    // every external link (measured on the handbook, 2026-11-05).
+    div.querySelectorAll('svg.external-icon').forEach((svg) => svg.remove())
+
+    div.querySelectorAll('img:not([data-qc-drawing])').forEach((img) => {
       let url: URL
       try {
         url = new URL(img.getAttribute('src') ?? '', location.href)
@@ -640,5 +681,5 @@ export function epubChapters(input: { chapters: EpubChapterInput[]; imageNames: 
       parseError: err ? (err.textContent ?? 'parse error').slice(0, 300) : null
     }
   })
-  return { chapters, formulas, counts }
+  return { chapters, drawings, counts }
 }

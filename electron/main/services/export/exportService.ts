@@ -263,7 +263,8 @@ export async function exportBook(opts: {
         files.push({ name: `${book.id}.html`, bytes: html.bytes })
         report.push(mainT('exportReportHtml', { mb: mb(html.bytes.length) }))
       }
-      if (content.formulas) report.push(mainT('exportReportFormulas', { count: content.formulas }))
+      if (content.drawings.formulas) report.push(mainT('exportReportFormulas', { count: content.drawings.formulas }))
+      if (content.drawings.diagrams) report.push(mainT('exportReportDiagrams', { count: content.drawings.diagrams }))
       if (content.counts.externalImages) report.push(mainT('exportReportExternalImages', { count: content.counts.externalImages }))
       if (content.counts.unsupportedImages) report.push(mainT('exportReportUnsupportedImages', { count: content.counts.unsupportedImages }))
     }

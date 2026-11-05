@@ -33,7 +33,7 @@ nav#toc { margin: 2em 0; }
   pre { border-color: #444; }
   th, td { border-color: #444; }
   .qc-chapter { border-color: #333; }
-  img.qc-formula, figure.qc-diagram svg { background: #fff; border-radius: 3px; }
+  img.qc-formula, img.qc-diagram-picture, figure.qc-diagram svg { background: #fff; border-radius: 3px; }
 }
 `
 

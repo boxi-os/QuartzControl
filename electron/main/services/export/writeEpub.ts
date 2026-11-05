@@ -6,7 +6,7 @@ import { createZip, type ZipEntry } from '../zipArchive'
 import type { CollectedPage } from './collect'
 import { headingAnchor } from './documentHtml'
 import type { ExportWindow } from './exportWindow'
-import { epubChapters, type EpubChapterInput } from './pageScripts'
+import { epubChapters, type Drawing, type EpubChapterInput } from './pageScripts'
 import type { SiteServer } from './siteServer'
 
 /**
@@ -28,7 +28,7 @@ export interface EpubParts {
   modified: Date
   /** The cover picture as bytes (the book's own or the project picture), or none. */
   cover: { data: Buffer; type: string } | null
-  /** The site's stylesheets, to draw formulas with KaTeX's own CSS and fonts. */
+  /** The site's stylesheets, to draw formulas with KaTeX's own CSS and fonts and diagrams in the site's fonts. */
   stylesheets: string[]
   items: DocItem[]
   pages: CollectedPage[]
@@ -38,7 +38,7 @@ export interface EpubResult {
   bytes: Buffer
   chapters: number
   images: number
-  counts: { externalImages: number; unsupportedImages: number; unresolvedLinks: number; footnotes: number; formulas: number }
+  counts: { externalImages: number; unsupportedImages: number; unresolvedLinks: number; footnotes: number; formulas: number; diagrams: number }
 }
 
 /** EPUB 3.3 core media types for pictures. An AVIF or a BMP of the site has no place in an ePub. */
@@ -61,6 +61,7 @@ h3 { font-size: 1.15em; margin: 1.2em 0 0.5em; }
 img, svg { max-width: 100%; height: auto; }
 figure { margin: 1em 0; }
 figure.qc-diagram { text-align: center; }
+img.qc-diagram-picture { background: #fff; }
 pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.85em; padding: 0.6em; border: 1px solid #ddd; border-radius: 4px; }
 code { font-family: monospace; font-size: 0.92em; }
 table { border-collapse: collapse; width: 100%; margin: 1em 0; }
@@ -150,70 +151,93 @@ async function readSiteFile(server: SiteServer, url: string): Promise<Buffer | n
   }
 }
 
-/** How much larger than CSS pixels a formula is drawn: sharp on paper-like screens. */
-const FORMULA_ZOOM = 3
+/** How much larger than CSS pixels a picture is drawn: sharp on paper-like screens. */
+const ZOOM: Record<Drawing['kind'], number> = { formula: 3, diagram: 2 }
+/** The window the pictures are drawn in; what lies outside it is not captured. */
+const DRAW_W = 3000
+const DRAW_H = 3000
 /** The reader's base size the em sizes below are relative to. */
 const BASE_PX = 16
 
 /**
- * Draws every formula as a PNG and returns, per picture, its bytes and the CSS that gives it the
- * size it had on the website in em - so it grows with the reader's font size instead of staying in
- * pixels.
+ * Draws every formula and diagram as a PNG and returns, per picture, its bytes and the CSS that
+ * gives it the size it had on the website in em - so it grows with the reader's font size instead
+ * of staying in pixels. A diagram is drawn at the width Mermaid gave it (its max-width, else its
+ * viewBox), not at a column's; a wide one is drawn at a smaller zoom rather than cut off.
  */
-async function drawFormulas(
+async function drawPictures(
   win: ExportWindow,
   server: SiteServer,
   stylesheets: string[],
-  formulas: { name: string; html: string; display: boolean }[],
+  drawings: Drawing[],
   signal?: AbortSignal
 ): Promise<Map<string, { data: Buffer; style: string }>> {
   const head = stylesheets.map((h) => `<link rel="stylesheet" href="${esc(h)}">`).join('')
   await win.load(
     server.setDocument(
-      'formula.html',
-      `<!doctype html><html saved-theme="light"><head><meta charset="utf-8">${head}<style>html,body{margin:0!important;padding:0!important;background:#fff!important}#f{display:inline-block;padding:1px 2px;background:#fff}#f .katex-display{margin:0!important}</style></head><body><span id="f"></span></body></html>`
+      'drawing.html',
+      `<!doctype html><html saved-theme="light"><head><meta charset="utf-8">${head}<style>html,body{margin:0!important;padding:0!important;background:#fff!important}#f{display:inline-block;padding:1px 2px;background:#fff}#f .katex-display{margin:0!important}#f.diagram{display:block;width:max-content;padding:4px}#f.diagram>svg{display:block;max-width:none!important;height:auto}</style></head><body><div id="f"></div></body></html>`
     )
   )
   const wc = win.win.webContents
-  // Room for a wide formula at three times its size: what lies outside the window is not captured.
   const [oldWidth, oldHeight] = win.win.getContentSize()
-  win.win.setContentSize(3000, 2000)
-  wc.setZoomFactor(FORMULA_ZOOM)
+  win.win.setContentSize(DRAW_W, DRAW_H)
   const out = new Map<string, { data: Buffer; style: string }>()
+  // capturePage takes the last frame painted. Without waiting for two animation frames it was
+  // still the previous formula: the wide polynomial of Example came out as the matrix before it.
+  const measure = (): Promise<{ x: number; y: number; width: number; height: number }> =>
+    win.run(
+      () =>
+        document.fonts.ready
+          .then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
+          .then(() => {
+            const r = document.getElementById('f')!.getBoundingClientRect()
+            return { x: r.x, y: r.y, width: r.width, height: r.height }
+          }),
+      []
+    )
   try {
-    for (const f of formulas) {
+    for (const d of drawings) {
       signal?.throwIfAborted()
-      const rect = await win.run(
-        (html: string) => {
+      await win.run(
+        (html: string, diagram: boolean) => {
           const box = document.getElementById('f')!
+          box.className = diagram ? 'diagram' : ''
           box.innerHTML = html
-          // capturePage takes the last frame painted. Without waiting for two animation frames it
-          // was still the previous formula: the wide polynomial of Example came out as the matrix
-          // before it.
-          return document.fonts.ready
-            .then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
-            .then(() => {
-              const r = box.getBoundingClientRect()
-              return { x: r.x, y: r.y, width: r.width, height: r.height }
-            })
+          const svg = diagram ? box.querySelector('svg') : null
+          if (svg) {
+            const max = parseFloat(svg.style.maxWidth)
+            const width = Number.isFinite(max) && max > 0 ? max : svg.viewBox.baseVal?.width || svg.getBoundingClientRect().width
+            svg.style.width = `${width}px`
+          }
         },
-        [f.html]
+        [d.html, d.kind === 'diagram']
       )
+      // Layout is in CSS pixels whatever the zoom, so one measurement says which zoom still fits.
+      wc.setZoomFactor(1)
+      const plain = await measure()
+      const zoom = Math.min(ZOOM[d.kind], DRAW_W / (plain.x + plain.width), DRAW_H / (plain.y + plain.height))
+      wc.setZoomFactor(zoom)
       // getBoundingClientRect answers in CSS pixels of the zoomed page; capturePage wants the
       // window's own units, which are those times the zoom.
-      const image = await wc.capturePage({
-        x: Math.floor(rect.x * FORMULA_ZOOM),
-        y: Math.floor(rect.y * FORMULA_ZOOM),
-        width: Math.ceil(rect.width * FORMULA_ZOOM),
-        height: Math.ceil(rect.height * FORMULA_ZOOM)
-      })
-      if (image.isEmpty() || (rect.x + rect.width) * FORMULA_ZOOM > 3000 || (rect.y + rect.height) * FORMULA_ZOOM > 2000) {
-        throw new Error(mainT('exportFormulaNotDrawn'))
+      const rect = await measure()
+      const box = {
+        x: Math.floor(rect.x * zoom),
+        y: Math.floor(rect.y * zoom),
+        width: Math.ceil(rect.width * zoom),
+        height: Math.ceil(rect.height * zoom)
+      }
+      let image = await wc.capturePage(box)
+      // capturePage answers in device pixels: on a Retina screen twice the zoom (the journey
+      // diagram of Example came out 6000 pixels wide). Every picture gets the zoom it asked for.
+      if (image.getSize().width > box.width) image = image.resize({ width: box.width, quality: 'best' })
+      if (image.isEmpty() || rect.width === 0 || box.x + box.width > DRAW_W + 1 || box.y + box.height > DRAW_H + 1) {
+        throw new Error(mainT(d.kind === 'formula' ? 'exportFormulaNotDrawn' : 'exportDiagramNotDrawn'))
       }
       const em = (px: number): string => `${(px / BASE_PX).toFixed(3)}em`
-      out.set(f.name, {
+      out.set(d.name, {
         data: image.toPNG(),
-        style: f.display ? `width:${em(rect.width)};max-width:100%` : `height:${em(rect.height)};vertical-align:middle`
+        style: d.display ? `width:${em(rect.width)};max-width:100%` : `height:${em(rect.height)};vertical-align:middle`
       })
     }
   } finally {
@@ -225,7 +249,7 @@ async function drawFormulas(
 
 /**
  * The book's content in the form a reader takes, shared by the ePub and the offline HTML: chapters
- * as XHTML bodies, the navigation, and every picture (the site's own, the formulas, the cover) as
+ * as XHTML bodies, the navigation, and every picture (the site's own, the formulas and diagrams, the cover) as
  * bytes under the name the chapters use. The offline HTML is made from this rather than from the
  * print document because this is the form epubcheck has passed: no site stylesheet, no script, no
  * KaTeX HTML that needs fonts from a CDN.
@@ -236,7 +260,8 @@ export interface BookContent {
   /** `images/…` → bytes and media type. */
   assets: Map<string, { data: Buffer; type: string }>
   cover: { name: string; data: Buffer; type: string } | null
-  formulas: number
+  /** How many of `assets` are drawn formulas and diagrams, not pictures of the site. */
+  drawings: { formulas: number; diagrams: number }
   counts: EpubResult['counts']
 }
 
@@ -263,7 +288,7 @@ export async function prepareBookContent(win: ExportWindow, server: SiteServer, 
   await win.load(server.setDocument('epub.html', '<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>'))
   signal?.throwIfAborted()
   const result = await win.run(epubChapters, [
-    { chapters: inputs, imageNames: {}, imageExtensions: Object.keys(IMAGE_TYPES).map((e) => e.slice(1)), formulaAlt: mainTIn(parts.lang, 'docFormulaAlt') }
+    { chapters: inputs, imageNames: {}, imageExtensions: Object.keys(IMAGE_TYPES).map((e) => e.slice(1)), formulaAlt: mainTIn(parts.lang, 'docFormulaAlt'), diagramAlt: mainTIn(parts.lang, 'docDiagramAlt') }
   ])
   const broken = result.chapters.filter((c) => c.parseError)
   if (broken.length) {
@@ -282,11 +307,11 @@ export async function prepareBookContent(win: ExportWindow, server: SiteServer, 
     assets.set(name, { data, type })
   }
 
-  if (result.formulas.length) {
-    const drawn = await drawFormulas(win, server, parts.stylesheets, result.formulas, signal)
+  if (result.drawings.length) {
+    const drawn = await drawPictures(win, server, parts.stylesheets, result.drawings, signal)
     for (const [name, f] of drawn) assets.set(name, { data: f.data, type: 'image/png' })
     for (const c of result.chapters) {
-      c.body = c.body.replace(/data-qc-formula="([^"]+)"/g, (_whole, name: string) => {
+      c.body = c.body.replace(/data-qc-drawing="([^"]+)"/g, (_whole, name: string) => {
         const f = drawn.get(name)
         return f ? `style="${f.style}"` : ''
       })
@@ -301,7 +326,10 @@ export async function prepareBookContent(win: ExportWindow, server: SiteServer, 
     nav,
     assets,
     cover,
-    formulas: result.formulas.length,
+    drawings: {
+      formulas: result.drawings.filter((d) => d.kind === 'formula').length,
+      diagrams: result.drawings.filter((d) => d.kind === 'diagram').length
+    },
     counts: result.counts
   }
 }
@@ -384,7 +412,7 @@ ${spine.join('\n')}
   return {
     bytes: createZip(entries, parts.modified),
     chapters: content.chapters.length,
-    images: content.assets.size - content.formulas,
+    images: content.assets.size - content.drawings.formulas - content.drawings.diagrams,
     counts: content.counts
   }
 }

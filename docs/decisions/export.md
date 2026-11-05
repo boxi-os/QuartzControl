@@ -282,8 +282,8 @@ gezählt. Im Handbuch und im Example kam beides nicht vor.
 
 Angesehen in Chromium (die Kapitel-Dateien als `file://`, gedruckt mit `pdftoppm`): Formelseite,
 Sequenzdiagramm. Codezeilen standen zentriert, weil Quartz Codeblöcke in `<figure>` legt; zentriert
-wird jetzt nur `figure.qc-diagram`. **Nicht in einem Reader angesehen** (Apple Books, Thorium,
-Calibre): Das steht für die Messung an der gebauten App aus.
+wird jetzt nur `figure.qc-diagram`. In Apple Books angesehen erst danach, siehe „Das ePub in
+Apple Books“ unten; Thorium und Calibre nicht.
 
 ### Das Offline-HTML, und ein Wettrennen beim Zeichnen der Formeln (2026-11-05)
 
@@ -442,3 +442,53 @@ Zwei Funde dabei: Die Datumszeile des Deckblatts kam in der Sprache der App („
 deutschen Handbuch, weil das Skript ohne Einstellungen läuft) und steht jetzt in der des
 Dokuments; und der Bericht sagte bei einer eigenen Reihenfolge „Reihenfolge aus dem Explorer“ und
 sagt jetzt „in der eigenen Reihenfolge des Buchs“.
+
+### Das ePub in Apple Books (2026-11-05)
+
+Gemessen mit Bücher 9.0 auf macOS 27.2: das Handbuch (Register und Verweise an), das ganze Example
+und ein Probebuch aus neun heiklen Example-Seiten (Tabellen, Code, Formeln im Text und als Block,
+vier Mermaid-Diagramme, Fußnoten, externe Links, Excalidraw), geöffnet mit `open -a Books`,
+geblättert per Pfeiltaste über `osascript`, aufgenommen mit `screencapture`; Thema „Original“, hell
+und dunkel.
+
+Was stimmte: Deckblatt mit Bild, das eigene Inhaltsverzeichnis und das von Books (aus
+`nav.xhtml`, mit Ebenen und Seitenzahlen), Tabellen, Codeblöcke, Callouts, Formelbilder, Register
+und „Verweise auf diese Seite“, Bilder der Website. Die Fußnoten stehen nicht im Fließtext, Books
+erkennt sie also als `epub:type="footnote"`; das Popup selbst ließ sich per Skript nicht anklicken
+(`click at` meldete -25212) und ist **nicht ausgelöst**.
+
+Zwei Fehler, beide nur im Reader, nicht in Chromium und nicht in Safari:
+
+- **Halbe Seite Leerraum hinter jedem externen Link.** Quartz setzt hinter externe Links ein
+  `svg.external-icon` mit `max-width: 0.8em` im `style`. Books hält sich nicht daran; im
+  Handbuch stand hinter „Oberfläche für Quartz“ eine halbe leere Seite, Kapitel 1 begann auf Seite
+  22. Das Symbol ist Schmuck (`aria-hidden`) und fällt jetzt im ePub und im HTML weg; Kapitel 1
+  beginnt auf Seite 15.
+- **Mermaid-Beschriftungen abgeschnitten oder unsichtbar.** Books setzt seine Schrift auf das
+  HTML in den `foreignObject`-Beschriftungen, die Mermaid für die Schrift der Website vermessen
+  hatte: „Rechteck“ und „Datenbank“ waren abgeschnitten, in hell wie dunkel. Im dunklen Thema
+  färbt Books die Beschriftungen zudem weiß, auf Mermaids weißen Kästen, und bei Excalidraw
+  verschwanden die schwarzen Pfeile auf der schwarzen Seite, die Beschriftung stand weiß auf
+  Pastell. Dasselbe Kapitel als Datei in Safari war richtig: Es ist die Gestaltung des Readers,
+  und die erreicht ein SVG in der Seite, aber kein Bild. Jede Diagramm-Figur (Mermaid und
+  Excalidraw) wird deshalb wie eine Formel als PNG gezeichnet: in der Breite, die Mermaid ihr gab
+  (`max-width`, sonst `viewBox`), mit Zoom 2, ein breites mit kleinerem Zoom statt abgeschnitten,
+  im Buch in `em` bemessen. `capturePage` liefert Gerätepixel, auf Retina das Doppelte (das
+  Journey-Diagramm kam 6000 Pixel breit); jedes Bild wird auf den Zoom verkleinert, den es
+  verlangt hat, die Formeln damit auch.
+
+Danach in Books, hell und dunkel: alle vier Mermaid-Diagramme und die Excalidraw-Zeichnung
+vollständig, im dunklen Thema auf weißem Grund wie die Formeln. Preis: Text in Diagrammen ist im
+ePub und im HTML nicht mehr durchsuchbar, Alternativtext ist „Diagramm“ (oder der `<title>` des
+SVG), und das ePub wird größer (Example 0,5 MB → 2,2 MB, Probebuch 0,2 → 1,0 MB, davon 0,5 MB die
+Excalidraw-Zeichnung). Im PDF bleiben Diagramme Vektoren.
+
+Die blassen Beschriftungen des gitGraph (orange auf halbtransparentem Blau) sind Mermaids eigene
+Farben aus dem `<style>` des SVG, so auch auf der Website.
+
+Gegenprobe nach dem Fix: epubcheck 5.4.0 auf `debian-vm` für Handbuch, Example und Probebuch je
+0 Fehler, 0 Warnungen; das Offline-HTML des Probebuchs mit 17 Bildern, keinem kaputten, 0
+Netzanfragen und 0 toten Verweisen.
+
+Nebenbei, nicht behoben: Der linke Rand eines Callouts, der über eine Spaltengrenze bricht,
+hinterlässt oben in der nächsten Spalte ein Strichlein.

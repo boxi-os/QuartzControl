@@ -65,7 +65,8 @@ dahin gilt der Fall als geduldet.
 | Silbentrennung | nicht unterstützt | `hyphens: auto` trennt Deutsch nur unter macOS; nicht eingebaut |
 | PDF/A, PDF/X, CMYK | nicht unterstützt | Chromium schreibt beides nicht |
 | ePub nach epubcheck 5.4.0 | unterstützt | Handbuch, Example de/en: 0 Fehler, 0 Warnungen |
-| ePub in Apple Books, Thorium, Calibre | Messung ausstehend | nur die Kapitel in Chromium angesehen |
+| ePub in Apple Books | unterstützt | gemessen 2026-11-05 (Bücher 9.0, hell und dunkel); Diagramme dafür als Bild, das Fußnoten-Popup nicht ausgelöst |
+| ePub in Thorium, Calibre | Messung ausstehend | nicht angesehen |
 | ePub über Kindle (KDP) | geduldet | nicht gemessen; KDP nimmt ePub an |
 | Reihenfolge aus Explorer oder quartz-navigations | unterstützt | gemessen an Handbuch und Example |
 | eine andere Navigation | geduldet | die größte Linkliste der Startseite, der Bericht sagt es |

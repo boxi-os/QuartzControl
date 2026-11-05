@@ -41,7 +41,10 @@ export default function DocumentFields({
   }
   return (
     <>
-      <FieldGroup label={t('publish.targetForm.documentFolder')}>
+      {/* Both columns: a path with the „Auswählen“ button beside it is wider than one column of the
+          panel, and a grid item does not shrink below its content - the button ran under the book
+          select (measured 2026-11-05 in the handbook screenshot). */}
+      <FieldGroup label={t('publish.targetForm.documentFolder')} className="sm:col-span-2">
         <div className="flex gap-2">
           <TextInput
             aria-label={t('publish.targetForm.documentFolder')}

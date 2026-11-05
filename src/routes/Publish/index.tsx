@@ -595,7 +595,9 @@ export default function Publish(): JSX.Element {
               />
             )}
             {targetDraft.destination.type === 'folder' && (
-              <Field label={t('publish.targetForm.folderPath')}>
+              // Both columns, like the document target's folder: one column is narrower than a
+              // path and its „Auswählen“ button, which ran past the column edge.
+              <Field label={t('publish.targetForm.folderPath')} className="sm:col-span-2">
                 <div className="flex gap-2">
                   <TextInput
                     value={targetDraft.destination.path}

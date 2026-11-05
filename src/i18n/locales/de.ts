@@ -2998,6 +2998,8 @@ export default {
       documentBook: 'Buch',
       documentPickBook: '— Buch wählen —',
       documentBookHint: 'Welche Seiten in welcher Reihenfolge, steht im Buch. Die Dateien heißen wie das Buch.',
+      documentBookGone: 'Das Buch „{{id}}“ gibt es in diesem Projekt nicht mehr (quartz-books/{{id}}.json fehlt). Bitte ein anderes Buch wählen.',
+      documentBookGoneOption: '„{{id}}“ (fehlt)',
       documentNoBooks: 'Dieses Projekt hat noch kein Buch. Bücher entstehen auf der Seite „Dokumente“.',
       documentFormats: 'Formate',
       withDocuments: 'Dokumente mit hochladen',

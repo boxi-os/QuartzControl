@@ -28,6 +28,13 @@ export default function DocumentFields({
   onChange: (destination: DocumentDestination) => void
 }): JSX.Element {
   const { t } = useTranslation()
+  // Two books of the same title were two equal lines; the file name tells them apart (review of
+  // 2026-11-06, nebenbei 4). A book the target names that is gone (deleted, renamed on another
+  // machine) stays selected and says so, rather than showing "pick a book" (nebenbei 5).
+  const titleCount = new Map<string, number>()
+  for (const b of books) titleCount.set(b.title, (titleCount.get(b.title) ?? 0) + 1)
+  const bookLabel = (b: BookDefinition): string => (!b.title ? b.id : (titleCount.get(b.title) ?? 0) > 1 ? `${b.title} (${b.id})` : b.title)
+  const bookGone = !!destination.bookId && !books.some((b) => b.id === destination.bookId)
   const toggleFormat = (format: DocumentFormat, on: boolean): void => {
     const formats = on ? FORMATS.filter((f) => f === format || destination.formats.includes(f)) : destination.formats.filter((f) => f !== format)
     onChange({ ...destination, formats })
@@ -55,13 +62,20 @@ export default function DocumentFields({
       </FieldGroup>
       <Field
         label={t('publish.targetForm.documentBook')}
-        hint={books.length === 0 ? t('publish.targetForm.documentNoBooks') : t('publish.targetForm.documentBookHint')}
+        hint={
+          bookGone
+            ? t('publish.targetForm.documentBookGone', { id: destination.bookId })
+            : books.length === 0
+              ? t('publish.targetForm.documentNoBooks')
+              : t('publish.targetForm.documentBookHint')
+        }
       >
         <Select value={destination.bookId} onChange={(e) => onChange({ ...destination, bookId: e.target.value })}>
           <option value="">{t('publish.targetForm.documentPickBook')}</option>
+          {bookGone && <option value={destination.bookId}>{t('publish.targetForm.documentBookGoneOption', { id: destination.bookId })}</option>}
           {books.map((b) => (
             <option key={b.id} value={b.id}>
-              {b.title || b.id}
+              {bookLabel(b)}
             </option>
           ))}
         </Select>

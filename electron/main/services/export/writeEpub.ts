@@ -51,7 +51,12 @@ const IMAGE_TYPES: Record<string, string> = {
   '.webp': 'image/webp'
 }
 
-/** The reader stylesheet, also the offline HTML's (writeHtml.ts). */
+/**
+ * The reader stylesheet, also the offline HTML's (writeHtml.ts). No background that assumes a light
+ * page: a reader's dark theme changes the text colour but not every background. Calibre 9.17 kept
+ * the callouts' #f5f5f5 and set their text light grey on it, barely readable (2026-11-05); a
+ * translucent grey works on either.
+ */
 export const STYLE = `
 body { margin: 0 4%; line-height: 1.5; }
 h1, h2, h3, h4, h5, h6 { line-height: 1.25; page-break-after: avoid; break-after: avoid; }
@@ -67,7 +72,7 @@ code { font-family: monospace; font-size: 0.92em; }
 table { border-collapse: collapse; width: 100%; margin: 1em 0; }
 th, td { border: 1px solid #ccc; padding: 0.3em 0.5em; text-align: left; vertical-align: top; }
 blockquote { margin: 1em 0; padding: 0.2em 1em; border-left: 3px solid #999; }
-blockquote.callout { border-left-width: 4px; background: #f5f5f5; }
+blockquote.callout { border-left-width: 4px; background: rgba(128, 128, 128, 0.12); }
 .callout-title { font-weight: bold; }
 .callout-icon, .callout-fold { display: none; }
 .qc-replaced { font-style: italic; }

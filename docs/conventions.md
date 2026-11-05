@@ -152,7 +152,8 @@ Begründung.
   gilt erst mit `aria-roledescription` und drei gleichen Takten als fertig; `capturePage` erst zwei
   Animationsframes nach dem Austausch.
 - **Im ePub ist nur Text, was der Reader umgestalten darf.** Formeln und Diagramme gehen in ePub
-  und HTML als Bild; ein SVG im Kapitel bekommt Schrift und Farben des Readers.
+  und HTML als Bild; ein SVG im Kapitel bekommt Schrift und Farben des Readers. Der Reader-Stil
+  setzt keinen Hintergrund, der eine helle Seite voraussetzt.
 - **Fenster:** ein Fenster, `hiddenInset` nur auf macOS, `will-navigate` nur auf das eigene
   Dokument, `setWindowOpenHandler` nur für http(s), eine CSP ohne externe Hosts, und
   `nativeTheme.themeSource` wird vor `createWindow()` gesetzt.

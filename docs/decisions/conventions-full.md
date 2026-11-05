@@ -528,7 +528,10 @@ Projektwurzel.
   Beschriftungen weiß auf weißen Kästen; Excalidraws schwarze Pfeile verschwanden auf schwarzem
   Grund. Dasselbe Kapitel in Safari war richtig. Aus demselben Grund fällt Quartz' Symbol hinter
   externen Links weg: Books ignorierte seine Größe und setzte eine halbe leere Seite dahinter
-  (`docs/decisions/export.md`, „Das ePub in Apple Books“).
+  (`docs/decisions/export.md`, „Das ePub in Apple Books“). Umgekehrt setzt der Reader-Stil keinen
+  Hintergrund, der eine helle Seite voraussetzt: Calibre färbt im dunklen Thema den Text hell und
+  lässt den Hintergrund stehen (Callouts in `#f5f5f5` waren kaum lesbar); ein halbtransparentes
+  Grau trägt auf beiden.
 - **Fenster:** ein Fenster, `hiddenInset` nur auf macOS, `will-navigate` erlaubt nur das eigene
   Dokument, `setWindowOpenHandler` gibt nur http(s) an den Browser, CSP ohne externe Hosts. Theme
   wird in Main über `nativeTheme.themeSource` gesetzt, *vor* `createWindow()`.

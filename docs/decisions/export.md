@@ -492,3 +492,28 @@ Netzanfragen und 0 toten Verweisen.
 
 Nebenbei, nicht behoben: Der linke Rand eines Callouts, der über eine Spaltengrenze bricht,
 hinterlässt oben in der nächsten Spalte ein Strichlein.
+
+### Das ePub in Calibre (2026-11-05)
+
+Gemessen mit dem E-book viewer von calibre 9.17.0 (offizielles DMG, signiert und notarisiert,
+aus dem Scratchpad gestartet, nicht installiert; Konfiguration und Cache über
+`CALIBRE_CONFIG_DIRECTORY`/`CALIBRE_CACHE_DIRECTORY` im Scratchpad) am Probebuch aus dem
+Abschnitt davor, im dunklen Thema des Viewers (er folgt dem System). Geblättert per Pfeiltaste über
+`osascript`; Klicks über ein kleines Swift-Programm mit `CGEvent`, denn `click at` von System
+Events trifft nur das Fenster, nicht den Inhalt.
+
+Was stimmte: Deckblatt, Tabellen, Code, Formeln und die vier Mermaid-Diagramme samt Excalidraw als
+Bild (auf weißem Grund), Register. Fußnoten zeigt Calibre zusätzlich am Kapitelende mit
+Rücksprungpfeil; ein Klick auf den Verweis öffnet sie als Popup (ausgelöst und aufgenommen).
+
+Ein Fehler: **Callouts kaum lesbar.** Der Reader-Stil gab `blockquote.callout` den Hintergrund
+`#f5f5f5`. Calibres dunkles Thema setzt die Textfarbe hell, lässt diesen Hintergrund aber stehen:
+hellgrauer Text auf fast weißem Grund. Apple Books hatte den Hintergrund im dunklen Thema mit
+ersetzt, deshalb fiel es dort nicht auf. Der Hintergrund ist jetzt `rgba(128, 128, 128, 0.12)`,
+der auf hellem wie dunklem Grund trägt; danach in Calibre lesbar (aufgenommen). Rahmen in
+`#ccc`/`#ddd`/`#999` stehen auf dunklem Grund weiter sichtbar und bleiben.
+
+Gegenprobe: epubcheck 5.4.0 0 Fehler, 0 Warnungen; Offline-HTML wie zuvor (17 Bilder, 0 kaputt,
+0 Netzanfragen, 0 tote Verweise). Calibres helles Thema nicht eigens angesehen. Nach dem Beenden
+lagen außerhalb des Scratchpads `~/Library/Preferences/net.kovidgoyal.calibre.plist` (Qt-Menü-
+Voreinstellungen) und `~/Library/Caches/calibre-ebook.com` (Qt-Shader-Cache); beide entfernt.

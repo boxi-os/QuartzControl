@@ -140,6 +140,17 @@ export function navList(entries: { href: string; title: string; level: number }[
 }
 
 /** A picture of the build, read from the served copy by its address. */
+/** The bytes of a picture written into a page as a data: URL (base64 or percent-encoded). */
+function dataUrlBytes(url: string): Buffer | null {
+  const m = /^data:[^,]*?(;base64)?,(.*)$/s.exec(url)
+  if (!m) return null
+  try {
+    return m[1] ? Buffer.from(m[2], 'base64') : Buffer.from(decodeURIComponent(m[2]), 'utf8')
+  } catch {
+    return null
+  }
+}
+
 async function readSiteFile(server: SiteServer, url: string): Promise<Buffer | null> {
   let pathname: string
   try {
@@ -334,10 +345,10 @@ export async function prepareBookContent(win: ExportWindow, server: SiteServer, 
   for (const c of result.chapters) for (const img of c.images) images.set(img.name, img.url)
   for (const [name, url] of images) {
     const type = IMAGE_TYPES[extname(name).toLowerCase()]
-    const data = await readSiteFile(server, url)
+    const data = url.startsWith('data:') ? dataUrlBytes(url) : await readSiteFile(server, url)
     // The page showed this picture from the build, so it is in the copy; one that is not means the
     // copy and the pages disagree, and the book would carry a reference to nothing.
-    if (!data || !type) throw new Error(mainT('exportEpubImageMissing', { url: new URL(url).pathname }))
+    if (!data || !type) throw new Error(mainT('exportEpubImageMissing', { url: url.startsWith('data:') ? url.slice(0, 40) : new URL(url).pathname }))
     assets.set(name, { data, type })
   }
 

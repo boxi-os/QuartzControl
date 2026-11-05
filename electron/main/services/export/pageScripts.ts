@@ -219,7 +219,9 @@ export function extractArticle(
   })
   // Not the <style> inside an SVG: Mermaid styles its diagram there, and without it every shape
   // printed as a black area (measured on Example's flowchart, 2026-11-05).
-  art.querySelectorAll('[hidden], a[role="anchor"], .multilanguage-notice, script, style, noscript, template, dialog, button').forEach((e) => {
+  // link, meta and base as well: raw HTML in a note may carry them, and a stylesheet from elsewhere
+  // made the offline HTML load from the network (review of 2026-11-06, N1).
+  art.querySelectorAll('[hidden], a[role="anchor"], .multilanguage-notice, script, style, noscript, template, dialog, button, link, meta, base').forEach((e) => {
     if (e.tagName.toLowerCase() === 'style' && e.closest('svg')) return
     e.remove()
   })
@@ -291,7 +293,12 @@ export function extractArticle(
       return
     }
     if (url.origin !== location.origin) {
-      if (/^https?:$/.test(url.protocol) || url.protocol === 'mailto:') a.setAttribute('href', url.href)
+      if (/^(https?|mailto|tel):$/.test(url.protocol)) return void a.setAttribute('href', url.href)
+      // javascript:, data:, file: and the like lead nowhere a reader should go; a javascript: link
+      // in the offline HTML ran its script on a click (N1). The words stay.
+      const span = document.createElement('span')
+      span.append(...a.childNodes)
+      a.replaceWith(span)
       return
     }
     const target = slugFromPathname(url.pathname)
@@ -552,12 +559,49 @@ export function epubChapters(input: {
     // every external link (measured on the handbook, 2026-11-05).
     div.querySelectorAll('svg.external-icon').forEach((svg) => svg.remove())
 
+    // Addresses from raw HTML that the ePub cannot carry and the offline HTML would fetch (N1): an
+    // url() in a style attribute and an SVG <image> from elsewhere. Only data: and #ids stay.
+    div.querySelectorAll('[style]').forEach((el) => {
+      const st = (el as HTMLElement).style
+      for (let k = st.length - 1; k >= 0; k--) {
+        if (/url\(\s*["']?(?!data:|#)/i.test(st.getPropertyValue(st[k]))) st.removeProperty(st[k])
+      }
+      if (!st.length) el.removeAttribute('style')
+    })
+    div.querySelectorAll('svg image').forEach((image) => {
+      const href = image.getAttribute('href') ?? image.getAttributeNS('http://www.w3.org/1999/xlink', 'href') ?? ''
+      if (!href.startsWith('data:')) image.remove()
+    })
+
     div.querySelectorAll('img:not([data-qc-drawing])').forEach((img) => {
       let url: URL
       try {
         url = new URL(img.getAttribute('src') ?? '', location.href)
       } catch {
         img.remove()
+        return
+      }
+      // A picture written into the page (data:) travels as a file of the book like the site's own;
+      // as a link it was a reference epubcheck refuses (RSC-029) and a picture nobody sees (N1).
+      if (url.protocol === 'data:') {
+        const mime = /^data:([^;,]+)/.exec(url.href)?.[1]?.toLowerCase() ?? ''
+        const ext = ({ 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/svg+xml': 'svg', 'image/webp': 'webp' } as Record<string, string>)[mime]
+        if (!ext || !input.imageExtensions.includes(ext)) {
+          counts.unsupportedImages++
+          const span = document.createElement('span')
+          span.className = 'qc-replaced'
+          span.textContent = img.getAttribute('alt') || ''
+          img.replaceWith(span)
+          return
+        }
+        let name = imageNames.get(url.href)
+        if (!name) {
+          name = `images/i${String(++nextImage).padStart(4, '0')}.${ext}`
+          imageNames.set(url.href, name)
+        }
+        images.push({ url: url.href, name })
+        img.setAttribute('src', `../${name}`)
+        if (!img.hasAttribute('alt')) img.setAttribute('alt', '')
         return
       }
       if (url.origin !== location.origin) {

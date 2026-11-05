@@ -776,3 +776,19 @@ neu gemountet. Gemessen mit echten Tasten an der gebauten App (`fix/m5.mjs`: „
 `BODY`, nachher „Anhang B2“ und der Fokus im Feld. Die Messung vom 2026-11-05 setzte den Text mit
 einem einzigen `fill` und konnte das nicht sehen. Das umbenannte Objekt übernimmt jetzt die
 Kennung des alten.
+
+### Rohes HTML eines Autors in ePub und Offline-HTML (2026-11-06, N1)
+
+In die Kopie `gui-test-evil` hatte das Review gesetzt, was ein Autor als rohes HTML schreiben kann:
+`style="background-image:url(http://…)"`, `<link rel="stylesheet" href="http://…">`,
+`<svg><image href="http://…">`, einen `javascript:`-Link und ein `data:`-Bild. Vorher (gebaute App,
+`fix/n1.sh`: Export, epubcheck auf debian-vm, das HTML in einem Fenster, das jede Anfrage außer
+`file:`/`data:` sperrt und zählt): epubcheck 5 Fehler (zweimal RSC-006, RSC-029, RSC-010, OPF-014),
+das Offline-HTML 2 Anfragen nach draußen, und ein Klick auf den `javascript:`-Link ersetzte das
+Dokument. Das `data:`-Bild stand als Link im Buch und zählte als „Bild von anderen Websites“.
+
+Jetzt: `link`, `meta`, `base` fallen beim Einsammeln wie `script`; ein Link, der weder http(s) noch
+`mailto:`/`tel:` ist, behält seine Worte und verliert die Adresse; im ePub und HTML fallen `url()` in
+`style`-Attributen (außer `data:` und `#…`) und SVG-`<image>` von anderswo; ein `data:`-Bild wird
+eine Datei des Buchs. Nachher: epubcheck 0 Fehler, 0 Anfragen, kein `javascript:`-Link, 2 Bilder im
+Buch statt 1. Example und Handbuch: epubcheck 0, das HTML 0 Anfragen, 0 kaputte Bilder, 0 tote Anker.

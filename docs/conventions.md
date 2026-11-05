@@ -152,7 +152,8 @@ Begründung.
 - **Wer ein gerendertes Ergebnis abholt, wartet, bis es fertig ist, nicht bis es da ist.** Mermaid
   gilt erst mit `aria-roledescription` und drei gleichen Takten als fertig; `capturePage` erst zwei
   Animationsframes nach dem Austausch, und zwar in einem Offscreen-Fenster: Ein verstecktes malt
-  unter Linux nicht.
+  unter Linux nicht. Gewartet wird nie ohne Frist und nie am Abbruch vorbei: Eine Seite lädt
+  höchstens 60 s, ein Abbruch schließt das Fenster sofort.
 - **Im ePub ist nur Text, was der Reader umgestalten darf.** Formeln und Diagramme gehen in ePub
   und HTML als Bild; ein SVG im Kapitel bekommt Schrift und Farben des Readers. Der Reader-Stil
   setzt keinen Hintergrund, der eine helle Seite voraussetzt.

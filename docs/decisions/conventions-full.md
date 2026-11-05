@@ -531,7 +531,12 @@ Projektwurzel.
   Animationsframe, und `capturePage` kehrt nicht zurück; der Export des Example stand dort bei der
   ersten Formel still. Die Größe des Fensters wird nach dem Anlegen gesetzt und mit
   `getContentSize()` gelesen, denn Linux legt es nur in Bildschirmgröße an
-  (`docs/decisions/export.md`, „Der Export unter Linux“).
+  (`docs/decisions/export.md`, „Der Export unter Linux“). Fertig heißt aber nicht „irgendwann“:
+  `loadURL` wartet auf jedes Bild, und ein Bild von einem Host, der annimmt und nie antwortet,
+  hielt den Export ohne Ende; der Abbruch setzte nur ein Signal, das zwischen den Schritten
+  gefragt wurde, und 240 s danach war der Lauf nicht zurück (zweiundsechzigstes Review, M2).
+  Seitdem lädt eine Seite höchstens 60 s und wird dann gelesen, wie sie dasteht, und ein Abbruch
+  schließt das Fenster und mit ihm alles, worauf es wartet.
 - **Im ePub ist nur Text, was der Reader umgestalten darf.** Formeln und Diagramme (Mermaid,
   Excalidraw) gehen in ePub und HTML als Bild (`drawPictures` in `export/writeEpub.ts`). Apple
   Books setzt seine Schrift auf die HTML-Beschriftungen eines Mermaid-SVG, die Mermaid für die

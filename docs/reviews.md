@@ -3592,3 +3592,53 @@ Aus der Abarbeitung, nur genannt:
   Weiterleitungen, auf `feat/1.3` schon in der Vergangenheitsform).
 
 Nichts gepusht.
+
+**Das zweiundsechzigste Review** ([`REVIEW-2026-11-06.md`](REVIEW-2026-11-06.md), Auftrag
+[`REVIEW-2026-11-06-auftrag.md`](REVIEW-2026-11-06-auftrag.md)), `feat/1.3` bei `bf998186`. Es
+ist die erste Runde auf `feat/1.3` und hat den Export als PDF, ePub und Offline-HTML gelesen, die
+zwanzig Commits ab `fea45cdc` samt Handbuch-Kapitel 6.8. Geschrieben von Claude Fable 5.1 als
+frisch gestarteter Subagent, ohne den Verlauf der Sitzung: 0 Hoch, 5 Mittel, 5 Niedrig,
+12 nebenbei. Das Urteil: nicht ganz so in 1.3, vorher M1 (der Symlink-Teil) bis M5. Gehalten hat,
+was gemessen war: Seiten- und Lesezeichenzahlen, epubcheck für Handbuch und Example, keine Anfrage
+aus dem Offline-HTML, `public/` beim Mitladen unberührt.
+
+Abgearbeitet am 2026-11-06 auf `feat/1.3`, ein Befund je Commit, an der gebauten App mit dem
+Geschirr des Reviews (eingepflanzte Kopien von gui-test, ein mitschreibender und ein schweigender
+Server auf `127.0.0.1`, epubcheck 5.4.0 auf `debian-vm`). Der Nutzer hat die Auswahl der Niedrig-
+und Nebenbei-Punkte freigegeben („nimm die sinnvollen Punkte mit“):
+
+- **M1** `5274937b`: Die Kopie des Baus nimmt keine Symlinks mit, und der Bericht nennt die Hosts,
+  von denen geladen wurde. Bilder von außen bleiben erlaubt.
+- **M2** `e41e58c9`: Ein Abbruch schließt das Exportfenster sofort (vorher nach 240 s nicht zurück,
+  jetzt 0,5 s); eine Seite lädt höchstens 60 s und wird dann gelesen, wie sie dasteht.
+- **M3** `5278f820`: Elemente, die XHTML nicht kennt („<selector>“ als Wort), werden im ePub ein
+  `span`; gui-test 4 Fehler → 0. Das Prüfskript `check:export` aus dem Plan gibt es weiter nicht.
+- **M4** `258dcedd`: Ein Inline-Element zählt am Druckrand mit seinem Inhalt, nicht mit seinem
+  Polster. Eine Toleranz wäre falsch: `printToPDF` schneidet am Inhaltsrand, ab 1,5 px sichtbar.
+- **M5** `63498646`: Eine umbenannte Zwischenüberschrift behält ihre Kennung und damit den Fokus.
+- **N1** `93e9fc13`: `link`/`meta`/`base`, `url()` in `style`, SVG-`<image>` von anderswo und
+  `javascript:`-Links fallen; ein `data:`-Bild wird eine Datei des Buchs.
+- **N2** `47983758`: Das Feld „Ordner“ liest erst nach 500 ms Ruhe (15 Kopien → 1).
+- **N3** `10e70ef2`: Speichern behält Felder einer späteren Fassung, ein unbekannter Zieltyp heißt
+  so; der Rückweg zu 1.2 steht als Satz in `release.md`, Punkt 7.
+- **N4** `80fa7575`: Überschriften zählen von der obersten Ebene der Seite (Example 119 Sprünge → 0).
+  Neue Referenzzahlen: Example 279 Seiten, Handbuch 145.
+- **N5**: nicht behoben, gemessen nicht erreichbar. Ein Unsinns-`href` fällt beim Lesen der
+  Navigation heraus (nur die eigene Origin zählt), und die Bildnamen entstehen in QuartzControls
+  eigener leerer Seite, auf der kein Skript der Website läuft.
+- **Nebenbei 1** `149616b6` (ein Listener je Fenster), **2** `acc04d98` (Schlagwörter im PDF; die
+  Seitenbeschriftung nicht), **3** `310bca1f` (fehlendes Deckblattbild → Projektbild, gesagt),
+  **4 und 5** `8c6561e6` (gleiche Titel und ein fehlendes Buch in der Auswahl), **6** mit M1,
+  **10** `5109c11e` (`build:handbook` vor dem PDF), **12** `57044b15` (nur der letzte Ordner wird
+  angelegt, gefragt vor dem Export).
+- Nicht gewählt: Nebenbei 7 (Ersatzsätze nur Deutsch und Englisch), 8 (keine Gesamtfrist; die 60 s
+  je Seite begrenzen den häufigsten Fall), 9 (Ziel in `content/`, dieselbe Regel wie das
+  Ordner-Ziel), 11 (kein Befund).
+
+Aus der Abarbeitung, nur genannt:
+- Findet der Export keine Navigation (weder Explorer noch quartz-navigations noch eine Linkliste),
+  enthält das Buch nur die Startseite und der Lauf meldet Erfolg („1 Seiten, ohne Navigation der
+  Website“). Der Plan sah als Ersatz die Reihenfolge aus `contentIndex.json` vor (gemessen mit
+  einem Skript, das `href` aller Links verbiegt).
+- `npm run smoke` stand zweimal still (0 % CPU, je über 9 Minuten), beide Male im selben
+  Shell-Aufruf direkt nach Export-Läufen; allein gestartet lief er jedes Mal durch. Ursache offen.

@@ -520,7 +520,12 @@ Projektwurzel.
 - **Wer ein gerendertes Ergebnis abholt, wartet, bis es fertig ist, nicht bis es da ist.** Mermaid
   setzt zuerst ein leeres Mess-SVG ein: Zwei Diagramme des Example waren leere Kästen, und das
   Sequenzdiagramm fehlte in einem Lauf. `capturePage` nimmt das zuletzt gemalte Bild: Die breite
-  Formel kam als die Matrix davor heraus, und epubcheck sieht das nicht.
+  Formel kam als die Matrix davor heraus, und epubcheck sieht das nicht. Gezeichnet wird in einem
+  eigenen Fenster mit `offscreen: true`: Unter Linux feuert im versteckten Fenster kein
+  Animationsframe, und `capturePage` kehrt nicht zurück; der Export des Example stand dort bei der
+  ersten Formel still. Die Größe des Fensters wird nach dem Anlegen gesetzt und mit
+  `getContentSize()` gelesen, denn Linux legt es nur in Bildschirmgröße an
+  (`docs/decisions/export.md`, „Der Export unter Linux“).
 - **Im ePub ist nur Text, was der Reader umgestalten darf.** Formeln und Diagramme (Mermaid,
   Excalidraw) gehen in ePub und HTML als Bild (`drawPictures` in `export/writeEpub.ts`). Apple
   Books setzt seine Schrift auf die HTML-Beschriftungen eines Mermaid-SVG, die Mermaid für die

@@ -36,7 +36,11 @@ export interface ExportWindow {
 const OUTSIDE_TYPES = new Set(['stylesheet', 'font', 'image'])
 const MERMAID = /\/mermaid[@/.-]/
 
-export function openExportWindow(origin: string, size: { width: number; height: number }): ExportWindow {
+/**
+ * `offscreen`: rendered without a window on screen, for drawing formulas and diagrams (see
+ * drawPictures in writeEpub.ts) - a hidden window on Linux paints no frames.
+ */
+export function openExportWindow(origin: string, size: { width: number; height: number }, opts: { offscreen?: boolean } = {}): ExportWindow {
   const partition = `quartzcontrol-export-${randomUUID()}`
   const ses = session.fromPartition(partition, { cache: false })
   const refused = new Map<string, number>()
@@ -77,7 +81,8 @@ export function openExportWindow(origin: string, size: { width: number; height: 
       // A hidden window is throttled like a background tab; Mermaid's layout and the fonts would
       // then crawl or stall.
       backgroundThrottling: false,
-      spellcheck: false
+      spellcheck: false,
+      offscreen: opts.offscreen ?? false
     }
   })
   markHelperWindow(win)

@@ -150,7 +150,8 @@ Begründung.
   und im Bericht gezählt. Gerendert wird hell.
 - **Wer ein gerendertes Ergebnis abholt, wartet, bis es fertig ist, nicht bis es da ist.** Mermaid
   gilt erst mit `aria-roledescription` und drei gleichen Takten als fertig; `capturePage` erst zwei
-  Animationsframes nach dem Austausch.
+  Animationsframes nach dem Austausch, und zwar in einem Offscreen-Fenster: Ein verstecktes malt
+  unter Linux nicht.
 - **Im ePub ist nur Text, was der Reader umgestalten darf.** Formeln und Diagramme gehen in ePub
   und HTML als Bild; ein SVG im Kapitel bekommt Schrift und Farben des Readers. Der Reader-Stil
   setzt keinen Hintergrund, der eine helle Seite voraussetzt.

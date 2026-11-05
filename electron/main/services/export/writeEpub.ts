@@ -5,7 +5,7 @@ import { mainT, mainTIn } from '../../i18n'
 import { createZip, type ZipEntry } from '../zipArchive'
 import type { CollectedPage } from './collect'
 import { headingAnchor } from './documentHtml'
-import type { ExportWindow } from './exportWindow'
+import { openExportWindow, type ExportWindow } from './exportWindow'
 import { epubChapters, type Drawing, type EpubChapterInput } from './pageScripts'
 import type { SiteServer } from './siteServer'
 
@@ -170,6 +170,14 @@ const BASE_PX = 16
  * gives it the size it had on the website in em - so it grows with the reader's font size instead
  * of staying in pixels. A diagram is drawn at the width Mermaid gave it (its max-width, else its
  * viewBox), not at a column's; a wide one is drawn at a smaller zoom rather than cut off.
+ *
+ * Drawn in a window of its own that renders offscreen, not in the export window. Measured on
+ * Debian 13 aarch64 (GNOME on Wayland, 2026-11-05): in a hidden window requestAnimationFrame never
+ * fires and capturePage never returns - the export of Example stood still at its first formula
+ * until it was killed. On macOS both work in a hidden window. An offscreen window paints on every
+ * system, so the two animation frames below arrive and the capture is the frame just painted
+ * (checked on both: a probe that alternated "A" and ten "W" got the width of each).
+ * Its refused requests are added to the export window's.
  */
 async function drawPictures(
   win: ExportWindow,
@@ -179,6 +187,25 @@ async function drawPictures(
   signal?: AbortSignal
 ): Promise<Map<string, { data: Buffer; style: string }>> {
   const head = stylesheets.map((h) => `<link rel="stylesheet" href="${esc(h)}">`).join('')
+  const drawWin = openExportWindow(server.origin, { width: DRAW_W, height: DRAW_H }, { offscreen: true })
+  // Created at the size of the screen on Linux (1280 x 800 on the VM, the pictures came out cut
+  // off at that edge); set afterwards, the size holds, and capturePage takes all of it.
+  drawWin.win.setContentSize(DRAW_W, DRAW_H)
+  try {
+    return await drawIn(drawWin, server, head, drawings, signal)
+  } finally {
+    for (const [key, n] of drawWin.refused) win.refused.set(key, (win.refused.get(key) ?? 0) + n)
+    drawWin.close()
+  }
+}
+
+async function drawIn(
+  win: ExportWindow,
+  server: SiteServer,
+  head: string,
+  drawings: Drawing[],
+  signal?: AbortSignal
+): Promise<Map<string, { data: Buffer; style: string }>> {
   await win.load(
     server.setDocument(
       'drawing.html',
@@ -186,8 +213,8 @@ async function drawPictures(
     )
   )
   const wc = win.win.webContents
-  const [oldWidth, oldHeight] = win.win.getContentSize()
-  win.win.setContentSize(DRAW_W, DRAW_H)
+  // The size the window really has, not the one asked for: the zoom and the check below go by it.
+  const [maxW, maxH] = win.win.getContentSize()
   const out = new Map<string, { data: Buffer; style: string }>()
   // capturePage takes the last frame painted. Without waiting for two animation frames it was
   // still the previous formula: the wide polynomial of Example came out as the matrix before it.
@@ -222,7 +249,7 @@ async function drawPictures(
       // Layout is in CSS pixels whatever the zoom, so one measurement says which zoom still fits.
       wc.setZoomFactor(1)
       const plain = await measure()
-      const zoom = Math.min(ZOOM[d.kind], DRAW_W / (plain.x + plain.width), DRAW_H / (plain.y + plain.height))
+      const zoom = Math.min(ZOOM[d.kind], maxW / (plain.x + plain.width), maxH / (plain.y + plain.height))
       wc.setZoomFactor(zoom)
       // getBoundingClientRect answers in CSS pixels of the zoomed page; capturePage wants the
       // window's own units, which are those times the zoom.
@@ -234,10 +261,11 @@ async function drawPictures(
         height: Math.ceil(rect.height * zoom)
       }
       let image = await wc.capturePage(box)
-      // capturePage answers in device pixels: on a Retina screen twice the zoom (the journey
-      // diagram of Example came out 6000 pixels wide). Every picture gets the zoom it asked for.
+      // capturePage answers in device pixels: on a Retina screen twice the zoom, offscreen as well
+      // (the journey diagram of Example came out 6000 pixels wide). Every picture gets the zoom it
+      // asked for.
       if (image.getSize().width > box.width) image = image.resize({ width: box.width, quality: 'best' })
-      if (image.isEmpty() || rect.width === 0 || box.x + box.width > DRAW_W + 1 || box.y + box.height > DRAW_H + 1) {
+      if (image.isEmpty() || rect.width === 0 || box.x + box.width > maxW + 1 || box.y + box.height > maxH + 1) {
         throw new Error(mainT(d.kind === 'formula' ? 'exportFormulaNotDrawn' : 'exportDiagramNotDrawn'))
       }
       const em = (px: number): string => `${(px / BASE_PX).toFixed(3)}em`
@@ -248,7 +276,6 @@ async function drawPictures(
     }
   } finally {
     wc.setZoomFactor(1)
-    win.win.setContentSize(oldWidth, oldHeight)
   }
   return out
 }

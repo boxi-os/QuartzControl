@@ -61,7 +61,7 @@ dahin gilt der Fall als geduldet.
 | Fall | Stufe | Stand |
 |---|---|---|
 | Export auf macOS (PDF, ePub, HTML) | unterstützt | gemessen 2026-11-05 an der gebauten App und am Handbuch (`docs/decisions/export.md`) |
-| PDF auf Linux | unterstützt | Spike auf `debian-vm` (aarch64): dieselben Seiten und Lesezeichen wie auf macOS; der Export der App selbst dort noch nicht gemessen |
+| Export auf Linux (PDF, ePub, HTML) | unterstützt | gemessen 2026-11-05 auf `debian-vm` (aarch64, Wayland, Software-Rendering), Module und gebaute App: dieselben Seiten und Lesezeichen wie auf macOS; x86_64, X11 und echte GPU nicht gemessen |
 | Silbentrennung | nicht unterstützt | `hyphens: auto` trennt Deutsch nur unter macOS; nicht eingebaut |
 | PDF/A, PDF/X, CMYK | nicht unterstützt | Chromium schreibt beides nicht |
 | ePub nach epubcheck 5.4.0 | unterstützt | Handbuch, Example de/en: 0 Fehler, 0 Warnungen |

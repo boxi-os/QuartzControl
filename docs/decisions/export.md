@@ -546,3 +546,57 @@ Seitenliste (`page-list`) hat.
 Gegenprobe: epubcheck 5.4.0 0 Fehler, 0 Warnungen; Offline-HTML unverändert. Nach dem Beenden lag
 außerhalb des Scratchpads nur `~/Library/Preferences/io.github.edrlab.thorium.plist` (Electron-
 Voreinstellungen zur Schreibrichtung); entfernt.
+
+### Der Export unter Linux (2026-11-05)
+
+Gemessen auf `debian-vm` (Debian 13, aarch64, GNOME 50 auf Wayland, Bildschirm 1280 x 800,
+Software-Rendering: die GPU-Initialisierung scheitert in der VM und Chromium malt in Software),
+Electron 43.4.1, Stand `3552731e` per Bundle in den Klon der VM. Zwei Wege: die Export-Module
+direkt (esbuild-Bündel wie beim Handbuch-Skript) und die gebaute App per Playwright, wie auf dem
+Mac (Ziel „Dokument“, „Jetzt exportieren“, einmal durchlaufen, einmal abbrechen).
+
+**Ein Fehler, der den Export unter Linux anhielt.** Das Handbuch (keine Formeln, keine Diagramme)
+lief in allen drei Formaten durch, das Example nicht: kein Ergebnis nach 600 s, alle Prozesse fast
+ohne CPU. Mit Zeitmarken: Einsammeln 14 s, PDF 8 s, dann stand der Export beim Zeichnen der ersten
+Formel. Ein Probeskript zeigte den Grund: Im versteckten Fenster feuert `requestAnimationFrame`
+unter Linux nie, und `capturePage` kehrt dort nicht zurück; auf macOS geht beides. Beides braucht
+nur das Zeichnen der Formel- und Diagrammbilder für ePub und HTML. Das PDF druckt
+`printToPDF` ohne Animationsframe und lief.
+
+Fix: gezeichnet wird in einem eigenen Fenster mit `offscreen: true` (dieselben Regeln über
+`openExportWindow`, abgelehnte Anfragen werden dem Exportfenster zugezählt). Es malt auf jedem
+System; das Probeskript, das abwechselnd „A“ und zehn „W“ setzte und aufnahm, bekam unter Linux
+wie auf macOS jedes Mal die Breite des eben gesetzten Texts. Zweiter Fund dabei: Unter Linux legt
+Electron auch das Offscreen-Fenster nur in Bildschirmgröße an (1280 x 800 statt 3000 x 3000), und
+die Bilder kamen an dieser Kante abgeschnitten heraus, weil die Prüfung mit der angeforderten
+Größe rechnete. Ein `setContentSize` nach dem Anlegen hält (`innerWidth` 3000, `capturePage` nimmt
+nach zwei Animationsframes auch 3000 x 3000 auf), und Zoom und Prüfung gehen jetzt nach
+`getContentSize()`, der Größe, die das Fenster wirklich hat.
+
+Danach, Linux gegen macOS:
+
+| | macOS | Linux |
+|---|---|---|
+| Handbuch (Register, Verweise, Inhaltsverzeichnis), alle drei Formate | 10,7 s | 9,3 s |
+| PDF Handbuch | 146 Seiten, 11/48/248/4 | 146 Seiten, 11/48/248/4 |
+| Example, alle drei Formate | 28,3 s | 24,7 s |
+| PDF Example | 287 Seiten, 9/46/252/260/23 | 287 Seiten, 9/46/252/260/23 |
+| Formel- und Diagrammbilder Example | 26 | 26, davon 22 in gleicher Pixelgröße, 4 um wenige Pixel anders (Schriftmetrik) |
+| epubcheck 5.4.0 | 0 / 0 | 0 / 0 (Handbuch und Example) |
+| Offline-HTML | 0 Anfragen, 0 kaputte Bilder, 0 tote Verweise | ebenso |
+| gebaute App, Export Example | 26,5 s | 27,5 s |
+| gebaute App, Abbruch | nichts geschrieben | nach 3,8 s „abgebrochen, nichts geschrieben“, Zielordner leer |
+
+**Seiten wie auf dem Mac.** Je Seite verglichen (`pdftotext`, Zeichen ohne Leerraum gezählt):
+Auf allen 146 Seiten des Handbuchs und 286 der 287 des Example stehen unter Linux dieselben
+Zeichen wie auf macOS; auf Example S. 249 hat das Mac-PDF einen Trennstrich mehr. Nichts rutscht
+also auf eine andere Seite. Verschieden ist der Zeilenfall: Wo die Website Systemschriften nennt,
+setzt Linux Cantarell, DejaVu und Liberation statt SF, Menlo und Helvetica ein (`pdffonts`). Drei
+Seiten (Formeln, Zustandsdiagramm, Flussdiagramm) als Bild angesehen: wie auf dem Mac.
+
+Nicht gemessen: ein Linux mit echter GPU, X11 statt Wayland, x86_64. Ein PDF-Lauf direkt nach dem
+ersten hängenden Lauf brauchte 234 s statt 22 s; er ließ sich danach nicht wiederholen (22,2 s).
+Dass Reste des abgeschossenen Laufs die Ursache waren, ist eine Vermutung. Abgeschossene Testläufe
+ließen drei Kopien des Builds in `/tmp` liegen (je 70 MB); die App räumt solche Kopien beim
+nächsten Start weg, sobald sie älter als eine Stunde sind; hier von Hand gelöscht. Beim ersten
+Start mit frischem Profil fragte GNOME nach dem Passwort für den Schlüsselbund (`safeStorage`).

@@ -147,7 +147,8 @@ Begründung.
   Das Exportfenster: unsichtbar, Sandbox, kein Preload, eigene Sitzung im Speicher.
 - **Was das Exportfenster von außen lädt, ist eine Regel, kein Pauschalverbot.** Stylesheets,
   Schriften, Bilder und Mermaid-Skripte ja; alles andere (Statistik, Graph, Beacons) wird gesperrt
-  und im Bericht gezählt. Gerendert wird hell.
+  und im Bericht gezählt. Der Bericht nennt beide Seiten mit Host. Die Kopie des Baus nimmt keine
+  Symlinks mit. Gerendert wird hell.
 - **Wer ein gerendertes Ergebnis abholt, wartet, bis es fertig ist, nicht bis es da ist.** Mermaid
   gilt erst mit `aria-roledescription` und drei gleichen Takten als fertig; `capturePage` erst zwei
   Animationsframes nach dem Austausch, und zwar in einem Offscreen-Fenster: Ein verstecktes malt

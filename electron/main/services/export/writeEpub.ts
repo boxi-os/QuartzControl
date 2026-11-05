@@ -177,7 +177,7 @@ const BASE_PX = 16
  * until it was killed. On macOS both work in a hidden window. An offscreen window paints on every
  * system, so the two animation frames below arrive and the capture is the frame just painted
  * (checked on both: a probe that alternated "A" and ten "W" got the width of each).
- * Its refused requests are added to the export window's.
+ * Its refused and fetched requests are added to the export window's.
  */
 async function drawPictures(
   win: ExportWindow,
@@ -195,6 +195,7 @@ async function drawPictures(
     return await drawIn(drawWin, server, head, drawings, signal)
   } finally {
     for (const [key, n] of drawWin.refused) win.refused.set(key, (win.refused.get(key) ?? 0) + n)
+    for (const [host, n] of drawWin.fetched) win.fetched.set(host, (win.fetched.get(host) ?? 0) + n)
     drawWin.close()
   }
 }

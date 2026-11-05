@@ -684,3 +684,28 @@ Leiste, die danach noch wächst (die Seitenauswahl liest die gebaute Website, 1 
 Meldung stand im Moment des Rollens am Rand und 66 px später darunter. Gemessen ist der Fall mit
 einer Pause nach dem Öffnen. Die Zeilen der Tabelle oben stammen aus dem Lauf vor dem Umsetzen der
 Meldung über die Knöpfe; die Wege selbst hat das nicht berührt.
+
+### Zweiundsechzigstes Review: was die Website im Exportfenster erreicht (2026-11-06, M1)
+
+Das Review pflanzte in eine Kopie von `gui-test` ein Skript und einen Symlink
+`public/static/leak-link.txt` auf eine Datei außerhalb des Baus; ein zweiter Server auf
+`127.0.0.1:48621` stand für „einen Host im Netz“ und schrieb jede Anfrage mit. Vorher (gebaute App,
+Skript `fix/m1.sh` im Scratchpad): 9 Anfragen an diesen Host, darunter
+`/exfil-secret.png?t=OUTSIDE-SECRET-…` – das Skript hatte die Datei hinter dem Symlink über die
+eigene Origin gelesen und als Adresse eines Bildes hinausgetragen. Der Bericht sagte „Stylesheets,
+Schriften oder Bilder kamen aus dem Netz.“ und nannte den Host nur unter den gesperrten.
+
+Zwei Dinge geändert:
+- **Die Kopie des Baus nimmt keine Symlinks mit** (`cp` mit `filter`, wie Staging und Adapter).
+  Damit liest weder der Server noch das ePub noch `contentIndex.json` durch einen Link hinaus. Kosten
+  an Example (641 Dateien, APFS): 190 ms mit Filter gegen 178 ms ohne.
+- **Der Bericht nennt die Hosts, von denen etwas geladen wurde.** Bilder von außen bleiben
+  erlaubt: Ein Bild in einer Notiz, das von einer anderen Website kommt, soll im Dokument stehen,
+  und ein Skript kann jede Adresse bilden, eine Regel nach Query-String hielte es nicht auf. Was
+  das Fenster erreicht, ist nach dem Fix das, was die Website ohnehin öffentlich zeigt; ein
+  Zählpixel zählt jede exportierte Seite als Besuch, und das sagt der Bericht jetzt mit Namen.
+  Adressen außerhalb des Webs (der PDF-Betrachter von Chromium) stehen in Klammern und fallen aus
+  der Liste; ein Host ohne Punkt (`localhost:8080`) fiel vorher mit heraus.
+
+Nachher: 9 Anfragen, `t=` leer (die Datei gibt es in der Kopie nicht), der Bericht sagt „Stylesheets,
+Schriften oder Bilder kamen aus dem Netz: cdn.jsdelivr.net, cdnjs.cloudflare.com, 127.0.0.1:48621“.

@@ -517,6 +517,12 @@ Projektwurzel.
   Plausible. Ein Pauschalverbot verlor Formeln und Diagramme, gar keins zählte jede exportierte
   Seite als Besuch. Hell, weil Quartz und Mermaid sonst dem Dark Mode der App folgen; gesetzt über
   den Debugger erst nach einer ersten Navigation auf der eigenen Origin (davor „target closed“).
+  Ein Bild ist eine Anfrage wie jede andere: Im zweiundsechzigsten Review (M1) las ein Skript der
+  Website eine Datei hinter einem Symlink in `public/` und trug sie als Adresse eines Bildes zu
+  einem fremden Host; der Bericht nannte den Host nur unter den gesperrten. Seitdem nimmt die Kopie
+  keine Symlinks mit (Quartz schreibt keine, Staging und Adapter übergehen sie ebenso), und der
+  Bericht nennt, von welchen Hosts geladen wurde. Bilder nach Query-String zu sperren hielte kein
+  Skript auf, das die Adresse selbst bildet.
 - **Wer ein gerendertes Ergebnis abholt, wartet, bis es fertig ist, nicht bis es da ist.** Mermaid
   setzt zuerst ein leeres Mess-SVG ein: Zwei Diagramme des Example waren leere Kästen, und das
   Sequenzdiagramm fehlte in einem Lauf. `capturePage` nimmt das zuletzt gemalte Bild: Die breite

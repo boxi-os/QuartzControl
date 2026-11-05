@@ -268,11 +268,12 @@ export async function exportBook(opts: {
       if (content.counts.externalImages) report.push(mainT('exportReportExternalImages', { count: content.counts.externalImages }))
       if (content.counts.unsupportedImages) report.push(mainT('exportReportUnsupportedImages', { count: content.counts.unsupportedImages }))
     }
-    if (win.fetchedOutside()) report.push(mainT('exportReportNetwork'))
+    // Hosts of the web only: the window names anything else in parentheses (see exportWindow.ts).
+    const webHosts = (hosts: Iterable<string>): string[] => [...new Set(hosts)].filter((h) => !h.startsWith('('))
+    const fetchedFrom = webHosts(win.fetched.keys())
+    if (fetchedFrom.length) report.push(mainT('exportReportNetwork', { hosts: fetchedFrom.slice(0, 6).join(', ') }))
     if (win.refused.size) {
-      // Hosts of the web only: an embedded PDF asks for Chromium's own viewer, whose extension id
-      // (mhjfbmdg…) is nothing a reader of the report could place.
-      const hosts = [...new Set([...win.refused.keys()].map((k) => k.split(' ')[1]))].filter((h) => h.includes('.'))
+      const hosts = webHosts([...win.refused.keys()].map((k) => k.split(' ')[1]))
       report.push(mainT('exportReportRefused', { count: [...win.refused.values()].reduce((a, b) => a + b, 0), hosts: hosts.slice(0, 6).join(', ') }))
     }
     return { files, report, order: { missing: resolved.missing, appended: resolved.appended }, pages: pageItems.length }

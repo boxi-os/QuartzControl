@@ -24,8 +24,10 @@ export interface ExportWindow {
   readonly win: BrowserWindow
   /** Requests refused under the rule above, by `<resourceType> <host>`. */
   readonly refused: Map<string, number>
-  /** Whether anything at all was fetched from outside (the run says it needed the network). */
-  readonly fetchedOutside: () => boolean
+  /** What was fetched from outside under the rule above, by host: the run names them, because a
+   *  picture is a request like any other - a counter pixel on the site counts every exported page
+   *  as a visit, and a script of the site can put what it read into the picture's address. */
+  readonly fetched: Map<string, number>
   load(url: string): Promise<void>
   /** Runs a self-contained function (see pageScripts.ts) with JSON-serialisable arguments and
    *  further functions passed as source. */
@@ -44,22 +46,25 @@ export function openExportWindow(origin: string, size: { width: number; height: 
   const partition = `quartzcontrol-export-${randomUUID()}`
   const ses = session.fromPartition(partition, { cache: false })
   const refused = new Map<string, number>()
-  let outside = false
+  const fetched = new Map<string, number>()
   ses.webRequest.onBeforeRequest((details, callback) => {
     const url = details.url
     if (url.startsWith(`${origin}/`) || url === origin || url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('devtools:')) {
       return callback({})
     }
-    const allowed = OUTSIDE_TYPES.has(details.resourceType) || (details.resourceType === 'script' && MERMAID.test(url))
-    if (allowed) {
-      outside = true
-      return callback({})
-    }
-    let host = url
+    let host = url.slice(0, 40)
     try {
-      host = new URL(url).host || url.slice(0, 40)
+      const u = new URL(url)
+      // An address that is not on the web (an embedded PDF asks for Chromium's own viewer,
+      // chrome-extension://mhjfbmdg…) is nothing a reader of the report could place.
+      host = /^(https?|wss?):$/.test(u.protocol) ? u.host : `(${u.protocol.slice(0, -1)})`
     } catch {
       // keep the raw prefix
+    }
+    const allowed = OUTSIDE_TYPES.has(details.resourceType) || (details.resourceType === 'script' && MERMAID.test(url))
+    if (allowed) {
+      fetched.set(host, (fetched.get(host) ?? 0) + 1)
+      return callback({})
     }
     const key = `${details.resourceType} ${host}`
     refused.set(key, (refused.get(key) ?? 0) + 1)
@@ -113,7 +118,7 @@ export function openExportWindow(origin: string, size: { width: number; height: 
   return {
     win,
     refused,
-    fetchedOutside: () => outside,
+    fetched,
     async load(url) {
       prepared ??= prepare()
       await prepared

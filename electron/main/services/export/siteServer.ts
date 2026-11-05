@@ -1,6 +1,6 @@
 import { createServer, type Server } from 'http'
 import { constants, createReadStream } from 'fs'
-import { cp, mkdtemp, readdir, rm, stat } from 'fs/promises'
+import { cp, lstat, mkdtemp, readdir, rm, stat } from 'fs/promises'
 import { tmpdir } from 'os'
 import { extname, isAbsolute, join, relative } from 'path'
 
@@ -104,7 +104,15 @@ async function resolveFile(root: string, pathname: string): Promise<string | nul
 export async function serveSiteCopy(buildDir: string): Promise<SiteServer> {
   const root = await mkdtemp(join(tmpdir(), TEMP_PREFIX))
   try {
-    await cp(buildDir, root, { recursive: true, mode: constants.COPYFILE_FICLONE, verbatimSymlinks: true })
+    // Without the symlinks in the build: Quartz writes none, and one that is there was put there by
+    // something else and may point anywhere on this disk. Followed, a script of the site read a file
+    // outside the build through /static/<link> and carried it off as the address of a picture
+    // (review of 2026-11-06, M1). The staging mirror and the upload adapters skip them as well.
+    await cp(buildDir, root, {
+      recursive: true,
+      mode: constants.COPYFILE_FICLONE,
+      filter: async (src) => src === buildDir || !(await lstat(src)).isSymbolicLink()
+    })
   } catch (err) {
     await rm(root, { recursive: true, force: true })
     throw err

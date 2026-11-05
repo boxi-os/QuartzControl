@@ -37,6 +37,9 @@ const MAX_SIZE = 0xffffffff
 export interface ZipEntry {
   name: string
   data: Buffer
+  /** Store uncompressed whatever deflate would gain. An ePub's `mimetype` must be the first entry
+   *  and stored (EPUB OCF 3.3, §4.3), so a reader can identify the file from its first bytes. */
+  store?: boolean
 }
 
 // ZIP stores the modification time as an MS-DOS date/time pair: two-second resolution, no zone,
@@ -73,7 +76,7 @@ export function createZip(entries: ZipEntry[], modified = new Date()): Buffer {
     const deflated = deflateRawSync(entry.data)
     // An already-compressed payload (a woff2, a png) routinely deflates to *more* than it was;
     // storing it uncompressed in that case is what ZIP's method 0 is for.
-    const useDeflate = deflated.length < entry.data.length
+    const useDeflate = !entry.store && deflated.length < entry.data.length
     const body = useDeflate ? deflated : entry.data
     const method = useDeflate ? METHOD_DEFLATE : METHOD_STORE
 

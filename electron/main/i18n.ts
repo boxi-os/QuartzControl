@@ -483,6 +483,12 @@ const STRINGS = {
     exportImagesPending: '{{count}} Bilder sind nach einer Minute noch nicht geladen. Ohne Netz fehlen Bilder, die die Website von anderswo lädt.',
     exportTocUnstable: 'Die Seitenzahlen im Inhaltsverzeichnis kamen nach drei Durchgängen nicht zur Ruhe.',
     docContents: 'Inhalt',
+    docFormulaAlt: 'Formel',
+    exportFormulaNotDrawn: 'Eine Formel konnte nicht als Bild gezeichnet werden.',
+    docAccessibilitySummary:
+      'Gegliedert mit Überschriften und einem Inhaltsverzeichnis. Ob jedes Bild einen Alternativtext hat, ist nicht geprüft.',
+    exportEpubNotWellFormed: 'Ein Kapitel des ePub ist kein wohlgeformtes XHTML:\n{{files}}',
+    exportEpubImageMissing: 'Das Bild {{url}} fehlt in der Kopie des Builds.',
     // Documents - books
     bookNotAnObject: 'Die Datei enthält kein Buch (kein JSON-Objekt).',
     bookUnreadable:
@@ -948,6 +954,12 @@ const STRINGS = {
     exportImagesPending: '{{count}} pictures have not loaded after a minute. Without a network, pictures the site loads from elsewhere are missing.',
     exportTocUnstable: 'The page numbers in the table of contents did not settle after three passes.',
     docContents: 'Contents',
+    docFormulaAlt: 'Formula',
+    exportFormulaNotDrawn: 'A formula could not be drawn as a picture.',
+    docAccessibilitySummary:
+      'Structured with headings and a table of contents. Whether every picture has an alternative text is not checked.',
+    exportEpubNotWellFormed: 'A chapter of the ePub is not well-formed XHTML:\n{{files}}',
+    exportEpubImageMissing: 'The picture {{url}} is missing from the copy of the build.',
     bookNotAnObject: 'The file holds no book (not a JSON object).',
     bookUnreadable:
       '{{file}} could not be read ({{reason}}). The file stays as it is; QuartzControl writes it again only once it is readable.',

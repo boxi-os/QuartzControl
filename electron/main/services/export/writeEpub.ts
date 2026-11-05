@@ -1,0 +1,348 @@
+import { readFile } from 'fs/promises'
+import { extname, isAbsolute, join, relative } from 'path'
+import { anchorFor, type DocItem } from '@shared/exportModel'
+import { mainT, mainTIn } from '../../i18n'
+import { createZip, type ZipEntry } from '../zipArchive'
+import type { CollectedPage } from './collect'
+import { headingAnchor } from './documentHtml'
+import type { ExportWindow } from './exportWindow'
+import { epubChapters, type EpubChapterInput } from './pageScripts'
+import type { SiteServer } from './siteServer'
+
+/**
+ * The ePub 3 writer: one XHTML file per page (pageScripts.epubChapters does the HTML → XHTML step
+ * in the export window), a navigation document from the book's order, the site's own pictures, a
+ * stylesheet of its own - the website's CSS (grid layout, sticky columns, CSS variables of the
+ * theme) is made for a browser window, and e-readers override most of it anyway - and the
+ * package document with accessibility metadata. Zipped with the app's own writer, `mimetype` first
+ * and stored.
+ */
+
+export interface EpubParts {
+  lang: string
+  title: string
+  subtitle: string
+  author: string
+  /** A stable `urn:uuid:` for this book, so a reader recognises a new edition as the same book. */
+  identifier: string
+  modified: Date
+  coverImage: string | null
+  /** The site's stylesheets, to draw formulas with KaTeX's own CSS and fonts. */
+  stylesheets: string[]
+  items: DocItem[]
+  pages: CollectedPage[]
+}
+
+export interface EpubResult {
+  bytes: Buffer
+  chapters: number
+  images: number
+  counts: { externalImages: number; unsupportedImages: number; unresolvedLinks: number; footnotes: number; formulas: number }
+}
+
+/** EPUB 3.3 core media types for pictures. An AVIF or a BMP of the site has no place in an ePub. */
+const IMAGE_TYPES: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp'
+}
+
+const STYLE = `
+body { margin: 0 4%; line-height: 1.5; }
+h1, h2, h3, h4, h5, h6 { line-height: 1.25; page-break-after: avoid; break-after: avoid; }
+h1 { font-size: 1.6em; margin: 0 0 0.8em; }
+h2 { font-size: 1.35em; margin: 1.4em 0 0.6em; }
+h3 { font-size: 1.15em; margin: 1.2em 0 0.5em; }
+img, svg { max-width: 100%; height: auto; }
+figure { margin: 1em 0; }
+figure.qc-diagram { text-align: center; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.85em; padding: 0.6em; border: 1px solid #ddd; border-radius: 4px; }
+code { font-family: monospace; font-size: 0.92em; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+th, td { border: 1px solid #ccc; padding: 0.3em 0.5em; text-align: left; vertical-align: top; }
+blockquote { margin: 1em 0; padding: 0.2em 1em; border-left: 3px solid #999; }
+blockquote.callout { border-left-width: 4px; background: #f5f5f5; }
+.callout-title { font-weight: bold; }
+.callout-icon, .callout-fold { display: none; }
+.qc-replaced { font-style: italic; }
+.index-heading { font-weight: bold; margin-top: 1.2em; }
+math[display="block"] { display: block; margin: 0.8em auto; }
+.qc-formula-block { text-align: center; margin: 0.8em 0; }
+aside.footnote, section.footnotes aside { font-size: 0.9em; margin: 0.4em 0; }
+nav ol { list-style: none; padding-left: 1.2em; }
+.cover { text-align: center; margin-top: 20%; }
+.cover img { max-width: 40%; }
+.cover .title { font-size: 2em; font-weight: bold; margin: 0.6em 0 0.2em; }
+.cover .subtitle { font-size: 1.2em; }
+`
+
+function esc(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function xhtml(lang: string, title: string, body: string, extraHead = ''): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${esc(lang)}" lang="${esc(lang)}">
+<head><meta charset="UTF-8"/><title>${esc(title)}</title><link rel="stylesheet" type="text/css" href="../style.css"/>${extraHead}</head>
+<body>${body}</body>
+</html>
+`
+}
+
+/** `2026-11-05T21:04:00Z` - the one form `dcterms:modified` accepts. */
+function epubDate(d: Date): string {
+  return d.toISOString().replace(/\.\d{3}Z$/, 'Z')
+}
+
+/** The navigation list, nested by level: a level deeper opens a list inside the previous item. */
+function navList(entries: { href: string; title: string; level: number }[]): string {
+  let out = ''
+  const stack: number[] = []
+  for (const e of entries) {
+    if (stack.length === 0) {
+      out += '<ol>'
+      stack.push(e.level)
+    } else if (e.level > stack[stack.length - 1]) {
+      out += '<ol>'
+      stack.push(e.level)
+    } else {
+      out += '</li>'
+      while (stack.length > 1 && e.level < stack[stack.length - 1]) {
+        out += '</ol></li>'
+        stack.pop()
+      }
+    }
+    out += `<li><a href="${esc(e.href)}">${esc(e.title)}</a>`
+  }
+  while (stack.length) {
+    out += '</li></ol>'
+    stack.pop()
+  }
+  return out
+}
+
+/** A picture of the build, read from the served copy by its address. */
+async function readSiteFile(server: SiteServer, url: string): Promise<Buffer | null> {
+  let pathname: string
+  try {
+    pathname = decodeURIComponent(new URL(url).pathname)
+  } catch {
+    return null
+  }
+  const file = join(server.root, pathname)
+  const rel = relative(server.root, file)
+  if (rel.startsWith('..') || isAbsolute(rel)) return null
+  try {
+    return await readFile(file)
+  } catch {
+    return null
+  }
+}
+
+/** How much larger than CSS pixels a formula is drawn: sharp on paper-like screens. */
+const FORMULA_ZOOM = 3
+/** The reader's base size the em sizes below are relative to. */
+const BASE_PX = 16
+
+/**
+ * Draws every formula as a PNG and returns, per picture, the CSS that gives it the size it had on
+ * the website in em - so it grows with the reader's font size instead of staying in pixels.
+ */
+async function drawFormulas(
+  win: ExportWindow,
+  server: SiteServer,
+  stylesheets: string[],
+  formulas: { name: string; html: string; display: boolean }[],
+  entries: ZipEntry[],
+  signal?: AbortSignal
+): Promise<Map<string, string>> {
+  const head = stylesheets.map((h) => `<link rel="stylesheet" href="${esc(h)}">`).join('')
+  await win.load(
+    server.setDocument(
+      'formula.html',
+      `<!doctype html><html saved-theme="light"><head><meta charset="utf-8">${head}<style>html,body{margin:0!important;padding:0!important;background:#fff!important}#f{display:inline-block;padding:1px 2px;background:#fff}#f .katex-display{margin:0!important}</style></head><body><span id="f"></span></body></html>`
+    )
+  )
+  const wc = win.win.webContents
+  // Room for a wide formula at three times its size: what lies outside the window is not captured.
+  const [oldWidth, oldHeight] = win.win.getContentSize()
+  win.win.setContentSize(3000, 2000)
+  wc.setZoomFactor(FORMULA_ZOOM)
+  const sizes = new Map<string, string>()
+  try {
+    for (const f of formulas) {
+      signal?.throwIfAborted()
+      const rect = await win.run(
+        (html: string) => {
+          const box = document.getElementById('f')!
+          box.innerHTML = html
+          return document.fonts.ready.then(() => {
+            const r = box.getBoundingClientRect()
+            return { x: r.x, y: r.y, width: r.width, height: r.height }
+          })
+        },
+        [f.html]
+      )
+      // getBoundingClientRect answers in CSS pixels of the zoomed page; capturePage wants the
+      // window's own units, which are those times the zoom.
+      const image = await wc.capturePage({
+        x: Math.floor(rect.x * FORMULA_ZOOM),
+        y: Math.floor(rect.y * FORMULA_ZOOM),
+        width: Math.ceil(rect.width * FORMULA_ZOOM),
+        height: Math.ceil(rect.height * FORMULA_ZOOM)
+      })
+      if (image.isEmpty() || (rect.x + rect.width) * FORMULA_ZOOM > 3000 || (rect.y + rect.height) * FORMULA_ZOOM > 2000) {
+        throw new Error(mainT('exportFormulaNotDrawn'))
+      }
+      entries.push({ name: `OEBPS/${f.name}`, data: image.toPNG() })
+      const em = (px: number): string => `${(px / BASE_PX).toFixed(3)}em`
+      sizes.set(f.name, f.display ? `width:${em(rect.width)};max-width:100%` : `height:${em(rect.height)};vertical-align:middle`)
+    }
+  } finally {
+    wc.setZoomFactor(1)
+    win.win.setContentSize(oldWidth, oldHeight)
+  }
+  return sizes
+}
+
+export async function writeEpub(win: ExportWindow, server: SiteServer, parts: EpubParts, signal?: AbortSignal): Promise<EpubResult> {
+  const byslug = new Map(parts.pages.map((p) => [p.slug, p]))
+  const inputs: EpubChapterInput[] = []
+  const navEntries: { href: string; title: string; level: number }[] = []
+  parts.items.forEach((item, index) => {
+    const file = `text/c${String(inputs.length + 1).padStart(4, '0')}.xhtml`
+    if (item.kind === 'heading') {
+      const anchor = headingAnchor(index)
+      inputs.push({ file, anchor, level: 1, title: item.text, html: '' })
+      navEntries.push({ href: `${file}#${anchor}`, title: item.text, level: 1 })
+      return
+    }
+    const page = byslug.get(item.slug)
+    if (!page) return
+    const anchor = anchorFor(page.slug)
+    inputs.push({ file, slug: page.slug, anchor, level: page.level, title: page.title, html: page.html })
+    navEntries.push({ href: `${file}#${anchor}`, title: page.title, level: page.level })
+  })
+
+  // A page of the site's own, so that relative addresses in the chapters resolve against it.
+  await win.load(server.setDocument('epub.html', '<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>'))
+  signal?.throwIfAborted()
+  const result = await win.run(epubChapters, [
+    { chapters: inputs, imageNames: {}, imageExtensions: Object.keys(IMAGE_TYPES).map((e) => e.slice(1)), formulaAlt: mainTIn(parts.lang, 'docFormulaAlt') }
+  ])
+  const broken = result.chapters.filter((c) => c.parseError)
+  if (broken.length) {
+    throw new Error(mainT('exportEpubNotWellFormed', { files: broken.map((c) => `${c.file}: ${c.parseError}`).slice(0, 5).join('\n') }))
+  }
+
+  const entries: ZipEntry[] = [
+    { name: 'mimetype', data: Buffer.from('application/epub+zip'), store: true },
+    {
+      name: 'META-INF/container.xml',
+      data: Buffer.from(
+        '<?xml version="1.0" encoding="UTF-8"?>\n<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>\n'
+      )
+    },
+    { name: 'OEBPS/style.css', data: Buffer.from(STYLE) }
+  ]
+  const manifest: string[] = ['<item id="style" href="style.css" media-type="text/css"/>']
+  const spine: string[] = []
+
+  // Pictures, once each, from the copy of the build.
+  const images = new Map<string, string>()
+  for (const c of result.chapters) for (const img of c.images) images.set(img.name, img.url)
+  let n = 0
+  for (const [name, url] of images) {
+    const type = IMAGE_TYPES[extname(name).toLowerCase()]
+    const data = await readSiteFile(server, url)
+    // The page showed this picture from the build, so it is in the copy; one that is not means the
+    // copy and the pages disagree, and the book would carry a reference to nothing.
+    if (!data || !type) throw new Error(mainT('exportEpubImageMissing', { url: new URL(url).pathname }))
+    entries.push({ name: `OEBPS/${name}`, data })
+    manifest.push(`<item id="img${++n}" href="${esc(name)}" media-type="${type}"/>`)
+  }
+
+  // Formulas as pictures, drawn in the export window with the site's own KaTeX stylesheet.
+  if (result.formulas.length) {
+    const sizes = await drawFormulas(win, server, parts.stylesheets, result.formulas, entries, signal)
+    for (const c of result.chapters) {
+      c.body = c.body.replace(/data-qc-formula="([^"]+)"/g, (_whole, name: string) => {
+        const size = sizes.get(name)
+        return size ? `style="${size}"` : ''
+      })
+    }
+    result.formulas.forEach((f, i) => manifest.push(`<item id="f${i + 1}" href="${esc(f.name)}" media-type="image/png"/>`))
+  }
+
+  // Cover: the picture (when it is the site's own and a type an ePub takes) and a page with the title.
+  let coverPage = ''
+  if (parts.coverImage) {
+    const ext = extname(new URL(parts.coverImage).pathname).toLowerCase()
+    const type = IMAGE_TYPES[ext]
+    const data = type ? await readSiteFile(server, parts.coverImage) : null
+    if (type && data) {
+      entries.push({ name: `OEBPS/images/cover${ext}`, data })
+      manifest.push(`<item id="cover-image" href="images/cover${ext}" media-type="${type}" properties="cover-image"/>`)
+      coverPage = `<img src="../images/cover${ext}" alt=""/>`
+    }
+  }
+  const coverBody = `<section class="cover" epub:type="cover">${coverPage}<p class="title">${esc(parts.title)}</p>${parts.subtitle ? `<p class="subtitle">${esc(parts.subtitle)}</p>` : ''}${parts.author ? `<p class="author">${esc(parts.author)}</p>` : ''}</section>`
+  entries.push({ name: 'OEBPS/text/cover.xhtml', data: Buffer.from(xhtml(parts.lang, parts.title, coverBody)) })
+  manifest.push('<item id="cover" href="text/cover.xhtml" media-type="application/xhtml+xml"/>')
+  spine.push('<itemref idref="cover"/>')
+
+  const contents = mainTIn(parts.lang, 'docContents')
+  const nav = `<nav epub:type="toc" id="toc"><h1>${esc(contents)}</h1>${navList(navEntries.map((e) => ({ ...e, href: e.href.replace(/^text\//, '') })))}</nav>`
+  entries.push({ name: 'OEBPS/text/nav.xhtml', data: Buffer.from(xhtml(parts.lang, contents, nav)) })
+  manifest.push('<item id="nav" href="text/nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>')
+  spine.push('<itemref idref="nav"/>')
+
+  result.chapters.forEach((c, i) => {
+    const id = `c${i + 1}`
+    entries.push({ name: `OEBPS/${c.file}`, data: Buffer.from(xhtml(parts.lang, inputs[i].title, c.body)) })
+    const props = [c.hasMath ? 'mathml' : '', c.hasSvg ? 'svg' : ''].filter(Boolean).join(' ')
+    manifest.push(`<item id="${id}" href="${c.file}" media-type="application/xhtml+xml"${props ? ` properties="${props}"` : ''}/>`)
+    spine.push(`<itemref idref="${id}"/>`)
+  })
+
+  const hasMath = result.chapters.some((c) => c.hasMath)
+  const visual = images.size > 0 || result.formulas.length > 0 || result.chapters.some((c) => c.hasSvg)
+  const features = ['structuralNavigation', 'tableOfContents', 'readingOrder', ...(hasMath ? ['MathML'] : [])]
+  const opf = `<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="book-id" xml:lang="${esc(parts.lang)}">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+<dc:identifier id="book-id">${esc(parts.identifier)}</dc:identifier>
+<dc:title>${esc(parts.title)}</dc:title>
+<dc:language>${esc(parts.lang)}</dc:language>
+${parts.author ? `<dc:creator>${esc(parts.author)}</dc:creator>` : ''}
+${parts.subtitle ? `<dc:description>${esc(parts.subtitle)}</dc:description>` : ''}
+<dc:date>${epubDate(parts.modified).slice(0, 10)}</dc:date>
+<meta property="dcterms:modified">${epubDate(parts.modified)}</meta>
+<meta property="schema:accessMode">textual</meta>
+${visual ? '<meta property="schema:accessMode">visual</meta>' : ''}
+<meta property="schema:accessModeSufficient">${visual ? 'textual,visual' : 'textual'}</meta>
+${features.map((f) => `<meta property="schema:accessibilityFeature">${f}</meta>`).join('\n')}
+<meta property="schema:accessibilityHazard">unknown</meta>
+<meta property="schema:accessibilitySummary">${esc(mainTIn(parts.lang, 'docAccessibilitySummary'))}</meta>
+<meta name="generator" content="QuartzControl"/>
+</metadata>
+<manifest>
+${manifest.join('\n')}
+</manifest>
+<spine>
+${spine.join('\n')}
+</spine>
+</package>
+`
+  entries.push({ name: 'OEBPS/content.opf', data: Buffer.from(opf) })
+  return {
+    bytes: createZip(entries, parts.modified),
+    chapters: result.chapters.length,
+    images: images.size,
+    counts: result.counts
+  }
+}

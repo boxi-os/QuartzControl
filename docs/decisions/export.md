@@ -243,3 +243,44 @@ Ergebnis) und wenn seine Elementzahl drei Takte (150 ms) gleich bleibt; Seiten o
 warten nicht. Danach in zwei Läufen alle 12 Diagramme des Example vollständig (Zustand, Journey,
 gitGraph, zwei Flussdiagramme, Sequenz, Klasse, ER, Mindmap, Torte, Quadrant, Sankey), das
 Sequenzdiagramm im Druck sichtbar. Handbuch unverändert 132 Seiten, 10/47/244/4.
+
+### Der ePub-Schreiber und epubcheck (2026-11-05)
+
+`writeEpub.ts` und `pageScripts.epubChapters`: je Seite eine XHTML-Datei, im Exportfenster mit
+`XMLSerializer` erzeugt und mit `DOMParser` (`application/xhtml+xml`) auf Wohlgeformtheit geprüft,
+dazu `nav.xhtml`, ein Deckblatt, ein eigenes Lese-CSS, die Bilder der Website und `content.opf`
+mit Barrierefreiheits-Metadaten. Gezippt mit `zipArchive.ts`, das dafür `store` gelernt hat:
+`mimetype` steht zuerst und ungepackt (`unzip -lv`: „Stored 20“).
+
+**Geprüft mit epubcheck 5.4.0** (W3C-Release von GitHub, OpenJDK 21 aus Debian) auf der debian-vm,
+weil der Mac kein Java hat; Debians eigenes Paket ist 4.2.6 und kennt EPUB 3.3 nicht. Der erste
+Lauf fand fünf Arten von Fehlern, jede mit einer Regel behoben:
+
+| Fund | Ursache | Regel |
+|---|---|---|
+| `width`/`height` kein Integer (Handbuch, 27×) | `<img width="auto">` u. ä. | ins `style`, „auto“ entfällt |
+| `<p>` an dieser Stelle nicht erlaubt (Example, 32×) | Mermaid: `<span class="nodeLabel"><p>` | wird ein `span` mit `display: block` |
+| doppelte ID | Mermaids Zeitstrahl: `node-undefined` mehrfach | Zähler an die späteren |
+| `aria-describedby` ohne Ziel | Mermaid verweist auf eine Beschreibung, die es nicht schreibt | toter Name entfällt |
+| nicht deklarierte entfernte Ressource | Excalidraw lädt die Schrift Virgil von unpkg | `@font-face` mit fremder URL entfällt |
+
+Danach: **Handbuch, Example de und Example en je „0 Schwerwiegende Fehler / 0 Fehler /
+0 Warnungen / 0 Informationen“.**
+
+**Formeln werden Bilder.** Quartz 5 rendert KaTeX nur als HTML (Example: `katex-html`, kein
+`katex-mathml`). Dieses HTML braucht KaTeX' Stylesheet und Schriften, die ein Reader nicht hat,
+und den TeX-Quelltext enthält der Build nicht. Jede Formel wird deshalb im Exportfenster mit den
+Stylesheets der Website gezeichnet (`capturePage` bei Zoom 3; im unsichtbaren Fenster liefert das
+Bilder, gemessen) und als PNG mit Größe in `em` eingesetzt, damit sie mit der Schrift des Readers
+wächst. Alternativtext „Formel“. Im Example 10 Formeln, eine davon als Bild angesehen (scharf).
+Die erste Fassung zählte 0 Formeln: `isConnected` ist für Elemente eines losgelösten Containers
+immer falsch.
+
+**Bilder von anderswo** werden ein Link (ePub erlaubt entfernte Ressourcen nur für Audio, Video
+und Schriften), Formate außerhalb der Kernliste (AVIF, BMP, TIFF) ihr Alternativtext; beides wird
+gezählt. Im Handbuch und im Example kam beides nicht vor.
+
+Angesehen in Chromium (die Kapitel-Dateien als `file://`, gedruckt mit `pdftoppm`): Formelseite,
+Sequenzdiagramm. Codezeilen standen zentriert, weil Quartz Codeblöcke in `<figure>` legt; zentriert
+wird jetzt nur `figure.qc-diagram`. **Nicht in einem Reader angesehen** (Apple Books, Thorium,
+Calibre): Das steht für die Messung an der gebauten App aus.

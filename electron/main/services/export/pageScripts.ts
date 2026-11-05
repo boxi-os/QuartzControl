@@ -392,3 +392,250 @@ export function fillPageNumbers(numbers: Record<string, number>): number {
   }
   return filled
 }
+
+export interface EpubChapterInput {
+  file: string
+  /** The page anchor and title heading; absent for an interposed heading. */
+  slug?: string
+  anchor: string
+  level: number
+  title: string
+  html: string
+}
+
+export interface EpubChapterOutput {
+  file: string
+  /** The body, serialised as XHTML (well-formed XML in the XHTML namespace). */
+  body: string
+  hasMath: boolean
+  hasSvg: boolean
+  /** Pictures of the site, by address, and the name they get in the book. */
+  images: { url: string; name: string }[]
+  /** Not well-formed after serialisation (DOMParser's own message). */
+  parseError: string | null
+}
+
+export interface EpubChaptersResult {
+  chapters: EpubChapterOutput[]
+  /** Formulas without MathML, to be drawn as pictures: their KaTeX HTML and the picture's name. */
+  formulas: { name: string; html: string; display: boolean }[]
+  counts: { externalImages: number; unsupportedImages: number; unresolvedLinks: number; footnotes: number; formulas: number }
+}
+
+/**
+ * The collected pages as ePub chapters, one XHTML file each. Runs in the export window, so the
+ * browser's own parser and XMLSerializer do the HTML → XHTML step - no second HTML parser in the
+ * main process that could read a page differently.
+ *
+ *  - Formulas: KaTeX writes MathML next to its HTML rendering; ePub 3 reads MathML, and the HTML
+ *    half needs KaTeX's stylesheet, which a reader does not have. The MathML stays, the rest goes.
+ *  - Pictures of the site get a name in the book; a picture from elsewhere cannot travel in an
+ *    ePub (remote resources are allowed for audio, video and fonts only) and becomes a link.
+ *  - In-document links point at the file that holds their anchor.
+ *  - Footnotes become what readers show as pop-ups: `epub:type="noteref"` on the reference and
+ *    each note an `<aside epub:type="footnote">`.
+ */
+export function epubChapters(input: { chapters: EpubChapterInput[]; imageNames: Record<string, string>; imageExtensions: string[]; formulaAlt: string }): EpubChaptersResult {
+  const XHTML = 'http://www.w3.org/1999/xhtml'
+  const counts = { externalImages: 0, unsupportedImages: 0, unresolvedLinks: 0, footnotes: 0, formulas: 0 }
+  const imageNames = new Map(Object.entries(input.imageNames))
+  const formulas: { name: string; html: string; display: boolean }[] = []
+  let nextImage = imageNames.size
+  const containers = input.chapters.map((c) => {
+    const div = document.createElement('div')
+    if (c.slug) {
+      const h = document.createElement(`h${Math.min(6, Math.max(1, c.level))}`)
+      h.id = c.anchor
+      h.textContent = c.title
+      div.append(h)
+      const rest = document.createElement('div')
+      rest.innerHTML = c.html
+      div.append(...rest.childNodes)
+    } else {
+      const h = document.createElement('h1')
+      h.id = c.anchor
+      h.textContent = c.title
+      div.append(h)
+    }
+    return div
+  })
+  // Which file holds which id - after the containers exist, before any link is rewritten.
+  const fileOf = new Map<string, string>()
+  containers.forEach((div, i) => div.querySelectorAll('[id]').forEach((e) => fileOf.set(e.id, input.chapters[i].file)))
+
+  const chapters = containers.map((div, i): EpubChapterOutput => {
+    const file = input.chapters[i].file
+    const images: { url: string; name: string }[] = []
+
+    div.querySelectorAll('.katex-display, .katex').forEach((k) => {
+      // A .katex inside a .katex-display went with its parent. Not isConnected: the container
+      // is never in the document, so that is false for every element in it.
+      if (!div.contains(k)) return
+      const math = k.querySelector('math')
+      counts.formulas++
+      if (!math) {
+        // Quartz 5 renders KaTeX as HTML only (measured on Example: katex-html, no katex-mathml),
+        // and that HTML needs KaTeX's stylesheet and fonts, which a reader does not have. The
+        // formula is drawn as a picture by the caller; its TeX source is not in the build, so the
+        // alternative text can only say what it is.
+        const display = k.classList.contains('katex-display')
+        const name = `images/f${String(formulas.length + 1).padStart(4, '0')}.png`
+        formulas.push({ name, html: k.outerHTML, display })
+        const img = document.createElement('img')
+        img.setAttribute('src', `../${name}`)
+        img.setAttribute('alt', input.formulaAlt)
+        img.setAttribute('class', display ? 'qc-formula qc-formula-display' : 'qc-formula')
+        img.setAttribute('data-qc-formula', name)
+        if (display) {
+          const p = document.createElement('p')
+          p.className = 'qc-formula-block'
+          p.append(img)
+          k.replaceWith(p)
+        } else k.replaceWith(img)
+        return
+      }
+      const copy = math.cloneNode(true) as Element
+      if (k.classList.contains('katex-display')) copy.setAttribute('display', 'block')
+      k.replaceWith(copy)
+    })
+
+    div.querySelectorAll('img:not([data-qc-formula])').forEach((img) => {
+      let url: URL
+      try {
+        url = new URL(img.getAttribute('src') ?? '', location.href)
+      } catch {
+        img.remove()
+        return
+      }
+      if (url.origin !== location.origin) {
+        counts.externalImages++
+        const a = document.createElement('a')
+        a.href = url.href
+        a.textContent = img.getAttribute('alt') || url.href
+        img.replaceWith(a)
+        return
+      }
+      const key = url.origin + url.pathname
+      const ext = (url.pathname.match(/\.([A-Za-z0-9]+)$/)?.[1] ?? '').toLowerCase()
+      // A format the ePub standard does not list (AVIF, BMP, TIFF) would not show in a reader.
+      if (!input.imageExtensions.includes(ext)) {
+        counts.unsupportedImages++
+        const span = document.createElement('span')
+        span.className = 'qc-replaced'
+        span.textContent = img.getAttribute('alt') || decodeURIComponent(url.pathname.split('/').pop() ?? '')
+        img.replaceWith(span)
+        return
+      }
+      let name = imageNames.get(key)
+      if (!name) {
+        name = `images/i${String(++nextImage).padStart(4, '0')}.${ext}`
+        imageNames.set(key, name)
+      }
+      images.push({ url: key, name })
+      img.setAttribute('src', `../${name}`)
+      if (!img.hasAttribute('alt')) img.setAttribute('alt', '')
+      for (const attr of ['loading', 'decoding', 'srcset', 'sizes', 'fetchpriority']) img.removeAttribute(attr)
+    })
+
+    div.querySelectorAll('a[href^="#"]').forEach((a) => {
+      const id = a.getAttribute('href')!.slice(1)
+      const target = fileOf.get(id)
+      if (!target) {
+        counts.unresolvedLinks++
+        const span = document.createElement('span')
+        span.append(...a.childNodes)
+        a.replaceWith(span)
+        return
+      }
+      a.setAttribute('href', target === file ? `#${id}` : `${target.split('/').pop()}#${id}`)
+    })
+
+    div.querySelectorAll('a[data-footnote-ref]').forEach((a) => a.setAttribute('epub:type', 'noteref'))
+    div.querySelectorAll('section.footnotes, section[data-footnotes]').forEach((section) => {
+      const notes = [...section.querySelectorAll('li[id]')]
+      const out = document.createElement('section')
+      out.className = 'footnotes'
+      for (const li of notes) {
+        counts.footnotes++
+        const aside = document.createElement('aside')
+        aside.setAttribute('epub:type', 'footnote')
+        aside.id = li.id
+        aside.append(...li.childNodes)
+        out.append(aside)
+      }
+      section.replaceWith(out)
+    })
+
+    // What epubcheck 5.4.0 refused in the handbook and Example (2026-11-05), one rule each:
+    //  - an <img> width/height that is not an integer ("auto", "100%") moves into the style;
+    div.querySelectorAll('img').forEach((img) => {
+      for (const dim of ['width', 'height']) {
+        const v = img.getAttribute(dim)
+        if (v !== null && !/^\d+$/.test(v)) {
+          img.removeAttribute(dim)
+          if (v !== 'auto') (img as HTMLElement).style.setProperty(dim, v)
+        }
+      }
+    })
+    //  - a <p> inside phrasing content (Mermaid's labels: <span class="nodeLabel"><p>…) is
+    //    allowed by the HTML parser, not by XHTML; it becomes a block span;
+    div.querySelectorAll('p').forEach((p) => {
+      if (!p.parentElement || !/^(span|a|em|strong|b|i|label|code|small|sub|sup|u|s|q|cite|mark)$/i.test(p.parentElement.tagName)) return
+      const span = document.createElement('span')
+      span.style.display = 'block'
+      for (const attr of [...p.attributes]) span.setAttribute(attr.name, attr.value)
+      span.append(...p.childNodes)
+      p.replaceWith(span)
+    })
+    //  - an id twice in one file (Mermaid's timeline names nodes `node-undefined`) keeps its first
+    //    holder; the others get a counter;
+    const seenIds = new Set<string>()
+    div.querySelectorAll('[id]').forEach((el) => {
+      if (!seenIds.has(el.id)) return void seenIds.add(el.id)
+      let k = 2
+      while (seenIds.has(`${el.id}-${k}`)) k++
+      el.id = `${el.id}-${k}`
+      seenIds.add(el.id)
+    })
+    //  - aria-labelledby/-describedby naming an element that is not there (Mermaid points at a
+    //    description it did not write) loses that name, and the attribute when none is left;
+    div.querySelectorAll('[aria-describedby], [aria-labelledby]').forEach((el) => {
+      for (const attr of ['aria-describedby', 'aria-labelledby']) {
+        const v = el.getAttribute(attr)
+        if (v === null) continue
+        const kept = v.split(/\s+/).filter((id) => id && seenIds.has(id))
+        if (kept.length) el.setAttribute(attr, kept.join(' '))
+        else el.removeAttribute(attr)
+      }
+    })
+    //  - a font an SVG loads from elsewhere (Excalidraw's Virgil from unpkg) is a remote resource,
+    //    which a reader offline cannot fetch either; the rule goes and the drawing falls back.
+    div.querySelectorAll('svg style').forEach((st) => {
+      st.textContent = (st.textContent ?? '').replace(/@font-face\s*\{[^}]*url\(\s*["']?https?:[^}]*\}/g, '')
+    })
+    // What XHTML or the ePub schema does not take, and nothing in a document needs.
+    div.querySelectorAll('*').forEach((el) => {
+      for (const attr of [...el.attributes]) {
+        const n = attr.name
+        if (n === 'tabindex' || n === 'contenteditable' || n === 'draggable' || n.startsWith('on')) el.removeAttribute(n)
+      }
+    })
+    div.querySelectorAll('input').forEach((input) => {
+      if (input.type !== 'checkbox') input.remove()
+    })
+
+    const serializer = new XMLSerializer()
+    const body = [...div.childNodes].map((n) => serializer.serializeToString(n)).join('')
+    const probe = new DOMParser().parseFromString(`<body xmlns="${XHTML}" xmlns:epub="http://www.idpf.org/2007/ops">${body}</body>`, 'application/xhtml+xml')
+    const err = probe.querySelector('parsererror')
+    return {
+      file,
+      body,
+      hasMath: !!div.querySelector('math'),
+      hasSvg: !!div.querySelector('svg'),
+      images,
+      parseError: err ? (err.textContent ?? 'parse error').slice(0, 300) : null
+    }
+  })
+  return { chapters, formulas, counts }
+}

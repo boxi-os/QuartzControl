@@ -310,3 +310,33 @@ Vorher hatten von den zehn PNGs des Example mehrere die Größe ihres Vorgänger
 zehn verschieden, die breite Formel als Bild angesehen (vollständig). Das ePub aus dem vorigen
 Abschnitt hatte denselben Fehler, epubcheck kann ihn nicht sehen. Nach der Korrektur: Handbuch und
 Example de wieder je 0 Fehler, 0 Warnungen.
+
+### Der Zieltyp „Dokument“ in der App (2026-11-05)
+
+`PublishDestination` hat den Typ `document` (`path`, `bookId`, `formats`); der Adapter
+`deploy/document.ts` passt in das Modell der Seite: `preview` nennt die Dateien, die entstehen
+(`neu` oder `geändert`), `run` exportiert über `export/exportService.ts` und schreibt jede Datei
+unter einem Hilfsnamen mit anschließendem `rename`. Gelöscht wird nie etwas. Der Fortschritt läuft
+über den vorhandenen Deploy-Zähler (Seite für Seite, dann „PDF“, „ePub“), Abbrechen über den neuen
+Kanal `export:cancel`. Jeder Export endet auch, wenn das letzte Fenster der App schließt: Sonst
+hielte das Exportfenster die App unter Linux und Windows am Leben.
+
+Gemessen an der gebauten App mit Playwright (Wegwerfprofil, Wegwerfprojekt aus der Config und
+einer Build-Kopie des Example; Buch und Ziel über IPC angelegt, geklickt wird auf der Seite):
+
+- „Jetzt exportieren“ mit allen drei Formaten: 26,5 s, drei Dateien im Zielordner, der Bericht
+  nennt Quelle der Reihenfolge, 5 ersetzte Elemente, 66 Verweise auf die Website, PDF 264 Seiten
+  mit Lesezeichen 8/46/252/260/23, ePub 137 Kapitel, HTML 1,7 MB, 10 Formeln als Bild, Netz
+  benutzt, 414 gesperrte Anfragen. Der Diff zeigte vorher „Neu (3)“, beim zweiten Lauf
+  „Geändert (3)“.
+- „Export abbrechen“ nach 3 s: „Der Export wurde abgebrochen. Es wurde nichts geschrieben.“ nach
+  3,9 s, keine Datei des Buchs im Ordner.
+
+**Zurückgebliebene Kopien des Builds.** Nach den Messläufen lagen 51 Ordner
+`quartzcontrol-export-*` im Temp-Verzeichnis, alle aus dem Messgeschirr: Dort war das
+Exportfenster das letzte Fenster, sein Schließen beendete Electron, bevor die Kopie gelöscht war
+(ein Lauf: 50 → 51). In der App hält das Hauptfenster sie am Leben, beide App-Läufe räumten auf;
+dieselbe Lücke hat die App aber, wenn sie mitten im Export beendet wird oder abstürzt. Beim Start
+entfernt `sweepExportTempDirs` deshalb Kopien, die älter als eine Stunde sind (Muster:
+`sweepRelayTempDirs`). Gemessen mit `npm run smoke`: vorher 6 Kopien älter als eine Stunde, danach
+0, die jüngeren unberührt.

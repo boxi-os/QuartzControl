@@ -26,7 +26,8 @@ export interface EpubParts {
   /** A stable `urn:uuid:` for this book, so a reader recognises a new edition as the same book. */
   identifier: string
   modified: Date
-  coverImage: string | null
+  /** The cover picture as bytes (the book's own or the project picture), or none. */
+  cover: { data: Buffer; type: string } | null
   /** The site's stylesheets, to draw formulas with KaTeX's own CSS and fonts. */
   stylesheets: string[]
   items: DocItem[]
@@ -287,13 +288,8 @@ export async function prepareBookContent(win: ExportWindow, server: SiteServer, 
     }
   }
 
-  let cover: BookContent['cover'] = null
-  if (parts.coverImage) {
-    const ext = extname(new URL(parts.coverImage).pathname).toLowerCase()
-    const type = IMAGE_TYPES[ext]
-    const data = type ? await readSiteFile(server, parts.coverImage) : null
-    if (type && data) cover = { name: `images/cover${ext}`, data, type }
-  }
+  const coverExt = parts.cover ? Object.entries(IMAGE_TYPES).find(([, type]) => type === parts.cover!.type)?.[0] : undefined
+  const cover: BookContent['cover'] = parts.cover && coverExt ? { name: `images/cover${coverExt}`, data: parts.cover.data, type: parts.cover.type } : null
 
   return {
     chapters: result.chapters.map((c, i) => ({ file: c.file, title: inputs[i].title, body: c.body, hasMath: c.hasMath, hasSvg: c.hasSvg })),

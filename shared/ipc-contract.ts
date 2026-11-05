@@ -1314,6 +1314,9 @@ export type PublishDestination =
   | { type: 'folder'; path: string; deleteRemoved: boolean }
   | { type: 'webhook' }
   | { type: 'git-branch'; branch: string; provider: 'github' | 'gitlab' | 'codeberg' }
+  /** A book of the site (quartz-books/<bookId>.json) as files in a folder - see
+   *  docs/decisions/export.md. The files are named after the book: `<bookId>.pdf` and so on. */
+  | { type: 'document'; path: string; bookId: string; formats: DocumentFormat[] }
 
 // Stored in <project>/.quartz-gui/publish-targets.json. `connectionId` is absent for
 // destinations that need no credential - a folder target, and a git-branch target, which uses the
@@ -1883,6 +1886,7 @@ export const IPC = {
   deployDiff: 'deploy:diff',
   deployRun: 'deploy:run',
   deployForgetManifest: 'deploy:forgetManifest',
+  exportCancel: 'export:cancel',
   deployProgress: 'deploy:progress',
   dialogPickFile: 'dialog:pickFile',
   dialogOpenPath: 'dialog:openPath',
@@ -2366,6 +2370,8 @@ export interface QuartzGuiApi {
      *  hand, an interrupted transfer, a site rolled back from the provider's own backup. */
     forgetManifest(projectPath: string, targetId: string): Promise<void>
     onProgress(cb: (event: DeployProgressEvent) => void): () => void
+    /** Stops a running document export of this target; false when none runs. */
+    cancelExport(input: { targetId: string }): Promise<boolean>
   }
   templatePackage: {
     /** What each part would contribute, so the export form can show counts before writing. */

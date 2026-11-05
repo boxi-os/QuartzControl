@@ -15,6 +15,7 @@ import { folderAdapter } from './folder'
 import { webhookAdapter } from './webhook'
 import { rsyncAdapter } from './rsync'
 import { gitBranchAdapter } from './gitBranch'
+import { documentAdapter } from './document'
 import { mainT } from '../../i18n'
 import { remotePathProblem } from '@shared/remotePath'
 import { reanchorTildeManifest } from './manifest'
@@ -28,7 +29,8 @@ const ADAPTERS: Partial<Record<string, DeployAdapter>> = {
   ftp: ftpAdapter,
   folder: folderAdapter,
   webhook: webhookAdapter,
-  'git-branch': gitBranchAdapter
+  'git-branch': gitBranchAdapter,
+  document: documentAdapter
 }
 
 // The one destination type with two adapters. rsync is not a separate kind of target - it is the

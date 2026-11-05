@@ -28,6 +28,7 @@ import {
 } from './services/buildService'
 import { getProject } from './services/projectStore'
 import { removeOpenRelayTempDirs, sweepRelayTempDirs } from './services/formsService'
+import { sweepExportTempDirs } from './services/export/siteServer'
 import { getSettings, saveSettings } from './services/settingsService'
 import { ensureToolPath } from './services/environmentService'
 import { applyRuntimeMode } from './services/nodeRuntime'
@@ -265,6 +266,7 @@ app.whenReady().then(async () => {
   createWindow()
   void promptForOrphanedServers().catch((error) => console.error('[main] orphan check failed:', error))
   void sweepRelayTempDirs().catch((error) => console.error('[main] relay temp sweep failed:', error))
+  void sweepExportTempDirs().catch((error) => console.error('[main] export temp sweep failed:', error))
 
   app.on('activate', () => {
     if (appWindows().length === 0) createWindow()

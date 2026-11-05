@@ -2823,7 +2823,7 @@ export default {
   },
   publish: {
     title: 'Veröffentlichen',
-    description: 'Baut das Projekt und veröffentlicht das Ergebnis auf die eingestellten Ziele (per SFTP/rsync, FTP, in einen Ordner, auf einen Git-Branch oder über einen Webhook).',
+    description: 'Baut das Projekt und veröffentlicht das Ergebnis auf die eingestellten Ziele (per SFTP/rsync, FTP, in einen Ordner, auf einen Git-Branch, über einen Webhook oder als Dokument: PDF, ePub, HTML).',
     baseUrlWarning: 'configuration.baseUrl steht noch auf „{{baseUrl}}“. Vor dem Veröffentlichen auf die echte Domain setzen.',
     connectionVsTarget:
       'Ein Zugang ist ein Account bei einem Anbieter und wird global in QuartzControl eingerichtet. Ein Ziel gehört zu diesem Projekt und sagt, wohin das Ergebnis soll.',
@@ -2919,6 +2919,18 @@ export default {
       typeFolder: 'Ordner',
       typeWebhook: 'Webhook',
       typeGitBranch: 'Git-Branch',
+      typeDocument: 'Dokument (PDF, ePub, HTML)',
+      documentFolder: 'Zielordner',
+      documentBook: 'Buch',
+      documentPickBook: '— Buch wählen —',
+      documentBookHint: 'Welche Seiten in welcher Reihenfolge, steht im Buch. Die Dateien heißen wie das Buch.',
+      documentNoBooks: 'Dieses Projekt hat noch kein Buch. Bücher entstehen auf der Seite „Dokumente“.',
+      documentFormats: 'Formate',
+      format: {
+        pdf: 'PDF',
+        epub: 'ePub',
+        html: 'HTML (eine Datei)'
+      },
       provider: 'Anbieter',
       branch: 'Branch',
       folderPath: 'Zielordner',
@@ -2979,8 +2991,11 @@ export default {
     },
     deployHeading: 'Veröffentlichen',
     deployButton: 'Jetzt veröffentlichen',
+    exportButton: 'Jetzt exportieren',
+    cancelExport: 'Export abbrechen',
     progress: '{{processed}}/{{total}} — {{file}}',
     deploySuccess: 'Veröffentlichung erfolgreich.',
+    exportSuccess: 'Export erfolgreich.',
     deployFailed: 'Veröffentlichung fehlgeschlagen.'
   },
   templates: {

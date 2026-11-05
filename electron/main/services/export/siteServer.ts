@@ -1,6 +1,6 @@
 import { createServer, type Server } from 'http'
 import { constants, createReadStream } from 'fs'
-import { cp, mkdtemp, rm, stat } from 'fs/promises'
+import { cp, mkdtemp, readdir, rm, stat } from 'fs/promises'
 import { tmpdir } from 'os'
 import { extname, isAbsolute, join, relative } from 'path'
 
@@ -47,6 +47,28 @@ const TYPES: Record<string, string> = {
 
 export const OWN_PREFIX = '/__quartzcontrol/'
 
+const TEMP_PREFIX = 'quartzcontrol-export-'
+
+/**
+ * Removes copies of a build an earlier run left behind. A copy goes when its export ends; one that
+ * is still there was left by an app that quit or crashed mid-export - and by the measuring bundle
+ * of 2026-11-05, where closing the export window was closing the last window, so Electron quit
+ * before the copy was removed (51 copies after an evening of measuring). Only copies older than an
+ * hour: a running export's own copy is younger. Called at startup, like formsService's relay sweep.
+ */
+export async function sweepExportTempDirs(now = Date.now()): Promise<string[]> {
+  const removed: string[] = []
+  for (const name of await readdir(tmpdir()).catch(() => [] as string[])) {
+    if (!name.startsWith(TEMP_PREFIX)) continue
+    const dir = join(tmpdir(), name)
+    const info = await stat(dir).catch(() => null)
+    if (!info?.isDirectory() || now - info.mtimeMs < 60 * 60_000) continue
+    await rm(dir, { recursive: true, force: true })
+    removed.push(dir)
+  }
+  return removed
+}
+
 export interface SiteServer {
   origin: string
   /** The copy the server reads from. */
@@ -80,7 +102,7 @@ async function resolveFile(root: string, pathname: string): Promise<string | nul
 }
 
 export async function serveSiteCopy(buildDir: string): Promise<SiteServer> {
-  const root = await mkdtemp(join(tmpdir(), 'quartzcontrol-export-'))
+  const root = await mkdtemp(join(tmpdir(), TEMP_PREFIX))
   try {
     await cp(buildDir, root, { recursive: true, mode: constants.COPYFILE_FICLONE, verbatimSymlinks: true })
   } catch (err) {

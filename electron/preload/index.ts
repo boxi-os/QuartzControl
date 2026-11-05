@@ -230,7 +230,8 @@ const api: QuartzGuiApi = {
       ipcRenderer.invoke(IPC.deployRun, projectPath, targetId, outputDir, excludePaths),
     forgetManifest: (projectPath: string, targetId: string) =>
       ipcRenderer.invoke(IPC.deployForgetManifest, projectPath, targetId),
-    onProgress: (cb: (event: DeployProgressEvent) => void) => onEvent<[DeployProgressEvent]>(IPC.deployProgress, cb)
+    onProgress: (cb: (event: DeployProgressEvent) => void) => onEvent<[DeployProgressEvent]>(IPC.deployProgress, cb),
+    cancelExport: (args: { targetId: string }) => ipcRenderer.invoke(IPC.exportCancel, args)
   },
   templatePackage: {
     inspect: (projectPath: string) => ipcRenderer.invoke(IPC.templatePackageInspect, projectPath),

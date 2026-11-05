@@ -6,6 +6,7 @@ import type { TFunction } from 'i18next'
 import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import type {
+  BookDefinition,
   Connection,
   DeployDiffEntry,
   DeployProgressEvent,
@@ -46,6 +47,7 @@ import { rsyncBlockReason } from '@shared/rsyncSupport'
 import { remotePathProblem, rsyncUnsafeChar } from '@shared/remotePath'
 import { TAB_ICONS } from '../navConfig'
 import GithubPages from './GithubPages'
+import DocumentFields from './DocumentFields'
 import HandbookLink from '../../components/HandbookLink'
 
 // GitHub Pages used to be a built-in choice that bypassed the target list entirely. It is now a
@@ -67,6 +69,7 @@ function destinationTypeLabel(t: TFunction, type: PublishTarget['destination']['
   if (type === 'ftp') return 'FTP'
   if (type === 'folder') return t('publish.targetForm.typeFolder')
   if (type === 'webhook') return t('publish.targetForm.typeWebhook')
+  if (type === 'document') return t('publish.targetForm.typeDocument')
   return t('publish.targetForm.typeGitBranch')
 }
 
@@ -77,6 +80,7 @@ function destinationLine(t: TFunction, target: PublishTarget, connections: Conne
   const connection = target.connectionId ? connections.find((c) => c.id === target.connectionId) : undefined
   const destination = target.destination
   if (destination.type === 'folder') return destination.path
+  if (destination.type === 'document') return `${destination.path} → ${destination.formats.map((f) => `${destination.bookId}.${f}`).join(', ')}`
   if (destination.type === 'git-branch') return `origin → ${destination.branch}`
   if (destination.type === 'webhook')
     return connection?.kind === 'webhook' && connection.displayOrigin ? `POST → ${connection.displayOrigin}` : t('publish.webhookNoUrl')
@@ -102,7 +106,9 @@ const BRANCH_DEFAULTS: Record<'github' | 'gitlab' | 'codeberg', string> = {
   codeberg: 'pages'
 }
 
-function emptyDestination(type: 'sftp' | 'ftp' | 'folder' | 'webhook' | 'git-branch'): SavePublishTargetInput['destination'] {
+type DestinationType = SavePublishTargetInput['destination']['type']
+
+function emptyDestination(type: DestinationType): SavePublishTargetInput['destination'] {
   switch (type) {
     case 'sftp':
       return { type: 'sftp', remotePath: '', transfer: 'sftp', deleteRemoved: true }
@@ -114,6 +120,8 @@ function emptyDestination(type: 'sftp' | 'ftp' | 'folder' | 'webhook' | 'git-bra
       return { type: 'webhook' }
     case 'git-branch':
       return { type: 'git-branch', branch: BRANCH_DEFAULTS.github, provider: 'github' }
+    case 'document':
+      return { type: 'document', path: '', bookId: '', formats: ['pdf'] }
   }
 }
 
@@ -123,6 +131,8 @@ export default function Publish(): JSX.Element {
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   const [connections, setConnections] = useState<Connection[]>([])
   const [targets, setTargets] = useState<PublishTarget[]>([])
+  // The books a document target can export (quartz-books/, see bookService).
+  const [books, setBooks] = useState<BookDefinition[]>([])
   // Which destination is selected, and the two fields that describe it, are "where the user was" -
   // kept across a trip to another area (see useStickyState). The diff below deliberately is not:
   // it's a snapshot of the build output and has to be re-taken.
@@ -149,6 +159,7 @@ export default function Publish(): JSX.Element {
   async function reload(): Promise<void> {
     setConnections(await window.quartzGui.connections.list())
     setTargets(await window.quartzGui.publishTargets.list(project.path))
+    setBooks((await window.quartzGui.books.list({ projectPath: project.path })).books)
   }
 
   useEffect(() => {
@@ -306,6 +317,9 @@ export default function Publish(): JSX.Element {
     if (activeTarget.destination.type === 'git-branch') {
       const question = t('publish.confirmDeployBranch', { branch: activeTarget.destination.branch })
       if (!(await confirmDialog({ text: question, confirmLabel: t('publish.confirmDeployAction'), danger: true }))) return
+    } else if (activeTarget.destination.type === 'document') {
+      // Writes files named after the book into a folder the user picked; the diff above names
+      // each one and whether it replaces a file. Nothing is deleted, and an export can be stopped.
     } else if (activeTarget.destination.type === 'webhook') {
       // A webhook uploads nothing and deletes nothing - it asks a provider to build. The shared
       // wording counted a diff this target does not have and read "0 Dateien werden hochgeladen,
@@ -432,6 +446,7 @@ export default function Publish(): JSX.Element {
     const destination = targetDraft.destination
     if (remotePathIssue || rsyncChar) return false
     if (destination.type === 'folder') return !!destination.path.trim()
+    if (destination.type === 'document') return !!destination.path.trim() && !!destination.bookId && destination.formats.length > 0
     if (destination.type === 'git-branch') return !!destination.branch.trim()
     return !!targetDraft.connectionId
   })()
@@ -443,7 +458,10 @@ export default function Publish(): JSX.Element {
   // A branch deploy replaces the branch with one root commit, so "publish everything except this
   // file" would delete that file from the live site rather than leave it alone. The diff is shown
   // for it, but read-only.
-  const canExclude = !!activeTarget && activeTarget.destination.type !== 'git-branch'
+  // Nor for a document: its "diff" is the files it writes, and leaving one out is a format the
+  // target does not export - which is what the target's own formats say.
+  const canExclude = !!activeTarget && activeTarget.destination.type !== 'git-branch' && activeTarget.destination.type !== 'document'
+  const isDocument = activeTarget?.destination.type === 'document'
   const canDeploy = !!activeTarget && (!hasFileDiff || !!diff)
 
   const panel = targetDraft ? (
@@ -460,7 +478,7 @@ export default function Publish(): JSX.Element {
               <Select
                 value={targetDraft.destination.type}
                 onChange={(e) => {
-                  const type = e.target.value as 'sftp' | 'ftp' | 'folder' | 'webhook' | 'git-branch'
+                  const type = e.target.value as DestinationType
                   setTargetDraft({
                     ...targetDraft,
                     // The connection is cleared with the type: an FTP account cannot serve an
@@ -475,6 +493,7 @@ export default function Publish(): JSX.Element {
                 <option value="folder">{t('publish.targetForm.typeFolder')}</option>
                 <option value="webhook">{t('publish.targetForm.typeWebhook')}</option>
                 <option value="git-branch">{t('publish.targetForm.typeGitBranch')}</option>
+                <option value="document">{t('publish.targetForm.typeDocument')}</option>
               </Select>
             </Field>
             {'remotePath' in targetDraft.destination && (
@@ -563,6 +582,13 @@ export default function Publish(): JSX.Element {
                 </Field>
               </>
             )}
+            {targetDraft.destination.type === 'document' && (
+              <DocumentFields
+                destination={targetDraft.destination}
+                books={books}
+                onChange={(destination) => setTargetDraft((prev) => (prev && prev.destination.type === 'document' ? { ...prev, destination } : prev))}
+              />
+            )}
             {targetDraft.destination.type === 'folder' && (
               <Field label={t('publish.targetForm.folderPath')}>
                 <div className="flex gap-2">
@@ -631,7 +657,7 @@ export default function Publish(): JSX.Element {
             {/* The paths this target never publishes, kept between runs - as opposed to the
                 per-run checkboxes in the diff below, which only skip one deploy. Not offered for a
                 branch target: there, leaving a file out deletes it from the live site. */}
-            {targetDraft.destination.type !== 'git-branch' && (
+            {targetDraft.destination.type !== 'git-branch' && targetDraft.destination.type !== 'document' && (
               <Field label={t('publish.targetForm.excludes')} className="sm:col-span-2">
                 <textarea
                   className="min-h-20 rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 font-mono text-ui text-text shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-ink/10 dark:bg-ink/5"
@@ -870,7 +896,7 @@ export default function Publish(): JSX.Element {
                 <Button variant="ghost" onClick={() => refreshDiff()} disabled={diffAction.pending || !activeTarget}>
                   {diffAction.pending ? t('common.saving') : t('publish.refreshDiff')}
                 </Button>
-                {hasFileDiff && activeTarget.destination.type !== 'git-branch' && (
+                {hasFileDiff && activeTarget.destination.type !== 'git-branch' && !isDocument && (
                   <Button
                     variant="ghost"
                     onClick={() => forgetManifestAction.run()}
@@ -954,9 +980,16 @@ export default function Publish(): JSX.Element {
           <Card>
             <div className="flex items-center justify-between">
               <CardHeading icon={CloudUpload}>{t('publish.deployHeading')}</CardHeading>
-              <Button onClick={deploy} disabled={deployAction.pending || !canDeploy}>
-                {deployAction.pending ? t('common.saving') : t('publish.deployButton')}
-              </Button>
+              <div className="flex gap-2">
+                {isDocument && deployAction.pending && (
+                  <Button variant="ghost" onClick={() => void window.quartzGui.deploy.cancelExport({ targetId: activeTarget.id })}>
+                    {t('publish.cancelExport')}
+                  </Button>
+                )}
+                <Button onClick={deploy} disabled={deployAction.pending || !canDeploy}>
+                  {deployAction.pending ? t('common.saving') : isDocument ? t('publish.exportButton') : t('publish.deployButton')}
+                </Button>
+              </div>
             </div>
             {activeTarget && 'deleteRemoved' in activeTarget.destination && !activeTarget.destination.deleteRemoved && (
               <Badge tone="slate">{t('publish.deleteDisabledHint')}</Badge>
@@ -972,9 +1005,10 @@ export default function Publish(): JSX.Element {
             {deployResult && (
               <>
                 <p className={`mt-2 text-xs ${deployResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {deployResult.success ? t('publish.deploySuccess') : t('publish.deployFailed')}
+                  {deployResult.success ? (isDocument ? t('publish.exportSuccess') : t('publish.deploySuccess')) : t('publish.deployFailed')}
                 </p>
-                <pre className="mt-2 max-h-56 overflow-y-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200">{deployResult.output}</pre>
+                {/* A document's report is sentences, not a file list: it wraps. */}
+                <pre className={`mt-2 max-h-56 overflow-y-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200 ${isDocument ? 'whitespace-pre-wrap break-words' : ''}`}>{deployResult.output}</pre>
               </>
             )}
           </Card>

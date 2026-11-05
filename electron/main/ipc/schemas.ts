@@ -520,6 +520,12 @@ const publishDestination = z.discriminatedUnion('type', [
     type: z.literal('git-branch'),
     branch: branchName,
     provider: z.enum(['github', 'gitlab', 'codeberg'])
+  }),
+  z.looseObject({
+    type: z.literal('document'),
+    path: absolutePath,
+    bookId: z.string().regex(BOOK_ID, 'not a book id'),
+    formats: z.array(z.enum(['pdf', 'epub', 'html'])).min(1).max(3)
   })
 ]).refine(
   (d) => (d.type !== 'sftp' && d.type !== 'ftp') || remotePathProblem(d.remotePath, d.deleteRemoved) !== 'whole-root',
@@ -588,6 +594,7 @@ const saveBook = z.looseObject({
 })
 export const booksListArgs = z.looseObject({ projectPath: absolutePath })
 export const bookArgs = z.looseObject({ projectPath: absolutePath, id: bookId })
+export const exportCancelArgs = z.looseObject({ targetId: uuid })
 export const bookSaveArgs = z.looseObject({ projectPath: absolutePath, book: saveBook })
 
 export const serverOptions = z.looseObject({

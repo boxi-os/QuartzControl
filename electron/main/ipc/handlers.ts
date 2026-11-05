@@ -42,6 +42,7 @@ import * as updateService from '../services/updateService'
 import * as connectionsService from '../services/connectionsService'
 import * as publishTargetsService from '../services/publishTargetsService'
 import * as bookService from '../services/bookService'
+import { cancelExport } from '../services/export/exportService'
 import * as githubService from '../services/githubService'
 import * as deployService from '../services/deploy'
 import { forgetManifest } from '../services/deploy/manifest'
@@ -458,6 +459,7 @@ export function registerIpcHandlers(): void {
   handle(IPC.deployForgetManifest, t([s.absolutePath, s.uuid]), (projectPath, targetId) =>
     forgetManifest(projectPath, targetId)
   )
+  handle(IPC.exportCancel, t([s.exportCancelArgs]), ({ targetId }) => cancelExport(targetId))
 
   // A folder is selectable as well as a file: packages written before the single-file format are
   // folders, and they stay importable.

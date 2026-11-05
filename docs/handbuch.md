@@ -300,19 +300,25 @@ deutsche Fassung, nach `release/QuartzControl-Handbuch-<version>.pdf`. Quelle is
 Umsetzung von Callouts, Tabellen und Bildern — eine zweite Markdown-Umsetzung liefe daneben
 auseinander. Vorher also `npm run build:handbook`.
 
-Die Gliederung kommt aus der gebauten Website: Startseite, dann die Kapitelordner nach Nummer (je
-`index` zuerst), dann die Seiten auf oberster Ebene als Anhang in der Reihenfolge von `APPENDIX` im
-Skript. Eine neue Seite dort bricht den Lauf ab, bis sie eingetragen ist — sonst fehlte sie im PDF,
-ohne dass es jemand merkt. Kapitel und Seiten werden zu h1 und h2 und damit zu den ersten zwei Ebenen
-der Lesezeichen; die Zwischenüberschriften einer Kapitel-Startseite werden zu Absätzen, weil sie als
-Lesezeichen zwischen den Seitentiteln standen. Interne Links zeigen auf Anker im PDF.
+Seit dem 2026-11-05 macht das PDF der Dokument-Export der App, den auch ein Ziel vom Typ
+„Dokument“ benutzt (`electron/main/services/export/`, Messungen in
+[`decisions/export.md`](decisions/export.md)). Das Skript bündelt dessen Module und führt sie in
+Electron aus; Chrome braucht es nicht mehr.
 
-Drei Dinge prüft das Skript, bevor Chrome druckt, weil man sie einem fertigen PDF nicht ansieht:
-Elemente über dem Druckrand (gemessen in A4-Druckbreite), Verweise ohne Ziel, Bilder, die nicht
-geladen haben. Der erste Lauf fand 121 überstehende Elemente — das CSS der Vorlage gibt Tabellen
-16 px Außenabstand je Seite, zusammen mit `width: 100%` —, und das Diagramm aus Rahmenzeichen in 1.2
-passte erst in 8,5 pt. Das Titelblatt nimmt `build/icon.png`: `static/icon.png` der Website ist das
-Projektbild des Handbuch-Projekts, das Quartz-Kristall.
+Die Gliederung steht in `scripts/handbook.book.json`, einem Buch wie die der App: Startseite, dann
+die Kapitel nach Nummer (je `index` zuerst), dann „Anhang“ mit den Seiten auf oberster Ebene. Eine
+gebaute Seite, die dort nicht steht, oder eine eingetragene, die es nicht mehr gibt, bricht den Lauf
+ab und wird genannt — sonst hängte der Export sie ans Ende oder ließe sie still weg. Startseiten
+und Kapitel werden zu h1, ihre Seiten zu h2 (die Ebenen rechnet der Export aus der Ordnertiefe), und
+die Zwischenüberschriften einer Kapitel-Startseite werden Absätze, weil sie als Lesezeichen zwischen
+den Seitentiteln standen. Interne Links zeigen auf Anker im PDF; das Inhaltsverzeichnis hat
+Seitenzahlen (`--no-toc` lässt es weg).
+
+Vor dem Drucken prüft der Export, was man einem fertigen PDF nicht ansieht: Elemente über dem
+Druckrand, Verweise ohne Ziel, Bilder, die nicht geladen haben. Die Regeln, die der erste Lauf des
+alten Skripts erzwang (Tabellen mit 16 px Außenabstand je Seite, das Diagramm aus Rahmenzeichen in
+8,5 pt), stehen in den Druckregeln des Exports. Das Titelblatt nimmt `build/icon.png`:
+`static/icon.png` der Website ist das Projektbild des Handbuch-Projekts, das Quartz-Kristall.
 
 ## Wie ein Bildschirm sein Kapitel nennt
 

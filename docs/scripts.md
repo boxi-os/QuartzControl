@@ -47,15 +47,17 @@ Wörtlich aus `CLAUDE.md` hierher gezogen am 2026-10-16, damit `CLAUDE.md` nicht
   (letztere übernimmt für das PDF weiter eine schon gebaute Website). Wo die Projekte dieses
   Rechners liegen, sagt `scripts/project-paths.mjs` — Standard `~/Documents/QuartzProjekte/`,
   überschreibbar mit `QUARTZCONTROL_PROJECT_ROOT`
-- `npm run build:handbook-pdf` — macht aus dem *gebauten* Handbuch (`resources/handbook`, also nach
-  `build:handbook`) ein PDF mit Lesezeichen, nur Deutsch, nach
-  `release/QuartzControl-Handbuch-<version>.pdf`. Chrome lädt jede Seite, das Skript setzt die
-  `<article>` zu einem Dokument zusammen und druckt es getaggt mit `outline` — Kapitel, Seiten und
-  Abschnitte werden zu drei Ebenen Lesezeichen (am 2026-09-14: 10/48/235, 115 Seiten, 11 MB).
-  Braucht Google Chrome. Bricht ab, bevor es druckt, wenn ein Element über den Druckrand steht, ein
-  Verweis kein Ziel hat, ein Bild nicht lädt oder eine Seite auf oberster Ebene nicht in `APPENDIX`
-  steht — gegengeprüft mit der Tabellenregel der Vorlage (120 Elemente je 16 px über dem Rand) und
-  einer zusätzlichen Seite. Einzelheiten in [`docs/handbuch.md`](handbuch.md)
+- `npm run build:handbook-pdf [-- --no-toc]` — macht aus dem *gebauten* Handbuch (`resources/handbook`,
+  also nach `build:handbook`) ein PDF mit Lesezeichen, nur Deutsch, nach
+  `release/QuartzControl-Handbuch-<version>.pdf`. **Seit dem 2026-11-05 über den Dokument-Export
+  der App** (`electron/main/services/export/`, als esbuild-Bündel in Electron, kein Chrome mehr):
+  getaggt, Lesezeichen aus den Überschriften, Inhaltsverzeichnis mit Seitenzahlen (`--no-toc` lässt
+  es weg). Welche Seiten in welcher Reihenfolge, steht in `scripts/handbook.book.json` (Kapitel,
+  dann „Anhang“). Bricht ab, wenn eine gebaute Seite dort nicht steht oder eine eingetragene nicht
+  gebaut ist, und vor dem Drucken bei Elementen über dem Druckrand, Verweisen ohne Ziel und Bildern,
+  die nicht laden. Am 2026-11-05: 56 Quellseiten, 132 Seiten (130 mit `--no-toc`), Lesezeichen
+  10/47/244/4, 9 s. Messungen in [`docs/decisions/export.md`](decisions/export.md), Einzelheiten
+  in [`docs/handbuch.md`](handbuch.md)
 - `npm run fetch:git` — holt das mitgelieferte git (dugite-native) für diesen Rechner nach
   `resources/git/<platform>-<arch>/` und dünnt es aus; beim Packen macht das `beforePack` von selbst
 - `npm run check:runtime -- <projektpfad>` — die eingebettete Node-Laufzeit gegen ein echtes Projekt:

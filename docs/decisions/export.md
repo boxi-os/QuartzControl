@@ -414,3 +414,31 @@ mit „Dokumente mit hochladen“ und `deleteRemoved`):
 (`draftOf`) und ließ `withDocuments` aus. Der Schalter stand auf aus, und das nächste Speichern
 hätte die Dokumente still abgeschaltet. `draftOf` übernimmt das Feld jetzt; danach steht der
 Schalter an, mit beiden Links.
+
+### Das Handbuch-PDF über den Export (2026-11-05)
+
+`scripts/build-handbook-pdf.mjs` hat keinen eigenen Weg mehr: Es bündelt `exportService` mit
+esbuild, führt das Bündel in Electron aus und bekommt das Buch aus `scripts/handbook.book.json`
+(eigene Reihenfolge wie die alte: Kapitel nach Nummer, „Anhang“, drei Anhangsseiten). Eine Seite,
+die der Export anhängen müsste oder die fehlt, bricht den Lauf ab und wird genannt, wie früher
+`APPENDIX`.
+
+Gegen die Vorher-Messung (gleicher Build vom 2026-10-26):
+
+| | altes Skript (Chrome) | neues mit `--no-toc` | neues (Standard) |
+|---|---|---|---|
+| Quellseiten | 56 | 56 | 56 |
+| PDF-Seiten | 129 | 130 | 132 |
+| Lesezeichen | 10/47/244/4 | 10/47/244/4 | 10/47/244/4 |
+| Laufzeit | 43 s | 7,3 s | 9,0 s |
+
+**Die eine Seite mehr** ohne Inhaltsverzeichnis: Die Zielseiten aller 305 Lesezeichen stimmen bis
+„5.2 · Der Ausgabeordner“ überein (pdf-lib, je Lesezeichen die Seite seines Ziels). Im alten PDF
+steht dort das Bild unten auf Seite 80 und seine Bildunterschrift oben auf Seite 81; das neue
+setzt Überschrift, Bild und Unterschrift zusammen auf Seite 81. Danach liegt jede Seite eine
+später.
+
+Zwei Funde dabei: Die Datumszeile des Deckblatts kam in der Sprache der App („As of“ auf dem
+deutschen Handbuch, weil das Skript ohne Einstellungen läuft) und steht jetzt in der des
+Dokuments; und der Bericht sagte bei einer eigenen Reihenfolge „Reihenfolge aus dem Explorer“ und
+sagt jetzt „in der eigenen Reihenfolge des Buchs“.

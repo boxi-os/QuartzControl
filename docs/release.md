@@ -260,9 +260,10 @@ mit, die dort drei Beschriftungen nannte, die es in der App nie gab.
 **Eine Seite „Neu in <Fassung>“ bekommt es nicht mehr.** Bis zum 2026-09-24 gab es `neu-in-beta-1`
 und `neu-in-rc-1`; sie sind gestrichen, weil der Versionsverlauf auf den Release-Seiten auf GitHub
 nachzulesen ist und die Startseite des Handbuchs dorthin verweist. Was sich geändert hat, steht
-also in den Release-Notizen, nicht im Vault. Eine neue Seite auf oberster Ebene muss weiterhin in
-die `APPENDIX`-Liste in `scripts/build-handbook-pdf.mjs`; das Skript bricht sonst ab, und genau
-dafür ist es da.
+also in den Release-Notizen, nicht im Vault. Eine neue Seite des Handbuchs muss in
+`scripts/handbook.book.json` eingetragen werden, an ihrer Stelle (bis zum 2026-11-05 nur die
+Seiten auf oberster Ebene, in der Liste `APPENDIX`); `build:handbook-pdf` bricht sonst ab und nennt
+sie, und genau dafür ist es da.
 
 **Die Handbuch-Website lädt ihre eigenen Schriften nur, wenn sie einmal gebaut wurde, seit die
 Schrift-URLs relativ sind.** `1df4ee4` schreibt `url("static/fonts/…")` statt

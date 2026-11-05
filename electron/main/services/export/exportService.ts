@@ -38,6 +38,10 @@ export interface ExportFile {
 export interface ExportOutcome {
   files: ExportFile[]
   report: string[]
+  /** Pages of an own order the build no longer has, and new pages appended at the end. */
+  order: { missing: string[]; appended: string[] }
+  /** Pages of the site in the document (not counting the register). */
+  pages: number
 }
 
 const running = new Map<string, AbortController>()
@@ -173,7 +177,9 @@ export async function exportBook(opts: {
     const resolved = resolveOrder({ order: book.order, excluded: book.excluded, root }, nav.slugs, pagesInLanguage(facts, book.language))
     const pageItems = resolved.items.filter((i) => i.kind === 'page')
     if (pageItems.length === 0) throw new Error(mainT('exportNoPages'))
-    report.push(mainT(`exportReportSource_${nav.source}`, { count: pageItems.length }))
+    // With an own order the navigation only decides what is new; saying the order came from it
+    // would describe the wrong book (the handbook's first run said "aus dem Explorer").
+    report.push(book.order === null ? mainT(`exportReportSource_${nav.source}`, { count: pageItems.length }) : mainT('exportReportOwnOrder', { count: pageItems.length }))
     if (resolved.missing.length) report.push(mainT('exportReportMissing', { count: resolved.missing.length, pages: resolved.missing.slice(0, 5).join(', ') }))
     if (resolved.appended.length) report.push(mainT('exportReportAppended', { count: resolved.appended.length, pages: resolved.appended.slice(0, 5).join(', ') }))
 
@@ -202,7 +208,9 @@ export async function exportBook(opts: {
 
     const files: ExportFile[] = []
     const now = new Date()
-    const meta = mainT('exportCoverDate', { date: now.toLocaleDateString(lang, { day: 'numeric', month: 'long', year: 'numeric' }) })
+    // In the document's language, like every other sentence in it (it said "As of" on a German
+    // handbook built without app settings).
+    const meta = mainTIn(lang, 'exportCoverDate', { date: now.toLocaleDateString(lang, { day: 'numeric', month: 'long', year: 'numeric' }) })
     if (opts.formats.includes('pdf')) {
       signal.throwIfAborted()
       opts.onProgress(pages.length, pages.length, 'PDF')
@@ -266,7 +274,7 @@ export async function exportBook(opts: {
       const hosts = [...new Set([...win.refused.keys()].map((k) => k.split(' ')[1]))].filter((h) => h.includes('.'))
       report.push(mainT('exportReportRefused', { count: [...win.refused.values()].reduce((a, b) => a + b, 0), hosts: hosts.slice(0, 6).join(', ') }))
     }
-    return { files, report }
+    return { files, report, order: { missing: resolved.missing, appended: resolved.appended }, pages: pageItems.length }
   } catch (err) {
     if (signal.aborted) throw new Error(mainT('exportCancelled'))
     throw err

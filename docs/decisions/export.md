@@ -638,3 +638,49 @@ Nebenbei, nicht behoben: Beide Hinweise stehen nur in der Ausgabe nach dem Lauf,
 Vorschau davor; wer ein veraltetes Dokument nicht hochladen will, erfährt es erst danach. Und SFTP
 und FTP lassen nach dem Abschalten einen leeren Ordner `downloads/` auf dem Server stehen (rsync
 und Git-Branch nicht).
+
+### Die Nachfrage beim Verlassen der Seite „Dokumente“ (2026-11-05)
+
+Gemessen an der gebauten App (macOS, Wegwerfprofil, Playwright, Fenster 1280 x 800), jede Tür mit
+einem geänderten Titel; die nativen Fragen über einen Stub von `dialog.showMessageBox`, der jede
+Frage mitschreibt und den benannten Knopf wählt. Eine scheiternde Speicherung: `quartz-books/` auf
+0555 gesetzt.
+
+**Vorher**, zwei Fehler:
+
+- **Die Türen antworteten verschieden.** Sidebar und Menü-Sprung (`app:navigate`) fragten „Auf dieser
+  Seite gibt es Änderungen, die noch nicht gespeichert sind. Was soll damit geschehen?“ mit
+  Abbrechen | Speichern | Änderungen verwerfen. Eine andere Zeile, Escape und „Neues Buch“ fragten
+  „Am geöffneten Buch gibt es ungespeicherte Änderungen. Wer jetzt wechselt, verliert sie.“ mit
+  Abbrechen | Verwerfen, ohne Speichern. Die Regel „alle Wege antworten gleich“ galt nicht.
+- **Ein gescheitertes Speichern verließ die Seite.** Sidebar → Speichern bei schreibgeschütztem
+  `quartz-books/`: Die Datei blieb, wie sie war, die Seite wechselte trotzdem zu „Veröffentlichen“,
+  die Änderung war weg. Ursache: Die Seite registrierte `saveAction.run()`; `useAsyncAction` fängt
+  den Fehler ab und gibt nichts zurück, und `runSaveCommand` zählt „nichts“ als Erfolg. Die drei
+  anderen Seiten mit Speichern geben aus `save()` einen Boolean zurück.
+
+**Fix:** Die Seite merkt sich, ob das Speichern durchkam, und gibt das zurück. Jeder Weg aus dem
+offenen Buch fragt über `confirmLeave`, mit denselben drei Antworten wie die Sidebar
+(`documents.confirmDiscard` entfällt). Die Fehlermeldung beim Speichern steht über den Knöpfen statt
+darunter, ist `role="alert"` und wird ins Bild gerollt: Unter den Knöpfen lag sie nach dem Speichern
+aus der Sidebar bei y 1019 in einem 800 hohen Fenster, die Seite schien den Klick zu übergehen.
+`scrollIntoView` allein rollte Seite und klebende Leiste zusammen und blieb 67 px zu kurz; der
+Rest wird in der Leiste nachgerollt.
+
+**Danach** (alle Türen mit Abbrechen, dazu Speichern und Verwerfen je an mehreren Türen):
+
+| Tür | Frage | Ergebnis |
+|---|---|---|
+| Sidebar, Menü-Sprung, andere Zeile, Escape, „Neues Buch“, Klick ins Leere | dieselbe, drei Antworten | Abbrechen: bleibt, Entwurf da |
+| Sidebar → Speichern | | gespeichert, Seite gewechselt |
+| andere Zeile → Speichern, Escape → Speichern | | gespeichert, gewechselt bzw. Auswahl gelöst |
+| Sidebar → Änderungen verwerfen, Klick ins Leere → verwerfen | | Datei unverändert, gewechselt |
+| Sidebar → Speichern, Schreiben scheitert | | bleibt, Entwurf da, Meldung sichtbar und angesagt |
+| andere Zeile → Speichern, Schreiben scheitert | | bleibt, Entwurf da |
+| Cmd+S (`app:command save`) | keine | gespeichert |
+
+Eine Falle der Messung: Wer gleich nach dem Öffnen eines Buchs tippt und speichert, misst eine
+Leiste, die danach noch wächst (die Seitenauswahl liest die gebaute Website, 1 bis 2 s); die
+Meldung stand im Moment des Rollens am Rand und 66 px später darunter. Gemessen ist der Fall mit
+einer Pause nach dem Öffnen. Die Zeilen der Tabelle oben stammen aus dem Lauf vor dem Umsetzen der
+Meldung über die Knöpfe; die Wege selbst hat das nicht berührt.

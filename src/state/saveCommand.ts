@@ -45,7 +45,8 @@ export function useSaveCommand(save: (() => void | Promise<void | boolean>) | nu
 /**
  * Runs the mounted page's save, if it registered one, and says whether it worked - the leave guard
  * navigates away only on `true`. A page that returns nothing counts as success: it did not throw,
- * and the three pages that register here all return the boolean.
+ * and the four pages that register here all return the boolean (Dokumente did not until 2026-11-05:
+ * its failed save counted as success, and the sidebar left with the edits).
  */
 export async function runSaveCommand(): Promise<boolean> {
   if (!handler) return false

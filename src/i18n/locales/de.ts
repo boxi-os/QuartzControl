@@ -2838,7 +2838,6 @@ export default {
     toBuild: 'Zu Vorschau & Build →',
     unsaved: 'Nicht gespeichert',
     discard: 'Verwerfen',
-    confirmDiscard: 'Am geöffneten Buch gibt es ungespeicherte Änderungen. Wer jetzt wechselt, verliert sie.',
     deleteBook: 'Buch löschen',
     confirmDelete: 'Buch „{{name}}“ löschen? Die Datei {{file}} wird entfernt; ein Ziel, das es exportiert, findet es danach nicht mehr.',
     unreadable: '{{file}} konnte nicht gelesen werden ({{reason}}). Die Datei bleibt, wie sie ist.',

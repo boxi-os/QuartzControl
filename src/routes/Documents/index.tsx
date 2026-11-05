@@ -26,7 +26,7 @@ import { confirmDialog } from '../../utils/confirm'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useAsyncAction } from '../../hooks/useAsyncAction'
 import { useStickyState } from '../../state/uiState'
-import { useUnsavedChanges } from '../../state/unsavedGuard'
+import { confirmLeave, useUnsavedChanges } from '../../state/unsavedGuard'
 import { useSaveCommand } from '../../state/saveCommand'
 import { useIpcQuery } from '../../state/useIpcQuery'
 import { announce } from '../../state/announcer'
@@ -84,20 +84,47 @@ export default function Documents(): JSX.Element {
   const dirty = draft !== null && JSON.stringify(draft) !== saved
   useUnsavedChanges(dirty)
 
+  // The leave guard goes on only when the save says it worked (runSaveCommand), and useAsyncAction
+  // keeps a failure to itself - so the save records whether it got through. Registered as a bare
+  // `saveAction.run()`, a save into a read-only quartz-books/ failed, and the sidebar left the page
+  // anyway, edits gone (measured 2026-11-05).
+  const saveWorked = useRef(false)
   const saveAction = useAsyncAction(async () => {
+    saveWorked.current = false
     if (!draft) return
     const book = await window.quartzGui.books.save({ projectPath: project.path, book: draft })
     await reload(book.id)
     announce(t('documents.savedAnnounce', { name: book.title || book.id }))
+    saveWorked.current = true
   })
-  useSaveCommand(dirty && !saveAction.pending ? () => saveAction.run() : null)
+  async function save(): Promise<boolean> {
+    await saveAction.run()
+    return saveWorked.current
+  }
+  // A failed save keeps the page. Its message stood under the buttons at the foot of the panel,
+  // below the window after the leave guard's "Speichern" (measured: y 1019 in a window 800 high),
+  // so the page seemed to ignore the click. It is said, stands above the buttons and is brought
+  // into view.
+  const saveErrorRef = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    const el = saveErrorRef.current
+    if (!saveAction.error || !el) return
+    el.scrollIntoView({ block: 'nearest' })
+    // scrollIntoView moves the page and the sticky panel in one go and fell 67 px short (the panel
+    // could still scroll 127); what is missing is scrolled in the panel itself.
+    const panel = el.closest('aside')
+    if (!panel) return
+    const over = el.getBoundingClientRect().bottom - panel.getBoundingClientRect().bottom
+    if (over > 0) panel.scrollTop += over + 8
+  }, [saveAction.error])
+  useSaveCommand(dirty && !saveAction.pending ? save : null)
 
+  // Every way off the open book asks the question the sidebar asks, with its three answers: another
+  // row, Escape, a click on the empty page and "Neues Buch" asked "Verwerfen?" with two, while the
+  // sidebar and the menu offered "Speichern" as well (measured 2026-11-05).
   async function select(id: string | null): Promise<void> {
     if (id === selectedId) return
-    if (dirty) {
-      const ok = await confirmDialog({ text: t('documents.confirmDiscard'), confirmLabel: t('documents.discard'), danger: true })
-      if (!ok) return
-    }
+    if (!(await confirmLeave(t))) return
     setSelectedId(id)
     const book = listing?.books.find((b) => b.id === id) ?? null
     setDraft(book ? asDraft(book) : null)
@@ -105,10 +132,7 @@ export default function Documents(): JSX.Element {
   }
 
   const createAction = useAsyncAction(async () => {
-    if (dirty) {
-      const ok = await confirmDialog({ text: t('documents.confirmDiscard'), confirmLabel: t('documents.discard'), danger: true })
-      if (!ok) return
-    }
+    if (!(await confirmLeave(t))) return
     const book = await window.quartzGui.books.save({ projectPath: project.path, book: emptyBook(t('documents.newBookTitle')) })
     await reload(book.id)
     announce(t('documents.createdAnnounce', { name: book.title }))
@@ -194,6 +218,11 @@ export default function Documents(): JSX.Element {
           </div>
         </div>
       </div>
+      {saveAction.error && (
+        <p ref={saveErrorRef} role="alert" className="mt-3 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">
+          {saveAction.error}
+        </p>
+      )}
       <FormActions
         secondary={dirty ? <span className="text-micro text-text-muted">{t('documents.unsaved')}</span> : undefined}
       >
@@ -204,7 +233,6 @@ export default function Documents(): JSX.Element {
           {saveAction.pending ? t('common.saving') : t('common.save')}
         </Button>
       </FormActions>
-      {saveAction.error && <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{saveAction.error}</p>}
     </Card>
   ) : (
     <Card>

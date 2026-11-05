@@ -2826,7 +2826,6 @@ export default {
     toBuild: 'To Preview & Build →',
     unsaved: 'Not saved',
     discard: 'Discard',
-    confirmDiscard: 'The open book has unsaved changes. Switching now loses them.',
     deleteBook: 'Delete book',
     confirmDelete: 'Delete the book “{{name}}”? The file {{file}} is removed; a target that exports it no longer finds it.',
     unreadable: '{{file}} could not be read ({{reason}}). The file stays as it is.',

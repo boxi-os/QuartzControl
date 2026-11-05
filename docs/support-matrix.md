@@ -64,7 +64,7 @@ dahin gilt der Fall als geduldet.
 | Export auf Linux (PDF, ePub, HTML) | unterstützt | gemessen 2026-11-05 auf `debian-vm` (aarch64, Wayland, Software-Rendering), Module und gebaute App: dieselben Seiten und Lesezeichen wie auf macOS; x86_64, X11 und echte GPU nicht gemessen |
 | Silbentrennung | nicht unterstützt | `hyphens: auto` trennt Deutsch nur unter macOS; nicht eingebaut |
 | PDF/A, PDF/X, CMYK | nicht unterstützt | Chromium schreibt beides nicht |
-| ePub nach epubcheck 5.4.0 | unterstützt | Handbuch, Example de/en: 0 Fehler, 0 Warnungen |
+| ePub nach epubcheck 5.4.0 | unterstützt | Handbuch, Example de/en, gui-test: 0 Fehler, 0 Warnungen (gui-test erst seit 2026-11-06: Wörter in spitzen Klammern) |
 | ePub in Apple Books | unterstützt | gemessen 2026-11-05 (Bücher 9.0, hell und dunkel; Fußnoten-Popup ausgelöst); Diagramme dafür als Bild |
 | ePub in Calibre | unterstützt | gemessen 2026-11-05 (E-book viewer 9.17.0, dunkles Thema; Fußnoten-Popup ausgelöst) |
 | ePub in Thorium | unterstützt | gemessen 2026-11-05 (Thorium 3.5.1, Neutral und Nachtzeit; Fußnoten-Popup ausgelöst) |

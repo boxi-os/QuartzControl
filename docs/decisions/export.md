@@ -727,3 +727,20 @@ geschrieben.“ Ohne Abbruch, nur ePub und HTML: 79 s, der Bericht nennt
 Gesamtdokument) bricht der Export mit „Bilder, die nicht geladen haben (1): Farben in CSS:
 http://127.0.0.1:48622/hang.png“ ab, der Satz, den die Prüfung des PDFs schon hatte. Example
 unverändert: 287 Seiten, Lesezeichen 9/46/252/260/23, 29,8 s.
+
+### Ein Wort in spitzen Klammern im ePub (2026-11-06, M3)
+
+Das ePub von `gui-test` bestand epubcheck 5.4.0 nicht: 4 Fehler RSC-005 („Element "selector" ist
+an dieser Stelle nicht erlaubt“, zweimal „use“), gemessen an der gebauten App mit `FORMATS=epub`
+und epubcheck auf debian-vm (`fix/epc.sh`). In den Quellenangaben stehen „The of <selector>
+syntax“ und „SVG <use> and the Shadow DOM“ als Text; Quartz reicht das als rohes HTML durch, der
+Browser macht ein unbekanntes Element daraus, der `XMLSerializer` schreibt es, und das Schema des
+ePub kennt es nicht. Handbuch und Example haben so etwas nicht, deshalb fiel es dort nicht auf.
+
+Jetzt wird jedes Element im XHTML-Namensraum, das nicht in der Liste steht, die epubcheck selbst
+als erlaubt aufzählt, ein `span` mit seinem Inhalt (nur `id`, `class`, `lang`, `title` gehen mit).
+Das Wort selbst fehlt danach im ePub wie auf der Website, die es auch nicht zeigt. Nachher:
+gui-test 0 Fehler, Example und Handbuch weiter 0 Fehler.
+
+Das Prüfskript `check:export`, das der Plan vorsah, gibt es nicht; die Gegenprobe ist bis dahin
+epubcheck auf debian-vm von Hand, mit gui-test als dritter Stichprobe neben Handbuch und Example.

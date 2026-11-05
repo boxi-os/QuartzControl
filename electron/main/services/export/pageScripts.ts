@@ -655,6 +655,28 @@ export function epubChapters(input: {
     div.querySelectorAll('svg style').forEach((st) => {
       st.textContent = (st.textContent ?? '').replace(/@font-face\s*\{[^}]*url\(\s*["']?https?:[^}]*\}/g, '')
     })
+    //  - an element HTML does not know is a word in angle brackets the author meant as text
+    //    ("the of <selector> syntax", "SVG <use> and the Shadow DOM" in gui-test, review of
+    //    2026-11-06, M3): the browser makes an element of it and shows what it holds, the schema
+    //    refuses it. It becomes a span with what it holds, like the site shows it. The names are
+    //    the ones epubcheck 5.4.0 lists as allowed in flow and phrasing content.
+    const KNOWN = new Set(
+      ('a abbr address area article aside audio b bdi bdo blockquote br canvas caption cite code col colgroup data ' +
+        'datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 ' +
+        'header hgroup hr i iframe img input ins kbd label legend li main map mark menu meter nav object ol optgroup ' +
+        'option output p picture pre progress q rp rt ruby s samp search section select small source span strong sub ' +
+        'summary sup table tbody td template textarea tfoot th thead time tr track u ul var video wbr').split(' ')
+    )
+    div.querySelectorAll('*').forEach((el) => {
+      if (el.namespaceURI !== XHTML || KNOWN.has(el.localName)) return
+      const span = document.createElement('span')
+      for (const name of ['id', 'class', 'lang', 'title']) {
+        const v = el.getAttribute(name)
+        if (v !== null) span.setAttribute(name, v)
+      }
+      span.append(...el.childNodes)
+      el.replaceWith(span)
+    })
     // The register's page numbers are the PDF's; a reader has no pages.
     div.querySelectorAll('.qc-pageno').forEach((e) => e.remove())
     // What XHTML or the ePub schema does not take, and nothing in a document needs.
